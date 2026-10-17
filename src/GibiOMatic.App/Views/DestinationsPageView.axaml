@@ -133,11 +133,21 @@
                         <TextBlock Classes="mono" FontSize="12" Text="{Binding Folder}" />
                       </Border>
                     </WrapPanel>
-                    <Border Classes="pill" HorizontalAlignment="Left"
+                    <Border Classes="pill" HorizontalAlignment="Left" IsVisible="{Binding !IsRunning}"
                             Background="{Binding StatusKind, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Background}">
                       <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding StatusText}" TextWrapping="Wrap"
                                  Foreground="{Binding StatusKind, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
                     </Border>
+                    <StackPanel Spacing="6" IsVisible="{Binding IsRunning}" MaxWidth="520" HorizontalAlignment="Left">
+                      <Border Classes="pill" HorizontalAlignment="Left"
+                              Background="{Binding Source={x:Static vm:StatusKind.Busy}, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Background}">
+                        <TextBlock FontSize="13" FontWeight="SemiBold" Text="{x:Static r:Strings.Destination_Running}"
+                                   Foreground="{Binding Source={x:Static vm:StatusKind.Busy}, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
+                      </Border>
+                      <TextBlock Classes="help" Text="{Binding ProgressText}" TextTrimming="CharacterEllipsis" />
+                      <ProgressBar Minimum="0" Maximum="1" Value="{Binding ProgressValue}" Height="4" MinWidth="320"
+                                   Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+                    </StackPanel>
                   </StackPanel>
                   <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
                     <Button Classes="secondary" Content="{x:Static r:Strings.Destinations_Configure}" Command="{Binding ConfigureCommand}" />
@@ -255,11 +265,21 @@
         </Button>
         <StackPanel Spacing="6">
           <TextBlock Classes="h1" Text="{Binding Title}" />
-          <Border Classes="pill" HorizontalAlignment="Left"
+          <Border Classes="pill" HorizontalAlignment="Left" IsVisible="{Binding IsIdle}"
                   Background="{Binding StatusKind, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Background}">
             <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding StatusText}"
                        Foreground="{Binding StatusKind, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
           </Border>
+          <StackPanel Spacing="6" IsVisible="{Binding IsRunning}" MaxWidth="640" HorizontalAlignment="Left">
+                      <Border Classes="pill" HorizontalAlignment="Left"
+                              Background="{Binding Source={x:Static vm:StatusKind.Busy}, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Background}">
+                        <TextBlock FontSize="13" FontWeight="SemiBold" Text="{x:Static r:Strings.Destination_Running}"
+                                   Foreground="{Binding Source={x:Static vm:StatusKind.Busy}, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
+                      </Border>
+                      <TextBlock Classes="help" Text="{Binding ProgressText}" TextTrimming="CharacterEllipsis" />
+                      <ProgressBar Minimum="0" Maximum="1" Value="{Binding ProgressValue}" Height="4" MinWidth="320"
+                                   Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+                    </StackPanel>
         </StackPanel>
 
         <!-- Copies: plan, confirmation, progress -->
@@ -270,11 +290,6 @@
               <Button Grid.Column="1" Classes="secondary" Content="{x:Static r:Strings.Destinations_SyncNow}"
                       Command="{Binding ShowPlanCommand}" IsEnabled="{Binding !IsRunning}" />
             </Grid>
-            <StackPanel Spacing="6" IsVisible="{Binding IsRunning}">
-              <TextBlock Classes="help" Text="{Binding ProgressText}" />
-              <ProgressBar Minimum="0" Maximum="1" Value="{Binding ProgressValue}" Height="4"
-                           Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
-            </StackPanel>
             <TextBlock Classes="success" Text="{Binding ResultText}" TextWrapping="Wrap"
                        IsVisible="{Binding ResultText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Classes.error="{Binding ResultIsError}" />
             <StackPanel Spacing="10" IsVisible="{Binding HasPlan}">
@@ -297,6 +312,38 @@
                         IsVisible="{Binding CanSync}" />
               </StackPanel>
             </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- History -->
+        <Border Classes="card">
+          <StackPanel Spacing="10">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Classes="h3" Text="{x:Static r:Strings.History_Title}" VerticalAlignment="Center" />
+              <Button Grid.Column="1" Classes="secondary" Content="{x:Static r:Strings.History_OpenLogs}" Command="{Binding OpenLogsCommand}"
+                      ToolTip.Tip="{x:Static r:Strings.History_LogsHelp}" />
+            </Grid>
+            <TextBlock Classes="help" Text="{x:Static r:Strings.History_Empty}" TextWrapping="Wrap" IsVisible="{Binding !History.Count}" />
+            <Border Background="{DynamicResource InputBrush}" CornerRadius="8" Padding="12,8" MaxHeight="320" IsVisible="{Binding History.Count}">
+              <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding History}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:HistoryRow">
+                      <Grid ColumnDefinitions="130,*" Margin="0,3">
+                        <TextBlock Classes="mono muted" FontSize="12" Text="{Binding When}" />
+                        <StackPanel Grid.Column="1" Spacing="1">
+                          <TextBlock FontSize="13" Text="{Binding Text}" TextWrapping="Wrap" Classes.error="{Binding IsError}" />
+                          <SelectableTextBlock Classes="mono" FontSize="12" Text="{Binding Detail}" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               IsVisible="{Binding Detail, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                        </StackPanel>
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </Border>
+            <TextBlock Classes="help" Text="{x:Static r:Strings.History_LogsHelp}" TextWrapping="Wrap" />
           </StackPanel>
         </Border>
 

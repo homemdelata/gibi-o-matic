@@ -83,6 +83,10 @@ public sealed class DestinationsPageTests : IDisposable
         Assert.Equal(StatusKind.Ok, page.Cards.Single().StatusKind);
         Assert.NotNull(detail.ResultText);
         Assert.False(detail.ResultIsError);
+        Assert.False(detail.IsRunning);
+        Assert.False(page.Cards.Single().IsRunning);
+        Assert.Equal(2, detail.History.Count(h => h.Text == Resources.Strings.History_Created));
+        Assert.DoesNotContain(detail.History, h => h.IsError);
 
         var library = _app.Get<LibraryPageViewModel>();
         await library.LoadAsync(Ct);
@@ -90,6 +94,25 @@ public sealed class DestinationsPageTests : IDisposable
         library.VisibleCards.OfType<BookCardViewModel>().First().SelectCommand.Execute(null);
         await WaitForAsync(() => library.Selected!.Copies.Count > 0);
         Assert.Equal(StatusKind.Ok, library.Selected!.Copies.Single().Kind);
+    }
+
+    [Fact]
+    public async Task A_copy_that_fails_shows_up_in_the_history_and_on_the_card()
+    {
+        await ImportSagaAsync();
+        var page = await CreateKomgaAsync();
+        var book = (await Session.Index!.GetBooksAsync(Ct)).Single(b => b.Metadata.Series?.Number == "2");
+        File.Delete(Path.Combine(Session.Current!.RootPath, book.Folder, book.MainFile!.Name));
+
+        page.Detail!.SyncCommand.Execute(null);
+        await Session.Destinations!.WaitUntilIdleAsync(Ct);
+        await page.RefreshAsync(Ct);
+
+        var failure = Assert.Single(page.Detail.History, h => h.IsError && h.Detail is not null && h.Text.Contains("Saga v02", StringComparison.Ordinal));
+        Assert.NotNull(failure.Detail);
+        Assert.True(page.Detail.ResultIsError);
+        Assert.Equal(StatusKind.Bad, page.Cards.Single().StatusKind);
+        Assert.Single(Directory.GetFiles(KomgaFolder, "*.cbz", SearchOption.AllDirectories));
     }
 
     [Fact]

@@ -426,4 +426,20 @@
   <data name="Library_RemoveFromDestination" xml:space="preserve"><value>Remove from {0}</value></data>
   <data name="Library_IncludedIn" xml:space="preserve"><value>{0} books included in {1}.</value></data>
   <data name="Library_RemovedFrom" xml:space="preserve"><value>{0} books removed from {1}.</value></data>
+  <data name="Destination_StatusLastErrors" xml:space="preserve"><value>{0} errors in the last update · {1}</value></data>
+  <data name="Destination_Running" xml:space="preserve"><value>Updating…</value></data>
+  <data name="Sync_Starting" xml:space="preserve"><value>Getting ready…</value></data>
+  <data name="Sync_Finishing" xml:space="preserve"><value>Finishing and notifying the server…</value></data>
+  <data name="History_Title" xml:space="preserve"><value>History</value></data>
+  <data name="History_Empty" xml:space="preserve"><value>Nothing yet. Every copy written or deleted, and every error, shows up here.</value></data>
+  <data name="History_Created" xml:space="preserve"><value>Created</value></data>
+  <data name="History_Updated" xml:space="preserve"><value>Updated</value></data>
+  <data name="History_Deleted" xml:space="preserve"><value>Deleted</value></data>
+  <data name="History_Failed" xml:space="preserve"><value>Error on {0}</value></data>
+  <data name="History_ScanRequested" xml:space="preserve"><value>Komga asked to scan the library</value></data>
+  <data name="History_ScanFailed" xml:space="preserve"><value>Could not notify Komga (it finds the files on its next scheduled scan)</value></data>
+  <data name="History_Finished" xml:space="preserve"><value>Update finished: {0} written, {1} deleted, {2} errors</value></data>
+  <data name="History_FinishedPlain" xml:space="preserve"><value>Update finished</value></data>
+  <data name="History_OpenLogs" xml:space="preserve"><value>Open log folder</value></data>
+  <data name="History_LogsHelp" xml:space="preserve"><value>The app logs have the technical details of errors (one file per day).</value></data>
 </root>

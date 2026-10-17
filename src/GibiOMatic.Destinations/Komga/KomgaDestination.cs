@@ -107,22 +107,24 @@ public sealed class KomgaDestination(DestinationConfig config, KomgaClient clien
         logger.LogInformation("Built {Target}: {Pages} pages ({Original} copied as they were)", target, result.Pages, result.OriginalPages);
     }
 
-    public async Task AfterSyncAsync(CancellationToken ct)
+    public async Task<AfterSyncResult?> AfterSyncAsync(CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(Config.ServerUrl) || string.IsNullOrWhiteSpace(Config.KomgaLibraryId) || !secrets.IsSupported
             || await secrets.GetAsync(Config.SecretName, ct) is not { Length: > 0 } key)
         {
-            return;
+            return null;
         }
 
         try
         {
             await client.ScanAsync(Config.ServerUrl, key, Config.KomgaLibraryId, ct);
+            return new AfterSyncResult(true);
         }
         catch (KomgaException ex)
         {
             // The files are there; Komga will find them on its own scheduled scan.
-            logger.LogWarning("Komga scan request failed: {Message}", ex.Message);
+            logger.LogWarning(ex, "Komga scan request failed: {Message}", ex.Message);
+            return new AfterSyncResult(false, ex.Message);
         }
     }
 }

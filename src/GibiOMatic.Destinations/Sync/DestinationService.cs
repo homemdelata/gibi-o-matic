@@ -115,6 +115,10 @@ public sealed class DestinationService : IAsyncDisposable
 
     public SyncResult? LastResult(string destinationId) => _lastResults.GetValueOrDefault(destinationId);
 
+    /// <summary>What the destination did, newest first (for its history).</summary>
+    public Task<IReadOnlyList<DestinationLogEntry>> HistoryAsync(string destinationId, int limit = 200, CancellationToken ct = default) =>
+        _sync.HistoryAsync(destinationId, limit, ct);
+
     public async Task<DestinationSummary> SummaryAsync(IDestination destination, CancellationToken ct = default)
     {
         var plan = await _sync.PlanAsync(destination, ct);

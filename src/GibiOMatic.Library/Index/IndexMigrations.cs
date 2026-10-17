@@ -85,6 +85,20 @@ internal static class IndexMigrations
             PRIMARY KEY (destination_id, book_id)
         );
         """,
+
+        // 5: what each destination did (copies written and removed, errors), shown in its history
+        """
+        CREATE TABLE destination_log (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            destination_id  TEXT NOT NULL,
+            at              TEXT NOT NULL,
+            kind            TEXT NOT NULL,
+            title           TEXT,
+            path            TEXT,
+            message         TEXT
+        );
+        CREATE INDEX ix_destination_log ON destination_log (destination_id, id);
+        """,
     ];
 
     public static int LatestVersion => All.Count;

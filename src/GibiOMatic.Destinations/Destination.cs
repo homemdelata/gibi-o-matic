@@ -53,6 +53,12 @@ public interface IDestination
     /// <summary>Writes the copy of <paramref name="book"/> to <paramref name="target"/> (a temporary file).</summary>
     Task GenerateAsync(LibraryInfo library, CatalogBook book, string target, IProgress<double>? progress, CancellationToken ct);
 
-    /// <summary>Called after a sync wrote or removed files (Komga: ask the server to scan).</summary>
-    Task AfterSyncAsync(CancellationToken ct);
+    /// <summary>
+    /// Called after a sync wrote or removed files (Komga: ask the server to scan).
+    /// Returns what happened, for the destination's history, or null when there was nothing to do.
+    /// </summary>
+    Task<AfterSyncResult?> AfterSyncAsync(CancellationToken ct);
 }
+
+/// <param name="Message">Technical detail (the server's error), shown as is in the history.</param>
+public sealed record AfterSyncResult(bool Success, string? Message = null);

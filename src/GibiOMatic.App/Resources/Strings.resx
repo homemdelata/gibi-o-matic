@@ -426,4 +426,20 @@
   <data name="Library_RemoveFromDestination" xml:space="preserve"><value>Tirar de {0}</value></data>
   <data name="Library_IncludedIn" xml:space="preserve"><value>{0} livros incluídos em {1}.</value></data>
   <data name="Library_RemovedFrom" xml:space="preserve"><value>{0} livros tirados de {1}.</value></data>
+  <data name="Destination_StatusLastErrors" xml:space="preserve"><value>{0} erros na última atualização · {1}</value></data>
+  <data name="Destination_Running" xml:space="preserve"><value>Atualizando…</value></data>
+  <data name="Sync_Starting" xml:space="preserve"><value>Preparando…</value></data>
+  <data name="Sync_Finishing" xml:space="preserve"><value>Finalizando e avisando o servidor…</value></data>
+  <data name="History_Title" xml:space="preserve"><value>Histórico</value></data>
+  <data name="History_Empty" xml:space="preserve"><value>Nada ainda. Cada cópia gravada ou apagada, e cada erro, aparece aqui.</value></data>
+  <data name="History_Created" xml:space="preserve"><value>Criado</value></data>
+  <data name="History_Updated" xml:space="preserve"><value>Atualizado</value></data>
+  <data name="History_Deleted" xml:space="preserve"><value>Apagado</value></data>
+  <data name="History_Failed" xml:space="preserve"><value>Erro em {0}</value></data>
+  <data name="History_ScanRequested" xml:space="preserve"><value>Komga avisado para escanear a biblioteca</value></data>
+  <data name="History_ScanFailed" xml:space="preserve"><value>Não foi possível avisar o Komga (ele acha os arquivos no próximo scan automático)</value></data>
+  <data name="History_Finished" xml:space="preserve"><value>Atualização concluída: {0} gravados, {1} apagados, {2} erros</value></data>
+  <data name="History_FinishedPlain" xml:space="preserve"><value>Atualização concluída</value></data>
+  <data name="History_OpenLogs" xml:space="preserve"><value>Abrir pasta de logs</value></data>
+  <data name="History_LogsHelp" xml:space="preserve"><value>Os logs do app têm os detalhes técnicos dos erros (um arquivo por dia).</value></data>
 </root>

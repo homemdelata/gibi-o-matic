@@ -79,6 +79,7 @@ internal sealed class OutputStore(LibraryIndex index)
 public sealed class DestinationSync(LibraryInfo library, LibraryIndex index, ILogger logger)
 {
     private readonly OutputStore _outputs = new(index);
+    private readonly DestinationLogStore _log = new(index);
 
     /// <param name="onlyBookId">Plan a single book (automatic mode after an edit).</param>
     public async Task<SyncPlan> PlanAsync(IDestination destination, CancellationToken ct, string? onlyBookId = null)
@@ -156,6 +157,7 @@ public sealed class DestinationSync(LibraryInfo library, LibraryIndex index, ILo
                 {
                     DeleteCopy(destination, action.OldPath!);
                     await _outputs.DeleteAsync(destination.Config.Id, action.BookId, ct);
+                    await _log.AddAsync(destination.Config.Id, DestinationLogKind.Deleted, action.Title, action.OldPath, null, ct);
                     deleted++;
                 }
                 else if (books.TryGetValue(action.BookId, out var book))
@@ -182,6 +184,8 @@ public sealed class DestinationSync(LibraryInfo library, LibraryIndex index, ILo
                     }
 
                     await _outputs.SaveAsync(destination.Config.Id, action.BookId, action.NewPath!, action.ContentHash!, ct);
+                    await _log.AddAsync(destination.Config.Id, action.Kind == SyncActionKind.Create ? DestinationLogKind.Created : DestinationLogKind.Updated,
+                        action.Title, action.NewPath, null, ct);
                     written++;
                 }
             }
@@ -189,6 +193,7 @@ public sealed class DestinationSync(LibraryInfo library, LibraryIndex index, ILo
             {
                 logger.LogWarning(ex, "Destination {Destination}: {Kind} of {Title} failed", destination.Config.Name, action.Kind, action.Title);
                 failures.Add((action.Title, ex.Message));
+                await _log.AddAsync(destination.Config.Id, DestinationLogKind.Failed, action.Title, action.NewPath ?? action.OldPath, ex.Message, CancellationToken.None);
             }
 
             done++;
@@ -197,16 +202,28 @@ public sealed class DestinationSync(LibraryInfo library, LibraryIndex index, ILo
         progress?.Report((done, plan.Actions.Count, string.Empty));
         logger.LogInformation("Destination {Destination}: {Written} written, {Deleted} removed, {Failed} failed",
             destination.Config.Name, written, deleted, failures.Count);
-        if (written + deleted > 0)
+        await _log.AddAsync(destination.Config.Id, DestinationLogKind.Finished, null, null,
+            FormattableString.Invariant($"{written}/{deleted}/{failures.Count}"), CancellationToken.None);
+        if (written + deleted > 0 && await destination.AfterSyncAsync(ct) is { } after)
         {
-            await destination.AfterSyncAsync(ct);
+            await _log.AddAsync(destination.Config.Id, after.Success ? DestinationLogKind.ScanRequested : DestinationLogKind.ScanFailed,
+                null, null, after.Message, CancellationToken.None);
         }
 
+        await _log.TrimAsync(destination.Config.Id, CancellationToken.None);
         return new SyncResult(written, deleted, failures);
     }
 
     /// <summary>Forgets every copy of a destination (when it is removed; its files stay where they are).</summary>
-    public Task ForgetAsync(string destinationId, CancellationToken ct) => _outputs.DeleteAsync(destinationId, null, ct);
+    public async Task ForgetAsync(string destinationId, CancellationToken ct)
+    {
+        await _outputs.DeleteAsync(destinationId, null, ct);
+        await _log.DeleteAsync(destinationId, ct);
+    }
+
+    /// <summary>The destination's history, newest first.</summary>
+    public Task<IReadOnlyList<DestinationLogEntry>> HistoryAsync(string destinationId, int limit, CancellationToken ct) =>
+        _log.GetAsync(destinationId, limit, ct);
 
     private static string Absolute(IDestination destination, string relative)
     {

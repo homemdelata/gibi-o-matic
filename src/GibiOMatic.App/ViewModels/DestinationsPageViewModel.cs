@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GibiOMatic.App.Resources;
 using GibiOMatic.App.Services;
+using GibiOMatic.Core;
 using GibiOMatic.Core.Domain;
 using GibiOMatic.Core.Ids;
 using GibiOMatic.Core.Secrets;
@@ -23,7 +24,8 @@ public enum DestinationsMode
 }
 
 /// <summary>A destination card in the list (SPEC §12, Destinos).</summary>
-public sealed partial class DestinationCardViewModel(DestinationSummary summary, Action<DestinationCardViewModel, bool> open) : ViewModelBase
+public sealed partial class DestinationCardViewModel(DestinationSummary summary, SyncResult? lastResult, Action<DestinationCardViewModel, bool> open)
+    : ViewModelBase, ISyncActivity
 {
     public DestinationSummary Summary { get; } = summary;
     public string Id => Summary.Config.Id;
@@ -33,18 +35,43 @@ public sealed partial class DestinationCardViewModel(DestinationSummary summary,
     public string WhenText => Summary.Config.When == DestinationTiming.Automatic ? Strings.Destination_Automatic : Strings.Destination_Manual;
     public string? Folder => Summary.Config.Folder;
 
-    public StatusKind StatusKind => Summary.Status.Health != DestinationHealth.Ready
+    public StatusKind StatusKind => Summary.Status.Health != DestinationHealth.Ready || lastResult?.Failures.Count > 0
         ? StatusKind.Bad
         : !Summary.Confirmed || Summary.Pending > 0 ? StatusKind.Warn : StatusKind.Ok;
 
-    public string StatusText => DestinationText.Status(Summary);
+    public string StatusText => lastResult?.Failures.Count > 0 && Summary.Status.Health == DestinationHealth.Ready
+        ? string.Format(CultureInfo.CurrentCulture, Strings.Destination_StatusLastErrors, lastResult.Failures.Count, DestinationText.Status(Summary))
+        : DestinationText.Status(Summary);
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SyncNowCommand))]
+    public partial bool IsRunning { get; set; }
+
+    [ObservableProperty]
+    public partial string? ProgressText { get; set; }
+
+    [ObservableProperty]
+    public partial double ProgressValue { get; set; }
 
     [RelayCommand]
     private void Configure() => open(this, false);
 
-    [RelayCommand]
+    private bool CanSyncNow => !IsRunning;
+
+    [RelayCommand(CanExecute = nameof(CanSyncNow))]
     private void SyncNow() => open(this, true);
 }
+
+/// <summary>What the card and the detail show while a destination is being updated.</summary>
+public interface ISyncActivity
+{
+    bool IsRunning { get; set; }
+    string? ProgressText { get; set; }
+    double ProgressValue { get; set; }
+}
+
+/// <summary>A line of a destination's history.</summary>
+public sealed record HistoryRow(string When, string Text, string? Detail, bool IsError);
 
 /// <summary>Texts about destinations shared by the page, the sidebar and the book panel.</summary>
 public static class DestinationText
@@ -69,6 +96,40 @@ public static class DestinationText
         return s.Pending > 0
             ? string.Format(CultureInfo.CurrentCulture, Strings.Destination_StatusPending, s.Pending, s.UpToDate)
             : string.Format(CultureInfo.CurrentCulture, Strings.Destination_StatusUpToDate, s.UpToDate);
+    }
+
+    /// <summary>"Gerando Saga v01 (3 de 10)…"; the last step is the server notice.</summary>
+    public static void Report(ISyncActivity activity, SyncProgress progress)
+    {
+        activity.IsRunning = true;
+        activity.ProgressValue = progress.Total == 0 ? 0 : (double)progress.Done / progress.Total;
+        activity.ProgressText = progress.Done >= progress.Total || string.IsNullOrEmpty(progress.Title)
+            ? Strings.Sync_Finishing
+            : string.Format(CultureInfo.CurrentCulture, Strings.Sync_Progress, progress.Title, progress.Done + 1, progress.Total);
+    }
+
+    public static HistoryRow History(DestinationLogEntry e)
+    {
+        var when = e.At.ToLocalTime().ToString("g", CultureInfo.CurrentCulture);
+        var item = e.Path ?? e.Title;
+        return e.Kind switch
+        {
+            DestinationLogKind.Created => new(when, Strings.History_Created, item, false),
+            DestinationLogKind.Updated => new(when, Strings.History_Updated, item, false),
+            DestinationLogKind.Deleted => new(when, Strings.History_Deleted, item, false),
+            DestinationLogKind.Failed => new(when, string.Format(CultureInfo.CurrentCulture, Strings.History_Failed, item), e.Message, true),
+            DestinationLogKind.ScanRequested => new(when, Strings.History_ScanRequested, null, false),
+            DestinationLogKind.ScanFailed => new(when, Strings.History_ScanFailed, e.Message, true),
+            _ => new(when, Finished(e.Message), null, e.Message?.EndsWith("/0", StringComparison.Ordinal) == false),
+        };
+    }
+
+    private static string Finished(string? counts)
+    {
+        var parts = (counts ?? string.Empty).Split('/');
+        return parts.Length == 3
+            ? string.Format(CultureInfo.CurrentCulture, Strings.History_Finished, parts[0], parts[1], parts[2])
+            : Strings.History_FinishedPlain;
     }
 
     public static string Copy(CopyState state) => state switch
@@ -361,7 +422,7 @@ public sealed partial class DestinationWizardViewModel : ViewModelBase
 }
 
 /// <summary>A destination opened: sync with confirmation, progress, and its settings.</summary>
-public sealed partial class DestinationDetailViewModel : ViewModelBase
+public sealed partial class DestinationDetailViewModel : ViewModelBase, ISyncActivity
 {
     private readonly DestinationsPageViewModel _page;
     private SyncPlan? _plan;
@@ -398,10 +459,16 @@ public sealed partial class DestinationDetailViewModel : ViewModelBase
     public partial bool CanSync { get; private set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsIdle))]
     public partial bool IsRunning { get; set; }
+
+    public bool IsIdle => !IsRunning;
 
     [ObservableProperty]
     public partial string? ProgressText { get; set; }
+
+    /// <summary>The latest entries of the destination's history, newest first.</summary>
+    public ObservableCollection<HistoryRow> History { get; } = [];
 
     [ObservableProperty]
     public partial double ProgressValue { get; set; }
@@ -460,6 +527,9 @@ public sealed partial class DestinationDetailViewModel : ViewModelBase
         }
 
         _page.Run(_plan);
+        IsRunning = true;
+        ProgressValue = 0;
+        ProgressText = Strings.Sync_Starting;
         CanSync = false;
         PlanText = null;
         PlanItems.Clear();
@@ -501,6 +571,9 @@ public sealed partial class DestinationDetailViewModel : ViewModelBase
 
     [RelayCommand]
     private void Back() => _page.ShowList();
+
+    [RelayCommand]
+    private Task OpenLogsAsync() => _page.OpenLogsAsync();
 }
 
 /// <summary>
@@ -517,11 +590,16 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
     private readonly IEnumerable<IDestinationType> _types;
     private readonly IUiThread _ui;
     private readonly ILogger<DestinationsPageViewModel> _logger;
+    private readonly IUrlOpener _urls;
+    private readonly AppPaths _paths;
     private readonly Debouncer _refresh;
 
     public DestinationsPageViewModel(LibrarySession session, ISettingsService settings, ISecretStore secrets, KomgaClient komga,
-        IFolderPicker folders, IEnumerable<IDestinationType> types, IUiThread ui, ILogger<DestinationsPageViewModel> logger)
+        IFolderPicker folders, IEnumerable<IDestinationType> types, IUiThread ui, IUrlOpener urls, AppPaths paths,
+        ILogger<DestinationsPageViewModel> logger)
     {
+        _urls = urls;
+        _paths = paths;
         _session = session;
         _settings = settings;
         _secrets = secrets;
@@ -583,15 +661,23 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
             Cards.Clear();
             foreach (var summary in summaries)
             {
-                Cards.Add(new DestinationCardViewModel(summary, (card, sync) => _ = OpenAsync(card.Id, sync)));
+                var card = new DestinationCardViewModel(summary, service.LastResult(summary.Config.Id), (c, sync) => _ = OpenAsync(c.Id, sync));
+                ShowActivity(service, card, summary.Config.Id);
+                Cards.Add(card);
             }
 
             if (Detail is { } detail && summaries.FirstOrDefault(s => s.Config.Id == detail.Config.Id) is { } current)
             {
                 detail.StatusText = DestinationText.Status(current);
                 detail.StatusKind = Cards.First(c => c.Id == current.Config.Id).StatusKind;
-                detail.IsRunning = service.IsBusy;
-                if (service.LastResult(current.Config.Id) is { } result && !service.IsBusy)
+                ShowActivity(service, detail, current.Config.Id);
+                detail.History.Clear();
+                foreach (var entry in await service.HistoryAsync(current.Config.Id, 200, ct))
+                {
+                    detail.History.Add(DestinationText.History(entry));
+                }
+
+                if (service.LastResult(current.Config.Id) is { } result && !detail.IsRunning)
                 {
                     detail.ResultIsError = result.Failures.Count > 0;
                     detail.ResultText = result.Failures.Count == 0
@@ -697,17 +783,51 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
 
     private void OnServiceChanged(object? sender, EventArgs e) => _refresh.Trigger();
 
+    /// <summary>Running while its job works (or while a job it started waits in line).</summary>
+    private static void ShowActivity(DestinationService service, ISyncActivity activity, string destinationId)
+    {
+        if (service.Current is { } progress && progress.DestinationId == destinationId)
+        {
+            DestinationText.Report(activity, progress);
+        }
+        else if (!(activity.IsRunning && service.IsBusy && service.Current is null))
+        {
+            activity.IsRunning = false;
+        }
+    }
+
     private void OnProgress(object? sender, SyncProgress? progress) => _ui.Post(() =>
     {
-        if (Detail is not { } detail || progress is null || progress.DestinationId != detail.Config.Id)
+        var activities = Cards.Cast<ISyncActivity>().Select(a => (Activity: a, Id: ((DestinationCardViewModel)a).Id)).ToList();
+        if (Detail is { } detail)
         {
-            return;
+            activities.Add((detail, detail.Config.Id));
         }
 
-        detail.IsRunning = true;
-        detail.ProgressValue = progress.Total == 0 ? 0 : (double)progress.Done / progress.Total;
-        detail.ProgressText = string.Format(CultureInfo.CurrentCulture, Strings.Sync_Progress, progress.Title, progress.Done + 1, progress.Total);
+        foreach (var (activity, id) in activities)
+        {
+            if (progress is not null && progress.DestinationId == id)
+            {
+                DestinationText.Report(activity, progress);
+            }
+            else if (progress is null)
+            {
+                activity.IsRunning = false;
+            }
+        }
+
+        if (progress is null)
+        {
+            _refresh.Trigger();
+        }
     });
+
+    /// <summary>The app's log files (errors with all their details), for debugging.</summary>
+    public Task OpenLogsAsync()
+    {
+        Directory.CreateDirectory(_paths.LogsDirectory);
+        return _urls.OpenAsync(new Uri(_paths.LogsDirectory + Path.DirectorySeparatorChar));
+    }
 
     public override void Dispose()
     {
