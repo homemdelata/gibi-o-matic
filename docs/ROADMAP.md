@@ -6,7 +6,7 @@ Status: ⬜ não iniciada · 🟨 em andamento · ✅ concluída. Seções `§` 
 |---|---|---|
 | F0 | Fundação | ✅ |
 | F1 | Importação + Biblioteca | ✅ |
-| F2 | Metadados | ⬜ |
+| F2 | Metadados | ✅ |
 | F3 | Destino Komga | ⬜ |
 | F4 | Destino Kindle | ⬜ |
 | F5 | Entrada automática | ⬜ |
@@ -89,24 +89,24 @@ Ao terminar cada fase: build e testes verdes → atualizar este arquivo → comm
 
 ## F2 · Metadados (§7, §8)
 
-- [ ] `IMetadataSource`: Open Library (ISBN), ComicVine (busca de volumes e edições, detalhes, créditos por função) e Google Books (opcional, desligado por padrão). Cada um com cache, limite de requisições e novas tentativas.
-- [ ] Identificação:
+- [x] `IMetadataSource`: Open Library (ISBN), ComicVine (busca de volumes e edições, detalhes, créditos por função) e Google Books (opcional, desligado por padrão). Cada um com cache, limite de requisições e novas tentativas.
+- [x] Identificação:
   - normalização do título (série, número, tipo TPB/avulsa);
   - candidatos;
   - pontuação;
   - filtros de editora, idioma e ano;
   - detecção de one-shot.
-- [ ] Aprovação automática segura (§8.2, item 3), com a marcação `matchedBy: auto` e o filtro "Aprovados automaticamente".
-- [ ] **Tela Revisão** (`Revisao.dc.html`): fila por gravidade, candidatos, tabela campo a campo com caixas de seleção, Aprovar e próximo, Pular.
-- [ ] **Editor** (`Editor.dc.html`):
+- [x] Aprovação automática segura (§8.2, item 3), com a marcação `matchedBy: auto` e o filtro "Aprovados automaticamente".
+- [x] **Tela Revisão** (`Revisao.dc.html`): fila por gravidade, candidatos, tabela campo a campo com caixas de seleção, Aprovar e próximo, Pular.
+- [x] **Editor** (`Editor.dc.html`):
   - um livro e lote;
   - créditos por função;
   - capa (trocar ou usar a página 1);
   - "É one-shot";
   - prévia dos nomes de saída por destino.
-- [ ] Histórico (`.gibiomatic/history`) e desfazer.
-- [ ] Renomear a pasta do livro quando editora, série ou título mudarem.
-- [ ] Configurações → Metadados: ordem e liga/desliga das fontes, chave do ComicVine (DPAPI), "Sempre revisar".
+- [x] Histórico (`.gibiomatic/history`) e desfazer.
+- [x] Renomear a pasta do livro quando editora, série ou título mudarem.
+- [x] Configurações → Metadados: ordem e liga/desliga das fontes, chave do ComicVine (DPAPI), "Sempre revisar".
 
 **Pronto quando**: a coleção inteira passa pela identificação, e a fila de Revisão é tratável em poucos cliques por livro.
 

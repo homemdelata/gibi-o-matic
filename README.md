@@ -7,7 +7,7 @@ App desktop (C# / Avalonia) para organizar uma coleção pessoal de quadrinhos d
 - **Komga** — publica cópias em CBZ com `ComicInfo.xml`, organizadas por editora/série.
 - **Kindle** — gera versões AZW3 via Kindle Comic Converter, prontas para copiar por USB.
 
-> Status: em desenvolvimento — fases F0 (fundação) e F1 (importação e biblioteca) concluídas. Veja [`docs/ROADMAP.md`](docs/ROADMAP.md) e [`docs/SPEC.md`](docs/SPEC.md).
+> Status: em desenvolvimento — fases F0 (fundação), F1 (importação e biblioteca) e F2 (metadados) concluídas. Veja [`docs/ROADMAP.md`](docs/ROADMAP.md) e [`docs/SPEC.md`](docs/SPEC.md).
 
 ## Desenvolvimento
 Requer o .NET 10 SDK (versão fixada em `global.json`).

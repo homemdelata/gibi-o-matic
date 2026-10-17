@@ -174,7 +174,7 @@ Faixas: **Ruim** (< 60), **Revisar** (60–84), **OK** (≥ 85). A regra já exi
 | **Google Books** | por ISBN, opcional | API v1 com limite agressivo sem chave; desligada por padrão |
 
 ### 8.2 Algoritmo
-1. **ISBN válido** (embutido ou existente): Open Library e, em seguida, a busca do ComicVine por esse ISBN. Se bater, a confiança fica ≥ 0,95.
+1. **ISBN válido** (embutido ou existente): Open Library (e Google Books, se ligado). O ComicVine não busca por ISBN; o título encontrado pelo ISBN orienta a busca no ComicVine, e o candidato do ComicVine que concordar com ele recebe a evidência do ISBN. Se bater, a confiança fica ≥ 0,95.
 2. **Título e série**: normaliza o título (separa a série do número: "Deadly Class, Vol. 11: A Fond Farewell" → série "Deadly Class", nº 11, tipo TPB) e busca *volumes* no ComicVine.
    - No ComicVine, encadernados costumam ser volumes próprios ("Deadly Class: Reagan Youth"). É preciso considerar os volumes da série e também os volumes "Série: Subtítulo".
    - Filtra por editora conhecida, idioma (descarta edições estrangeiras, como a *House of Slaughter* alemã da Splitter) e ano.
