@@ -1,0 +1,176 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GibiOMatic.App.ViewModels"
+             xmlns:c="using:GibiOMatic.App.Controls"
+             xmlns:conv="using:GibiOMatic.App.Converters"
+             xmlns:r="using:GibiOMatic.App.Resources"
+             x:Class="GibiOMatic.App.Views.ReviewPageView"
+             x:DataType="vm:ReviewPageViewModel">
+  <Grid ColumnDefinitions="320,*">
+    <!-- Queue -->
+    <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+      <DockPanel Margin="16,28,16,16">
+        <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="8,0,8,14">
+          <TextBlock Classes="h1" FontSize="28" Text="{Binding Title}" />
+          <TextBlock Classes="muted" Text="{Binding Subtitle}" />
+        </StackPanel>
+        <Border DockPanel.Dock="Top" Classes="card" Padding="12,10" Margin="0,0,0,12" IsVisible="{Binding Status.IsVisible}">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="help" Text="{Binding Status.Text}" />
+            <Button Classes="secondary" MinHeight="32" Padding="12,0" HorizontalAlignment="Left" FontSize="13"
+                    Content="{Binding Status.PauseLabel}" Command="{Binding Status.TogglePauseCommand}" />
+          </StackPanel>
+        </Border>
+        <ListBox ItemsSource="{Binding Items}" Background="Transparent" AutomationProperties.Name="{x:Static r:Strings.Review_Queue}">
+          <ListBox.Styles>
+            <Style Selector="ListBoxItem">
+              <Setter Property="Padding" Value="0" />
+              <Setter Property="Margin" Value="0,0,0,4" />
+            </Style>
+            <Style Selector="ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+              <Setter Property="Background" Value="Transparent" />
+            </Style>
+          </ListBox.Styles>
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:ReviewItemViewModel">
+              <Button Classes="queue-item" Classes.selected="{Binding IsSelected}" Command="{Binding SelectCommand}">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                  <Border Width="34" Height="50" CornerRadius="5" ClipToBounds="True">
+                    <Border.Background>
+                      <SolidColorBrush Color="{Binding Card.PlaceholderColor}" />
+                    </Border.Background>
+                    <Panel>
+                      <Border Background="{StaticResource HalftoneBrush}" />
+                      <Image Source="{Binding Card.Thumbnail}" Stretch="UniformToFill" />
+                    </Panel>
+                  </Border>
+                  <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center" Spacing="3">
+                    <TextBlock FontWeight="SemiBold" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Classes="muted" FontSize="12" Text="{Binding Issue}" TextTrimming="CharacterEllipsis" />
+                  </StackPanel>
+                  <TextBlock Grid.Column="2" Classes="mono" FontSize="12" FontWeight="Medium" VerticalAlignment="Center" Text="{Binding Score}"
+                             Foreground="{Binding Card.Band, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
+                </Grid>
+              </Button>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+    </Border>
+
+    <!-- Nothing to review -->
+    <StackPanel Grid.Column="1" IsVisible="{Binding IsEmpty}" MaxWidth="520" Spacing="12"
+                HorizontalAlignment="Center" VerticalAlignment="Center">
+      <Border Width="72" Height="72" CornerRadius="18" HorizontalAlignment="Center" Background="{DynamicResource CardBrush}"
+              BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+        <c:StrokeIcon Data="{StaticResource Icon.Review}" Width="32" Height="32" Foreground="{DynamicResource OkBrush}" />
+      </Border>
+      <TextBlock Classes="h2" HorizontalAlignment="Center" Text="{x:Static r:Strings.Review_EmptyTitle}" />
+      <TextBlock Classes="muted" TextAlignment="Center" TextWrapping="Wrap" Text="{Binding EmptyText}" />
+    </StackPanel>
+
+    <!-- Comparison -->
+    <DockPanel Grid.Column="1" Margin="{StaticResource PagePadding}" IsVisible="{Binding HasSelection}">
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,18">
+        <StackPanel Spacing="6" Margin="0,0,16,0">
+          <SelectableTextBlock Classes="mono" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" Text="{Binding FolderPath}"
+                               TextWrapping="Wrap" />
+          <TextBlock FontFamily="{StaticResource FontDisplay}" FontSize="26" FontWeight="Bold" TextWrapping="Wrap"
+                     Text="{Binding Selected.Title, FallbackValue={x:Null}}" />
+        </StackPanel>
+        <Border Grid.Column="1" Classes="pill" Padding="14,8" VerticalAlignment="Top"
+                Background="{Binding ConfidenceLevel, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Background}">
+          <TextBlock FontWeight="SemiBold" Text="{Binding ConfidenceText}" TextWrapping="Wrap" MaxWidth="360"
+                     Foreground="{Binding ConfidenceLevel, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
+        </Border>
+      </Grid>
+
+      <TextBlock DockPanel.Dock="Top" Classes="help" Foreground="{DynamicResource WarnTextBrush}" Margin="0,0,0,12" Text="{Binding NotesText}"
+                 IsVisible="{Binding NotesText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+      <!-- Search again with other words -->
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,18">
+        <TextBox Text="{Binding SearchText}" PlaceholderText="{x:Static r:Strings.Review_SearchPlaceholder}"
+                 AutomationProperties.Name="{x:Static r:Strings.Review_SearchPlaceholder}">
+          <TextBox.InnerLeftContent>
+            <c:StrokeIcon Data="{StaticResource Icon.Search}" Width="17" Height="17" Margin="12,0,0,0" Foreground="{DynamicResource TextMutedBrush}" />
+          </TextBox.InnerLeftContent>
+        </TextBox>
+        <Button Grid.Column="1" Classes="secondary" Margin="10,0,0,0" Content="{x:Static r:Strings.Review_SearchAgain}"
+                Command="{Binding SearchAgainCommand}" IsEnabled="{Binding !IsBusy}" />
+      </Grid>
+
+      <!-- Footer -->
+      <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,18,0,0">
+        <TextBlock Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,16,0" Text="{Binding AppliedSummary}" />
+        <Button Grid.Column="1" Classes="secondary" Margin="0,0,10,0" Content="{x:Static r:Strings.Review_Skip}" Command="{Binding SkipCommand}" />
+        <Button Grid.Column="2" Classes="secondary" Margin="0,0,10,0" Content="{x:Static r:Strings.Review_EditByHand}" Command="{Binding EditByHandCommand}" />
+        <Button Grid.Column="3" Classes="primary" Padding="22,0" Content="{x:Static r:Strings.Review_Approve}" Command="{Binding ApproveCommand}" />
+      </Grid>
+
+      <ScrollViewer>
+        <StackPanel Spacing="18">
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{x:Static r:Strings.Review_NoCandidateHelp}" IsVisible="{Binding !HasCandidate}" />
+
+          <!-- Candidates -->
+          <StackPanel Spacing="10" IsVisible="{Binding HasCandidate}">
+            <TextBlock Classes="section-label" Text="{x:Static r:Strings.Review_Candidates}" />
+            <ItemsControl ItemsSource="{Binding Candidates}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <UniformGrid Columns="3" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:CandidateViewModel">
+                  <Button Classes="candidate" Classes.selected="{Binding IsSelected}" Command="{Binding PickCommand}" Margin="0,0,12,12">
+                    <StackPanel Spacing="4">
+                      <TextBlock FontWeight="SemiBold" Text="{Binding Title}" TextWrapping="Wrap" MaxLines="3" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Classes="muted" FontSize="12" Text="{Binding MetaLine}" TextWrapping="Wrap" />
+                      <TextBlock Classes="muted" FontSize="12" Text="{Binding SourceText}" />
+                      <TextBlock Classes="mono" FontSize="12" FontWeight="Medium" Margin="0,2,0,0" Text="{Binding ConfidenceText}"
+                                 Foreground="{Binding Level, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
+                    </StackPanel>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+
+          <!-- Field by field -->
+          <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="14" ClipToBounds="True"
+                  IsVisible="{Binding HasCandidate}">
+            <StackPanel>
+              <Grid ColumnDefinitions="48,150,*,1.4*" Background="{DynamicResource CardBrush}">
+                <TextBlock Grid.Column="1" Classes="section-label" Margin="8,12" Text="{x:Static r:Strings.Review_ColField}" />
+                <TextBlock Grid.Column="2" Classes="section-label" Margin="8,12" Text="{x:Static r:Strings.Review_ColCurrent}" />
+                <TextBlock Grid.Column="3" Classes="section-label" Margin="8,12" Text="{x:Static r:Strings.Review_ColProposed}" />
+              </Grid>
+              <ItemsControl ItemsSource="{Binding Rows}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:FieldRowViewModel">
+                    <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
+                      <Grid ColumnDefinitions="48,150,*,1.4*">
+                        <CheckBox Margin="14,0,0,0" VerticalAlignment="Center" IsChecked="{Binding IsApplied}" IsEnabled="{Binding CanApply}"
+                                  AutomationProperties.Name="{Binding Label}" />
+                        <TextBlock Grid.Column="1" Classes="muted" Margin="8,12" VerticalAlignment="Center" Text="{Binding Label}" />
+                        <TextBlock Grid.Column="2" Classes="current" Classes.applied="{Binding IsApplied}" Margin="8,12" VerticalAlignment="Center"
+                                   TextWrapping="Wrap" MaxLines="4" TextTrimming="CharacterEllipsis" Text="{Binding Current}" />
+                        <StackPanel Grid.Column="3" Margin="8,12" VerticalAlignment="Center" Spacing="2">
+                          <TextBlock Classes="proposed" Classes.applied="{Binding IsApplied}" TextWrapping="Wrap" MaxLines="5"
+                                     TextTrimming="CharacterEllipsis" Text="{Binding Proposed}" />
+                          <TextBlock Classes="help" Foreground="{DynamicResource WarnTextBrush}" Text="{x:Static r:Strings.Review_Conflict}"
+                                     IsVisible="{Binding Change.Conflict}" />
+                        </StackPanel>
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+    </DockPanel>
+  </Grid>
+</UserControl>

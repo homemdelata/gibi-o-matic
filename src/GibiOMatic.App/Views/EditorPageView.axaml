@@ -1,0 +1,201 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GibiOMatic.App.ViewModels"
+             xmlns:c="using:GibiOMatic.App.Controls"
+             xmlns:r="using:GibiOMatic.App.Resources"
+             x:Class="GibiOMatic.App.Views.EditorPageView"
+             x:DataType="vm:EditorPageViewModel">
+  <Panel>
+    <!-- No book chosen -->
+    <StackPanel IsVisible="{Binding IsEmpty}" MaxWidth="520" Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+      <Border Width="72" Height="72" CornerRadius="18" HorizontalAlignment="Center" Background="{DynamicResource CardBrush}"
+              BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+        <c:StrokeIcon Data="{StaticResource Icon.Editor}" Width="32" Height="32" Foreground="{DynamicResource AccentBrush}" />
+      </Border>
+      <TextBlock Classes="h2" HorizontalAlignment="Center" Text="{Binding Title}" />
+      <TextBlock Classes="muted" TextAlignment="Center" TextWrapping="Wrap" Text="{x:Static r:Strings.Editor_Empty}" />
+      <Button Classes="secondary" HorizontalAlignment="Center" Content="{x:Static r:Strings.Nav_Library}" Command="{Binding BackToLibraryCommand}" />
+    </StackPanel>
+
+    <DockPanel Margin="{StaticResource PagePadding}" IsVisible="{Binding HasBooks}">
+      <!-- Header -->
+      <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,18">
+        <Button Classes="link" Content="{x:Static r:Strings.Editor_Back}" Command="{Binding BackToLibraryCommand}" />
+        <TextBlock Classes="h1" FontSize="30" TextWrapping="Wrap" Text="{Binding Heading}" />
+      </StackPanel>
+
+      <Border DockPanel.Dock="Top" Margin="0,0,0,18" Padding="16,12" CornerRadius="12" Background="#1AF5C542" BorderBrush="#59F5C542"
+              BorderThickness="1" IsVisible="{Binding IsBatch}">
+        <TextBlock Foreground="#F5D87A" TextWrapping="Wrap" Text="{Binding BatchNotice}" />
+      </Border>
+
+      <!-- Footer -->
+      <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,18,0,0">
+        <StackPanel VerticalAlignment="Center" Spacing="6" Margin="0,0,16,0">
+          <CheckBox Content="{x:Static r:Strings.Editor_MarkReviewed}" IsChecked="{Binding MarkReviewed}" />
+          <TextBlock Classes="success" Text="{Binding Message}" IsVisible="{Binding !MessageIsError}" />
+          <TextBlock Classes="error" Text="{Binding Message}" IsVisible="{Binding MessageIsError}" />
+        </StackPanel>
+        <Button Grid.Column="1" Classes="secondary" Margin="0,0,10,0" Content="{x:Static r:Strings.Editor_SearchOnline}"
+                Command="{Binding SearchOnlineCommand}" IsVisible="{Binding IsSingle}" />
+        <Button Grid.Column="2" Classes="secondary" Margin="0,0,10,0" Content="{x:Static r:Strings.Editor_Discard}" Command="{Binding DiscardCommand}" />
+        <Button Grid.Column="3" Classes="primary" Padding="22,0" Content="{x:Static r:Strings.Editor_Save}" Command="{Binding SaveCommand}" />
+      </Grid>
+
+      <ScrollViewer>
+        <StackPanel Spacing="22" Margin="0,0,12,0">
+          <Grid ColumnDefinitions="Auto,*">
+            <!-- Cover -->
+            <StackPanel Width="210" Spacing="10" Margin="0,0,28,0" IsVisible="{Binding IsSingle}">
+              <Border CornerRadius="12" BoxShadow="0 12 30 0 #73000000">
+                <c:AspectBox>
+                  <Border CornerRadius="12" ClipToBounds="True" Background="{DynamicResource HoverBrush}">
+                    <Panel>
+                      <Border Background="{StaticResource HalftoneBrush}" />
+                      <Image Source="{Binding Cover}" Stretch="UniformToFill" />
+                    </Panel>
+                  </Border>
+                </c:AspectBox>
+              </Border>
+              <Button Classes="secondary" MinHeight="40" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontWeight="Medium"
+                      Content="{x:Static r:Strings.Editor_ChangeCover}" Command="{Binding ChangeCoverCommand}" />
+              <Button Classes="secondary" MinHeight="40" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" FontWeight="Medium"
+                      Content="{x:Static r:Strings.Editor_UseFirstPage}" Command="{Binding UseFirstPageCommand}" />
+            </StackPanel>
+
+            <!-- Fields -->
+            <StackPanel Grid.Column="1" Spacing="22">
+              <Grid ColumnDefinitions="*,16,*,16,*" RowDefinitions="Auto,14,Auto,14,Auto,14,Auto">
+                <StackPanel Grid.ColumnSpan="5" Spacing="6" IsVisible="{Binding IsSingle}">
+                  <TextBlock Classes="field-label" Text="{x:Static r:Strings.Field_Title}" />
+                  <TextBox Text="{Binding BookTitle}" AutomationProperties.Name="{x:Static r:Strings.Field_Title}" />
+                </StackPanel>
+
+                <StackPanel Grid.Row="2" Grid.ColumnSpan="3" Spacing="6">
+                  <TextBlock Classes="field-label" Text="{x:Static r:Strings.Field_Series}" />
+                  <TextBox Text="{Binding SeriesName}" PlaceholderText="{x:Static r:Strings.Editor_Various}"
+                           AutomationProperties.Name="{x:Static r:Strings.Field_Series}" />
+                </StackPanel>
+                <StackPanel Grid.Row="2" Grid.Column="4" Spacing="6">
+                  <TextBlock Classes="field-label" Text="{x:Static r:Strings.Editor_Number}" />
+                  <TextBox Text="{Binding Number}" AutomationProperties.Name="{x:Static r:Strings.Editor_Number}" />
+                  <CheckBox Content="{x:Static r:Strings.Editor_NumberInSequence}" IsChecked="{Binding NumberInSequence}" IsVisible="{Binding IsBatch}" />
+                </StackPanel>
+
+                <StackPanel Grid.Row="4" Spacing="6">
+                  <TextBlock Classes="field-label" Text="{x:Static r:Strings.Field_Date}" />
+                  <TextBox Text="{Binding DateText}" PlaceholderText="{x:Static r:Strings.Editor_DateHelp}"
+                           AutomationProperties.Name="{x:Static r:Strings.Field_Date}" />
+                </StackPanel>
+                <StackPanel Grid.Row="4" Grid.Column="2" Spacing="6">
+                  <TextBlock Classes="field-label" Text="{x:Static r:Strings.Field_Publisher}" />
+                  <TextBox Text="{Binding Publisher}" PlaceholderText="{x:Static r:Strings.Editor_Various}"
+                           AutomationProperties.Name="{x:Static r:Strings.Field_Publisher}" />
+                </StackPanel>
+                <StackPanel Grid.Row="4" Grid.Column="4" Spacing="6">
+                  <TextBlock Classes="field-label" Text="{x:Static r:Strings.Editor_Imprint}" />
+                  <TextBox Text="{Binding Imprint}" AutomationProperties.Name="{x:Static r:Strings.Editor_Imprint}" />
+                </StackPanel>
+
+                <StackPanel Grid.Row="6" Spacing="6">
+                  <TextBlock Classes="field-label" Text="{x:Static r:Strings.Field_Kind}" />
+                  <ComboBox ItemsSource="{Binding KindChoices}" SelectedItem="{Binding SelectedKind}"
+                            AutomationProperties.Name="{x:Static r:Strings.Field_Kind}">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate x:DataType="vm:KindOption">
+                        <TextBlock Text="{Binding Label}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+                </StackPanel>
+                <StackPanel Grid.Row="6" Grid.Column="2" Spacing="6">
+                  <TextBlock Classes="field-label" Text="{x:Static r:Strings.Field_Isbn}" />
+                  <TextBox Classes="mono" Text="{Binding Isbn}" AutomationProperties.Name="{x:Static r:Strings.Field_Isbn}" />
+                </StackPanel>
+                <StackPanel Grid.Row="6" Grid.Column="4" Spacing="6">
+                  <TextBlock Classes="field-label" Text="{x:Static r:Strings.Editor_Language}" />
+                  <TextBox Text="{Binding Language}" PlaceholderText="en" AutomationProperties.Name="{x:Static r:Strings.Editor_Language}" />
+                </StackPanel>
+              </Grid>
+
+              <CheckBox Content="{x:Static r:Strings.Editor_OneShot}" IsChecked="{Binding OneShot}" IsThreeState="{Binding IsBatch}" />
+
+              <!-- Credits -->
+              <StackPanel Spacing="10" IsVisible="{Binding IsSingle}">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <TextBlock FontSize="15" FontWeight="SemiBold" Text="{x:Static r:Strings.Editor_Credits}" VerticalAlignment="Center" />
+                  <TextBlock Classes="help" Text="{x:Static r:Strings.Editor_CreditsHelp}" VerticalAlignment="Center" />
+                </StackPanel>
+                <ItemsControl ItemsSource="{Binding Credits}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:CreditRowViewModel">
+                      <Grid ColumnDefinitions="170,10,*,10,Auto" Margin="0,0,0,10">
+                        <ComboBox ItemsSource="{Binding $parent[UserControl].((vm:EditorPageViewModel)DataContext).Roles}"
+                                  SelectedItem="{Binding Role}" AutomationProperties.Name="{x:Static r:Strings.Editor_Role}">
+                          <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:RoleOption">
+                              <TextBlock Text="{Binding Label}" />
+                            </DataTemplate>
+                          </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <TextBox Grid.Column="2" Text="{Binding Name}" AutomationProperties.Name="{x:Static r:Strings.Editor_Name}" />
+                        <Button Grid.Column="4" Classes="icon" Width="42" MinHeight="42" Command="{Binding RemoveCommand}"
+                                ToolTip.Tip="{x:Static r:Strings.Editor_RemoveCredit}" AutomationProperties.Name="{x:Static r:Strings.Editor_RemoveCredit}">
+                          <c:StrokeIcon Data="{StaticResource Icon.Close}" Width="16" Height="16" Foreground="{DynamicResource TextMutedBrush}" />
+                        </Button>
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Button Classes="dashed" HorizontalAlignment="Left" Content="{x:Static r:Strings.Editor_AddCredit}" Command="{Binding AddCreditCommand}" />
+              </StackPanel>
+
+              <StackPanel Spacing="6">
+                <TextBlock Classes="field-label" Text="{x:Static r:Strings.Field_Summary}" />
+                <TextBox Text="{Binding Summary}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="110" VerticalContentAlignment="Top"
+                         Padding="12,10" AutomationProperties.Name="{x:Static r:Strings.Field_Summary}" />
+              </StackPanel>
+            </StackPanel>
+          </Grid>
+
+          <!-- Output names -->
+          <UniformGrid Columns="2">
+            <Border Classes="card" Margin="0,0,6,0" Padding="16,14">
+              <StackPanel Spacing="6">
+                <TextBlock Classes="section-label" Text="{x:Static r:Strings.Editor_PreviewKomga}" />
+                <SelectableTextBlock Classes="mono" TextWrapping="Wrap" Text="{Binding KomgaPreview}" />
+              </StackPanel>
+            </Border>
+            <Border Classes="card" Margin="6,0,0,0" Padding="16,14">
+              <StackPanel Spacing="6">
+                <TextBlock Classes="section-label" Text="{x:Static r:Strings.Editor_PreviewKindle}" />
+                <SelectableTextBlock Classes="mono" TextWrapping="Wrap" Text="{Binding KindlePreview}" />
+              </StackPanel>
+            </Border>
+          </UniformGrid>
+
+          <!-- History -->
+          <StackPanel Spacing="8" IsVisible="{Binding IsSingle}">
+            <TextBlock Classes="section-label" Text="{x:Static r:Strings.Editor_History}" />
+            <TextBlock Classes="help" Text="{x:Static r:Strings.Editor_HistoryEmpty}"
+                       IsVisible="{Binding HasNoHistory}" />
+            <ItemsControl ItemsSource="{Binding History}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:HistoryRowViewModel">
+                  <Border Background="{DynamicResource CardBrush}" CornerRadius="10" Padding="14,8" Margin="0,0,0,6">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                      <TextBlock Classes="mono muted" FontSize="12" VerticalAlignment="Center" Text="{Binding When}" />
+                      <TextBlock Grid.Column="1" Margin="14,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="{Binding Title}" />
+                      <Button Grid.Column="2" Classes="secondary" MinHeight="32" Padding="12,0" FontSize="13"
+                              Content="{x:Static r:Strings.Editor_Restore}" Command="{Binding RestoreCommand}" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </StackPanel>
+      </ScrollViewer>
+    </DockPanel>
+  </Panel>
+</UserControl>

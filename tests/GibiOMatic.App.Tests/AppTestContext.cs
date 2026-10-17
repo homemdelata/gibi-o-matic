@@ -1,6 +1,10 @@
 using GibiOMatic.App.Services;
 using GibiOMatic.Core;
 using Microsoft.Extensions.Configuration;
+using GibiOMatic.Core.Domain;
+using GibiOMatic.Core.Settings;
+using GibiOMatic.Metadata;
+using GibiOMatic.Metadata.Identification;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GibiOMatic.App.Tests;
@@ -23,6 +27,9 @@ public sealed class AppTestContext : IDisposable
 
     public FakeFilePicker FilePicker { get; } = new();
 
+    /// <summary>Never calls the real APIs; answers what each test scripts.</summary>
+    public FakeIdentifier Identifier { get; } = new();
+
     public string Folder(string name) => _temp.Combine(name);
 
     public T Get<T>() where T : notnull => _services.GetRequiredService<T>();
@@ -34,6 +41,7 @@ public sealed class AppTestContext : IDisposable
             .AddSingleton<IFolderPicker>(Picker)
             .AddSingleton<IFilePicker>(FilePicker)
             .AddSingleton<IUiThread>(new InlineUiThread())
+            .AddSingleton<IBookIdentifier>(Identifier)
             .BuildServiceProvider();
 
     public void Dispose()
@@ -61,10 +69,41 @@ public sealed class FakeFilePicker : IFilePicker
 
     public Task<IReadOnlyList<string>> PickBooksAsync(string title, CancellationToken ct = default) =>
         Task.FromResult(_answers.Count > 0 ? _answers.Dequeue() : (IReadOnlyList<string>)[]);
+
+    public string? NextImage { get; set; }
+
+    public Task<string?> PickImageAsync(string title, CancellationToken ct = default) => Task.FromResult(NextImage);
 }
 
 /// <summary>No UI thread in tests: updates run right away.</summary>
 public sealed class InlineUiThread : IUiThread
 {
     public void Post(Action action) => action();
+}
+
+public sealed class FakeIdentifier : IBookIdentifier
+{
+    public Func<BookMetadata, string?, IReadOnlyList<MetadataCandidate>> Respond { get; set; } = (_, _) => [];
+
+    public Task<IdentificationResult> IdentifyAsync(BookMetadata book, MetadataSettings settings, string? searchText, CancellationToken ct) =>
+        Task.FromResult(new IdentificationResult(BookQuery.From(book, searchText), Respond(book, searchText), []));
+
+    public Task<MetadataCandidate> CompleteAsync(MetadataCandidate candidate, CancellationToken ct) =>
+        Task.FromResult(candidate with { Record = candidate.Record with { IsDetailed = true } });
+
+    public static MetadataCandidate Candidate(string title, string series, string number, double confidence, params MatchReason[] reasons) => new(
+        new MetadataRecord
+        {
+            Source = SourceIds.ComicVine,
+            Title = title,
+            SeriesName = series,
+            Number = number,
+            Kind = BookKind.Tpb,
+            Date = new PartialDate(2012, 10, 10),
+            Publisher = "Image Comics",
+            Credits = [new Credit(CreditRole.Writer, "Brian K. Vaughan"), new Credit(CreditRole.Artist, "Fiona Staples")],
+            ComicVineId = "4000-1",
+        },
+        confidence,
+        reasons);
 }

@@ -44,7 +44,7 @@
                            Text="{Binding Label}" />
                 <TextBlock Grid.Column="2" Classes="mono muted" FontSize="12" VerticalAlignment="Center"
                            Text="{Binding Count}" IsVisible="{Binding HasPlainCount}" />
-                <Border Grid.Column="2" Background="{DynamicResource AccentBrush}" CornerRadius="99" Padding="7,1"
+                <Border Grid.Column="2" Classes="nav-badge" Classes.warn="{Binding IsWarnBadge}" CornerRadius="99" Padding="7,1"
                         VerticalAlignment="Center" IsVisible="{Binding HasBadge}">
                   <TextBlock Classes="mono" FontSize="12" FontWeight="Medium" Foreground="{DynamicResource OnAccentBrush}"
                              Text="{Binding Count}" />

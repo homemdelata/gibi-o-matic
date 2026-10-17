@@ -5,7 +5,10 @@ using GibiOMatic.Core.Libraries;
 using GibiOMatic.Core.Secrets;
 using GibiOMatic.Core.Settings;
 using GibiOMatic.Library;
+using GibiOMatic.Library.Editing;
+using GibiOMatic.Library.Identification;
 using GibiOMatic.Library.Import;
+using GibiOMatic.Metadata;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -44,6 +47,9 @@ public static class ServiceRegistration
         services.AddSingleton<ImportAnalyzer>();
         services.AddSingleton<BookImporter>();
         services.AddSingleton<ImportQueueFactory>();
+        services.AddMetadataSources(paths);
+        services.AddSingleton<BookEditor>();
+        services.AddSingleton<IdentificationQueueFactory>();
 
         // UI services
         services.AddSingleton<IUiThread, AvaloniaUiThread>();
@@ -58,6 +64,8 @@ public static class ServiceRegistration
         services.AddTransient<ShellViewModel>();
         services.AddTransient<LibraryPageViewModel>();
         services.AddTransient<InboxPageViewModel>();
+        services.AddTransient<ReviewPageViewModel>();
+        services.AddTransient<EditorPageViewModel>();
         services.AddTransient<SettingsPageViewModel>();
         services.AddSingleton<Func<WelcomeViewModel>>(sp => sp.GetRequiredService<WelcomeViewModel>);
         services.AddSingleton<Func<ShellViewModel>>(sp => sp.GetRequiredService<ShellViewModel>);

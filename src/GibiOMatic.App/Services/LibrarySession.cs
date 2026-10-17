@@ -2,6 +2,7 @@ using GibiOMatic.App.Resources;
 using GibiOMatic.Core.Libraries;
 using GibiOMatic.Core.Settings;
 using GibiOMatic.Library;
+using GibiOMatic.Library.Identification;
 using GibiOMatic.Library.Import;
 using GibiOMatic.Library.Index;
 
@@ -11,12 +12,19 @@ namespace GibiOMatic.App.Services;
 /// The library currently open in the app, with its inbox queue. Opening or creating one
 /// remembers it in the settings, so the next start opens it directly.
 /// </summary>
-public sealed class LibrarySession(LibraryService libraries, ISettingsService settings, ImportQueueFactory queues) : IAsyncDisposable, IDisposable
+public sealed class LibrarySession(
+    LibraryService libraries,
+    ISettingsService settings,
+    ImportQueueFactory queues,
+    IdentificationQueueFactory identifications) : IAsyncDisposable, IDisposable
 {
     public LibraryInfo? Current { get; private set; }
 
     /// <summary>The inbox of the current library, running in the background.</summary>
     public ImportQueue? Queue { get; private set; }
+
+    /// <summary>Online identification of the current library's books, running in the background.</summary>
+    public IdentificationQueue? Identification { get; private set; }
 
     public LibraryIndex? Index => Current is null ? null : libraries.GetIndex(Current);
 
@@ -37,26 +45,36 @@ public sealed class LibrarySession(LibraryService libraries, ISettingsService se
             await settings.SaveAsync(settings.Current with { LibraryPath = library.RootPath }, ct);
         }
 
-        if (Queue is not null)
-        {
-            await Queue.DisposeAsync();
-        }
+        await StopQueuesAsync();
 
         var queue = queues.Create(library);
+        var identification = identifications.Create(library);
+        // Every imported book is identified afterwards (decision of 2026-10-17).
+        queue.BookImported += (_, bookId) => _ = identification.EnqueueAsync([bookId], force: false);
         await queue.StartAsync(ct);
+        await identification.StartAsync(ct);
         Queue = queue;
+        Identification = identification;
         Current = library;
         Changed?.Invoke(this, library);
         return library;
     }
 
     /// <summary>Stops the background import; an item in progress resumes on the next start.</summary>
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync() => new(StopQueuesAsync());
+
+    private async Task StopQueuesAsync()
     {
         if (Queue is not null)
         {
-            await Queue.DisposeAsync();
+            await Queue.DisposeAsync().ConfigureAwait(false);
             Queue = null;
+        }
+
+        if (Identification is not null)
+        {
+            await Identification.DisposeAsync().ConfigureAwait(false);
+            Identification = null;
         }
     }
 

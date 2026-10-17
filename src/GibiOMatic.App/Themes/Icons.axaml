@@ -24,6 +24,9 @@
   <StreamGeometry x:Key="Icon.Pause">M7,4 H10 V20 H7 Z M14,4 H17 V20 H14 Z</StreamGeometry>
   <StreamGeometry x:Key="Icon.Play">M7,4 L19,12 L7,20 Z</StreamGeometry>
 
+  <StreamGeometry x:Key="Icon.Close">M6,6 L18,18 M18,6 L6,18</StreamGeometry>
+  <StreamGeometry x:Key="Icon.Check">M20,6 L9,17 L4,12</StreamGeometry>
+
   <!-- Halftone texture of the placeholder covers ("gibi impresso"). -->
   <DrawingBrush x:Key="HalftoneBrush" TileMode="Tile" Stretch="None" SourceRect="0,0,7,7" DestinationRect="0,0,7,7">
     <DrawingBrush.Drawing>

@@ -6,7 +6,11 @@ using GibiOMatic.App.Resources;
 using GibiOMatic.App.Services;
 using GibiOMatic.Core.Domain;
 using GibiOMatic.Core.Libraries;
+using GibiOMatic.Core.Secrets;
 using GibiOMatic.Core.Settings;
+using GibiOMatic.Metadata;
+using GibiOMatic.Metadata.Http;
+using GibiOMatic.Metadata.Sources;
 using Microsoft.Extensions.Logging;
 
 namespace GibiOMatic.App.ViewModels;
@@ -14,6 +18,21 @@ namespace GibiOMatic.App.ViewModels;
 public sealed record LanguageOption(string Code, string DisplayName);
 
 public sealed record ThemeOption(AppTheme Theme, string DisplayName, bool IsAvailable);
+
+/// <summary>A metadata source in the priority list.</summary>
+public sealed partial class SourceOptionViewModel(string id, string name, string help, bool enabled) : ObservableObject
+{
+    public string Id { get; } = id;
+    public string Name { get; } = name;
+    public string Help { get; } = help;
+    public bool NeedsKey => Id == SourceIds.ComicVine;
+
+    [ObservableProperty]
+    public partial bool Enabled { get; set; } = enabled;
+
+    [ObservableProperty]
+    public partial int Position { get; set; }
+}
 
 /// <summary>A format in the preference list (best first).</summary>
 public sealed record FormatOption(BookFormat Format, int Position)
@@ -30,6 +49,9 @@ public sealed partial class SettingsPageViewModel : PageViewModel
     private readonly ILibraryService _libraries;
     private readonly IFolderPicker _folderPicker;
     private readonly ILogger<SettingsPageViewModel> _logger;
+    private readonly ISecretStore _secrets;
+    private readonly ComicVineKeyProvider _keys;
+    private readonly ComicVineClient _comicVine;
     private readonly string _runningLanguage;
 
     public SettingsPageViewModel(
@@ -37,8 +59,14 @@ public sealed partial class SettingsPageViewModel : PageViewModel
         LibrarySession session,
         ILibraryService libraries,
         IFolderPicker folderPicker,
+        ISecretStore secrets,
+        ComicVineKeyProvider keys,
+        ComicVineClient comicVine,
         ILogger<SettingsPageViewModel> logger)
     {
+        _secrets = secrets;
+        _keys = keys;
+        _comicVine = comicVine;
         _settings = settings;
         _session = session;
         _libraries = libraries;
@@ -66,6 +94,25 @@ public sealed partial class SettingsPageViewModel : PageViewModel
     ];
 
     public string LibraryPath => _session.Current?.RootPath ?? string.Empty;
+
+    /// <summary>Metadata sources in priority order (SPEC §8.1).</summary>
+    public ObservableCollection<SourceOptionViewModel> Sources { get; } = [];
+
+    /// <summary>"Sempre revisar": never approve automatically.</summary>
+    [ObservableProperty]
+    public partial bool AlwaysReview { get; set; }
+
+    /// <summary>A new ComicVine key typed by the user (never shown back).</summary>
+    [ObservableProperty]
+    public partial string? ComicVineKeyInput { get; set; }
+
+    [ObservableProperty]
+    public partial string? KeyStatus { get; private set; }
+
+    [ObservableProperty]
+    public partial bool KeyStatusIsError { get; private set; }
+
+    public bool CanStoreSecrets => _secrets.IsSupported;
 
     /// <summary>Which format becomes the main original when a book exists in several (SPEC §10).</summary>
     public ObservableCollection<FormatOption> Formats { get; } = [];
@@ -142,6 +189,115 @@ public sealed partial class SettingsPageViewModel : PageViewModel
         }
     }
 
+    public override async Task OnNavigatedToAsync(CancellationToken ct = default) => await UpdateKeyStatusAsync(ct);
+
+    private async Task UpdateKeyStatusAsync(CancellationToken ct)
+    {
+        KeyStatusIsError = false;
+        if (!_secrets.IsSupported)
+        {
+            KeyStatus = await _keys.GetKeyAsync(ct) is null ? Strings.Key_Unsupported : Strings.Key_FromEnvironment;
+            return;
+        }
+
+        KeyStatus = await _keys.IsFromConfigurationAsync(ct)
+            ? Strings.Key_FromEnvironment
+            : await _keys.GetKeyAsync(ct) is null ? Strings.Key_Missing : Strings.Key_Stored;
+    }
+
+    /// <summary>The key is stored right away (protected with DPAPI), not with "Salvar".</summary>
+    [RelayCommand]
+    private async Task SaveKeyAsync(CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(ComicVineKeyInput) || !_secrets.IsSupported)
+        {
+            return;
+        }
+
+        await _secrets.SetAsync(SecretNames.ComicVineApiKey, ComicVineKeyInput.Trim(), ct);
+        ComicVineKeyInput = null;
+        await UpdateKeyStatusAsync(ct);
+        await TestKeyAsync(ct);
+    }
+
+    [RelayCommand]
+    private async Task TestKeyAsync(CancellationToken ct)
+    {
+        if (await _keys.GetKeyAsync(ct) is null)
+        {
+            await UpdateKeyStatusAsync(ct);
+            return;
+        }
+
+        try
+        {
+            var ok = await _comicVine.TestKeyAsync(ct);
+            KeyStatusIsError = !ok;
+            KeyStatus = ok ? Strings.Key_Works : Strings.Key_Rejected;
+        }
+        catch (MetadataSourceException ex)
+        {
+            _logger.LogWarning(ex, "ComicVine key test failed");
+            KeyStatusIsError = true;
+            KeyStatus = string.Format(CultureInfo.CurrentCulture, Strings.Note_Unavailable, "ComicVine");
+        }
+    }
+
+    [RelayCommand]
+    private async Task RemoveKeyAsync(CancellationToken ct)
+    {
+        if (_secrets.IsSupported)
+        {
+            await _secrets.RemoveAsync(SecretNames.ComicVineApiKey, ct);
+        }
+
+        await UpdateKeyStatusAsync(ct);
+    }
+
+    [RelayCommand]
+    private void MoveSourceUp(SourceOptionViewModel option) => MoveSource(option, -1);
+
+    [RelayCommand]
+    private void MoveSourceDown(SourceOptionViewModel option) => MoveSource(option, +1);
+
+    private void MoveSource(SourceOptionViewModel option, int delta)
+    {
+        var index = Sources.IndexOf(option);
+        var target = index + delta;
+        if (index < 0 || target < 0 || target >= Sources.Count)
+        {
+            return;
+        }
+
+        Sources.Move(index, target);
+        NumberSources();
+    }
+
+    private void NumberSources()
+    {
+        for (var i = 0; i < Sources.Count; i++)
+        {
+            Sources[i].Position = i + 1;
+        }
+    }
+
+    private void SetSources(MetadataSettings metadata)
+    {
+        Sources.Clear();
+        foreach (var source in metadata.Normalized().Sources)
+        {
+            var (name, help) = source.Id switch
+            {
+                SourceIds.OpenLibrary => ("Open Library", Strings.Source_OpenLibraryHelp),
+                SourceIds.ComicVine => ("ComicVine", Strings.Source_ComicVineHelp),
+                _ => ("Google Books", Strings.Source_GoogleBooksHelp),
+            };
+            Sources.Add(new SourceOptionViewModel(source.Id, name, help, source.Enabled));
+        }
+
+        NumberSources();
+    }
+
     [RelayCommand]
     private void MoveFormatUp(FormatOption option) => MoveFormat(option, -1);
 
@@ -188,6 +344,11 @@ public sealed partial class SettingsPageViewModel : PageViewModel
             Language = SelectedLanguage.Code,
             Theme = SelectedTheme.Theme,
             FormatPreference = Formats.Select(f => f.Format).ToList(),
+            Metadata = new MetadataSettings
+            {
+                Sources = Sources.Select(src => new SourceSetting(src.Id, src.Enabled)).ToList(),
+                AlwaysReview = AlwaysReview,
+            },
         };
 
         try
@@ -209,6 +370,8 @@ public sealed partial class SettingsPageViewModel : PageViewModel
         SelectedLanguage = Languages.FirstOrDefault(l => l.Code == settings.Language) ?? Languages[0];
         SelectedTheme = Themes.FirstOrDefault(t => t.Theme == settings.Theme && t.IsAvailable) ?? Themes[0];
         SetFormats(settings.FormatPreference);
+        SetSources(settings.Metadata);
+        AlwaysReview = settings.Metadata.AlwaysReview;
     }
 
     private void SetStatus(string message, bool isError)

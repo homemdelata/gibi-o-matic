@@ -26,10 +26,13 @@ public sealed partial class NavItemViewModel(NavPage page, string label, PageVie
     [NotifyPropertyChangedFor(nameof(HasPlainCount), nameof(HasBadge))]
     public partial string? Count { get; set; }
 
-    /// <summary>Show the counter as a yellow pill (things waiting for the user).</summary>
+    /// <summary>Show the counter as a pill (things waiting for the user).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasPlainCount), nameof(HasBadge))]
     public partial bool IsBadge { get; set; }
+
+    /// <summary>Orange pill (Revisão) instead of the yellow one (Entrada).</summary>
+    public bool IsWarnBadge { get; init; }
 
     public bool HasPlainCount => !string.IsNullOrEmpty(Count) && !IsBadge;
 
@@ -40,10 +43,10 @@ public sealed partial class NavItemViewModel(NavPage page, string label, PageVie
 public sealed partial class ShellViewModel : ViewModelBase, IDisposable
 {
     private readonly LibrarySession _session;
-    private readonly Debouncer _inboxCount;
+    private readonly Debouncer _counts;
 
     public ShellViewModel(LibrarySession session, LibraryPageViewModel libraryPage, InboxPageViewModel inboxPage,
-        SettingsPageViewModel settingsPage, IUiThread ui)
+        ReviewPageViewModel reviewPage, EditorPageViewModel editorPage, SettingsPageViewModel settingsPage, IUiThread ui)
     {
         _session = session;
         LibraryPath = session.Current?.RootPath ?? string.Empty;
@@ -51,13 +54,12 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
         NavItems =
         [
             new NavItemViewModel(NavPage.Library, Strings.Nav_Library, libraryPage),
-            new NavItemViewModel(NavPage.Inbox, Strings.Nav_Inbox, inboxPage),
-            new NavItemViewModel(NavPage.Review, Strings.Nav_Review, new PlaceholderPageViewModel(Strings.Nav_Review, Strings.Review_Subtitle)),
-            new NavItemViewModel(NavPage.Editor, Strings.Nav_Editor, new PlaceholderPageViewModel(Strings.Nav_Editor, Strings.Editor_Subtitle)),
+            new NavItemViewModel(NavPage.Inbox, Strings.Nav_Inbox, inboxPage) { IsBadge = true },
+            new NavItemViewModel(NavPage.Review, Strings.Nav_Review, reviewPage) { IsBadge = true, IsWarnBadge = true },
+            new NavItemViewModel(NavPage.Editor, Strings.Nav_Editor, editorPage),
             new NavItemViewModel(NavPage.Destinations, Strings.Nav_Destinations, new PlaceholderPageViewModel(Strings.Nav_Destinations, Strings.Destinations_Subtitle)),
             new NavItemViewModel(NavPage.Settings, Strings.Nav_Settings, settingsPage),
         ];
-        NavItems[1].IsBadge = true;
 
         libraryPage.PropertyChanged += (_, e) =>
         {
@@ -66,12 +68,21 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
                 NavItems[0].Count = libraryPage.BookCount?.ToString(CultureInfo.CurrentCulture);
             }
         };
-        libraryPage.NavigationRequested += (_, page) => NavigateTo(page);
 
-        _inboxCount = new Debouncer(ui, TimeSpan.FromMilliseconds(300), UpdateInboxCountAsync);
+        foreach (var item in NavItems)
+        {
+            item.Content.NavigationRequested += (_, request) => Navigate(request);
+        }
+
+        _counts = new Debouncer(ui, TimeSpan.FromMilliseconds(300), UpdateCountsAsync);
         if (session.Queue is { } queue)
         {
             queue.Changed += OnQueueChanged;
+        }
+
+        if (session.Identification is { } identification)
+        {
+            identification.Changed += OnQueueChanged;
         }
     }
 
@@ -91,11 +102,30 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
     public async Task InitializeAsync()
     {
         NavigateTo(NavPage.Library);
-        await UpdateInboxCountAsync();
+        await UpdateCountsAsync();
         await CurrentNavigation;
     }
 
     public void NavigateTo(NavPage page) => SelectedNavItem = NavItems.First(i => i.Page == page);
+
+    /// <summary>Shows a page with the books chosen on another one (Biblioteca → Editor, Revisão → Editor…).</summary>
+    public void Navigate(NavigationRequest request)
+    {
+        var item = NavItems.First(i => i.Page == request.Page);
+        if (request.BookIds is { } ids)
+        {
+            item.Content.SetBooks(ids);
+        }
+
+        if (SelectedNavItem == item)
+        {
+            CurrentNavigation = item.Content.OnNavigatedToAsync();
+        }
+        else
+        {
+            SelectedNavItem = item;
+        }
+    }
 
     partial void OnSelectedNavItemChanged(NavItemViewModel? value)
     {
@@ -106,20 +136,24 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
         }
     }
 
-    /// <summary>Files waiting in the inbox (to analyse, to confirm or to import).</summary>
-    private async Task UpdateInboxCountAsync()
+    /// <summary>Files waiting in the inbox and books waiting in the Review.</summary>
+    private async Task UpdateCountsAsync()
     {
-        if (_session.Queue is not { } queue)
+        if (_session.Queue is { } queue)
         {
-            return;
+            var summary = await queue.GetSummaryAsync();
+            var waiting = summary.Waiting + summary.Ready + summary.Queued;
+            NavItems[1].Count = waiting > 0 ? waiting.ToString(CultureInfo.CurrentCulture) : null;
         }
 
-        var summary = await queue.GetSummaryAsync();
-        var waiting = summary.Waiting + summary.Ready + summary.Queued;
-        NavItems[1].Count = waiting > 0 ? waiting.ToString(CultureInfo.CurrentCulture) : null;
+        if (_session.Identification is { } identification)
+        {
+            var toReview = (await identification.GetCountsAsync()).ToReview;
+            NavItems[2].Count = toReview > 0 ? toReview.ToString(CultureInfo.CurrentCulture) : null;
+        }
     }
 
-    private void OnQueueChanged(object? sender, EventArgs e) => _inboxCount.Trigger();
+    private void OnQueueChanged(object? sender, EventArgs e) => _counts.Trigger();
 
     public void Dispose()
     {
@@ -128,7 +162,12 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
             queue.Changed -= OnQueueChanged;
         }
 
-        _inboxCount.Dispose();
+        if (_session.Identification is { } identification)
+        {
+            identification.Changed -= OnQueueChanged;
+        }
+
+        _counts.Dispose();
         foreach (var item in NavItems)
         {
             item.Content.Dispose();

@@ -147,6 +147,10 @@ public sealed partial class BookCardViewModel : ViewModelBase
     [ObservableProperty]
     public partial bool IsSelected { get; set; }
 
+    /// <summary>Picked in selection mode (batch edit, fetch metadata).</summary>
+    [ObservableProperty]
+    public partial bool IsChecked { get; set; }
+
     /// <summary>The grid thumbnail, loaded the first time a visible card asks for it.</summary>
     public Bitmap? Thumbnail
     {

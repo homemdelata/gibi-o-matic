@@ -34,6 +34,9 @@
                       <TextBlock Classes="mono" FontSize="10.5" FontWeight="Medium" LetterSpacing="0.4" Text="{Binding Badge}"
                                  Foreground="{Binding Band, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
                     </Border>
+                    <Border Classes="check" IsVisible="{Binding IsChecked}">
+                      <c:StrokeIcon Data="{StaticResource Icon.Check}" Width="16" Height="16" StrokeThickness="2.6" Foreground="{DynamicResource OnAccentBrush}" />
+                    </Border>
                   </Panel>
                 </Border>
               </Border>
@@ -135,8 +138,8 @@
             <TextBlock Text="{x:Static r:Strings.Library_ImportShort}" VerticalAlignment="Center" />
           </StackPanel>
         </Button>
-        <Button Grid.Column="2" Classes="primary" IsEnabled="False" VerticalAlignment="Center"
-                ToolTip.Tip="{x:Static r:Strings.Library_Soon}" ToolTip.ShowOnDisabled="True"
+        <Button Grid.Column="2" Classes="primary" VerticalAlignment="Center" Command="{Binding FetchMetadataCommand}"
+                ToolTip.Tip="{x:Static r:Strings.Library_FetchHelp}" IsVisible="{Binding HasBooks}"
                 AutomationProperties.Name="{x:Static r:Strings.Library_FetchMetadata}">
           <StackPanel Orientation="Horizontal" Spacing="8">
             <c:StrokeIcon Data="{StaticResource Icon.Sparkle}" Width="17" Height="17" StrokeThickness="2.2" />
@@ -144,6 +147,25 @@
           </StackPanel>
         </Button>
       </Grid>
+
+      <!-- "Buscar metadados" asks first: safe matches are approved on their own -->
+      <Border DockPanel.Dock="Top" Classes="card" BorderBrush="{DynamicResource WarnBrush}" Margin="0,0,0,16"
+              IsVisible="{Binding FetchConfirmation, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+        <Grid ColumnDefinitions="*,Auto,Auto">
+          <TextBlock VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,16,0" Text="{Binding FetchConfirmation}" />
+          <Button Grid.Column="1" Classes="primary" Margin="0,0,8,0" Content="{x:Static r:Strings.Library_FetchYes}" Command="{Binding ConfirmFetchCommand}" />
+          <Button Grid.Column="2" Classes="secondary" Content="{x:Static r:Strings.Common_Cancel}" Command="{Binding CancelFetchCommand}" />
+        </Grid>
+      </Border>
+
+      <!-- Identification running in the background -->
+      <Border DockPanel.Dock="Top" Classes="card" Padding="16,10" Margin="0,0,0,16" IsVisible="{Binding Status.IsVisible}">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Classes="help" FontSize="13" VerticalAlignment="Center" Text="{Binding Status.Text}" />
+          <Button Grid.Column="1" Classes="secondary" MinHeight="32" Padding="12,0" FontSize="13" Margin="12,0,0,0"
+                  Content="{Binding Status.PauseLabel}" Command="{Binding Status.TogglePauseCommand}" />
+        </Grid>
+      </Border>
 
       <!-- Health of the library -->
       <UniformGrid DockPanel.Dock="Top" Classes="summary" Margin="0,0,-12,10" IsVisible="{Binding HasBooks}">
@@ -197,8 +219,11 @@
                           Foreground="{DynamicResource TextMutedBrush}" />
           </TextBox.InnerLeftContent>
         </TextBox>
-        <Border Grid.Column="1" VerticalAlignment="Center" BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1"
-                CornerRadius="10" ClipToBounds="True" Margin="12,0,0,0">
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" Margin="12,0,0,0">
+        <Button Classes="secondary" MinHeight="38" Padding="14,0" Classes.selected="{Binding IsSelecting}"
+                Content="{x:Static r:Strings.Library_Select}" Command="{Binding ToggleSelectingCommand}" />
+        <Border VerticalAlignment="Center" BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1"
+                CornerRadius="10" ClipToBounds="True">
           <StackPanel Orientation="Horizontal">
             <Button Classes="segment" Classes.selected="{Binding IsSeriesView}" Content="{x:Static r:Strings.Library_ViewSeries}"
                     Command="{Binding SetViewModeCommand}" CommandParameter="{x:Static vm:LibraryViewMode.Series}" />
@@ -206,7 +231,20 @@
                     Command="{Binding SetViewModeCommand}" CommandParameter="{x:Static vm:LibraryViewMode.Books}" />
           </StackPanel>
         </Border>
+        </StackPanel>
       </Grid>
+
+      <!-- Selection mode -->
+      <Border DockPanel.Dock="Top" Classes="card" Padding="16,10" Margin="0,0,0,16" IsVisible="{Binding IsSelecting}">
+        <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+          <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="{Binding CheckedText}" />
+          <Button Grid.Column="1" Classes="secondary" MinHeight="36" Margin="0,0,8,0" Content="{x:Static r:Strings.Library_SelectAll}"
+                  Command="{Binding CheckAllVisibleCommand}" />
+          <Button Grid.Column="2" Classes="primary" MinHeight="36" Margin="0,0,8,0" Content="{x:Static r:Strings.Library_EditBatch}"
+                  Command="{Binding EditCheckedCommand}" />
+          <Button Grid.Column="3" Classes="secondary" MinHeight="36" Content="{x:Static r:Strings.Common_Cancel}" Command="{Binding ToggleSelectingCommand}" />
+        </Grid>
+      </Border>
 
       <!-- Filters -->
       <Grid DockPanel.Dock="Top" Margin="0,0,0,22" IsVisible="{Binding HasBooks}">
@@ -373,11 +411,13 @@
             </StackPanel>
 
             <StackPanel Spacing="8">
-              <Button Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False"
-                      Content="{x:Static r:Strings.Details_Review}" ToolTip.Tip="{x:Static r:Strings.Library_Soon}" ToolTip.ShowOnDisabled="True" />
+              <Button Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                      Content="{x:Static r:Strings.Details_Review}"
+                      Command="{Binding $parent[UserControl].((vm:LibraryPageViewModel)DataContext).ReviewSelectedCommand}" />
               <Grid ColumnDefinitions="*,8,*">
-                <Button Classes="secondary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False"
-                        Content="{x:Static r:Strings.Details_Edit}" ToolTip.Tip="{x:Static r:Strings.Library_Soon}" ToolTip.ShowOnDisabled="True" />
+                <Button Classes="secondary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Content="{x:Static r:Strings.Details_Edit}"
+                        Command="{Binding $parent[UserControl].((vm:LibraryPageViewModel)DataContext).EditSelectedCommand}" />
                 <Button Grid.Column="2" Classes="secondary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False"
                         Content="{x:Static r:Strings.Details_SendKindle}" ToolTip.Tip="{x:Static r:Strings.Library_Soon}" ToolTip.ShowOnDisabled="True" />
               </Grid>

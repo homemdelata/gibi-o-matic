@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using GibiOMatic.App.Resources;
 using GibiOMatic.App.Services;
 using GibiOMatic.Conversion;
+using GibiOMatic.Core.Domain;
 using GibiOMatic.Core.Quality;
 using GibiOMatic.Library;
 using Microsoft.Extensions.Logging;
@@ -19,6 +20,7 @@ public enum LibraryFilter
     NoSeries,
     UnknownAuthor,
     Complete,
+    AutoApproved,
 }
 
 public enum LibraryViewMode
@@ -70,9 +72,15 @@ public sealed partial class LibraryPageViewModel : PageViewModel
         _filePicker = filePicker;
         _logger = logger;
         _reload = new Debouncer(ui, TimeSpan.FromMilliseconds(400), () => LoadAsync());
+        Status = new IdentificationStatusViewModel(session, ui);
         if (session.Queue is { } queue)
         {
             queue.BookImported += OnBookImported;
+        }
+
+        if (session.Identification is { } identification)
+        {
+            identification.BookUpdated += OnBookImported;
         }
 
         Filters =
@@ -83,6 +91,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel
             new(LibraryFilter.NoSeries, Strings.Filter_NoSeries, PickFilter),
             new(LibraryFilter.UnknownAuthor, Strings.Filter_UnknownAuthor, PickFilter),
             new(LibraryFilter.Complete, Strings.Filter_Complete, PickFilter),
+            new(LibraryFilter.AutoApproved, Strings.Filter_AutoApproved, PickFilter),
         ];
         Filters[0].IsSelected = true;
     }
@@ -91,8 +100,27 @@ public sealed partial class LibraryPageViewModel : PageViewModel
 
     public string LibraryPath => _session.Current?.RootPath ?? string.Empty;
 
-    /// <summary>Asks the shell to show another page (Entrada after picking files to import).</summary>
-    public event EventHandler<NavPage>? NavigationRequested;
+    public IdentificationStatusViewModel Status { get; }
+
+    /// <summary>Selection mode: clicking a card checks it instead of showing it.</summary>
+    [ObservableProperty]
+    public partial bool IsSelecting { get; private set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasChecked))]
+    [NotifyCanExecuteChangedFor(nameof(EditCheckedCommand))]
+    public partial int CheckedCount { get; private set; }
+
+    public bool HasChecked => CheckedCount > 0;
+
+    [ObservableProperty]
+    public partial string? CheckedText { get; private set; }
+
+    /// <summary>"Buscar metadados" for the whole library waits for this confirmation.</summary>
+    [ObservableProperty]
+    public partial string? FetchConfirmation { get; private set; }
+
+    private IReadOnlyList<string> _fetchIds = [];
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsEmpty), nameof(HasBooks))]
@@ -161,7 +189,11 @@ public sealed partial class LibraryPageViewModel : PageViewModel
     [ObservableProperty]
     public partial int NeedsReviewCount { get; private set; }
 
-    public override Task OnNavigatedToAsync(CancellationToken ct = default) => LoadAsync(ct);
+    public override async Task OnNavigatedToAsync(CancellationToken ct = default)
+    {
+        await Status.RefreshAsync();
+        await LoadAsync(ct);
+    }
 
     /// <summary>Reads every book from the index and scores it.</summary>
     public async Task LoadAsync(CancellationToken ct = default)
@@ -176,14 +208,25 @@ public sealed partial class LibraryPageViewModel : PageViewModel
             var books = await index.GetBooksAsync(ct);
             var context = QualityContext.From(books.Select(b => b.Metadata));
             var selectedId = Selected?.Card.Id;
+            var checkedIds = _books.Where(b => b.IsChecked).Select(b => b.Id).ToHashSet();
             _books = books
-                .Select(b => new BookCardViewModel(b, QualityAnalyzer.Analyze(b.Metadata, context), library, _thumbnails, _covers, SelectBook))
+                .Select(b => new BookCardViewModel(b, QualityAnalyzer.Analyze(b.Metadata, context), library, _thumbnails, _covers, OnCardClicked))
                 .OrderBy(b => b.Book.Metadata.Series?.Name ?? b.Title, NaturalStringComparer.Instance)
                 .ThenBy(b => b.Book.Metadata.Series?.Number ?? string.Empty, NaturalStringComparer.Instance)
                 .ThenBy(b => b.Title, NaturalStringComparer.Instance)
                 .ToList();
 
             BookCount = _books.Count;
+            if (IsSelecting)
+            {
+                foreach (var book in _books.Where(b => checkedIds.Contains(b.Id)))
+                {
+                    book.IsChecked = true;
+                }
+
+                UpdateChecked();
+            }
+
             UpdateSummary();
             ApplyView();
             var keep = selectedId is null ? null : _books.FirstOrDefault(b => b.Id == selectedId);
@@ -226,6 +269,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel
         LibraryFilter.NoSeries => book.Book.Metadata.Series is null,
         LibraryFilter.UnknownAuthor => QualityAnalyzer.HasUnknownAuthor(book.Book.Metadata),
         LibraryFilter.Complete => book.Band == QualityBand.Ok,
+        LibraryFilter.AutoApproved => book.Book.Metadata.Review.MatchedBy == MatchedBy.Auto,
         _ => true,
     };
 
@@ -326,6 +370,111 @@ public sealed partial class LibraryPageViewModel : PageViewModel
         }
     }
 
+    private void OnCardClicked(BookCardViewModel card)
+    {
+        if (IsSelecting)
+        {
+            card.IsChecked = !card.IsChecked;
+            UpdateChecked();
+        }
+        else
+        {
+            SelectBook(card);
+        }
+    }
+
+    private void UpdateChecked()
+    {
+        CheckedCount = _books.Count(b => b.IsChecked);
+        CheckedText = string.Format(CultureInfo.CurrentCulture, Strings.Library_CheckedCount, CheckedCount);
+    }
+
+    [RelayCommand]
+    private void ToggleSelecting()
+    {
+        IsSelecting = !IsSelecting;
+        if (!IsSelecting)
+        {
+            foreach (var book in _books)
+            {
+                book.IsChecked = false;
+            }
+        }
+
+        UpdateChecked();
+    }
+
+    /// <summary>Checks every book shown (after filter and search).</summary>
+    [RelayCommand]
+    private void CheckAllVisible()
+    {
+        foreach (var card in VisibleCards)
+        {
+            foreach (var book in card switch { BookCardViewModel b => [b], SeriesCardViewModel s => s.Books, _ => [] })
+            {
+                book.IsChecked = true;
+            }
+        }
+
+        UpdateChecked();
+    }
+
+    [RelayCommand(CanExecute = nameof(HasChecked))]
+    private void EditChecked() => RequestNavigation(NavPage.Editor, _books.Where(b => b.IsChecked).Select(b => b.Id).ToList());
+
+    [RelayCommand]
+    private void ReviewSelected()
+    {
+        if (Selected?.Card is { } card)
+        {
+            RequestNavigation(NavPage.Review, [card.Id]);
+        }
+    }
+
+    [RelayCommand]
+    private void EditSelected()
+    {
+        if (Selected?.Card is { } card)
+        {
+            RequestNavigation(NavPage.Editor, [card.Id]);
+        }
+    }
+
+    /// <summary>
+    /// The checked books, or every book still to review. A batch operation (CLAUDE.md, rule 7):
+    /// it asks first, since safe matches are approved automatically.
+    /// </summary>
+    [RelayCommand]
+    private void FetchMetadata()
+    {
+        _fetchIds = IsSelecting && HasChecked
+            ? _books.Where(b => b.IsChecked).Select(b => b.Id).ToList()
+            : _books.Where(b => b.Book.Metadata.Review.Status == ReviewStatus.Pending).Select(b => b.Id).ToList();
+        FetchConfirmation = _fetchIds.Count == 0
+            ? Strings.Library_FetchNothing
+            : string.Format(CultureInfo.CurrentCulture, Strings.Library_FetchConfirm, _fetchIds.Count);
+    }
+
+    [RelayCommand]
+    private async Task ConfirmFetchAsync(CancellationToken ct)
+    {
+        FetchConfirmation = null;
+        if (_fetchIds.Count > 0 && _session.Identification is { } queue)
+        {
+            await queue.EnqueueAsync(_fetchIds, force: true, ct);
+            await Status.RefreshAsync();
+        }
+
+        _fetchIds = [];
+    }
+
+    [RelayCommand]
+    private void CancelFetch()
+    {
+        FetchConfirmation = null;
+        _fetchIds = [];
+    }
+
     private void SelectBook(BookCardViewModel? card)
     {
         if (Selected?.Card is { } previous)
@@ -362,7 +511,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel
         }
 
         await queue.AddAsync(paths, ct);
-        NavigationRequested?.Invoke(this, NavPage.Inbox);
+        RequestNavigation(NavPage.Inbox);
     }
 
     private void OnBookImported(object? sender, string bookId) => _reload.Trigger();
@@ -374,6 +523,12 @@ public sealed partial class LibraryPageViewModel : PageViewModel
             queue.BookImported -= OnBookImported;
         }
 
+        if (_session.Identification is { } identification)
+        {
+            identification.BookUpdated -= OnBookImported;
+        }
+
         _reload.Dispose();
+        Status.Dispose();
     }
 }

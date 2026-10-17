@@ -69,6 +69,68 @@
         </StackPanel>
       </TabItem>
 
+      <!-- Metadata -->
+      <TabItem Header="{x:Static r:Strings.Settings_TabMetadata}">
+        <StackPanel Spacing="14">
+          <TextBlock Classes="help" FontSize="13" Text="{x:Static r:Strings.Settings_SourcesHelp}" />
+          <ItemsControl ItemsSource="{Binding Sources}" AutomationProperties.Name="{x:Static r:Strings.Settings_TabMetadata}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:SourceOptionViewModel">
+                <Border Classes="card" Margin="0,0,0,10">
+                  <StackPanel Spacing="12">
+                    <Grid ColumnDefinitions="28,*,Auto,Auto,Auto">
+                      <TextBlock Classes="mono muted" VerticalAlignment="Center" Text="{Binding Position}" />
+                      <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                        <TextBlock Classes="strong" Text="{Binding Name}" />
+                        <TextBlock Classes="help" Text="{Binding Help}" />
+                      </StackPanel>
+                      <Button Grid.Column="2" Classes="icon" Margin="0,0,6,0"
+                              Command="{Binding $parent[UserControl].((vm:SettingsPageViewModel)DataContext).MoveSourceUpCommand}"
+                              CommandParameter="{Binding}" ToolTip.Tip="{x:Static r:Strings.Settings_MoveUp}"
+                              AutomationProperties.Name="{x:Static r:Strings.Settings_MoveUp}">
+                        <c:StrokeIcon Data="{StaticResource Icon.ChevronUp}" Width="16" Height="16" />
+                      </Button>
+                      <Button Grid.Column="3" Classes="icon" Margin="0,0,14,0"
+                              Command="{Binding $parent[UserControl].((vm:SettingsPageViewModel)DataContext).MoveSourceDownCommand}"
+                              CommandParameter="{Binding}" ToolTip.Tip="{x:Static r:Strings.Settings_MoveDown}"
+                              AutomationProperties.Name="{x:Static r:Strings.Settings_MoveDown}">
+                        <c:StrokeIcon Data="{StaticResource Icon.ChevronDown}" Width="16" Height="16" />
+                      </Button>
+                      <ToggleSwitch Grid.Column="4" IsChecked="{Binding Enabled}" OnContent="" OffContent=""
+                                    AutomationProperties.Name="{Binding Name}" />
+                    </Grid>
+                    <StackPanel Spacing="8" IsVisible="{Binding NeedsKey}" Margin="28,0,0,0">
+                      <TextBlock Classes="field-label" Text="{x:Static r:Strings.Settings_KeyLabel}" />
+                      <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                        <TextBox Classes="mono" PasswordChar="•" PlaceholderText="{x:Static r:Strings.Settings_KeyPlaceholder}"
+                                 Text="{Binding $parent[UserControl].((vm:SettingsPageViewModel)DataContext).ComicVineKeyInput}"
+                                 IsEnabled="{Binding $parent[UserControl].((vm:SettingsPageViewModel)DataContext).CanStoreSecrets}"
+                                 AutomationProperties.Name="{x:Static r:Strings.Settings_KeyLabel}" />
+                        <Button Grid.Column="1" Classes="secondary" Margin="8,0,0,0" Content="{x:Static r:Strings.Settings_SaveKey}"
+                                Command="{Binding $parent[UserControl].((vm:SettingsPageViewModel)DataContext).SaveKeyCommand}" />
+                        <Button Grid.Column="2" Classes="secondary" Margin="8,0,0,0" Content="{x:Static r:Strings.Settings_TestKey}"
+                                Command="{Binding $parent[UserControl].((vm:SettingsPageViewModel)DataContext).TestKeyCommand}" />
+                        <Button Grid.Column="3" Classes="secondary" Margin="8,0,0,0" Content="{x:Static r:Strings.Settings_RemoveKey}"
+                                Command="{Binding $parent[UserControl].((vm:SettingsPageViewModel)DataContext).RemoveKeyCommand}" />
+                      </Grid>
+                      <TextBlock Classes="help" Text="{Binding $parent[UserControl].((vm:SettingsPageViewModel)DataContext).KeyStatus}"
+                                 Foreground="{DynamicResource TextSecondaryBrush}" />
+                      <TextBlock Classes="help" Text="{x:Static r:Strings.Settings_KeyHelp}" />
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Border Classes="card">
+            <StackPanel Spacing="4">
+              <CheckBox Content="{x:Static r:Strings.Settings_AlwaysReview}" IsChecked="{Binding AlwaysReview}" FontWeight="SemiBold" />
+              <TextBlock Classes="help" Margin="28,0,0,0" Text="{x:Static r:Strings.Settings_AlwaysReviewHelp}" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </TabItem>
+
       <!-- General -->
       <TabItem Header="{x:Static r:Strings.Settings_TabGeneral}">
         <StackPanel Spacing="14">

@@ -182,4 +182,126 @@
   <data name="Welcome_NotEmpty" xml:space="preserve"><value>The folder {0} already has files. Create the library here anyway? The files already in it will not be touched.</value></data>
   <data name="Welcome_CreateAnyway" xml:space="preserve"><value>Create anyway</value></data>
   <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Editor_AddCredit" xml:space="preserve"><value>+ Add credit</value></data>
+  <data name="Editor_Back" xml:space="preserve"><value>← Library</value></data>
+  <data name="Editor_BatchHeading" xml:space="preserve"><value>Batch · {0} books</value></data>
+  <data name="Editor_BatchNotice" xml:space="preserve"><value>Editing {0} books. Empty fields are not changed; "Volume / #" can be numbered in sequence.</value></data>
+  <data name="Editor_ChangeCover" xml:space="preserve"><value>Change cover</value></data>
+  <data name="Editor_CoverChanged" xml:space="preserve"><value>Cover changed.</value></data>
+  <data name="Editor_CoverInvalid" xml:space="preserve"><value>That image could not be read.</value></data>
+  <data name="Editor_Credits" xml:space="preserve"><value>Credits</value></data>
+  <data name="Editor_CreditsHelp" xml:space="preserve"><value>"Authors" in generated files = writers</value></data>
+  <data name="Editor_DateHelp" xml:space="preserve"><value>YYYY, YYYY-MM or YYYY-MM-DD</value></data>
+  <data name="Editor_Discard" xml:space="preserve"><value>Discard</value></data>
+  <data name="Editor_Empty" xml:space="preserve"><value>Pick a book in the Library and click Edit, or use Select to edit several at once.</value></data>
+  <data name="Editor_History" xml:space="preserve"><value>HISTORY</value></data>
+  <data name="Editor_HistoryEmpty" xml:space="preserve"><value>No previous versions yet. Each save keeps the previous version here.</value></data>
+  <data name="Editor_Imprint" xml:space="preserve"><value>Imprint</value></data>
+  <data name="Editor_InvalidDate" xml:space="preserve"><value>Invalid date. Use YYYY, YYYY-MM or YYYY-MM-DD.</value></data>
+  <data name="Editor_Language" xml:space="preserve"><value>Language</value></data>
+  <data name="Editor_MarkReviewed" xml:space="preserve"><value>Mark as reviewed</value></data>
+  <data name="Editor_Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Editor_Number" xml:space="preserve"><value>Volume / #</value></data>
+  <data name="Editor_NumberInSequence" xml:space="preserve"><value>Number in sequence from this one</value></data>
+  <data name="Editor_OneShot" xml:space="preserve"><value>It is a one-shot (stand-alone book)</value></data>
+  <data name="Editor_PreviewKindle" xml:space="preserve"><value>KINDLE · DEFAULT NAME</value></data>
+  <data name="Editor_PreviewKomga" xml:space="preserve"><value>KOMGA · DEFAULT PATH</value></data>
+  <data name="Editor_RemoveCredit" xml:space="preserve"><value>Remove credit</value></data>
+  <data name="Editor_Restore" xml:space="preserve"><value>Restore</value></data>
+  <data name="Editor_Restored" xml:space="preserve"><value>Version from {0} restored (the previous one went to the history).</value></data>
+  <data name="Editor_Role" xml:space="preserve"><value>Role</value></data>
+  <data name="Editor_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Editor_Saved" xml:space="preserve"><value>Saved. The previous version is in the history.</value></data>
+  <data name="Editor_SavedMany" xml:space="preserve"><value>{0} books saved. The previous versions are in the history.</value></data>
+  <data name="Editor_SearchOnline" xml:space="preserve"><value>Search online</value></data>
+  <data name="Editor_UseFirstPage" xml:space="preserve"><value>Use page 1</value></data>
+  <data name="Editor_Various" xml:space="preserve"><value>(various)</value></data>
+  <data name="Field_Date" xml:space="preserve"><value>Publication date</value></data>
+  <data name="Field_Isbn" xml:space="preserve"><value>ISBN</value></data>
+  <data name="Field_Kind" xml:space="preserve"><value>Kind</value></data>
+  <data name="Field_Number" xml:space="preserve"><value>Number</value></data>
+  <data name="Field_OneShot" xml:space="preserve"><value>One-shot</value></data>
+  <data name="Field_Publisher" xml:space="preserve"><value>Publisher</value></data>
+  <data name="Field_Series" xml:space="preserve"><value>Series</value></data>
+  <data name="Field_Summary" xml:space="preserve"><value>Summary</value></data>
+  <data name="Field_Title" xml:space="preserve"><value>Title</value></data>
+  <data name="Filter_AutoApproved" xml:space="preserve"><value>Approved automatically</value></data>
+  <data name="Identify_Paused" xml:space="preserve"><value>Metadata search paused · {0} queued</value></data>
+  <data name="Identify_Running" xml:space="preserve"><value>Fetching metadata: “{0}” · {1} queued</value></data>
+  <data name="Identify_Waiting" xml:space="preserve"><value>Metadata search: {0} queued</value></data>
+  <data name="Key_FromEnvironment" xml:space="preserve"><value>Using the development key (user secrets or environment variable).</value></data>
+  <data name="Key_Missing" xml:space="preserve"><value>No key: ComicVine is not used.</value></data>
+  <data name="Key_Rejected" xml:space="preserve"><value>ComicVine rejected the key.</value></data>
+  <data name="Key_Stored" xml:space="preserve"><value>Key stored with Windows protection (DPAPI).</value></data>
+  <data name="Key_Unsupported" xml:space="preserve"><value>Storing keys is not available on this system yet; use the GIBIOMATIC_COMICVINE_KEY variable.</value></data>
+  <data name="Key_Works" xml:space="preserve"><value>The key works.</value></data>
+  <data name="Kind_Artbook" xml:space="preserve"><value>Art book</value></data>
+  <data name="Kind_Book" xml:space="preserve"><value>Book (text)</value></data>
+  <data name="Kind_Issue" xml:space="preserve"><value>Single issue</value></data>
+  <data name="Kind_Keep" xml:space="preserve"><value>(keep)</value></data>
+  <data name="Kind_Omnibus" xml:space="preserve"><value>Omnibus</value></data>
+  <data name="Kind_Tpb" xml:space="preserve"><value>Collected edition (TPB)</value></data>
+  <data name="Library_CheckedCount" xml:space="preserve"><value>{0} selected</value></data>
+  <data name="Library_EditBatch" xml:space="preserve"><value>Edit batch</value></data>
+  <data name="Library_FetchConfirm" xml:space="preserve"><value>Fetch metadata for {0} books? Safe matches are approved automatically (undo from the history); the others go to the Review.</value></data>
+  <data name="Library_FetchHelp" xml:space="preserve"><value>Looks up the books not reviewed yet (or the selected ones) on Open Library and ComicVine</value></data>
+  <data name="Library_FetchNothing" xml:space="preserve"><value>Every book is already reviewed. Use Select to fetch specific books again.</value></data>
+  <data name="Library_FetchYes" xml:space="preserve"><value>Fetch</value></data>
+  <data name="Library_Select" xml:space="preserve"><value>Select</value></data>
+  <data name="Library_SelectAll" xml:space="preserve"><value>Check visible</value></data>
+  <data name="Note_InvalidKey" xml:space="preserve"><value>ComicVine rejected the key; check Settings → Metadata.</value></data>
+  <data name="Note_NoKey" xml:space="preserve"><value>No ComicVine key: set it in Settings → Metadata.</value></data>
+  <data name="Note_RateLimited" xml:space="preserve"><value>{0}: request limit reached; try again later.</value></data>
+  <data name="Note_Unavailable" xml:space="preserve"><value>{0} did not respond.</value></data>
+  <data name="Picker_CoverTitle" xml:space="preserve"><value>Choose the cover image</value></data>
+  <data name="Reason_Isbn" xml:space="preserve"><value>ISBN</value></data>
+  <data name="Reason_Kind" xml:space="preserve"><value>kind</value></data>
+  <data name="Reason_Number" xml:space="preserve"><value>number</value></data>
+  <data name="Reason_Publisher" xml:space="preserve"><value>publisher</value></data>
+  <data name="Reason_SecondSource" xml:space="preserve"><value>2 sources</value></data>
+  <data name="Reason_Title" xml:space="preserve"><value>title</value></data>
+  <data name="Reason_Year" xml:space="preserve"><value>year</value></data>
+  <data name="Review_AppliedSummary" xml:space="preserve"><value>{0} of {1} fields will be applied · the original file is not changed</value></data>
+  <data name="Review_Approve" xml:space="preserve"><value>Approve and next</value></data>
+  <data name="Review_Candidates" xml:space="preserve"><value>CANDIDATES FOUND</value></data>
+  <data name="Review_CheckMatch" xml:space="preserve"><value>Confirm the match</value></data>
+  <data name="Review_ColCurrent" xml:space="preserve"><value>CURRENT</value></data>
+  <data name="Review_ColField" xml:space="preserve"><value>FIELD</value></data>
+  <data name="Review_ColProposed" xml:space="preserve"><value>PROPOSED</value></data>
+  <data name="Review_Confidence" xml:space="preserve"><value>{0:0%} confidence</value></data>
+  <data name="Review_Conflict" xml:space="preserve"><value>The current value looks good; check only if you are sure.</value></data>
+  <data name="Review_EditByHand" xml:space="preserve"><value>Edit by hand</value></data>
+  <data name="Review_Empty" xml:space="preserve"><value>Nothing waiting for you. Approved automatically: {0} · approved by you: {1}.</value></data>
+  <data name="Review_EmptyTitle" xml:space="preserve"><value>Nothing to review</value></data>
+  <data name="Review_NoCandidate" xml:space="preserve"><value>No candidate</value></data>
+  <data name="Review_Queue" xml:space="preserve"><value>Review queue</value></data>
+  <data name="Review_SearchAgain" xml:space="preserve"><value>Search again</value></data>
+  <data name="Review_SearchFailed" xml:space="preserve"><value>The search failed</value></data>
+  <data name="Review_SearchPlaceholder" xml:space="preserve"><value>Search with other words (e.g. House of Slaughter Vol. 1)</value></data>
+  <data name="Review_Skip" xml:space="preserve"><value>Skip</value></data>
+  <data name="Review_Source" xml:space="preserve"><value>Source: {0}</value></data>
+  <data name="Review_Subtitle_Count" xml:space="preserve"><value>{0} books · most serious first</value></data>
+  <data name="Role_Artist" xml:space="preserve"><value>Art</value></data>
+  <data name="Role_Colorist" xml:space="preserve"><value>Colors</value></data>
+  <data name="Role_Cover" xml:space="preserve"><value>Cover</value></data>
+  <data name="Role_Editor" xml:space="preserve"><value>Editor</value></data>
+  <data name="Role_Inker" xml:space="preserve"><value>Inks</value></data>
+  <data name="Role_Letterer" xml:space="preserve"><value>Letters</value></data>
+  <data name="Role_Other" xml:space="preserve"><value>Other</value></data>
+  <data name="Role_Translator" xml:space="preserve"><value>Translation</value></data>
+  <data name="Role_Writer" xml:space="preserve"><value>Writer</value></data>
+  <data name="Settings_AlwaysReview" xml:space="preserve"><value>Always review</value></data>
+  <data name="Settings_AlwaysReviewHelp" xml:space="preserve"><value>Turns automatic approval off: every identified book waits for your confirmation in the Review.</value></data>
+  <data name="Settings_KeyHelp" xml:space="preserve"><value>The key is personal (comicvine.gamespot.com/api). It is stored right away, protected by Windows, and never goes to settings.json or the library.</value></data>
+  <data name="Settings_KeyLabel" xml:space="preserve"><value>ComicVine API key</value></data>
+  <data name="Settings_KeyPlaceholder" xml:space="preserve"><value>Paste your personal key here</value></data>
+  <data name="Settings_RemoveKey" xml:space="preserve"><value>Remove</value></data>
+  <data name="Settings_SaveKey" xml:space="preserve"><value>Store key</value></data>
+  <data name="Settings_SourcesHelp" xml:space="preserve"><value>Priority order of the sources. With an ISBN, the first ISBN source that answers is used; ComicVine brings credits by role and collected editions.</value></data>
+  <data name="Settings_TabMetadata" xml:space="preserve"><value>Metadata</value></data>
+  <data name="Settings_TestKey" xml:space="preserve"><value>Test</value></data>
+  <data name="Source_ComicVineHelp" xml:space="preserve"><value>Collected editions and single issues, credits by role. Requires a personal key.</value></data>
+  <data name="Source_GoogleBooksHelp" xml:space="preserve"><value>By ISBN. Without a key it often refuses requests; off by default.</value></data>
+  <data name="Source_OpenLibraryHelp" xml:space="preserve"><value>Lookup by ISBN. No key.</value></data>
+  <data name="Review_NoCandidateHelp" xml:space="preserve"><value>No source found this book. Try searching with other words (the title as printed on the cover) or edit it by hand.</value></data>
 </root>

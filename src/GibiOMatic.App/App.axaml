@@ -11,6 +11,8 @@
     <DataTemplate DataType="vm:ShellViewModel"><v:ShellView /></DataTemplate>
     <DataTemplate DataType="vm:LibraryPageViewModel"><v:LibraryPageView /></DataTemplate>
     <DataTemplate DataType="vm:InboxPageViewModel"><v:InboxPageView /></DataTemplate>
+    <DataTemplate DataType="vm:ReviewPageViewModel"><v:ReviewPageView /></DataTemplate>
+    <DataTemplate DataType="vm:EditorPageViewModel"><v:EditorPageView /></DataTemplate>
     <DataTemplate DataType="vm:SettingsPageViewModel"><v:SettingsPageView /></DataTemplate>
     <DataTemplate DataType="vm:PlaceholderPageViewModel"><v:PlaceholderPageView /></DataTemplate>
   </Application.DataTemplates>

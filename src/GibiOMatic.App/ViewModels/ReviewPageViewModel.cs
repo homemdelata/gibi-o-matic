@@ -1,0 +1,476 @@
+using System.Collections.ObjectModel;
+using System.Globalization;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using GibiOMatic.App.Resources;
+using GibiOMatic.App.Services;
+using GibiOMatic.Core.Domain;
+using GibiOMatic.Core.Quality;
+using GibiOMatic.Library;
+using GibiOMatic.Library.Identification;
+using GibiOMatic.Library.Index;
+using GibiOMatic.Metadata;
+using GibiOMatic.Metadata.Identification;
+using Microsoft.Extensions.Logging;
+
+namespace GibiOMatic.App.ViewModels;
+
+/// <summary>A book in the Review queue.</summary>
+public sealed partial class ReviewItemViewModel(BookCardViewModel card, BookIdentification identification, string issue, Action<ReviewItemViewModel> select)
+    : ViewModelBase
+{
+    public BookCardViewModel Card { get; } = card;
+    public BookIdentification Identification { get; } = identification;
+    public string BookId => Card.Id;
+    public string Title => Card.Title;
+
+    /// <summary>What is wrong, in a few words ("Título, autores e série").</summary>
+    public string Issue { get; } = issue;
+
+    public int Score => Card.Report.Score;
+
+    [ObservableProperty]
+    public partial bool IsSelected { get; set; }
+
+    [RelayCommand]
+    private void Select() => select(this);
+}
+
+public sealed partial class CandidateViewModel(MetadataCandidate candidate, Action<CandidateViewModel> pick) : ViewModelBase
+{
+    public MetadataCandidate Candidate { get; private set; } = candidate;
+
+    public string Title => Candidate.Record.Title ?? "—";
+
+    public string MetaLine => string.Join(" · ", new[]
+    {
+        Candidate.Record.Publisher,
+        Candidate.Record.Date?.Year.ToString(CultureInfo.InvariantCulture),
+        Candidate.Record.Kind switch
+        {
+            BookKind.Issue => Strings.Kind_Issue,
+            BookKind.Tpb => Strings.Kind_Tpb,
+            BookKind.Omnibus => Strings.Kind_Omnibus,
+            _ => null,
+        },
+        Candidate.Record.IsOneShot ? Strings.Field_OneShot : null,
+    }.Where(p => !string.IsNullOrEmpty(p)));
+
+    public string SourceText => string.Format(CultureInfo.CurrentCulture, Strings.Review_Source, IdentificationText.SourceName(Candidate.Record.Source));
+
+    public string ConfidenceText => string.Format(CultureInfo.CurrentCulture, Strings.Review_Confidence, Candidate.Confidence);
+
+    public CheckStatus Level => IdentificationText.LevelOf(Candidate.Confidence);
+
+    [ObservableProperty]
+    public partial bool IsSelected { get; set; }
+
+    public void Update(MetadataCandidate detailed)
+    {
+        Candidate = detailed;
+        OnPropertyChanged(string.Empty);
+    }
+
+    [RelayCommand]
+    private void Pick() => pick(this);
+}
+
+/// <summary>A row of the "campo · atual · proposto" table, with its check box.</summary>
+public sealed partial class FieldRowViewModel(FieldChange change, Action changed) : ViewModelBase
+{
+    public FieldChange Change { get; } = change;
+    public string Label => IdentificationText.FieldLabel(Change.Field);
+    public string Current => Display(Change.Current);
+    public string Proposed => Display(Change.Proposed);
+
+    private string Display(string? value) => Change.Field == ProposalField.Kind && value is not null
+        ? value switch
+        {
+            "issue" => Strings.Kind_Issue,
+            "tpb" => Strings.Kind_Tpb,
+            "omnibus" => Strings.Kind_Omnibus,
+            "artbook" => Strings.Kind_Artbook,
+            "book" => Strings.Kind_Book,
+            _ => value,
+        }
+        : value ?? "—";
+
+    /// <summary>Only rows that change something can be applied.</summary>
+    public bool CanApply => Change.Changed;
+
+    [ObservableProperty]
+    public partial bool IsApplied { get; set; } = change.Changed && !change.Conflict;
+
+    partial void OnIsAppliedChanged(bool value) => changed();
+}
+
+/// <summary>
+/// The Review (SPEC §7): books whose identification needs the user, most serious first; for each,
+/// the candidates and a field-by-field comparison. "Aprovar e próximo" applies the checked fields.
+/// </summary>
+public sealed partial class ReviewPageViewModel : PageViewModel
+{
+    private readonly LibrarySession _session;
+    private readonly ThumbnailCache _thumbnails;
+    private readonly ICoverLoader _covers;
+    private readonly ILogger<ReviewPageViewModel> _logger;
+    private readonly Debouncer _refresh;
+    private readonly SemaphoreSlim _refreshGate = new(1, 1);
+    private string? _pendingBookId;
+    private CatalogBook? _book;
+
+    public ReviewPageViewModel(LibrarySession session, ThumbnailCache thumbnails, ICoverLoader covers, IUiThread ui, ILogger<ReviewPageViewModel> logger)
+    {
+        _session = session;
+        _thumbnails = thumbnails;
+        _covers = covers;
+        _logger = logger;
+        Status = new IdentificationStatusViewModel(session, ui);
+        _refresh = new Debouncer(ui, TimeSpan.FromMilliseconds(500), () => RefreshAsync());
+        if (session.Identification is { } queue)
+        {
+            queue.Changed += OnQueueChanged;
+        }
+    }
+
+    public override string Title => Strings.Nav_Review;
+
+    public IdentificationStatusViewModel Status { get; }
+
+    public ObservableCollection<ReviewItemViewModel> Items { get; } = [];
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelection))]
+    public partial ReviewItemViewModel? Selected { get; private set; }
+
+    public bool HasSelection => Selected is not null;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsEmpty))]
+    public partial bool HasItems { get; private set; }
+
+    public bool IsEmpty => !HasItems;
+
+    [ObservableProperty]
+    public partial string? EmptyText { get; private set; }
+
+    [ObservableProperty]
+    public partial string? FolderPath { get; private set; }
+
+    [ObservableProperty]
+    public partial string? SearchText { get; set; }
+
+    public ObservableCollection<CandidateViewModel> Candidates { get; } = [];
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasCandidate))]
+    [NotifyCanExecuteChangedFor(nameof(ApproveCommand))]
+    public partial CandidateViewModel? SelectedCandidate { get; private set; }
+
+    public bool HasCandidate => SelectedCandidate is not null;
+
+    public ObservableCollection<FieldRowViewModel> Rows { get; } = [];
+
+    [ObservableProperty]
+    public partial string? ConfidenceText { get; private set; }
+
+    [ObservableProperty]
+    public partial CheckStatus ConfidenceLevel { get; private set; }
+
+    [ObservableProperty]
+    public partial string? NotesText { get; private set; }
+
+    [ObservableProperty]
+    public partial string? AppliedSummary { get; private set; }
+
+    [ObservableProperty]
+    public partial bool IsBusy { get; private set; }
+
+    public override void SetBooks(IReadOnlyList<string> bookIds) => _pendingBookId = bookIds.FirstOrDefault();
+
+    public override async Task OnNavigatedToAsync(CancellationToken ct = default)
+    {
+        await Status.RefreshAsync();
+        var bookId = _pendingBookId;
+        _pendingBookId = null;
+
+        // "Revisar metadados" on a book that was never identified (or is approved): search now.
+        if (bookId is not null && _session.Identification is { } queue)
+        {
+            var identification = await queue.GetAsync(bookId, ct);
+            if (identification?.State is null or IdentificationState.Queued or IdentificationState.AutoApproved or IdentificationState.Approved)
+            {
+                IsBusy = true;
+                try
+                {
+                    await queue.SearchAgainAsync(bookId, null, ct);
+                }
+                finally
+                {
+                    IsBusy = false;
+                }
+            }
+        }
+
+        await RefreshAsync(ct, bookId);
+    }
+
+    /// <summary>Reloads the queue; keeps the selected book (or picks <paramref name="selectBookId"/>).</summary>
+    public async Task RefreshAsync(CancellationToken ct = default, string? selectBookId = null)
+    {
+        if (_session.Identification is not { } queue || _session.Index is not { } index || _session.Current is not { } library)
+        {
+            return;
+        }
+
+        // A queue change and a navigation may ask at the same time; one refresh at a time.
+        await _refreshGate.WaitAsync(ct);
+        try
+        {
+            var reviewItems = await queue.GetReviewItemsAsync(ct);
+            var books = (await index.GetBooksAsync(ct)).ToDictionary(b => b.Metadata.Id);
+            var context = QualityContext.From(books.Values.Select(b => b.Metadata));
+            var items = reviewItems
+                .Where(i => books.ContainsKey(i.BookId) && (books[i.BookId].Metadata.Review.Status == ReviewStatus.Pending || i.BookId == selectBookId))
+                .Select(i =>
+                {
+                    var book = books[i.BookId];
+                    var card = new BookCardViewModel(book, QualityAnalyzer.Analyze(book.Metadata, context), library, _thumbnails, _covers, _ => { });
+                    return new ReviewItemViewModel(card, i, IssueOf(i, card.Report), SelectItem);
+                })
+                .OrderBy(i => i.Identification.Skipped)
+                .ThenBy(i => i.Score)
+                .ThenBy(i => i.Title, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+
+            var keep = selectBookId ?? Selected?.BookId;
+            Items.Clear();
+            foreach (var item in items)
+            {
+                Items.Add(item);
+            }
+
+            HasItems = Items.Count > 0;
+            Subtitle = string.Format(CultureInfo.CurrentCulture, Strings.Review_Subtitle_Count, Items.Count);
+            var counts = await queue.GetCountsAsync(ct);
+            EmptyText = string.Format(CultureInfo.CurrentCulture, Strings.Review_Empty, counts.AutoApproved, counts.Approved);
+            var next = Items.FirstOrDefault(i => i.BookId == keep) ?? Items.FirstOrDefault();
+            if (next?.BookId != Selected?.BookId || next is null)
+            {
+                await SelectAsync(next, ct);
+            }
+            else if (next is not null)
+            {
+                next.IsSelected = true;
+                Selected = next;
+            }
+        }
+        catch (Exception ex) when (LibrarySession.IsExpectedFailure(ex))
+        {
+            _logger.LogError(ex, "Could not load the Review");
+        }
+        finally
+        {
+            _refreshGate.Release();
+        }
+    }
+
+    private static string IssueOf(BookIdentification identification, QualityReport report)
+    {
+        if (identification.State == IdentificationState.NoMatch)
+        {
+            return Strings.Review_NoCandidate;
+        }
+
+        if (identification.State == IdentificationState.Failed)
+        {
+            return Strings.Review_SearchFailed;
+        }
+
+        var fields = new[] { QualityField.Title, QualityField.Authors, QualityField.Date, QualityField.Series }
+            .Where(report.HasProblemIn)
+            .Select(f => f switch
+            {
+                QualityField.Title => Strings.Details_Title,
+                QualityField.Authors => Strings.Details_Authors,
+                QualityField.Date => Strings.Details_Date,
+                _ => Strings.Details_Series,
+            })
+            .ToList();
+        return fields.Count == 0 ? Strings.Review_CheckMatch : string.Join(", ", fields);
+    }
+
+    private void SelectItem(ReviewItemViewModel item) => _ = SelectAsync(item, CancellationToken.None);
+
+    private async Task SelectAsync(ReviewItemViewModel? item, CancellationToken ct)
+    {
+        if (Selected is { } previous)
+        {
+            previous.IsSelected = false;
+        }
+
+        Selected = item;
+        Candidates.Clear();
+        Rows.Clear();
+        SelectedCandidate = null;
+        ConfidenceText = null;
+        NotesText = null;
+        AppliedSummary = null;
+        if (item is null || _session.Current is not { } library)
+        {
+            _book = null;
+            FolderPath = null;
+            return;
+        }
+
+        item.IsSelected = true;
+        _book = item.Card.Book;
+        FolderPath = Path.Combine(library.RootPath, _book.Folder);
+        var result = item.Identification.Result;
+        SearchText = result?.Query.SearchText ?? BookQuery.From(_book.Metadata).SearchText;
+        NotesText = IdentificationText.Notes(item.Identification.Message);
+        foreach (var candidate in result?.Candidates ?? [])
+        {
+            Candidates.Add(new CandidateViewModel(candidate, c => _ = PickAsync(c, CancellationToken.None)));
+        }
+
+        if (Candidates.Count > 0)
+        {
+            await PickAsync(Candidates[0], ct);
+        }
+        else
+        {
+            ConfidenceText = Strings.Review_NoCandidate;
+            ConfidenceLevel = CheckStatus.Bad;
+        }
+    }
+
+    private async Task PickAsync(CandidateViewModel candidate, CancellationToken ct)
+    {
+        foreach (var c in Candidates)
+        {
+            c.IsSelected = c == candidate;
+        }
+
+        SelectedCandidate = candidate;
+        if (!candidate.Candidate.Record.IsDetailed && _session.Identification is { } queue)
+        {
+            try
+            {
+                IsBusy = true;
+                candidate.Update(await queue.CompleteAsync(candidate.Candidate, ct));
+            }
+            catch (Exception ex) when (ex is Metadata.Http.MetadataSourceException or HttpRequestException)
+            {
+                NotesText = IdentificationText.Notes("comicvine:Unavailable");
+                _logger.LogWarning(ex, "Could not load the candidate details");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        if (_book is null || SelectedCandidate != candidate)
+        {
+            return;
+        }
+
+        ConfidenceText = $"{candidate.ConfidenceText} · {IdentificationText.Reasons(candidate.Candidate)}";
+        ConfidenceLevel = candidate.Level;
+        Rows.Clear();
+        foreach (var change in Proposal.Compare(_book.Metadata, candidate.Candidate.Record).Where(r => r.Proposed is not null))
+        {
+            Rows.Add(new FieldRowViewModel(change, UpdateSummary));
+        }
+
+        UpdateSummary();
+    }
+
+    private void UpdateSummary() =>
+        AppliedSummary = string.Format(CultureInfo.CurrentCulture, Strings.Review_AppliedSummary, Rows.Count(r => r.IsApplied), Rows.Count(r => r.CanApply));
+
+    [RelayCommand(CanExecute = nameof(HasCandidate))]
+    private async Task ApproveAsync(CancellationToken ct)
+    {
+        if (Selected is not { } item || SelectedCandidate is not { } candidate || _session.Identification is not { } queue)
+        {
+            return;
+        }
+
+        var fields = Rows.Where(r => r.IsApplied).Select(r => r.Change.Field).ToHashSet();
+        var index = Items.IndexOf(item);
+        await queue.ApproveAsync(item.BookId, candidate.Candidate, fields, ct);
+        await MoveToNextAsync(index, ct);
+    }
+
+    [RelayCommand]
+    private async Task SkipAsync(CancellationToken ct)
+    {
+        if (Selected is not { } item || _session.Identification is not { } queue)
+        {
+            return;
+        }
+
+        var index = Items.IndexOf(item);
+        await queue.SkipAsync(item.BookId, ct);
+        await MoveToNextAsync(index, ct);
+    }
+
+    private async Task MoveToNextAsync(int index, CancellationToken ct)
+    {
+        var nextId = Items.Count > index + 1 ? Items[index + 1].BookId : null;
+        Selected = null;
+        await RefreshAsync(ct, nextId);
+    }
+
+    [RelayCommand]
+    private void EditByHand()
+    {
+        if (Selected is { } item)
+        {
+            RequestNavigation(NavPage.Editor, [item.BookId]);
+        }
+    }
+
+    [RelayCommand]
+    private async Task SearchAgainAsync(CancellationToken ct)
+    {
+        if (Selected is not { } item || _session.Identification is not { } queue)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            await queue.SearchAgainAsync(item.BookId, string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim(), ct);
+            Selected = null;
+            await RefreshAsync(ct, item.BookId);
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private void OnQueueChanged(object? sender, EventArgs e)
+    {
+        // New books in the review appear on their own; the one being reviewed stays put.
+        if (!IsBusy)
+        {
+            _refresh.Trigger();
+        }
+    }
+
+    public override void Dispose()
+    {
+        if (_session.Identification is { } queue)
+        {
+            queue.Changed -= OnQueueChanged;
+        }
+
+        _refresh.Dispose();
+        Status.Dispose();
+    }
+}

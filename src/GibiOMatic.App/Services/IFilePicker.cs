@@ -10,6 +10,9 @@ public interface IFilePicker
 {
     /// <summary>Asks the user for book files; returns an empty list if cancelled.</summary>
     Task<IReadOnlyList<string>> PickBooksAsync(string title, CancellationToken ct = default);
+
+    /// <summary>Asks the user for one image (a new cover); <c>null</c> if cancelled.</summary>
+    Task<string?> PickImageAsync(string title, CancellationToken ct = default);
 }
 
 public sealed class AvaloniaFilePicker : IFilePicker
@@ -32,5 +35,21 @@ public sealed class AvaloniaFilePicker : IFilePicker
         ct.ThrowIfCancellationRequested();
 
         return files.Select(f => f.TryGetLocalPath()).OfType<string>().ToList();
+    }
+
+    public async Task<string?> PickImageAsync(string title, CancellationToken ct = default)
+    {
+        var window = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow
+                     ?? throw new InvalidOperationException("No main window to show the file picker on.");
+
+        var files = await TopLevel.GetTopLevel(window)!.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = title,
+            AllowMultiple = false,
+            FileTypeFilter = [FilePickerFileTypes.ImageAll],
+        });
+        ct.ThrowIfCancellationRequested();
+
+        return files.Count == 0 ? null : files[0].TryGetLocalPath();
     }
 }
