@@ -1,6 +1,6 @@
 # Gibiteca — Especificação
 
-> Versão 0.1 · 2026-10-17 · status: rascunho para revisão
+> Versão 0.2 · 2026-10-17 · status: rascunho para revisão
 > Protótipo de interface: Claude Design (link privado do autor)
 
 ## 1. Visão
@@ -21,8 +21,9 @@ Gibiteca é um app desktop para quem compra quadrinhos digitais (Humble Bundle, 
 ### 1.2 Fora do escopo (por enquanto)
 - Leitor de quadrinhos embutido (o Komga e o Kindle fazem isso).
 - Loja, download automático de compras, remoção de DRM.
-- Livros de texto "reflow" como foco. Eles podem ser guardados no arquivo, mas sem conversões especiais.
+- Livros de texto "reflow" como foco. Eles podem ser guardados no arquivo e enviados a destinos que os aceitem (seção 9.1), mas sem conversões especiais na primeira versão.
 - Modo servidor/web.
+- Migração do Calibre: a coleção será reconstruída a partir dos originais baixados de novo (seção 10).
 
 ## 2. Conceitos
 
@@ -115,7 +116,7 @@ ENTRADA ──importar──► ARQUIVO (original + metadata.json) ──gerar�
       "sha256": "…",
       "bytes": 412345678,
       "source": "Humble Bundle",
-      "quality": "original"            // original | converted-by-calibre | unknown
+      "quality": "original"            // original | converted | unknown
     }
   ],
   "review": {
@@ -151,7 +152,7 @@ Faixas: **Ruim** (< 60), **Revisar** (60–84), **OK** (≥ 85). A regra já exi
 2. Para cada arquivo: espera a escrita terminar, calcula o SHA-256 e detecta o formato pelo conteúdo.
 3. **Duplicados**:
    - mesmo hash de um original existente: avisa e ignora;
-   - mesmo livro identificado com arquivo diferente: pergunta *Substituir o atual* / *Manter os dois* (formato extra) / *Ignorar*. Sugere "Substituir" quando o atual tem `quality: converted-by-calibre`.
+   - mesmo livro identificado com arquivo diferente: pergunta *Substituir o atual* / *Manter os dois* (formato extra) / *Ignorar*. Sugere "Substituir" quando o novo arquivo é de um formato preferido (ver seção 10).
 4. Lê metadados embutidos: `ComicInfo.xml` (CBZ/CBR), OPF (EPUB), Info/XMP (PDF), ISBN na página de créditos (opcional, fase posterior).
 5. Roda a identificação (seção 8) e mostra o resultado na tela Entrada.
 6. Ao confirmar: copia o original para o Arquivo, extrai a capa e grava o `metadata.json`. O arquivo na Entrada é movido para `Entrada/_importados/`, não apagado.
@@ -178,7 +179,19 @@ Faixas: **Ruim** (< 60), **Revisar** (60–84), **OK** (≥ 85). A regra já exi
    - No ComicVine, encadernados costumam ser volumes próprios ("Deadly Class: Reagan Youth"). É preciso considerar os volumes da série e também os volumes "Série: Subtítulo".
    - Filtra por editora conhecida, idioma (descarta edições estrangeiras, como a *House of Slaughter* alemã da Splitter) e ano.
    - Pontua cada candidato por similaridade de título, número, editora, ano e número de páginas.
-3. **Limiares**: ≥ 0,90 aprova automaticamente (configurável; pode ficar sempre em "revisar"); de 0,50 a 0,90 vai para a Revisão com candidatos; abaixo disso, Revisão sem sugestão.
+3. **Aprovação automática segura**: ligada por padrão, mas só quando **todas** as condições abaixo valem. Qualquer outro caso vai para a Revisão, com os candidatos.
+   - **Evidência forte**, de um destes tipos:
+     - o ISBN do arquivo bate com o resultado;
+     - **duas fontes independentes concordam** em título, número e editora;
+     - ou, só no ComicVine: série, número, editora e ano batem exatamente e existe **um único** candidato acima de 0,5.
+   - **Nenhum campo existente "bom" seria sobrescrito por um diferente.** Por exemplo, uma data já preenchida que discorda vai para a Revisão.
+   - **A confiança calculada é ≥ 0,95.**
+   - **Garantias:**
+     - todo livro aprovado automaticamente fica marcado como `matchedBy: auto` e aparece no filtro "Aprovados automaticamente", para conferência por amostragem;
+     - tudo pode ser desfeito pelo histórico;
+     - a configuração "Sempre revisar" desliga a aprovação automática.
+
+   Entre 0,50 e 0,95, o livro vai para a Revisão com candidatos; abaixo de 0,50, vai para a Revisão sem sugestão.
 4. **Créditos**: só as funções criativas (roteiro, arte, arte-final, cores, letras, capa). Editores ficam fora por padrão; o plugin do Calibre os misturava com os autores.
 
 ### 8.3 Lições do diagnóstico do Calibre (2026-10-17)
@@ -203,11 +216,20 @@ public interface IDestination {
 }
 ```
 - **Regras de todo destino**: *Quais livros* (toda a biblioteca / escolhidos / séries) e *Quando* (automático ao aprovar / manual).
+- **Capacidades por tipo**: cada tipo declara que tipos de livro aceita (`issue`, `tpb`, `omnibus`, `artbook`, `book`). Se o tipo aceita livros que não são HQ (`book`), a opção "Incluir livros que não são quadrinhos" aparece no destino, **desligada por padrão**. Se não aceita, a opção nem aparece.
+  - **Komga**: aceita, porque lê EPUB reflow desde a versão 1.8, com leitor próprio. Livros de texto vão como EPUB, sem conversão.
+  - **Kindle**: o KCC só converte imagens. Livros de texto exigiriam outro conversor ou o Send to Kindle, por isso ficam **a fazer** (backlog). Até lá, a opção não aparece.
 - **Estado por livro e destino** (tabela no índice): hash dos metadados mais hash do original usados na última geração. Se mudar, o livro fica "desatualizado".
 - As configurações de destino são **por máquina** (`%APPDATA%\Gibiteca\settings.json`), porque caminhos como `Z:\` e o Kindle conectado são locais.
 
 ### 9.2 Destino Komga
-- **Saída**: CBZ com `ComicInfo.xml`, em `{Pasta}/{Editora}/{Série}/{Série} v{Número:00} ({Ano}).cbz` (modelo editável em Avançado).
+- **Como o Komga monta as séries**: cada subpasta que contém livros vira uma série, em qualquer profundidade, e cada arquivo vira um livro da série da pasta onde está. Os livros de uma pasta de one-shots viram, cada um, uma série de um livro só. O nome dessa pasta é a opção "One-Shots directory" da biblioteca no Komga.
+- **Saída padrão** (modelo editável em Avançado):
+  - livros com série: `{Pasta}/{Série}/{Série} v{Número:00} ({Ano}).cbz`;
+  - one-shots: `{Pasta}/_oneshots/{Título} ({Ano}).cbz`.
+- **Por que não `Editora/Série/`**: a pasta da editora não contém arquivos, então em tese o Komga a ignora, mas isso **não foi testado**. A editora já vai no `ComicInfo.xml` e o Komga permite filtrar por ela. Fica como modelo opcional, a validar na F3.
+- **One-shot**: um livro sem série, ou cuja série tem um livro só (graphic novel independente, como *Plutona*). Vem da identificação (ComicVine com 1 edição) e pode ser marcado à mão no Editor ("É one-shot").
+- **Assistente**: pede o nome da pasta de one-shots (padrão `_oneshots`) e mostra o aviso "Configure o mesmo nome em *One-Shots directory* na biblioteca do Komga".
 - **Geração do CBZ**:
   - original CBZ: copia e injeta ou substitui o `ComicInfo.xml`;
   - original CBR: extrai e reempacota como CBZ;
@@ -222,25 +244,28 @@ public interface IDestination {
 - **Formato**: AZW3/MOBI (cabo USB, recomendado) ou EPUB (Send to Kindle, com compressão da Amazon).
 - **Entrega**:
   - Windows: o Kindle 2024+ usa **MTP**; cópia para `documents/` via Windows Portable Devices (por exemplo, o NuGet `MediaDevices`).
-  - Linux: libmtp/gvfs (a validar). Como alternativa em qualquer sistema, existe o botão "Abrir pasta" para arrastar à mão.
+  - Linux: **a fazer**. Até lá, o botão "Abrir pasta" permite arrastar à mão, e esse botão existe em todos os sistemas.
 - **Quadro a quadro**: o Kindle oferece "Visualização de painéis" (menu Aa, dois toques) em arquivos do KCC. Detecção real de quadros fica no backlog.
 - **Padrão**: livros escolhidos, manual.
-- **Riscos**: o KCC precisa do KindleGen para gerar MOBI/AZW3. O KindleGen vem no Kindle Previewer, que só existe para Windows e macOS, então no Linux a saída pode ficar limitada a EPUB. Também falta confirmar se a licença do KCC permite distribuí-lo junto com o app; senão, o app baixa ou aponta para uma instalação existente.
+- **Riscos**: o KCC precisa do KindleGen para gerar MOBI/AZW3. O KindleGen vem no Kindle Previewer, que só existe para Windows e macOS, então no Linux a saída pode ficar limitada a EPUB.
+- **Licença do KCC**: ISC, permissiva. Pode ser distribuído junto com o app, mantendo o aviso de copyright. Como é chamado como processo externo, não impõe nada à licença do Gibiteca.
 
 ### 9.4 Backlog de tipos
 Kavita, Kobo (KEPUB via KCC), Pasta simples (copiar em CBZ/PDF/EPUB), servidor OPDS, Calibre-Web.
 
-## 10. Migração do Calibre (uma vez)
+## 10. Carga inicial (importação em massa)
 
-1. Lê o `metadata.db` do Calibre em **modo somente leitura**, como os scripts de análise já fazem.
-2. Para cada livro, escolhe o melhor original:
-   - tem `ORIGINAL_EPUB`: ele é o original da editora (o EPUB foi reprocessado pelo Calibre) — 25 casos;
-   - tem PDF e EPUB convertido pelo Calibre a partir de PDF: o PDF é o original e o EPUB é descartado — ~40 casos;
-   - EPUB sem assinatura de conversor: original da editora — ~550 casos;
-   - EPUB convertido pelo Calibre sem outra fonte: importa com `quality: converted-by-calibre` e entra na lista "baixar de novo".
-3. Converte os metadados: título, autores (como `writer`; nomes grudados com `|` são separados), série e índice, data (`0101-01-01` vira vazio), editora, ISBN (só os válidos), sinopse, tags e capa.
-4. Roda primeiro em **simulação**, com um relatório do que seria feito, e só grava depois de confirmar.
-5. Não toca na biblioteca do Calibre. Ela continua existindo como backup até o usuário decidir apagá-la.
+Não há migração do Calibre. A coleção é reconstruída a partir dos originais baixados de novo do Humble Bundle, e os metadados de todos os livros são refeitos.
+
+1. O usuário aponta a Entrada para a pasta com os downloads, que podem ser centenas de arquivos.
+2. A importação roda **em lotes**, em segundo plano, com progresso e possibilidade de pausar e retomar. O estado fica no índice, então fechar o app não perde nada.
+3. A identificação respeita os limites das APIs, com fila, cache e reintentos. A carga inicial pode levar horas, e isso é esperado.
+4. Ao terminar, mostra um resumo:
+   - quantos foram aprovados automaticamente;
+   - quantos estão na Revisão;
+   - quantos são duplicados, por exemplo o mesmo livro em PDF e em CBZ.
+5. **Duplicados de formato**: quando o mesmo livro chega em mais de um formato, o melhor vira o original principal e os outros ficam como formatos extras. A ordem de preferência é CBZ > PDF > EPUB > CBR, configurável.
+6. A biblioteca do Calibre não é lida nem alterada. Ela continua como backup até o usuário decidir apagá-la.
 
 ## 11. Configurações
 
@@ -277,7 +302,7 @@ Gibiteca.sln
   src/
     Gibiteca.App/              # Avalonia: Views, ViewModels, temas, recursos (resx)
     Gibiteca.Core/             # domínio (Book, Credit, Destination…), regras de qualidade, serviços
-    Gibiteca.Library/          # formato em disco, metadata.json, índice SQLite, importação, migração do Calibre
+    Gibiteca.Library/          # formato em disco, metadata.json, índice SQLite, importação (entrada e carga em massa)
     Gibiteca.Metadata/         # IMetadataSource: OpenLibrary, ComicVine, GoogleBooks; identificação
     Gibiteca.Conversion/       # leitura de PDF/EPUB/CBZ/CBR, montagem de CBZ, ComicInfo.xml, execução do KCC
     Gibiteca.Destinations/     # IDestinationType + Komga + Kindle (MTP)
@@ -312,11 +337,11 @@ Gibiteca.sln
 | Fase | Entrega | Pronto quando |
 |---|---|---|
 | **F0 · Fundação** | Solução .NET, CI no GitHub Actions (build e testes), configurações, formato do Arquivo e índice | o app abre, aponta para uma pasta e cria a biblioteca vazia |
-| **F1 · Migração + Biblioteca** | Importador do Calibre (simulação e execução), grade, filtros e nota de qualidade, painel | os 661 livros aparecem com as mesmas notas da análise em Python |
-| **F2 · Metadados** | Open Library + ComicVine, identificação, Revisão, Editor (um livro e lote), histórico e desfazer | o lote 1 da análise (39 livros "Desconhecido") é corrigido pelo app |
+| **F1 · Importação + Biblioteca** | Importação manual e em massa (seção 10), cópia para o Arquivo, capa, metadados embutidos, grade, filtros e nota de qualidade, painel | os originais baixados aparecem na biblioteca com nota de qualidade |
+| **F2 · Metadados** | Open Library + ComicVine, identificação, aprovação automática segura, Revisão, Editor (um livro e lote), histórico e desfazer | a coleção inteira passa pela identificação e a fila de Revisão é tratável |
 | **F3 · Destino Komga** | Montagem de CBZ (PDF/EPUB/CBZ/CBR), ComicInfo.xml, modelo de nomes, estado de sincronização, scan opcional | a biblioteca aparece no Komga com séries e metadados corretos |
 | **F4 · Destino Kindle** | Integração com o KCC, perfis, envio via MTP no Windows | um livro escolhido chega ao Colorsoft e abre com a visualização de painéis |
-| **F5 · Entrada** | Pasta observada, identificação na chegada, duplicados e substituição | um download novo do Humble vai do download ao Komga sem passos manuais além da aprovação |
+| **F5 · Entrada automática** | Pasta observada, identificação na chegada, duplicados e substituição | um download novo do Humble vai do download ao Komga sem passos manuais, ou só com a aprovação |
 | **F6 · Polimento** | Inglês, tema claro, instalador Windows, build Linux, documentação de usuário | pronto para outra pessoa instalar sozinha |
 
 ### Backlog
@@ -324,9 +349,14 @@ Detecção real de quadros (Panel View com regiões por quadro), outros destinos
 
 ## 16. Questões em aberto
 
-1. Nome definitivo do app ("Gibiteca" é provisório) e licença (MIT? GPL?).
-2. Endpoints e autenticação da API do Komga para disparar o scan.
-3. KCC: licença para distribuir junto e comportamento sem KindleGen no Linux.
-4. MTP no Linux: qual biblioteca/abordagem.
-5. Aprovação automática ligada por padrão, ou tudo passa pela Revisão no começo?
-6. Livros que não são HQ (artbooks, livros de design/games): entram nos destinos? Proposta: não, por padrão.
+1. Nome definitivo do app ("Gibiteca" é provisório; em discussão um nome no estilo "-inator").
+2. Licença, caso o projeto seja aberto: proposta **MIT**. Todas as dependências são permissivas (KCC é ISC), então qualquer licença funciona. A **GPL-3.0** seria a alternativa se a intenção for obrigar forks a continuarem abertos.
+3. Endpoints e autenticação da API do Komga para disparar o scan.
+4. Comportamento do KCC sem KindleGen no Linux.
+5. Pastas de editora no Komga (`Editora/Série/`): testar na F3.
+
+**Decididas (2026-10-17)**:
+- Sem migração do Calibre; carga inicial a partir dos originais.
+- Aprovação automática ligada, com as regras de segurança da seção 8.2.
+- Livros que não são HQ: opção por destino, conforme a capacidade do tipo.
+- Cópia para o Kindle no Linux: a fazer.
