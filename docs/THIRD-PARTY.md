@@ -15,10 +15,10 @@ Toda dependência precisa de licença compatível com MIT (sem AGPL/GPL). Atuali
 | Bricolage Grotesque | — | fonte de títulos (embutida, `Assets/Fonts`) | SIL OFL 1.1 | em uso (F0) |
 | IBM Plex Sans, IBM Plex Mono | — | fontes de texto (embutidas, `Assets/Fonts`) | SIL OFL 1.1 (Reserved Font Name "Plex") | em uso (F0) |
 | Lucide (ícones folder-plus, folder-open, rotate-cw) | — | ícones, como geometria em `Themes/Icons.axaml` | ISC | em uso (F0) |
-| UglyToad.PdfPig | — | inspecionar PDF / extrair imagens | Apache-2.0 | planejado (F1) |
-| PDFium (via PDFtoImage ou PDFiumCore) | — | renderizar páginas de PDF | BSD-3 / Apache-2.0 / MIT (confirmar) | planejado (F1) |
-| SharpCompress | — | CBR (RAR) | MIT | planejado (F1) |
-| SkiaSharp | — | imagens (incluído no Avalonia) | MIT | planejado |
+| PDFium (`bblanchon.PDFium.Win32` e `.Linux`) | 157.0.8100 | renderizar a página 1 do PDF (capa), Info do PDF; chamado por P/Invoke próprio | Apache-2.0 (binários); PDFium: BSD-3-Clause | em uso (F1) |
+| SharpCompress | 1.0.0 | ler CBZ e CBR (RAR) | MIT (a descompressão de RAR deriva do unrar, cuja licença só proíbe recriar o compressor RAR) | em uso (F1) |
+| SkiaSharp (+ NativeAssets.Linux) | 3.119.4 | capas e miniaturas; a mesma versão do Avalonia.Skia | MIT | em uso (F1) |
+| UglyToad.PdfPig | — | extrair imagens do PDF sem perda | Apache-2.0 | planejado (F3) |
 | MediaDevices | — | MTP no Windows | MIT (confirmar) | planejado (F4) |
 | KCC (Kindle Comic Converter) | — | conversão para Kindle (processo externo) | ISC | planejado (F4) |
 

@@ -318,7 +318,7 @@ GibiOMatic.sln
 |---|---|---|
 | UI | Avalonia, CommunityToolkit.Mvvm | MIT |
 | Banco/índice | Microsoft.Data.Sqlite + Dapper | MIT / Apache-2.0 |
-| Renderizar PDF | PDFium (via PDFtoImage ou PDFiumCore) | BSD/Apache |
+| Renderizar PDF | PDFium (binários bblanchon/pdfium-binaries, P/Invoke próprio) | BSD/Apache |
 | Extrair imagens do PDF sem perda | UglyToad.PdfPig | Apache-2.0 |
 | CBR (RAR) | SharpCompress | MIT |
 | Imagens | SkiaSharp (já vem com o Avalonia) | MIT |

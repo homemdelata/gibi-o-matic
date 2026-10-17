@@ -5,7 +5,7 @@ Status: ⬜ não iniciada · 🟨 em andamento · ✅ concluída. Seções `§` 
 | Fase | Nome | Status |
 |---|---|---|
 | F0 | Fundação | ✅ |
-| F1 | Importação + Biblioteca | ⬜ |
+| F1 | Importação + Biblioteca | ✅ |
 | F2 | Metadados | ⬜ |
 | F3 | Destino Komga | ⬜ |
 | F4 | Destino Kindle | ⬜ |
@@ -55,33 +55,33 @@ Ao terminar cada fase: build e testes verdes → atualizar este arquivo → comm
 
 **Objetivo**: trazer os originais baixados para o Arquivo e vê-los na Biblioteca com nota de qualidade.
 
-- [ ] **Detecção de formato** pelo conteúdo (*magic bytes*): PDF, ZIP/CBZ, RAR/CBR, EPUB.
-- [ ] **Importação manual** (§6): botão "Importar arquivos…" e arrastar e soltar.
+- [x] **Detecção de formato** pelo conteúdo (*magic bytes*): PDF, ZIP/CBZ, RAR/CBR, EPUB.
+- [x] **Importação manual** (§6): botão "Importar arquivos…" e arrastar e soltar.
   - Calcula o SHA-256;
   - detecta duplicado exato (mesmo hash);
   - copia para `Livros/{Editora}/{Série}/{Título} [{id6}]/` (sem metadados ainda, cai em `_Sem editora/…`), com o nome limpo e o `downloadedAs` registrado;
   - escreve o `metadata.json` (§4.3) de forma atômica.
-- [ ] **Importação em massa** (§10):
+- [x] **Importação em massa** (§10):
   - fila persistida no índice, em segundo plano, com progresso, pausar e retomar;
   - sobrevive ao fechamento do app;
   - resumo final.
-- [ ] **Duplicados de formato**: o mesmo livro em vários formatos vira um livro só, com o original principal escolhido pela preferência CBZ > PDF > EPUB > CBR (configurável) e os demais como formatos extras. Na F1, a identificação do "mesmo livro" usa ISBN embutido ou título normalizado e número; a F2 refina.
-- [ ] **Metadados embutidos**: `ComicInfo.xml` (CBZ/CBR), OPF (EPUB) e Info/XMP (PDF) → preenchimento inicial do `metadata.json`.
-- [ ] **Capa** (`cover.jpg`):
+- [x] **Duplicados de formato**: o mesmo livro em vários formatos vira um livro só, com o original principal escolhido pela preferência CBZ > PDF > EPUB > CBR (configurável) e os demais como formatos extras. Na F1, a identificação do "mesmo livro" usa ISBN embutido ou título normalizado e número; a F2 refina.
+- [x] **Metadados embutidos**: `ComicInfo.xml` (CBZ/CBR), OPF (EPUB) e Info/XMP (PDF) → preenchimento inicial do `metadata.json`.
+- [x] **Capa** (`cover.jpg`):
   - CBZ/CBR: primeira imagem em ordem natural;
   - EPUB: a imagem de capa declarada no OPF;
   - PDF: renderizar a página 1 com PDFium (ver §13 e `reference/python/pdf2epub.py`).
   - Gerar miniaturas em cache local.
-- [ ] **Nota de qualidade** (§5): portar `reference/python/analyze.py` para `GibiOMatic.Core`, com testes cobrindo cada regra (títulos colados, "Desconhecido", autores grudados, "Untitled", série no título sem campo série etc.).
-- [ ] **Tela Biblioteca** (protótipo `Main.dc.html`):
+- [x] **Nota de qualidade** (§5): portar `reference/python/analyze.py` para `GibiOMatic.Core`, com testes cobrindo cada regra (títulos colados, "Desconhecido", autores grudados, "Untitled", série no título sem campo série etc.).
+- [x] **Tela Biblioteca** (protótipo `Main.dc.html`):
   - grade virtualizada de capas com selo OK, Revisar ou Ruim;
   - alternância Séries/Livros;
   - busca;
   - filtros (Precisa revisão, Sem data, Sem série, Autor desconhecido, Completos);
   - cartões de resumo;
   - painel de detalhes do livro selecionado: o que falta, arquivos e ações, ainda desabilitadas.
-- [ ] **Tela Entrada**, versão manual (protótipo `Entrada.dc.html`): lista do que está sendo importado e tratamento de duplicados (Substituir, Manter os dois, Ignorar).
-- [ ] Desempenho: abrir uma biblioteca de 1000 livros em menos de 2 s com o índice pronto, e rolagem fluida.
+- [x] **Tela Entrada**, versão manual (protótipo `Entrada.dc.html`): lista do que está sendo importado e tratamento de duplicados (Substituir, Manter os dois, Ignorar).
+- [x] Desempenho: abrir uma biblioteca de 1000 livros em menos de 2 s com o índice pronto, e rolagem fluida.
 
 **Pronto quando**: o usuário importa a pasta com os downloads novos e vê todos na Biblioteca, com capa e nota de qualidade, e os originais no Arquivo com o hash conferido.
 
