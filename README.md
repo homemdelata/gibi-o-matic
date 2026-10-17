@@ -1,4 +1,4 @@
-# Gibiteca
+# Gibi-o-matic
 
 App desktop (C# / Avalonia) para organizar uma coleção pessoal de quadrinhos digitais:
 

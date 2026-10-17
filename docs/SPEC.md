@@ -1,11 +1,11 @@
-# Gibiteca — Especificação
+# Gibi-o-matic — Especificação
 
 > Versão 0.2 · 2026-10-17 · status: rascunho para revisão
 > Protótipo de interface: Claude Design (link privado do autor)
 
 ## 1. Visão
 
-Gibiteca é um app desktop para quem compra quadrinhos digitais (Humble Bundle, lojas DRM-free etc.) e quer:
+Gibi-o-matic é um app desktop para quem compra quadrinhos digitais (Humble Bundle, lojas DRM-free etc.) e quer:
 
 1. **guardar os originais** em segurança, com metadados corretos;
 2. **ler com conforto** no tablet (via servidor como o Komga) e em e-readers (Kindle);
@@ -55,7 +55,7 @@ ENTRADA ──importar──► ARQUIVO (original + metadata.json) ──gerar�
 
 ### 4.1 Princípios
 - **Fonte da verdade = arquivos no disco**, não o banco. Cada livro tem um `metadata.json` ao lado do original. O índice SQLite é só cache e pode ser reconstruído a qualquer momento varrendo as pastas.
-- **O índice fica fora do Drive**, em `%LOCALAPPDATA%\Gibiteca\` (Linux: `~/.local/share/gibiteca/`). SQLite dentro de pasta sincronizada é fonte clássica de corrupção.
+- **O índice fica fora do Drive**, em `%LOCALAPPDATA%\GibiOMatic\` (Linux: `~/.local/share/gibiomatic/`). SQLite dentro de pasta sincronizada é fonte clássica de corrupção.
 - **Escritas atômicas**: grava em `*.tmp` e renomeia.
 - **Originais imutáveis**: o hash SHA-256 é gravado na importação e verificado sob demanda.
 
@@ -63,7 +63,7 @@ ENTRADA ──importar──► ARQUIVO (original + metadata.json) ──gerar�
 
 ```
 <Arquivo>/
-  gibiteca-library.json            # id da biblioteca, versão do formato
+  gibiomatic-library.json            # id da biblioteca, versão do formato
   Livros/
     Image/
       Saga/
@@ -77,7 +77,7 @@ ENTRADA ──importar──► ARQUIVO (original + metadata.json) ──gerar�
           ...
     _Sem editora/
       ...
-  .gibiteca/
+  .gibiomatic/
     history/<id>/<timestamp>.json  # versões anteriores do metadata.json (últimas 20)
 ```
 
@@ -162,7 +162,7 @@ Faixas: **Ruim** (< 60), **Revisar** (60–84), **OK** (≥ 85). A regra já exi
 - **Revisão**: fila ordenada pela nota de qualidade. Para cada livro: candidatos com % de confiança e tabela *campo · atual · proposto*, com uma caixa de seleção por campo. Ações: Aprovar e próximo, Pular, Editar à mão.
 - **Editor**: todos os campos da seção 4.3, créditos com função, capa (trocar ou usar a página 1), prévia dos nomes que cada destino vai gerar.
 - **Edição em lote**: selecionar N livros e editar os campos em comum. Campos vazios não alteram nada. "Numerar em sequência" serve para o número da série.
-- Toda gravação gera uma entrada em `.gibiteca/history` e pode ser desfeita.
+- Toda gravação gera uma entrada em `.gibiomatic/history` e pode ser desfeita.
 
 ## 8. Fontes de metadados e identificação
 
@@ -220,7 +220,7 @@ public interface IDestination {
   - **Komga**: aceita, porque lê EPUB reflow desde a versão 1.8, com leitor próprio. Livros de texto vão como EPUB, sem conversão.
   - **Kindle**: o KCC só converte imagens. Livros de texto exigiriam outro conversor ou o Send to Kindle, por isso ficam **a fazer** (backlog). Até lá, a opção não aparece.
 - **Estado por livro e destino** (tabela no índice): hash dos metadados mais hash do original usados na última geração. Se mudar, o livro fica "desatualizado".
-- As configurações de destino são **por máquina** (`%APPDATA%\Gibiteca\settings.json`), porque caminhos como `Z:\` e o Kindle conectado são locais.
+- As configurações de destino são **por máquina** (`%APPDATA%\GibiOMatic\settings.json`), porque caminhos como `Z:\` e o Kindle conectado são locais.
 
 ### 9.2 Destino Komga
 - **Como o Komga monta as séries**: cada subpasta que contém livros vira uma série, em qualquer profundidade, e cada arquivo vira um livro da série da pasta onde está. Os livros de uma pasta de one-shots viram, cada um, uma série de um livro só. O nome dessa pasta é a opção "One-Shots directory" da biblioteca no Komga.
@@ -252,7 +252,7 @@ public interface IDestination {
 - **Quadro a quadro**: o Kindle oferece "Visualização de painéis" (menu Aa, dois toques) em arquivos do KCC. Detecção real de quadros fica no backlog.
 - **Padrão**: livros escolhidos, manual.
 - **Riscos**: o KCC precisa do KindleGen para gerar MOBI/AZW3. O KindleGen vem no Kindle Previewer, que só existe para Windows e macOS, então no Linux a saída pode ficar limitada a EPUB.
-- **Licença do KCC**: ISC, permissiva. Pode ser distribuído junto com o app, mantendo o aviso de copyright. Como é chamado como processo externo, não impõe nada à licença do Gibiteca.
+- **Licença do KCC**: ISC, permissiva. Pode ser distribuído junto com o app, mantendo o aviso de copyright. Como é chamado como processo externo, não impõe nada à licença do GibiOMatic.
 
 ### 9.4 Backlog de tipos
 Kavita, Kobo (KEPUB via KCC), Pasta simples (copiar em CBZ/PDF/EPUB), servidor OPDS, Calibre-Web.
@@ -273,9 +273,9 @@ Não há migração do Calibre. A coleção é reconstruída a partir dos origin
 
 ## 11. Configurações
 
-- **Gerais** (`%APPDATA%\Gibiteca\settings.json`): idioma (pt-BR, en), tema (escuro, claro, sistema), pasta do Arquivo, pasta de Entrada, fontes de metadados (ordem e liga/desliga), limiar de aprovação automática, destinos.
+- **Gerais** (`%APPDATA%\GibiOMatic\settings.json`): idioma (pt-BR, en), tema (escuro, claro, sistema), pasta do Arquivo, pasta de Entrada, fontes de metadados (ordem e liga/desliga), limiar de aprovação automática, destinos.
 - **Segredos** (chaves de API) **não vão para arquivos de texto**: Windows DPAPI (`ProtectedData`) e, no Linux, libsecret.
-- **Da biblioteca** (`gibiteca-library.json`, no Drive): só o que é da coleção, independente da máquina (versão do formato, id).
+- **Da biblioteca** (`gibiomatic-library.json`, no Drive): só o que é da coleção, independente da máquina (versão do formato, id).
 
 ## 12. Interface
 
@@ -302,16 +302,16 @@ Baseada no protótipo do Claude Design. Telas:
 - **Avalonia 11** com MVVM (CommunityToolkit.Mvvm).
 
 ```
-Gibiteca.sln
+GibiOMatic.sln
   src/
-    Gibiteca.App/              # Avalonia: Views, ViewModels, temas, recursos (resx)
-    Gibiteca.Core/             # domínio (Book, Credit, Destination…), regras de qualidade, serviços
-    Gibiteca.Library/          # formato em disco, metadata.json, índice SQLite, importação (entrada e carga em massa)
-    Gibiteca.Metadata/         # IMetadataSource: OpenLibrary, ComicVine, GoogleBooks; identificação
-    Gibiteca.Conversion/       # leitura de PDF/EPUB/CBZ/CBR, montagem de CBZ, ComicInfo.xml, execução do KCC
-    Gibiteca.Destinations/     # IDestinationType + Komga + Kindle (MTP)
+    GibiOMatic.App/              # Avalonia: Views, ViewModels, temas, recursos (resx)
+    GibiOMatic.Core/             # domínio (Book, Credit, Destination…), regras de qualidade, serviços
+    GibiOMatic.Library/          # formato em disco, metadata.json, índice SQLite, importação (entrada e carga em massa)
+    GibiOMatic.Metadata/         # IMetadataSource: OpenLibrary, ComicVine, GoogleBooks; identificação
+    GibiOMatic.Conversion/       # leitura de PDF/EPUB/CBZ/CBR, montagem de CBZ, ComicInfo.xml, execução do KCC
+    GibiOMatic.Destinations/     # IDestinationType + Komga + Kindle (MTP)
   tests/
-    Gibiteca.Core.Tests/ …     # xUnit; amostras sintéticas, nunca HQs reais no repositório
+    GibiOMatic.Core.Tests/ …     # xUnit; amostras sintéticas, nunca HQs reais no repositório
 ```
 
 | Necessidade | Biblioteca | Licença |
@@ -332,7 +332,7 @@ Gibiteca.sln
 ## 14. Integridade e segurança
 
 - Originais imutáveis, com hash conferido e verificação opcional ("verificar arquivo").
-- Toda operação em lote tem simulação, confirmação e log em `%LOCALAPPDATA%\Gibiteca\logs`.
+- Toda operação em lote tem simulação, confirmação e log em `%LOCALAPPDATA%\GibiOMatic\logs`.
 - Nenhum segredo no repositório, nem nos arquivos do Drive.
 - O app não envia dados para lugar nenhum além das fontes de metadados escolhidas.
 
@@ -353,12 +353,12 @@ Detecção real de quadros (Panel View com regiões por quadro), outros destinos
 
 ## 16. Questões em aberto
 
-1. Nome definitivo do app ("Gibiteca" é provisório; em discussão um nome no estilo "-o-matic").
-2. Endpoints e autenticação da API do Komga para disparar o scan.
-3. Comportamento do KCC sem KindleGen no Linux.
-4. Pastas de editora no Komga (`Editora/Série/`): testar na F3.
+1. Endpoints e autenticação da API do Komga para disparar o scan.
+2. Comportamento do KCC sem KindleGen no Linux.
+3. Pastas de editora no Komga (`Editora/Série/`): testar na F3.
 
 **Decididas (2026-10-17)**:
+- Nome: **Gibi-o-matic** (repositório `gibi-o-matic`, namespace `GibiOMatic`).
 - Licença MIT (arquivo `LICENSE`).
 - Sem migração do Calibre; carga inicial a partir dos originais.
 - Aprovação automática ligada, com as regras de segurança da seção 8.2.
