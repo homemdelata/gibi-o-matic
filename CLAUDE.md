@@ -38,9 +38,14 @@ Licença MIT. Repositório privado por enquanto (`github.com/homemdelata/gibi-o-
 2. **Nunca versionar** quadrinhos (CBZ/CBR/PDF/EPUB/AZW3), chaves de API ou dados pessoais. Os testes usam arquivos **sintéticos gerados no próprio teste**: PDFs, CBZs e EPUBs mínimos.
 3. **Sem dependências AGPL/GPL** (ex.: MuPDF/PyMuPDF, mesmo que o script de referência use). Verifique a licença antes de adicionar qualquer pacote e registre em `docs/THIRD-PARTY.md`.
 4. **Chave do ComicVine nunca no código nem no repositório.**
-   - Em desenvolvimento: `dotnet user-secrets` (projeto App) ou a variável de ambiente `GIBIOMATIC_COMICVINE_KEY`.
+   - Em desenvolvimento ela **já está guardada** nos *user secrets* do .NET, fora do repositório:
+     - `UserSecretsId` = `3c6e08f6-15a8-4547-9a68-52954af24a45` (coloque exatamente esse valor em `<UserSecretsId>` no `.csproj` do `GibiOMatic.App` e de projetos de teste de integração que precisarem);
+     - chave de configuração `ComicVine:ApiKey`;
+     - arquivo `%APPDATA%\Microsoft\UserSecrets\3c6e08f6-15a8-4547-9a68-52954af24a45\secrets.json`.
+     - Leia via `IConfiguration` (`AddUserSecrets`) só em Debug. Nunca imprima a chave em logs ou na saída do terminal.
+   - Também aceite a variável de ambiente `GIBIOMATIC_COMICVINE_KEY`, para o CI e para outros desenvolvedores.
    - Em produção: o usuário digita a chave nas Configurações, e ela é guardada protegida (DPAPI no Windows).
-   - Se precisar da chave para testar, **peça ao usuário**.
+   - Testes que chamam a API de verdade ficam marcados como integração e são pulados quando não há chave.
 5. **APIs externas**: User-Agent próprio, cache local das respostas, limite de requisições e novas tentativas com espera (*backoff*). Nunca martelar o ComicVine.
 6. **Não mexer nas pastas reais do usuário** (`G:\Meu Drive\...`, `Z:\`, o Kindle) sem pedir antes. Para testes manuais, use uma pasta de teste (ex.: `D:\gibiomatic-teste\`).
 7. Operações em lote: simulação primeiro, depois confirmação e log.
