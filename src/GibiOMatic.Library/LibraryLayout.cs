@@ -1,0 +1,16 @@
+namespace GibiOMatic.Library;
+
+/// <summary>Names of the files and folders that make up a library on disk (SPEC §4.2).</summary>
+public static class LibraryLayout
+{
+    public const string ManifestFileName = "gibiomatic-library.json";
+    public const string BooksFolderName = "Livros";
+    public const string InternalFolderName = ".gibiomatic";
+    public const string HistoryFolderName = "history";
+    public const string MetadataFileName = "metadata.json";
+
+    public static string ManifestPath(string root) => Path.Combine(root, ManifestFileName);
+    public static string BooksPath(string root) => Path.Combine(root, BooksFolderName);
+    public static string InternalPath(string root) => Path.Combine(root, InternalFolderName);
+    public static string HistoryPath(string root) => Path.Combine(root, InternalFolderName, HistoryFolderName);
+}
