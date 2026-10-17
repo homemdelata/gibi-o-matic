@@ -196,6 +196,7 @@ public sealed class BookImporter(IBookFileReader reader, ILogger<BookImporter> l
         Format = analysis.Format,
         Sha256 = analysis.Sha256,
         Bytes = analysis.Bytes,
+        Pages = analysis.Metadata.PageCount,
         Quality = analysis.Metadata.LooksConverted ? FileQuality.Converted : FileQuality.Unknown,
     };
 

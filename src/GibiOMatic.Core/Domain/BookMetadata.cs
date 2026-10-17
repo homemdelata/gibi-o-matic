@@ -79,6 +79,10 @@ public sealed record BookFile
     public BookFormat Format { get; init; }
     public required string Sha256 { get; init; }
     public long Bytes { get; init; }
+
+    /// <summary>Number of pages counted in the file at import (null for books imported before this existed).</summary>
+    public int? Pages { get; init; }
+
     public string? Source { get; init; }
     public FileQuality Quality { get; init; } = FileQuality.Unknown;
 }

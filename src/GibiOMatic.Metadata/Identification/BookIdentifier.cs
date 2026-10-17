@@ -21,6 +21,12 @@ public interface IBookIdentifier
 
     /// <summary>Fetches what the search summary lacks (credits, synopsis) for a ComicVine candidate.</summary>
     Task<MetadataCandidate> CompleteAsync(MetadataCandidate candidate, CancellationToken ct);
+
+    /// <summary>
+    /// The book the user found on comicvine.gamespot.com: an issue link (…/4000-937068/) gives that
+    /// issue; a volume link (…/4050-144057/) gives its issues. Empty when the link is not recognised.
+    /// </summary>
+    Task<IReadOnlyList<MetadataCandidate>> FromComicVineLinkAsync(BookMetadata book, string link, CancellationToken ct);
 }
 
 /// <summary>
@@ -190,6 +196,66 @@ public sealed class BookIdentifier(
                 IsDetailed = true,
             },
         };
+    }
+
+    public async Task<IReadOnlyList<MetadataCandidate>> FromComicVineLinkAsync(BookMetadata book, string link, CancellationToken ct)
+    {
+        if (ParseComicVineLink(link) is not { } target)
+        {
+            return [];
+        }
+
+        var query = BookQuery.From(book);
+        var issues = new List<CvIssueSummary>();
+        CvVolume? volume;
+        if (target.IsIssue)
+        {
+            if (await comicVine.GetIssueAsync(target.Id, ct) is not { } issue)
+            {
+                return [];
+            }
+
+            volume = await comicVine.GetVolumeAsync(issue.VolumeId, ct);
+            issues.Add(new CvIssueSummary(issue.Id, issue.VolumeId, issue.VolumeName, issue.IssueNumber, issue.Name, issue.Date, issue.CoverUrl, issue.CoverFullUrl));
+        }
+        else
+        {
+            volume = await comicVine.GetVolumeAsync(target.Id, ct);
+            if (volume is null)
+            {
+                return [];
+            }
+
+            issues.AddRange(await comicVine.GetIssuesAsync([volume.Id], ct));
+        }
+
+        volume ??= new CvVolume(issues[0].VolumeId, issues[0].VolumeName, null, null, issues.Count);
+
+        // The user chose it: full confidence; the ones closest to the book first (for a volume link).
+        var candidates = issues
+            .Select(i => Score(i, volume, query))
+            .OrderByDescending(c => c.Confidence)
+            .Take(12)
+            .Select(c => c with { Confidence = 1.0, Reasons = [MatchReason.ChosenByUser] })
+            .ToList();
+        if (candidates.Count > 0)
+        {
+            candidates[0] = await CompleteAsync(candidates[0], ct);
+        }
+
+        return candidates;
+    }
+
+    /// <summary>"https://comicvine.gamespot.com/deadly-class-…/4000-937068/" → issue 937068.</summary>
+    public static (bool IsIssue, int Id)? ParseComicVineLink(string? link)
+    {
+        if (string.IsNullOrWhiteSpace(link))
+        {
+            return null;
+        }
+
+        var m = System.Text.RegularExpressions.Regex.Match(link, @"\b(4000|4050)-(\d+)\b");
+        return m.Success && int.TryParse(m.Groups[2].Value, out var id) ? (m.Groups[1].Value == "4000", id) : null;
     }
 
     private async Task<List<MetadataCandidate>> SearchComicVineAsync(BookQuery query, CancellationToken ct)
@@ -440,4 +506,6 @@ public interface IComicVineApi
     Task<IReadOnlyList<CvIssueSummary>> GetIssuesAsync(IReadOnlyCollection<int> volumeIds, CancellationToken ct, string? issueNumber = null);
 
     Task<CvIssue?> GetIssueAsync(int id, CancellationToken ct);
+
+    Task<CvVolume?> GetVolumeAsync(int id, CancellationToken ct);
 }

@@ -204,6 +204,20 @@ public sealed class IdentificationQueue : IAsyncDisposable
         return result;
     }
 
+    /// <summary>A ComicVine link pasted in the Review: its book becomes the candidates. Returns how many.</summary>
+    public async Task<int> UseComicVineLinkAsync(string bookId, string link, CancellationToken ct = default)
+    {
+        var book = await _index.GetBookAsync(bookId, ct) ?? throw new InvalidOperationException($"Book {bookId} not found.");
+        var candidates = await _identifier.FromComicVineLinkAsync(book.Metadata, link, ct);
+        if (candidates.Count > 0)
+        {
+            await SetStateAsync(bookId, IdentificationState.NeedsReview, new IdentificationResult(BookQuery.From(book.Metadata), candidates, []), null, ct);
+            OnChanged();
+        }
+
+        return candidates.Count;
+    }
+
     /// <summary>Details (credits, synopsis) of a candidate picked in the Review.</summary>
     public Task<MetadataCandidate> CompleteAsync(MetadataCandidate candidate, CancellationToken ct = default) =>
         _identifier.CompleteAsync(candidate, ct);

@@ -61,6 +61,9 @@ public enum MatchReason
     Year,
     Kind,
     SecondSource,
+
+    /// <summary>The user pointed to this record (a ComicVine link).</summary>
+    ChosenByUser,
 }
 
 /// <summary>A possible identification of a book, with the confidence of the match (0–1).</summary>

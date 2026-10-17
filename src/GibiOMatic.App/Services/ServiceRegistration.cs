@@ -56,6 +56,7 @@ public static class ServiceRegistration
         services.AddSingleton<IFolderPicker, AvaloniaFolderPicker>();
         services.AddSingleton<IFilePicker, AvaloniaFilePicker>();
         services.AddSingleton<ICoverLoader, CoverLoader>();
+        services.AddSingleton<IUrlOpener, AvaloniaUrlOpener>();
         services.AddSingleton<LibrarySession>();
 
         // View models (a new shell and pages for each opened library)

@@ -36,6 +36,12 @@ internal sealed class FakeComicVine : IComicVineApi
         return Task.FromResult(Details.GetValueOrDefault(id));
     }
 
+    public Task<CvVolume?> GetVolumeAsync(int id, CancellationToken ct)
+    {
+        Calls.Add($"volume:{id}");
+        return Task.FromResult(Volumes.FirstOrDefault(v => v.Id == id));
+    }
+
     public static FakeComicVine DeadlyClass()
     {
         var cv = new FakeComicVine();
@@ -225,6 +231,38 @@ public sealed class IdentifierTests
 
         Assert.Empty(result.Candidates);
         Assert.Empty(cv.Calls);
+    }
+
+    [Theory]
+    [InlineData("https://comicvine.gamespot.com/deadly-class-a-fond-farewell-part-one-1-volume-11/4000-937068/", true, 937068)]
+    [InlineData("comicvine.gamespot.com/deadly-class/4050-71032/", false, 71032)]
+    public void ComicVine_links_are_recognised(string link, bool isIssue, int id) =>
+        Assert.Equal((isIssue, id), BookIdentifier.ParseComicVineLink(link));
+
+    [Fact]
+    public async Task An_issue_link_chosen_by_the_user_is_the_candidate()
+    {
+        var cv = FakeComicVine.DeadlyClass();
+
+        var candidates = await Identifier(cv).FromComicVineLinkAsync(Book("whatever"),
+            "https://comicvine.gamespot.com/x/4000-937068/", Ct);
+
+        var candidate = Assert.Single(candidates);
+        Assert.Equal((1.0, "Deadly Class, Vol. 11: A Fond Farewell Part One"), (candidate.Confidence, candidate.Record.Title));
+        Assert.Equal([MatchReason.ChosenByUser], candidate.Reasons);
+        Assert.Equal("Image", candidate.Record.Publisher);
+        Assert.True(candidate.Record.IsDetailed);
+    }
+
+    [Fact]
+    public async Task A_volume_link_offers_its_issues_closest_first()
+    {
+        var cv = FakeComicVine.DeadlyClass();
+
+        var candidates = await Identifier(cv).FromComicVineLinkAsync(Book("Deadly Class #11"), "https://comicvine.gamespot.com/deadly-class/4050-71032/", Ct);
+
+        Assert.Equal("4000-479942", candidates[0].Record.ComicVineId);
+        Assert.Empty(await Identifier(cv).FromComicVineLinkAsync(Book("x"), "https://example.com/not-comicvine", Ct));
     }
 
     [Fact]

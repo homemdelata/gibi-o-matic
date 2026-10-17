@@ -88,6 +88,7 @@ public sealed class ImportAndLibraryTests : IDisposable
         await page.LoadAsync(Ct);
 
         // Séries view (default): the two Saga volumes become one card, Plutona stays on its own.
+        // A series with one book is shown as that book.
         Assert.Equal(LibraryViewMode.Series, page.ViewMode);
         Assert.Equal(2, page.VisibleCards.Count);
         var saga = Assert.Single(page.VisibleCards.OfType<SeriesCardViewModel>());
@@ -111,6 +112,15 @@ public sealed class ImportAndLibraryTests : IDisposable
         page.Filters.Single(f => f.Filter == LibraryFilter.UnknownAuthor).PickCommand.Execute(null);
         Assert.Equal("Plutona", Assert.Single(page.VisibleCards.OfType<BookCardViewModel>()).Title);
         Assert.True(page.Filters.Single(f => f.Filter == LibraryFilter.UnknownAuthor).IsSelected);
+
+        // A series of one book shows as the book, not as a stack.
+        page.Filters[0].PickCommand.Execute(null);
+        var plutona = page.VisibleCards.OfType<BookCardViewModel>().Single(b => b.Title == "Plutona");
+        await _app.Get<GibiOMatic.Library.Editing.BookEditor>().UpdateAsync(Session.Current!, plutona.Id, m => m with { Series = new("Plutona", "1") }, Ct);
+        await page.LoadAsync(Ct);
+        page.SetViewModeCommand.Execute(LibraryViewMode.Series);
+        Assert.Contains(page.VisibleCards, c => c is BookCardViewModel { Title: "Plutona" });
+        Assert.Single(page.VisibleCards.OfType<SeriesCardViewModel>());
     }
 
     [Fact]

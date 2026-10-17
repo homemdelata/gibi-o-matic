@@ -329,7 +329,9 @@ public sealed partial class LibraryPageViewModel : PageViewModel
                 }
                 else if (seen.Add(name))
                 {
-                    cards.Add(new SeriesCardViewModel(name, books.Where(b => string.Equals(b.Book.Metadata.Series?.Name, name, StringComparison.OrdinalIgnoreCase)).ToList(), OpenSeriesCard));
+                    // A series with a single book is just that book (no stack, no "1 livro").
+                    var inSeries = books.Where(b => string.Equals(b.Book.Metadata.Series?.Name, name, StringComparison.OrdinalIgnoreCase)).ToList();
+                    cards.Add(inSeries.Count == 1 ? inSeries[0] : new SeriesCardViewModel(name, inSeries, OpenSeriesCard));
                 }
             }
 

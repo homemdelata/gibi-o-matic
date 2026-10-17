@@ -88,6 +88,7 @@
                                TextWrapping="Wrap" />
           <TextBlock FontFamily="{StaticResource FontDisplay}" FontSize="26" FontWeight="Bold" TextWrapping="Wrap"
                      Text="{Binding Selected.Title, FallbackValue={x:Null}}" />
+          <TextBlock Classes="mono muted" FontSize="12.5" Text="{Binding FileInfoText}" />
         </StackPanel>
         <Border Grid.Column="2" Classes="pill" Padding="14,8" VerticalAlignment="Top"
                 Background="{Binding ConfidenceLevel, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Background}">
@@ -100,7 +101,7 @@
                  IsVisible="{Binding NotesText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
       <!-- Search again with other words -->
-      <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,18">
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,10">
         <TextBox Text="{Binding SearchText}" PlaceholderText="{x:Static r:Strings.Review_SearchPlaceholder}"
                  AutomationProperties.Name="{x:Static r:Strings.Review_SearchPlaceholder}">
           <TextBox.InnerLeftContent>
@@ -109,7 +110,21 @@
         </TextBox>
         <Button Grid.Column="1" Classes="secondary" Margin="10,0,0,0" Content="{x:Static r:Strings.Review_SearchAgain}"
                 Command="{Binding SearchAgainCommand}" />
+        <Button Grid.Column="2" Classes="secondary" Margin="10,0,0,0" Content="{x:Static r:Strings.Review_OpenComicVine}"
+                Command="{Binding OpenComicVineCommand}" ToolTip.Tip="{x:Static r:Strings.Review_OpenComicVineHelp}" />
       </Grid>
+
+      <!-- The right page found in the browser -->
+      <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,18">
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBox Classes="mono" FontSize="12.5" Text="{Binding ComicVineLink}" PlaceholderText="{x:Static r:Strings.Review_LinkPlaceholder}"
+                   AutomationProperties.Name="{x:Static r:Strings.Review_LinkPlaceholder}" />
+          <Button Grid.Column="1" Classes="secondary" Margin="10,0,0,0" Content="{x:Static r:Strings.Review_UseLink}"
+                  Command="{Binding UseComicVineLinkCommand}" />
+        </Grid>
+        <TextBlock Classes="error" FontSize="12.5" Text="{Binding LinkError}"
+                   IsVisible="{Binding LinkError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      </StackPanel>
 
       <!-- Footer -->
       <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,18,0,0">
@@ -159,6 +174,8 @@
                       <TextBlock FontWeight="SemiBold" Text="{Binding Title}" TextWrapping="Wrap" MaxLines="3" TextTrimming="CharacterEllipsis" />
                       <TextBlock Classes="muted" FontSize="12" Text="{Binding MetaLine}" TextWrapping="Wrap" />
                       <TextBlock Classes="muted" FontSize="12" Text="{Binding SourceText}" />
+                      <TextBlock Classes="muted" FontSize="12" Text="{Binding PagesText}"
+                                 IsVisible="{Binding PagesText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                       <TextBlock Classes="mono" FontSize="12" FontWeight="Medium" Margin="0,2,0,0" Text="{Binding ConfidenceText}"
                                  Foreground="{Binding Level, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
                     </StackPanel>

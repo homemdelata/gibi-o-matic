@@ -27,6 +27,8 @@ public sealed class AppTestContext : IDisposable
 
     public FakeFilePicker FilePicker { get; } = new();
 
+    public FakeUrlOpener Urls { get; } = new();
+
     /// <summary>Never calls the real APIs; answers what each test scripts.</summary>
     public FakeIdentifier Identifier { get; } = new();
 
@@ -42,6 +44,7 @@ public sealed class AppTestContext : IDisposable
             .AddSingleton<IFilePicker>(FilePicker)
             .AddSingleton<IUiThread>(new InlineUiThread())
             .AddSingleton<IBookIdentifier>(Identifier)
+            .AddSingleton<IUrlOpener>(Urls)
             .BuildServiceProvider();
 
     public void Dispose()
@@ -101,6 +104,11 @@ public sealed class FakeIdentifier : IBookIdentifier
     public Task<MetadataCandidate> CompleteAsync(MetadataCandidate candidate, CancellationToken ct) =>
         Task.FromResult(candidate with { Record = candidate.Record with { IsDetailed = true } });
 
+    public Task<IReadOnlyList<MetadataCandidate>> FromComicVineLinkAsync(BookMetadata book, string link, CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<MetadataCandidate>>(link.Contains("4000-")
+            ? [Candidate("House of Slaughter, Vol. 1", "House of Slaughter", "1", 1.0, MatchReason.ChosenByUser)]
+            : []);
+
     public static MetadataCandidate Candidate(string title, string series, string number, double confidence, params MatchReason[] reasons) => new(
         new MetadataRecord
         {
@@ -116,4 +124,15 @@ public sealed class FakeIdentifier : IBookIdentifier
         },
         confidence,
         reasons);
+}
+
+public sealed class FakeUrlOpener : IUrlOpener
+{
+    public List<Uri> Opened { get; } = [];
+
+    public Task OpenAsync(Uri url)
+    {
+        Opened.Add(url);
+        return Task.CompletedTask;
+    }
 }

@@ -5,7 +5,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GibiOMatic.App.Resources;
 using GibiOMatic.App.Services;
+using GibiOMatic.Conversion;
 using GibiOMatic.Core.Domain;
+using GibiOMatic.Core.Libraries;
 using GibiOMatic.Core.Quality;
 using GibiOMatic.Library;
 using GibiOMatic.Library.Identification;
@@ -83,6 +85,11 @@ public sealed partial class CandidateViewModel : ViewModelBase
 
     public string SourceText => string.Format(CultureInfo.CurrentCulture, Strings.Review_Source, IdentificationText.SourceName(Candidate.Record.Source));
 
+    /// <summary>"128 páginas" when the source knows (Open Library, Google Books; ComicVine does not have it).</summary>
+    public string? PagesText => Candidate.Record.PageCount is { } pages
+        ? string.Format(CultureInfo.CurrentCulture, Strings.Review_Pages, pages)
+        : null;
+
     public string ConfidenceText => string.Format(CultureInfo.CurrentCulture, Strings.Review_Confidence, Candidate.Confidence);
 
     public CheckStatus Level => IdentificationText.LevelOf(Candidate.Confidence);
@@ -148,16 +155,21 @@ public sealed partial class ReviewPageViewModel : PageViewModel
     private readonly ThumbnailCache _thumbnails;
     private readonly ICoverLoader _covers;
     private readonly CoverImageCache _remoteCovers;
+    private readonly IBookFileReader _reader;
+    private readonly IUrlOpener _urls;
+    private readonly Dictionary<string, int?> _pageCounts = [];
     private readonly ILogger<ReviewPageViewModel> _logger;
     private readonly Debouncer _refresh;
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
     private string? _pendingBookId;
     private CatalogBook? _book;
 
-    public ReviewPageViewModel(LibrarySession session, ThumbnailCache thumbnails, ICoverLoader covers, CoverImageCache remoteCovers, IUiThread ui,
-        ILogger<ReviewPageViewModel> logger)
+    public ReviewPageViewModel(LibrarySession session, ThumbnailCache thumbnails, ICoverLoader covers, CoverImageCache remoteCovers,
+        IBookFileReader reader, IUrlOpener urls, IUiThread ui, ILogger<ReviewPageViewModel> logger)
     {
         _remoteCovers = remoteCovers;
+        _reader = reader;
+        _urls = urls;
         _session = session;
         _thumbnails = thumbnails;
         _covers = covers;
@@ -196,6 +208,17 @@ public sealed partial class ReviewPageViewModel : PageViewModel
 
     [ObservableProperty]
     public partial string? SearchText { get; set; }
+
+    /// <summary>A ComicVine page the user found in the browser.</summary>
+    [ObservableProperty]
+    public partial string? ComicVineLink { get; set; }
+
+    [ObservableProperty]
+    public partial string? LinkError { get; private set; }
+
+    /// <summary>"Arquivo: 132 páginas · PDF", to compare with the candidates.</summary>
+    [ObservableProperty]
+    public partial string? FileInfoText { get; private set; }
 
     public ObservableCollection<CandidateViewModel> Candidates { get; } = [];
 
@@ -388,6 +411,9 @@ public sealed partial class ReviewPageViewModel : PageViewModel
         item.IsSelected = true;
         _book = item.Card.Book;
         FolderPath = Path.Combine(library.RootPath, _book.Folder);
+        ComicVineLink = null;
+        LinkError = null;
+        _ = ShowFileInfoAsync(item, library);
         var result = item.Identification.Result;
         SearchText = result?.Query.SearchText ?? BookQuery.From(_book.Metadata).SearchText;
         NoCandidateText = string.Format(CultureInfo.CurrentCulture, Strings.Review_NothingFor, SearchText);
@@ -448,6 +474,92 @@ public sealed partial class ReviewPageViewModel : PageViewModel
         }
 
         UpdateSummary();
+    }
+
+    /// <summary>Pages of the main original: recorded at import, or counted now for older books.</summary>
+    private async Task ShowFileInfoAsync(ReviewItemViewModel item, LibraryInfo library)
+    {
+        FileInfoText = null;
+        if (item.Card.Book.MainFile is not { } main)
+        {
+            return;
+        }
+
+        if (!_pageCounts.TryGetValue(item.BookId, out var pages))
+        {
+            pages = main.Pages;
+            if (pages is null)
+            {
+                var path = Path.Combine(library.RootPath, item.Card.Book.Folder, main.Name);
+                pages = File.Exists(path) ? (await _reader.ReadAsync(path, main.Format)).Metadata.PageCount : null;
+            }
+
+            _pageCounts[item.BookId] = pages;
+        }
+
+        if (Selected == item)
+        {
+            var format = QualityText.FormatLabel(main.Format);
+            FileInfoText = pages is { } n
+                ? string.Format(CultureInfo.CurrentCulture, Strings.Review_FilePages, n, format)
+                : string.Format(CultureInfo.CurrentCulture, Strings.Review_FileFormat, format);
+        }
+    }
+
+    /// <summary>Opens the ComicVine search for the current words in the browser.</summary>
+    [RelayCommand]
+    private async Task OpenComicVineAsync()
+    {
+        var words = string.IsNullOrWhiteSpace(SearchText) ? Selected?.Title : SearchText.Trim();
+        if (!string.IsNullOrWhiteSpace(words))
+        {
+            await _urls.OpenAsync(new Uri("https://comicvine.gamespot.com/search/?i=&q=" + Uri.EscapeDataString(words)));
+        }
+    }
+
+    /// <summary>"Esta é a certa": the book of a pasted ComicVine link becomes the candidate.</summary>
+    [RelayCommand(CanExecute = nameof(IsIdle))]
+    private async Task UseComicVineLinkAsync(CancellationToken ct)
+    {
+        if (Selected is not { } item || _session.Identification is not { } queue)
+        {
+            return;
+        }
+
+        LinkError = null;
+        if (Metadata.Identification.BookIdentifier.ParseComicVineLink(ComicVineLink) is null)
+        {
+            LinkError = Strings.Review_LinkInvalid;
+            return;
+        }
+
+        Candidates.Clear();
+        Rows.Clear();
+        SelectedCandidate = null;
+        ConfidenceText = null;
+        SetBusy(Strings.Review_LoadingLink);
+        try
+        {
+            var found = await queue.UseComicVineLinkAsync(item.BookId, ComicVineLink!.Trim(), ct);
+            SetBusy(null);
+            Selected = null;
+            await RefreshAsync(ct, item.BookId);
+            if (found == 0)
+            {
+                LinkError = Strings.Review_LinkNotFound;
+            }
+        }
+        catch (MetadataSourceException ex)
+        {
+            _logger.LogWarning(ex, "Could not load the ComicVine link");
+            Selected = null;
+            await RefreshAsync(ct, item.BookId);
+            LinkError = IdentificationText.Notes($"comicvine:{ex.Error}");
+        }
+        finally
+        {
+            SetBusy(null);
+        }
     }
 
     /// <summary>Downloads (once) and decodes a candidate's cover; <c>null</c> when it cannot be had.</summary>

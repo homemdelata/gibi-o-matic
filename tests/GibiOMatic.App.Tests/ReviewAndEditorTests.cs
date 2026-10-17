@@ -129,6 +129,32 @@ public sealed class ReviewAndEditorTests : IDisposable
     }
 
     [Fact]
+    public async Task The_right_comicvine_page_can_be_pasted_and_the_file_pages_are_shown()
+    {
+        await ImportAsync("houseofslaughter_vol1.pdf");
+        var review = _app.Get<ReviewPageViewModel>();
+        await review.OnNavigatedToAsync(Ct);
+        await Task.Delay(200, Ct);
+        Assert.Equal("Arquivo: 1 páginas · PDF", review.FileInfoText);
+
+        review.SearchText = "House of Slaughter";
+        await review.OpenComicVineCommand.ExecuteAsync(null);
+        Assert.Contains("q=House%20of%20Slaughter", Assert.Single(_app.Urls.Opened).AbsoluteUri);
+
+        review.ComicVineLink = "https://example.com/wrong";
+        await review.UseComicVineLinkCommand.ExecuteAsync(null);
+        Assert.NotNull(review.LinkError);
+
+        review.ComicVineLink = "https://comicvine.gamespot.com/house-of-slaughter-1/4000-123/";
+        await review.UseComicVineLinkCommand.ExecuteAsync(null);
+
+        Assert.Null(review.LinkError);
+        var candidate = Assert.Single(review.Candidates);
+        Assert.Equal("House of Slaughter, Vol. 1", candidate.Title);
+        Assert.True(review.ConfidenceText?.Contains("100") == true, $"Confidence text: '{review.ConfidenceText}'");
+    }
+
+    [Fact]
     public async Task Safe_matches_are_approved_automatically_and_listed_by_the_library_filter()
     {
         _app.Identifier.Respond = (_, _) => [FakeIdentifier.Candidate("Saga, Vol. 1", "Saga", "1", 0.98, MatchReason.Isbn, MatchReason.SecondSource)];

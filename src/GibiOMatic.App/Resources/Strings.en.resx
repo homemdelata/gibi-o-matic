@@ -314,4 +314,15 @@
   <data name="Review_CoverFile" xml:space="preserve"><value>the file's cover</value></data>
   <data name="Review_CoverSource" xml:space="preserve"><value>the source's cover (the one on the chosen card)</value></data>
   <data name="Review_DownloadingCover" xml:space="preserve"><value>Downloading the source cover and applying…</value></data>
+  <data name="Review_Pages" xml:space="preserve"><value>{0} pages</value></data>
+  <data name="Review_FilePages" xml:space="preserve"><value>File: {0} pages · {1}</value></data>
+  <data name="Review_FileFormat" xml:space="preserve"><value>File: {0}</value></data>
+  <data name="Review_OpenComicVine" xml:space="preserve"><value>Open on ComicVine</value></data>
+  <data name="Review_OpenComicVineHelp" xml:space="preserve"><value>Opens the ComicVine search in the browser. Found the right book? Copy the page address and paste it below.</value></data>
+  <data name="Review_LinkPlaceholder" xml:space="preserve"><value>Paste the link of the right ComicVine page (…/4000-123456/ or …/4050-123456/)</value></data>
+  <data name="Review_UseLink" xml:space="preserve"><value>Use this one</value></data>
+  <data name="Review_LinkInvalid" xml:space="preserve"><value>That link does not look like a ComicVine issue (4000-…) or volume (4050-…).</value></data>
+  <data name="Review_LinkNotFound" xml:space="preserve"><value>ComicVine found nothing at that link.</value></data>
+  <data name="Review_LoadingLink" xml:space="preserve"><value>Loading the book from the ComicVine link…</value></data>
+  <data name="Reason_ChosenByUser" xml:space="preserve"><value>chosen by you</value></data>
 </root>

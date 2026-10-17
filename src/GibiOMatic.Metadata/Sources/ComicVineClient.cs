@@ -115,6 +115,15 @@ public sealed class ComicVineClient(SourceClient client, IComicVineKeyProvider k
             FullCoverOf(i));
     }
 
+    public async Task<CvVolume?> GetVolumeAsync(int id, CancellationToken ct)
+    {
+        var url = $"{Base}/volume/4050-{id.ToString(CultureInfo.InvariantCulture)}/?format=json&field_list=id,name,start_year,publisher,count_of_issues";
+        using var doc = await GetAsync("volume", url, ct);
+        return doc.RootElement.Prop("results") is { ValueKind: JsonValueKind.Object } v
+            ? new CvVolume(v.Int("id") ?? id, v.Str("name") ?? string.Empty, v.Int("start_year"), v.Prop("publisher")?.Str("name"), v.Int("count_of_issues") ?? 0)
+            : null;
+    }
+
     /// <summary>Checks the key with the smallest possible request.</summary>
     public async Task<bool> TestKeyAsync(CancellationToken ct)
     {

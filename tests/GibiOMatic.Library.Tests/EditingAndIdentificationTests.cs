@@ -31,6 +31,9 @@ internal sealed class FakeIdentifier : IBookIdentifier
     public Task<MetadataCandidate> CompleteAsync(MetadataCandidate candidate, CancellationToken ct) =>
         Task.FromResult(candidate with { Record = candidate.Record with { IsDetailed = true, Summary = "detailed" } });
 
+    public Task<IReadOnlyList<MetadataCandidate>> FromComicVineLinkAsync(BookMetadata book, string link, CancellationToken ct) =>
+        Task.FromResult<IReadOnlyList<MetadataCandidate>>(link.Contains("4000-") ? [Saga(1.0, MatchReason.ChosenByUser)] : []);
+
     public static MetadataCandidate Saga(double confidence, params MatchReason[] reasons) => new(new MetadataRecord
     {
         Source = SourceIds.ComicVine,
@@ -237,6 +240,21 @@ public sealed class EditingAndIdentificationTests : IAsyncLifetime
         Assert.Equal(MatchedBy.Auto, saved.Metadata.Review.MatchedBy);
         var cover = Path.Combine(_library.RootPath, saved.Folder, LibraryLayout.CoverFileName);
         Assert.True(SyntheticImages.Near(SyntheticImages.Inspect(await File.ReadAllBytesAsync(cover, Ct)).Center, SyntheticBooks.CoverColor));
+    }
+
+    [Fact]
+    public async Task A_comicvine_link_becomes_the_candidate_and_the_file_pages_are_known()
+    {
+        var book = await ImportAsync("houseofslaughter_vol1.pdf");
+        Assert.Equal(2, book.MainFile!.Pages);
+        var queue = await StartQueueAsync();
+
+        Assert.Equal(0, await queue.UseComicVineLinkAsync(book.Metadata.Id, "https://comicvine.gamespot.com/x/4050-1/", Ct));
+        Assert.Equal(1, await queue.UseComicVineLinkAsync(book.Metadata.Id, "https://comicvine.gamespot.com/x/4000-1/", Ct));
+
+        var item = (await queue.GetAsync(book.Metadata.Id, Ct))!;
+        Assert.Equal(IdentificationState.NeedsReview, item.State);
+        Assert.Equal(MatchReason.ChosenByUser, Assert.Single(item.Result!.Candidates).Reasons.Single());
     }
 
     [Fact]

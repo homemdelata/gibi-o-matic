@@ -121,6 +121,7 @@ public static class IdentificationText
             MatchReason.Year => Strings.Reason_Year,
             MatchReason.Kind => Strings.Reason_Kind,
             MatchReason.SecondSource => Strings.Reason_SecondSource,
+            MatchReason.ChosenByUser => Strings.Reason_ChosenByUser,
             _ => r.ToString(),
         });
         return string.Join(" + ", parts);
