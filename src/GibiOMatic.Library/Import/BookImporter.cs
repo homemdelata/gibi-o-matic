@@ -167,53 +167,11 @@ public sealed class BookImporter(IBookFileReader reader, ILogger<BookImporter> l
         await MetadataFile.WriteWithHistoryAsync(library.RootPath, metadataPath, updated, ct);
 
         // A publisher or series filled in by the new file moves the book to its proper folder (SPEC §4.2).
-        var folder = MoveFolderIfNeeded(library.RootPath, existing.Folder, LibraryNaming.BookFolder(updated));
+        var folder = BookFolders.MoveIfNeeded(library.RootPath, existing.Folder, LibraryNaming.BookFolder(updated), logger);
         metadataPath = Path.Combine(library.RootPath, folder, LibraryLayout.MetadataFileName);
         await index.UpsertBookAsync(new IndexedBook(updated, folder, File.GetLastWriteTimeUtc(metadataPath)), ct);
 
         logger.LogInformation("Added {Source} to book {BookId} ({Mode})", sourcePath, book.Id, replace ? "replace" : "keep both");
-    }
-
-    /// <summary>Moves a book folder and removes the parent folders left empty. Returns the folder in use.</summary>
-    private string MoveFolderIfNeeded(string root, string current, string wanted)
-    {
-        if (string.Equals(current, wanted, StringComparison.Ordinal))
-        {
-            return current;
-        }
-
-        var from = Path.Combine(root, current);
-        var to = Path.Combine(root, wanted);
-        if (Directory.Exists(to))
-        {
-            logger.LogWarning("Not moving {From}: {To} already exists", current, wanted);
-            return current;
-        }
-
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(to)!);
-            Directory.Move(from, to);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            logger.LogWarning(ex, "Could not move {From} to {To}", current, wanted);
-            return current;
-        }
-
-        var books = Path.GetFullPath(LibraryLayout.BooksPath(root));
-        for (var parent = Path.GetDirectoryName(from); parent is not null && Path.GetFullPath(parent).Length > books.Length; parent = Path.GetDirectoryName(parent))
-        {
-            if (Directory.EnumerateFileSystemEntries(parent).Any())
-            {
-                break;
-            }
-
-            Directory.Delete(parent);
-        }
-
-        logger.LogInformation("Moved book folder {From} to {To}", current, wanted);
-        return wanted;
     }
 
     /// <summary>Existing metadata wins; the new file only fills what is empty.</summary>

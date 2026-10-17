@@ -59,6 +59,20 @@ internal static class IndexMigrations
             value  TEXT NOT NULL
         );
         """,
+
+        // 3: online identification of each book (candidates for the Review)
+        """
+        CREATE TABLE identifications (
+            book_id      TEXT PRIMARY KEY,
+            state        TEXT NOT NULL,
+            result_json  TEXT,
+            confidence   REAL,
+            message      TEXT,
+            skipped      INTEGER NOT NULL DEFAULT 0,
+            updated_at   TEXT NOT NULL
+        );
+        CREATE INDEX ix_identifications_state ON identifications (state);
+        """,
     ];
 
     public static int LatestVersion => All.Count;
