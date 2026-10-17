@@ -1,0 +1,58 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GibiOMatic.App.ViewModels"
+             xmlns:c="using:GibiOMatic.App.Controls"
+             xmlns:conv="using:GibiOMatic.App.Converters"
+             xmlns:r="using:GibiOMatic.App.Resources"
+             x:Class="GibiOMatic.App.Views.ShellView"
+             x:DataType="vm:ShellViewModel">
+  <Grid ColumnDefinitions="Auto,*">
+    <!-- Sidebar -->
+    <Border Grid.Column="0" Width="{StaticResource SidebarWidth}" Padding="16,24"
+            Background="{DynamicResource SurfaceBrush}"
+            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="8,0,8,28">
+          <Border Width="34" Height="34" CornerRadius="9" Background="{DynamicResource AccentBrush}">
+            <c:StrokeIcon Data="{StaticResource Icon.Logo}" Width="20" Height="20" StrokeThickness="2.2"
+                          Foreground="{DynamicResource OnAccentBrush}" />
+          </Border>
+          <TextBlock Classes="brand" Text="Gibi-o-matic" VerticalAlignment="Center" />
+        </StackPanel>
+
+        <!-- Status of the archive (destinations join in F3/F4) -->
+        <Border DockPanel.Dock="Bottom" Padding="14" CornerRadius="12"
+                Background="{DynamicResource InputBrush}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+          <Grid ColumnDefinitions="Auto,Auto,*">
+            <Ellipse Width="8" Height="8" Fill="{DynamicResource OkBrush}" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Margin="8,0,10,0" FontSize="12" FontWeight="Medium"
+                       Text="{x:Static r:Strings.Status_Archive}" />
+            <TextBlock Grid.Column="2" Classes="mono muted" FontSize="12" HorizontalAlignment="Right"
+                       TextTrimming="PrefixCharacterEllipsis"
+                       Text="{Binding LibraryPath}" ToolTip.Tip="{Binding LibraryPath}" />
+          </Grid>
+        </Border>
+
+        <ListBox Classes="nav" ItemsSource="{Binding NavItems}" SelectedItem="{Binding SelectedNavItem}"
+                 AutomationProperties.Name="{x:Static r:Strings.Nav_Main}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:NavItemViewModel">
+              <Grid ColumnDefinitions="Auto,*,Auto">
+                <c:StrokeIcon Data="{Binding Page, Converter={x:Static conv:NavIconConverter.Instance}}" />
+                <TextBlock Grid.Column="1" Classes="nav-label" Margin="12,0" VerticalAlignment="Center"
+                           Text="{Binding Label}" />
+                <TextBlock Grid.Column="2" Classes="mono muted" FontSize="12" VerticalAlignment="Center"
+                           Text="{Binding Count}"
+                           IsVisible="{Binding Count, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+    </Border>
+
+    <!-- Current page -->
+    <ContentControl Grid.Column="1" Content="{Binding CurrentPage}" />
+  </Grid>
+</UserControl>

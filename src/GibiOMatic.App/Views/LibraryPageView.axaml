@@ -1,0 +1,36 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GibiOMatic.App.ViewModels"
+             xmlns:c="using:GibiOMatic.App.Controls"
+             xmlns:r="using:GibiOMatic.App.Resources"
+             x:Class="GibiOMatic.App.Views.LibraryPageView"
+             x:DataType="vm:LibraryPageViewModel">
+  <DockPanel Margin="{StaticResource PagePadding}">
+    <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,22">
+      <TextBlock Classes="h1" Text="{Binding Title}" />
+      <TextBlock Classes="muted" Text="{Binding Subtitle}" />
+    </StackPanel>
+
+    <!-- Empty state -->
+    <StackPanel IsVisible="{Binding IsEmpty}" MaxWidth="520" Spacing="14"
+                HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,80">
+      <Border Width="72" Height="72" CornerRadius="18" HorizontalAlignment="Center"
+              Background="{DynamicResource CardBrush}"
+              BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+        <c:StrokeIcon Data="{StaticResource Icon.Library}" Width="32" Height="32"
+                      Foreground="{DynamicResource AccentBrush}" />
+      </Border>
+      <TextBlock Classes="h2" HorizontalAlignment="Center" Text="{x:Static r:Strings.Library_EmptyTitle}" />
+      <TextBlock Classes="muted" TextAlignment="Center" TextWrapping="Wrap"
+                 Text="{x:Static r:Strings.Library_EmptyHelp}" />
+      <SelectableTextBlock Classes="mono" HorizontalAlignment="Center" TextWrapping="Wrap"
+                           Foreground="{DynamicResource TextSecondaryBrush}" Text="{Binding LibraryPath}" />
+      <Button Classes="secondary" HorizontalAlignment="Center" Margin="0,8,0,0" IsEnabled="False">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <c:StrokeIcon Data="{StaticResource Icon.Import}" Width="17" Height="17" />
+          <TextBlock Text="{x:Static r:Strings.Library_Import}" VerticalAlignment="Center" />
+        </StackPanel>
+      </Button>
+    </StackPanel>
+  </DockPanel>
+</UserControl>

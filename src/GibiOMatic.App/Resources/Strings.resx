@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Keep Strings.resx (pt-BR, default) and Strings.en.resx in sync: every key must exist in both. -->
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Nav_Library" xml:space="preserve"><value>Biblioteca</value></data>
+  <data name="Nav_Inbox" xml:space="preserve"><value>Entrada</value></data>
+  <data name="Nav_Review" xml:space="preserve"><value>Revisão</value></data>
+  <data name="Nav_Editor" xml:space="preserve"><value>Editor</value></data>
+  <data name="Nav_Destinations" xml:space="preserve"><value>Destinos</value></data>
+  <data name="Nav_Settings" xml:space="preserve"><value>Configurações</value></data>
+  <data name="Nav_Main" xml:space="preserve"><value>Navegação principal</value></data>
+  <data name="Status_Archive" xml:space="preserve"><value>Arquivo</value></data>
+  <data name="Welcome_Title" xml:space="preserve"><value>Bem-vindo ao Gibi-o-matic</value></data>
+  <data name="Welcome_Subtitle" xml:space="preserve"><value>Guarde seus quadrinhos originais com metadados corretos e gere cópias de leitura para o Komga e o Kindle.</value></data>
+  <data name="Welcome_CreateTitle" xml:space="preserve"><value>Criar biblioteca nova</value></data>
+  <data name="Welcome_CreateHelp" xml:space="preserve"><value>Escolha uma pasta vazia. Os originais e os metadados vão ficar nela.</value></data>
+  <data name="Welcome_OpenTitle" xml:space="preserve"><value>Abrir biblioteca existente</value></data>
+  <data name="Welcome_OpenHelp" xml:space="preserve"><value>Uma pasta que já tem o arquivo gibiomatic-library.json, por exemplo no Google Drive.</value></data>
+  <data name="Welcome_Footer" xml:space="preserve"><value>Os arquivos originais nunca são alterados.</value></data>
+  <data name="Picker_CreateTitle" xml:space="preserve"><value>Escolha a pasta da nova biblioteca</value></data>
+  <data name="Picker_OpenTitle" xml:space="preserve"><value>Escolha a pasta da biblioteca</value></data>
+  <data name="Picker_InboxTitle" xml:space="preserve"><value>Escolha a pasta de entrada</value></data>
+  <data name="Error_AlreadyALibrary" xml:space="preserve"><value>Essa pasta já tem uma biblioteca. Use "Abrir biblioteca existente".</value></data>
+  <data name="Error_NotALibrary" xml:space="preserve"><value>Essa pasta não tem uma biblioteca do Gibi-o-matic (falta o arquivo gibiomatic-library.json).</value></data>
+  <data name="Error_InvalidManifest" xml:space="preserve"><value>O arquivo gibiomatic-library.json dessa pasta está danificado.</value></data>
+  <data name="Error_UnsupportedFormat" xml:space="preserve"><value>Essa biblioteca foi criada por uma versão mais nova do Gibi-o-matic. Atualize o app para abri-la.</value></data>
+  <data name="Error_FileAccess" xml:space="preserve"><value>Não foi possível acessar a pasta: {0}</value></data>
+  <data name="Error_RememberedLibrary" xml:space="preserve"><value>Não foi possível abrir a biblioteca em {0}. {1}</value></data>
+  <data name="Library_SubtitleOne" xml:space="preserve"><value>1 livro</value></data>
+  <data name="Library_SubtitleMany" xml:space="preserve"><value>{0} livros</value></data>
+  <data name="Library_EmptyTitle" xml:space="preserve"><value>Sua biblioteca está vazia</value></data>
+  <data name="Library_EmptyHelp" xml:space="preserve"><value>A importação de quadrinhos chega na próxima versão. A biblioteca já está criada em:</value></data>
+  <data name="Library_Import" xml:space="preserve"><value>Importar arquivos…</value></data>
+  <data name="Inbox_Subtitle" xml:space="preserve"><value>Arquivos novos chegam aqui para serem identificados e importados.</value></data>
+  <data name="Review_Subtitle" xml:space="preserve"><value>Livros cujos metadados precisam da sua confirmação.</value></data>
+  <data name="Editor_Subtitle" xml:space="preserve"><value>Edite os metadados de um livro ou de vários de uma vez.</value></data>
+  <data name="Destinations_Subtitle" xml:space="preserve"><value>Komga, Kindle e outros lugares para onde as cópias de leitura vão.</value></data>
+  <data name="Placeholder_Title" xml:space="preserve"><value>Em construção</value></data>
+  <data name="Placeholder_Help" xml:space="preserve"><value>Esta tela chega numa próxima fase.</value></data>
+  <data name="Settings_Subtitle" xml:space="preserve"><value>Komga, Kindle e outros lugares de leitura ficam em Destinos.</value></data>
+  <data name="Settings_TabFolders" xml:space="preserve"><value>Pastas</value></data>
+  <data name="Settings_TabGeneral" xml:space="preserve"><value>Geral</value></data>
+  <data name="Settings_LibraryLabel" xml:space="preserve"><value>Arquivo (biblioteca)</value></data>
+  <data name="Settings_LibraryHelp" xml:space="preserve"><value>Onde ficam os originais e os metadados.</value></data>
+  <data name="Settings_OpenOther" xml:space="preserve"><value>Abrir outra…</value></data>
+  <data name="Settings_RebuildIndex" xml:space="preserve"><value>Reconstruir índice</value></data>
+  <data name="Settings_RebuildDone" xml:space="preserve"><value>Índice reconstruído: {0} livros.</value></data>
+  <data name="Settings_RebuildIssues" xml:space="preserve"><value>Índice reconstruído: {0} livros. {1} arquivos metadata.json com problema foram ignorados (detalhes no log).</value></data>
+  <data name="Settings_InboxLabel" xml:space="preserve"><value>Entrada</value></data>
+  <data name="Settings_InboxHelp" xml:space="preserve"><value>Pasta onde chegam os downloads novos. Usada pela importação automática.</value></data>
+  <data name="Settings_Language" xml:space="preserve"><value>Idioma</value></data>
+  <data name="Settings_Theme" xml:space="preserve"><value>Tema</value></data>
+  <data name="Settings_RestartNotice" xml:space="preserve"><value>O novo idioma vale depois de reiniciar o app.</value></data>
+  <data name="Settings_RestoreDefaults" xml:space="preserve"><value>Restaurar padrão</value></data>
+  <data name="Settings_Save" xml:space="preserve"><value>Salvar</value></data>
+  <data name="Settings_Saved" xml:space="preserve"><value>Configurações salvas.</value></data>
+  <data name="Theme_Dark" xml:space="preserve"><value>Escuro</value></data>
+  <data name="Theme_Light" xml:space="preserve"><value>Claro (em breve)</value></data>
+  <data name="Theme_System" xml:space="preserve"><value>Seguir o sistema (em breve)</value></data>
+  <data name="Common_Choose" xml:space="preserve"><value>Escolher</value></data>
+</root>

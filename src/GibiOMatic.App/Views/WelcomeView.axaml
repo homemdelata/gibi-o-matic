@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GibiOMatic.App.ViewModels"
+             xmlns:c="using:GibiOMatic.App.Controls"
+             xmlns:r="using:GibiOMatic.App.Resources"
+             x:Class="GibiOMatic.App.Views.WelcomeView"
+             x:DataType="vm:WelcomeViewModel">
+  <ScrollViewer>
+    <StackPanel MaxWidth="760" Margin="32,64" Spacing="28" VerticalAlignment="Center">
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <Border Width="44" Height="44" CornerRadius="11" Background="{DynamicResource AccentBrush}">
+          <c:StrokeIcon Data="{StaticResource Icon.Logo}" Width="26" Height="26" StrokeThickness="2.2"
+                        Foreground="{DynamicResource OnAccentBrush}" />
+        </Border>
+        <TextBlock Classes="brand" FontSize="26" Text="Gibi-o-matic" VerticalAlignment="Center" />
+      </StackPanel>
+
+      <StackPanel Spacing="8">
+        <TextBlock Classes="h1" Text="{x:Static r:Strings.Welcome_Title}" TextWrapping="Wrap" />
+        <TextBlock Classes="muted" FontSize="15" Text="{x:Static r:Strings.Welcome_Subtitle}" TextWrapping="Wrap" />
+      </StackPanel>
+
+      <Grid ColumnDefinitions="*,16,*">
+        <Button Classes="choice" Command="{Binding CreateLibraryCommand}">
+          <StackPanel Spacing="14">
+            <Border Classes="icon-tile" HorizontalAlignment="Left" Background="{DynamicResource AccentBrush}">
+              <c:StrokeIcon Data="{StaticResource Icon.FolderPlus}" Width="22" Height="22"
+                            Foreground="{DynamicResource OnAccentBrush}" />
+            </Border>
+            <TextBlock Classes="h3" Text="{x:Static r:Strings.Welcome_CreateTitle}" />
+            <TextBlock Classes="help" FontSize="13.5" Text="{x:Static r:Strings.Welcome_CreateHelp}" />
+          </StackPanel>
+        </Button>
+        <Button Grid.Column="2" Classes="choice" Command="{Binding OpenLibraryCommand}">
+          <StackPanel Spacing="14">
+            <Border Classes="icon-tile" HorizontalAlignment="Left">
+              <c:StrokeIcon Data="{StaticResource Icon.FolderOpen}" Width="22" Height="22"
+                            Foreground="{DynamicResource AccentBrush}" />
+            </Border>
+            <TextBlock Classes="h3" Text="{x:Static r:Strings.Welcome_OpenTitle}" />
+            <TextBlock Classes="help" FontSize="13.5" Text="{x:Static r:Strings.Welcome_OpenHelp}" />
+          </StackPanel>
+        </Button>
+      </Grid>
+
+      <TextBlock Classes="error" Text="{Binding ErrorMessage}"
+                 IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+      <TextBlock Classes="help" Text="{x:Static r:Strings.Welcome_Footer}" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

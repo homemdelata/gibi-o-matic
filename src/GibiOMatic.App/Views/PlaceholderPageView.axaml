@@ -1,0 +1,25 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GibiOMatic.App.ViewModels"
+             xmlns:c="using:GibiOMatic.App.Controls"
+             xmlns:r="using:GibiOMatic.App.Resources"
+             x:Class="GibiOMatic.App.Views.PlaceholderPageView"
+             x:DataType="vm:PlaceholderPageViewModel">
+  <DockPanel Margin="{StaticResource PagePadding}">
+    <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,22">
+      <TextBlock Classes="h1" Text="{Binding Title}" />
+      <TextBlock Classes="muted" Text="{Binding Subtitle}" TextWrapping="Wrap" />
+    </StackPanel>
+    <Border Classes="card" VerticalAlignment="Top" HorizontalAlignment="Left" Padding="22">
+      <StackPanel Orientation="Horizontal" Spacing="16">
+        <Border Classes="icon-tile">
+          <c:StrokeIcon Data="{StaticResource Icon.Editor}" Foreground="{DynamicResource WarnTextBrush}" />
+        </Border>
+        <StackPanel Spacing="2" VerticalAlignment="Center">
+          <TextBlock Classes="strong" Text="{x:Static r:Strings.Placeholder_Title}" />
+          <TextBlock Classes="help" Text="{x:Static r:Strings.Placeholder_Help}" />
+        </StackPanel>
+      </StackPanel>
+    </Border>
+  </DockPanel>
+</UserControl>

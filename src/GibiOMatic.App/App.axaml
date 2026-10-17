@@ -1,0 +1,35 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GibiOMatic.App.ViewModels"
+             xmlns:v="using:GibiOMatic.App.Views"
+             x:Class="GibiOMatic.App.App"
+             Name="Gibi-o-matic"
+             RequestedThemeVariant="Dark">
+
+  <Application.DataTemplates>
+    <DataTemplate DataType="vm:WelcomeViewModel"><v:WelcomeView /></DataTemplate>
+    <DataTemplate DataType="vm:ShellViewModel"><v:ShellView /></DataTemplate>
+    <DataTemplate DataType="vm:LibraryPageViewModel"><v:LibraryPageView /></DataTemplate>
+    <DataTemplate DataType="vm:SettingsPageViewModel"><v:SettingsPageView /></DataTemplate>
+    <DataTemplate DataType="vm:PlaceholderPageViewModel"><v:PlaceholderPageView /></DataTemplate>
+  </Application.DataTemplates>
+
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="/Themes/Tokens.axaml" />
+        <ResourceInclude Source="/Themes/Icons.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Dark" Accent="#F5C542" RegionColor="#121317" AltHigh="#121317"
+                               BaseHigh="#ECEDEF" ErrorText="#F2677A" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
+    <StyleInclude Source="/Themes/Controls.axaml" />
+  </Application.Styles>
+</Application>

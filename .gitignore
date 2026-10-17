@@ -425,6 +425,8 @@ test-results/
 # Mac bundle stuff
 *.dmg
 *.app
+# ...but not the Avalonia project (Windows matches ignore patterns case-insensitively)
+!src/GibiOMatic.App/
 
 # content below from: https://github.com/github/gitignore/blob/master/Global/macOS.gitignore
 # General

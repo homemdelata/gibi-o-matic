@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>GibiOMatic</AssemblyName>
+    <NeutralLanguage>pt-BR</NeutralLanguage>
+    <RootNamespace>GibiOMatic.App</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <!-- Development-only ComicVine key lives in .NET user secrets, outside the repository. -->
+    <UserSecretsId>3c6e08f6-15a8-4547-9a68-52954af24a45</UserSecretsId>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GibiOMatic.Core\GibiOMatic.Core.csproj" />
+    <ProjectReference Include="..\GibiOMatic.Library\GibiOMatic.Library.csproj" />
+    <ProjectReference Include="..\GibiOMatic.Metadata\GibiOMatic.Metadata.csproj" />
+    <ProjectReference Include="..\GibiOMatic.Conversion\GibiOMatic.Conversion.csproj" />
+    <ProjectReference Include="..\GibiOMatic.Destinations\GibiOMatic.Destinations.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Extensions.Logging" />
+    <PackageReference Include="Serilog.Sinks.File" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+
+  <!-- UI strings: pt-BR is the neutral (default) culture, English is a satellite. -->
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\Strings.resx">
+      <StronglyTypedFileName>$(IntermediateOutputPath)Strings.Designer.cs</StronglyTypedFileName>
+      <StronglyTypedLanguage>CSharp</StronglyTypedLanguage>
+      <StronglyTypedNamespace>GibiOMatic.App.Resources</StronglyTypedNamespace>
+      <StronglyTypedClassName>Strings</StronglyTypedClassName>
+      <PublicClass>true</PublicClass>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="GibiOMatic.App.Tests" />
+  </ItemGroup>
+</Project>

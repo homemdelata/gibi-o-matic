@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\GibiOMatic.App\GibiOMatic.App.csproj" />
+  </ItemGroup>
+</Project>
