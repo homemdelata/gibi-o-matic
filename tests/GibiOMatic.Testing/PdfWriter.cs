@@ -44,8 +44,10 @@ internal static class PdfWriter
 
             var jpeg = SyntheticImages.Jpeg(200, 300, i == 0 ? SyntheticBooks.CoverColor : SyntheticBooks.PageColor);
             SetStream(image, "/Type /XObject /Subtype /Image /Width 200 /Height 300 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode", jpeg);
-            SetStream(content, string.Empty, Encoding.ASCII.GetBytes($"q {PageWidthPt} 0 0 {PageHeightPt} 0 0 cm /Im0 Do Q"));
-            Set(page, $"<< /Type /Page /Parent {pagesNode} 0 R /MediaBox [0 0 {PageWidthPt} {PageHeightPt}] /Resources << /XObject << /Im0 {image} 0 R >> >> /Contents {content} 0 R >>");
+            var text = options.TextOverPages ? " BT /F1 36 Tf 40 60 Td (POW!) Tj ET" : string.Empty;
+            SetStream(content, string.Empty, Encoding.ASCII.GetBytes($"q {PageWidthPt} 0 0 {PageHeightPt} 0 0 cm /Im0 Do Q{text}"));
+            var font = options.TextOverPages ? " /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >>" : string.Empty;
+            Set(page, $"<< /Type /Page /Parent {pagesNode} 0 R /MediaBox [0 0 {PageWidthPt} {PageHeightPt}] /Resources << /XObject << /Im0 {image} 0 R >>{font} >> /Contents {content} 0 R >>");
         }
 
         Set(pagesNode, $"<< /Type /Pages /Kids [{string.Join(' ', kids.Select(k => $"{k} 0 R"))}] /Count {kids.Count} >>");

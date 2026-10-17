@@ -212,6 +212,9 @@ public static class SyntheticBooks
 
         /// <summary>An uncompressed XMP packet attached to the catalog.</summary>
         public string? Xmp { get; init; }
+
+        /// <summary>Puts a line of text over every page (like lettering over the art), so pages must be rendered.</summary>
+        public bool TextOverPages { get; init; }
     }
 
     /// <summary>A PDF whose pages are full-page JPEG images (page 1 red, the others blue).</summary>

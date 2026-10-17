@@ -84,6 +84,58 @@ internal static unsafe partial class PdfiumNative
     [LibraryImport(Library)]
     public static partial CULong FPDF_GetMetaText(nint document, byte* tag, void* buffer, CULong length);
 
+    // Page objects, to tell a page that is one full-page JPEG from one with text or vectors.
+    public const int PageObjectText = 1;
+    public const int PageObjectImage = 3;
+
+    public const int ColorSpaceGray = 1;
+    public const int ColorSpaceRgb = 2;
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct Matrix
+    {
+        public float A, B, C, D, E, F;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ImageMetadata
+    {
+        public uint Width;
+        public uint Height;
+        public float HorizontalDpi;
+        public float VerticalDpi;
+        public uint BitsPerPixel;
+        public int ColorSpace;
+        public int MarkedContentId;
+    }
+
+    [LibraryImport(Library)]
+    public static partial int FPDFPage_CountObjects(nint page);
+
+    [LibraryImport(Library)]
+    public static partial nint FPDFPage_GetObject(nint page, int index);
+
+    [LibraryImport(Library)]
+    public static partial int FPDFPageObj_GetType(nint pageObject);
+
+    [LibraryImport(Library)]
+    public static partial int FPDFPageObj_GetBounds(nint pageObject, out float left, out float bottom, out float right, out float top);
+
+    [LibraryImport(Library)]
+    public static partial int FPDFPageObj_GetMatrix(nint pageObject, out Matrix matrix);
+
+    [LibraryImport(Library)]
+    public static partial int FPDFImageObj_GetImageFilterCount(nint imageObject);
+
+    [LibraryImport(Library)]
+    public static partial CULong FPDFImageObj_GetImageFilter(nint imageObject, int index, byte* buffer, CULong length);
+
+    [LibraryImport(Library)]
+    public static partial CULong FPDFImageObj_GetImageDataRaw(nint imageObject, byte* buffer, CULong length);
+
+    [LibraryImport(Library)]
+    public static partial int FPDFImageObj_GetImageMetadata(nint imageObject, nint page, out ImageMetadata metadata);
+
     /// <summary>Read callback for <see cref="FPDF_LoadCustomDocument"/>; <paramref name="param"/> is a GCHandle to a Stream.</summary>
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     public static int ReadBlock(nint param, CULong position, byte* buffer, CULong size)

@@ -131,6 +131,122 @@ internal sealed unsafe class PdfDocument : IDisposable
         }
     }
 
+    private const int JpegQuality = 92;
+    private const int DefaultRenderHeight = 2400;
+    private const int MinRenderHeight = 1200;
+    private const int MaxRenderHeight = 3200;
+    private const float CoverTolerance = 2f;
+
+    /// <summary>
+    /// The page as an image (SPEC §9.2, validated in reference/python/pdf2epub.py): when the page is
+    /// a single upright RGB/gray JPEG covering it, with no text or vectors on top, its original bytes
+    /// are returned untouched; otherwise the page is rendered at the resolution of its largest
+    /// image and saved as JPEG quality 92.
+    /// </summary>
+    public PdfPageImage GetPageImage(int index)
+    {
+        int targetHeight;
+        lock (PdfiumNative.Sync)
+        {
+            var page = PdfiumNative.FPDF_LoadPage(_document, index);
+            if (page == 0)
+            {
+                throw new PdfException($"Page {index + 1} could not be loaded.");
+            }
+
+            try
+            {
+                var heightPt = PdfiumNative.FPDF_GetPageHeightF(page);
+                var widthPt = PdfiumNative.FPDF_GetPageWidthF(page);
+                var images = new List<(nint Object, PdfiumNative.ImageMetadata Metadata, float Left, float Bottom, float Right, float Top)>();
+                var onlyImages = true;
+                var count = PdfiumNative.FPDFPage_CountObjects(page);
+                for (var i = 0; i < count; i++)
+                {
+                    var obj = PdfiumNative.FPDFPage_GetObject(page, i);
+                    if (PdfiumNative.FPDFPageObj_GetType(obj) != PdfiumNative.PageObjectImage)
+                    {
+                        onlyImages = false; // text, vector paths, shadings, forms
+                        continue;
+                    }
+
+                    PdfiumNative.FPDFPageObj_GetBounds(obj, out var left, out var bottom, out var right, out var top);
+                    PdfiumNative.FPDFImageObj_GetImageMetadata(obj, page, out var metadata);
+                    images.Add((obj, metadata, left, bottom, right, top));
+                }
+
+                if (onlyImages && images.Count == 1 && OriginalJpeg(images[0].Object, images[0].Metadata) is { } jpeg)
+                {
+                    var (_, md, l, b, r, t) = images[0];
+                    var covers = l <= CoverTolerance && b <= CoverTolerance && r >= widthPt - CoverTolerance && t >= heightPt - CoverTolerance;
+                    if (covers && PdfiumNative.FPDFPageObj_GetMatrix(images[0].Object, out var m) != 0
+                        && Math.Abs(m.B) < 1e-6 && Math.Abs(m.C) < 1e-6 && m.A > 0 && m.D > 0)
+                    {
+                        return new PdfPageImage(jpeg, (int)md.Width, (int)md.Height, IsOriginal: true);
+                    }
+                }
+
+                // Render at the resolution of the largest image, without upscaling a lot.
+                targetHeight = DefaultRenderHeight;
+                var scaled = images
+                    .Where(img => img.Top - img.Bottom > 1 && img.Metadata.Height > 0)
+                    .Select(img => img.Metadata.Height * heightPt / (img.Top - img.Bottom))
+                    .ToList();
+                if (scaled.Count > 0)
+                {
+                    targetHeight = (int)scaled.Max();
+                }
+
+                targetHeight = Math.Clamp(targetHeight, MinRenderHeight, MaxRenderHeight);
+            }
+            finally
+            {
+                PdfiumNative.FPDF_ClosePage(page);
+            }
+        }
+
+        using var bitmap = RenderPage(index, targetHeight);
+        using var image = SKImage.FromBitmap(bitmap);
+        using var data = image.Encode(SKEncodedImageFormat.Jpeg, JpegQuality);
+        return new PdfPageImage(data.ToArray(), bitmap.Width, bitmap.Height, IsOriginal: false);
+    }
+
+    /// <summary>The raw JPEG of an image object when it is a plain DCT-encoded RGB or gray image.</summary>
+    private static byte[]? OriginalJpeg(nint imageObject, PdfiumNative.ImageMetadata metadata)
+    {
+        if (metadata.ColorSpace is not (PdfiumNative.ColorSpaceRgb or PdfiumNative.ColorSpaceGray)
+            || PdfiumNative.FPDFImageObj_GetImageFilterCount(imageObject) != 1)
+        {
+            return null;
+        }
+
+        var filterLength = (int)PdfiumNative.FPDFImageObj_GetImageFilter(imageObject, 0, null, default).Value;
+        var filter = new byte[Math.Max(filterLength, 1)];
+        fixed (byte* f = filter)
+        {
+            PdfiumNative.FPDFImageObj_GetImageFilter(imageObject, 0, f, new CULong((nuint)filter.Length));
+        }
+
+        if (Encoding.ASCII.GetString(filter).TrimEnd('\0') != "DCTDecode")
+        {
+            return null;
+        }
+
+        var length = (int)PdfiumNative.FPDFImageObj_GetImageDataRaw(imageObject, null, default).Value;
+        if (length < 4)
+        {
+            return null;
+        }
+
+        var bytes = new byte[length];
+        fixed (byte* b = bytes)
+        {
+            PdfiumNative.FPDFImageObj_GetImageDataRaw(imageObject, b, new CULong((nuint)length));
+        }
+
+        return bytes[0] == 0xFF && bytes[1] == 0xD8 ? bytes : null;
+    }
+
     public void Dispose()
     {
         lock (PdfiumNative.Sync)
@@ -151,3 +267,6 @@ internal sealed unsafe class PdfDocument : IDisposable
         _stream.Dispose();
     }
 }
+
+/// <param name="IsOriginal">The JPEG bytes stored in the PDF, untouched (no recompression).</param>
+internal sealed record PdfPageImage(byte[] Jpeg, int Width, int Height, bool IsOriginal);
