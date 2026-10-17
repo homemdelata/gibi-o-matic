@@ -135,7 +135,7 @@ public sealed class ReviewAndEditorTests : IDisposable
         var review = _app.Get<ReviewPageViewModel>();
         await review.OnNavigatedToAsync(Ct);
         await Task.Delay(200, Ct);
-        Assert.Equal("Arquivo: 1 páginas · PDF", review.FileInfoText);
+        Assert.Equal(string.Format(System.Globalization.CultureInfo.CurrentCulture, Resources.Strings.Review_FilePages, 1, "PDF"), review.FileInfoText);
 
         review.SearchText = "House of Slaughter";
         await review.OpenComicVineCommand.ExecuteAsync(null);
