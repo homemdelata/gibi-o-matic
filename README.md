@@ -9,5 +9,8 @@ App desktop (C# / Avalonia) para organizar uma coleção pessoal de quadrinhos d
 
 > Status: em planejamento. Veja [`docs/SPEC.md`](docs/SPEC.md).
 
+## Licença
+MIT — veja [`LICENSE`](LICENSE).
+
 ## Design
 Protótipo da interface: Claude Design (link privado do autor).

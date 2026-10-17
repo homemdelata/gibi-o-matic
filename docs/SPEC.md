@@ -226,10 +226,14 @@ public interface IDestination {
 - **Como o Komga monta as séries**: cada subpasta que contém livros vira uma série, em qualquer profundidade, e cada arquivo vira um livro da série da pasta onde está. Os livros de uma pasta de one-shots viram, cada um, uma série de um livro só. O nome dessa pasta é a opção "One-Shots directory" da biblioteca no Komga.
 - **Saída padrão** (modelo editável em Avançado):
   - livros com série: `{Pasta}/{Série}/{Série} v{Número:00} ({Ano}).cbz`;
-  - one-shots: `{Pasta}/_oneshots/{Título} ({Ano}).cbz`.
+  - one-shots: `{Pasta}/{Pasta de one-shots}/{Título} ({Ano}).cbz`.
 - **Por que não `Editora/Série/`**: a pasta da editora não contém arquivos, então em tese o Komga a ignora, mas isso **não foi testado**. A editora já vai no `ComicInfo.xml` e o Komga permite filtrar por ela. Fica como modelo opcional, a validar na F3.
 - **One-shot**: um livro sem série, ou cuja série tem um livro só (graphic novel independente, como *Plutona*). Vem da identificação (ComicVine com 1 edição) e pode ser marcado à mão no Editor ("É one-shot").
-- **Assistente**: pede o nome da pasta de one-shots (padrão `_oneshots`) e mostra o aviso "Configure o mesmo nome em *One-Shots directory* na biblioteca do Komga".
+- **Configuração "Pasta de one-shots"** do destino, espelhando a opção *One-Shots directory* do Komga:
+  - padrão `_oneshots`;
+  - vazia = sem tratamento especial, e os one-shots ficam cada um na sua própria pasta de série;
+  - o assistente e a tela do destino lembram de configurar o mesmo nome no Komga;
+  - se o endereço e a chave do Komga estiverem configurados, o app lê a opção da biblioteca e avisa se os nomes forem diferentes.
 - **Geração do CBZ**:
   - original CBZ: copia e injeta ou substitui o `ComicInfo.xml`;
   - original CBR: extrai e reempacota como CBZ;
@@ -349,13 +353,13 @@ Detecção real de quadros (Panel View com regiões por quadro), outros destinos
 
 ## 16. Questões em aberto
 
-1. Nome definitivo do app ("Gibiteca" é provisório; em discussão um nome no estilo "-inator").
-2. Licença, caso o projeto seja aberto: proposta **MIT**. Todas as dependências são permissivas (KCC é ISC), então qualquer licença funciona. A **GPL-3.0** seria a alternativa se a intenção for obrigar forks a continuarem abertos.
-3. Endpoints e autenticação da API do Komga para disparar o scan.
-4. Comportamento do KCC sem KindleGen no Linux.
-5. Pastas de editora no Komga (`Editora/Série/`): testar na F3.
+1. Nome definitivo do app ("Gibiteca" é provisório; em discussão um nome no estilo "-o-matic").
+2. Endpoints e autenticação da API do Komga para disparar o scan.
+3. Comportamento do KCC sem KindleGen no Linux.
+4. Pastas de editora no Komga (`Editora/Série/`): testar na F3.
 
 **Decididas (2026-10-17)**:
+- Licença MIT (arquivo `LICENSE`).
 - Sem migração do Calibre; carga inicial a partir dos originais.
 - Aprovação automática ligada, com as regras de segurança da seção 8.2.
 - Livros que não são HQ: opção por destino, conforme a capacidade do tipo.
