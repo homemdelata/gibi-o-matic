@@ -30,8 +30,20 @@ public sealed class ReviewAndEditorTests : IDisposable
         await Session.Queue.WaitUntilIdleAsync(Ct);
         await Session.Queue.ConfirmAsync(Ct);
         await Session.Queue.WaitUntilIdleAsync(Ct);
-        await Task.Delay(50, Ct);
-        await Session.Identification!.WaitUntilIdleAsync(Ct);
+
+        // Imported books enter the identification queue through an event; wait until every one was handled.
+        var books = await Session.Index!.GetBooksAsync(Ct);
+        for (var waited = 0; waited < 10_000; waited += 25)
+        {
+            var counts = await Session.Identification!.GetCountsAsync(Ct);
+            if (counts.Queued == 0 && counts.ToReview + counts.AutoApproved + counts.Approved >= books.Count)
+            {
+                break;
+            }
+
+            await Task.Delay(25, Ct);
+        }
+
         return await Session.Index!.GetBooksAsync(Ct);
     }
 
