@@ -38,7 +38,13 @@ public sealed class DpapiSecretStore(AppPaths paths) : ISecretStore
 
     public Task RemoveAsync(string name, CancellationToken ct = default)
     {
-        File.Delete(FileFor(name));
+        // File.Delete ignores a missing file but not a missing folder (nothing stored yet).
+        var file = FileFor(name);
+        if (File.Exists(file))
+        {
+            File.Delete(file);
+        }
+
         return Task.CompletedTask;
     }
 
