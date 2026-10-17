@@ -88,4 +88,22 @@ public sealed class SettingsPageTests : IDisposable
         Assert.Equal(other, _app.Get<LibrarySession>().Current?.RootPath);
         Assert.Equal(other, _app.Get<ISettingsService>().Current.LibraryPath);
     }
+
+    [Fact]
+    public async Task The_preferred_format_order_can_be_changed_and_restored()
+    {
+        await OpenLibraryAsync();
+        var page = _app.Get<SettingsPageViewModel>();
+        Assert.Equal([BookFormat.Cbz, BookFormat.Pdf, BookFormat.Epub, BookFormat.Cbr], page.Formats.Select(f => f.Format));
+
+        page.MoveFormatUpCommand.Execute(page.Formats[1]);
+        page.MoveFormatDownCommand.Execute(page.Formats[3]); // last one: nothing happens
+        await page.SaveCommand.ExecuteAsync(null);
+
+        Assert.Equal([BookFormat.Pdf, BookFormat.Cbz, BookFormat.Epub, BookFormat.Cbr], _app.Get<ISettingsService>().Current.FormatPreference);
+        Assert.Equal(["1", "2", "3", "4"], page.Formats.Select(f => f.Rank));
+
+        page.RestoreDefaultsCommand.Execute(null);
+        Assert.Equal(AppSettings.DefaultFormatPreference, page.Formats.Select(f => f.Format));
+    }
 }

@@ -21,6 +21,8 @@ public sealed class AppTestContext : IDisposable
 
     public FakeFolderPicker Picker { get; } = new();
 
+    public FakeFilePicker FilePicker { get; } = new();
+
     public string Folder(string name) => _temp.Combine(name);
 
     public T Get<T>() where T : notnull => _services.GetRequiredService<T>();
@@ -30,6 +32,8 @@ public sealed class AppTestContext : IDisposable
         new ServiceCollection()
             .AddGibiOMatic(Paths, new ConfigurationBuilder().Build())
             .AddSingleton<IFolderPicker>(Picker)
+            .AddSingleton<IFilePicker>(FilePicker)
+            .AddSingleton<IUiThread>(new InlineUiThread())
             .BuildServiceProvider();
 
     public void Dispose()
@@ -47,4 +51,20 @@ public sealed class FakeFolderPicker : IFolderPicker
 
     public Task<string?> PickFolderAsync(string title, CancellationToken ct = default) =>
         Task.FromResult(_answers.Count > 0 ? _answers.Dequeue() : null);
+}
+
+public sealed class FakeFilePicker : IFilePicker
+{
+    private readonly Queue<IReadOnlyList<string>> _answers = new();
+
+    public void WillReturn(params string[] files) => _answers.Enqueue(files);
+
+    public Task<IReadOnlyList<string>> PickBooksAsync(string title, CancellationToken ct = default) =>
+        Task.FromResult(_answers.Count > 0 ? _answers.Dequeue() : (IReadOnlyList<string>)[]);
+}
+
+/// <summary>No UI thread in tests: updates run right away.</summary>
+public sealed class InlineUiThread : IUiThread
+{
+    public void Post(Action action) => action();
 }

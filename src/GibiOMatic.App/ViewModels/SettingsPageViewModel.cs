@@ -1,8 +1,10 @@
+using System.Collections.ObjectModel;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GibiOMatic.App.Resources;
 using GibiOMatic.App.Services;
+using GibiOMatic.Core.Domain;
 using GibiOMatic.Core.Libraries;
 using GibiOMatic.Core.Settings;
 using Microsoft.Extensions.Logging;
@@ -12,6 +14,13 @@ namespace GibiOMatic.App.ViewModels;
 public sealed record LanguageOption(string Code, string DisplayName);
 
 public sealed record ThemeOption(AppTheme Theme, string DisplayName, bool IsAvailable);
+
+/// <summary>A format in the preference list (best first).</summary>
+public sealed record FormatOption(BookFormat Format, int Position)
+{
+    public string Label => QualityText.FormatLabel(Format);
+    public string Rank => Position.ToString(CultureInfo.CurrentCulture);
+}
 
 /// <summary>Settings (SPEC §11): folders and general options. Metadata sources arrive in F2.</summary>
 public sealed partial class SettingsPageViewModel : PageViewModel
@@ -57,6 +66,9 @@ public sealed partial class SettingsPageViewModel : PageViewModel
     ];
 
     public string LibraryPath => _session.Current?.RootPath ?? string.Empty;
+
+    /// <summary>Which format becomes the main original when a book exists in several (SPEC §10).</summary>
+    public ObservableCollection<FormatOption> Formats { get; } = [];
 
     [ObservableProperty]
     public partial string? InboxPath { get; set; }
@@ -131,6 +143,35 @@ public sealed partial class SettingsPageViewModel : PageViewModel
     }
 
     [RelayCommand]
+    private void MoveFormatUp(FormatOption option) => MoveFormat(option, -1);
+
+    [RelayCommand]
+    private void MoveFormatDown(FormatOption option) => MoveFormat(option, +1);
+
+    private void MoveFormat(FormatOption option, int delta)
+    {
+        var order = Formats.Select(f => f.Format).ToList();
+        var index = order.IndexOf(option.Format);
+        var target = index + delta;
+        if (index < 0 || target < 0 || target >= order.Count)
+        {
+            return;
+        }
+
+        (order[index], order[target]) = (order[target], order[index]);
+        SetFormats(order);
+    }
+
+    private void SetFormats(IEnumerable<BookFormat> order)
+    {
+        Formats.Clear();
+        foreach (var (format, i) in order.Select((f, i) => (f, i)))
+        {
+            Formats.Add(new FormatOption(format, i + 1));
+        }
+    }
+
+    [RelayCommand]
     private void RestoreDefaults()
     {
         // The library is not a "preference": it stays as is.
@@ -146,6 +187,7 @@ public sealed partial class SettingsPageViewModel : PageViewModel
             InboxPath = string.IsNullOrWhiteSpace(InboxPath) ? null : InboxPath.Trim(),
             Language = SelectedLanguage.Code,
             Theme = SelectedTheme.Theme,
+            FormatPreference = Formats.Select(f => f.Format).ToList(),
         };
 
         try
@@ -166,6 +208,7 @@ public sealed partial class SettingsPageViewModel : PageViewModel
         InboxPath = settings.InboxPath;
         SelectedLanguage = Languages.FirstOrDefault(l => l.Code == settings.Language) ?? Languages[0];
         SelectedTheme = Themes.FirstOrDefault(t => t.Theme == settings.Theme && t.IsAvailable) ?? Themes[0];
+        SetFormats(settings.FormatPreference);
     }
 
     private void SetStatus(string message, bool isError)

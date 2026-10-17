@@ -1,9 +1,11 @@
 using GibiOMatic.App.ViewModels;
+using GibiOMatic.Conversion;
 using GibiOMatic.Core;
 using GibiOMatic.Core.Libraries;
 using GibiOMatic.Core.Secrets;
 using GibiOMatic.Core.Settings;
 using GibiOMatic.Library;
+using GibiOMatic.Library.Import;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -35,10 +37,19 @@ public static class ServiceRegistration
             services.AddSingleton<ISecretStore, UnsupportedSecretStore>();
         }
 
-        services.AddSingleton<ILibraryService, LibraryService>();
+        services.AddSingleton<LibraryService>();
+        services.AddSingleton<ILibraryService>(sp => sp.GetRequiredService<LibraryService>());
+        services.AddSingleton<IBookFileReader, BookFileReader>();
+        services.AddSingleton<ThumbnailCache>();
+        services.AddSingleton<ImportAnalyzer>();
+        services.AddSingleton<BookImporter>();
+        services.AddSingleton<ImportQueueFactory>();
 
         // UI services
+        services.AddSingleton<IUiThread, AvaloniaUiThread>();
         services.AddSingleton<IFolderPicker, AvaloniaFolderPicker>();
+        services.AddSingleton<IFilePicker, AvaloniaFilePicker>();
+        services.AddSingleton<ICoverLoader, CoverLoader>();
         services.AddSingleton<LibrarySession>();
 
         // View models (a new shell and pages for each opened library)
@@ -46,6 +57,7 @@ public static class ServiceRegistration
         services.AddTransient<WelcomeViewModel>();
         services.AddTransient<ShellViewModel>();
         services.AddTransient<LibraryPageViewModel>();
+        services.AddTransient<InboxPageViewModel>();
         services.AddTransient<SettingsPageViewModel>();
         services.AddSingleton<Func<WelcomeViewModel>>(sp => sp.GetRequiredService<WelcomeViewModel>);
         services.AddSingleton<Func<ShellViewModel>>(sp => sp.GetRequiredService<ShellViewModel>);

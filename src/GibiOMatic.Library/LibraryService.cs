@@ -44,7 +44,7 @@ public sealed class LibraryService(AppPaths paths, ILogger<LibraryService> logge
         var index = IndexFor(library);
         if (await index.EnsureSchemaAsync(ct))
         {
-            logger.LogInformation("Index for library {LibraryId} is new; rebuilding", library.Id);
+            logger.LogInformation("Index for library {LibraryId} is new or was migrated; rebuilding", library.Id);
             await RebuildAsync(library, index, ct);
         }
 

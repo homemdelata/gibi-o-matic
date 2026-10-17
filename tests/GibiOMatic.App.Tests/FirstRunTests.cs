@@ -93,4 +93,29 @@ public sealed class FirstRunTests : IDisposable
         var welcome = Assert.IsType<WelcomeViewModel>(main.Content);
         Assert.Contains(missing, welcome.ErrorMessage);
     }
+
+    [Fact]
+    public async Task Creating_a_library_in_a_folder_with_files_asks_first()
+    {
+        var main = await StartAsync(_app.CreateServices());
+        var folder = _app.Folder("Fotos");
+        Directory.CreateDirectory(folder);
+        await File.WriteAllTextAsync(Path.Combine(folder, "foto.jpg"), "x", Ct);
+        var welcome = (WelcomeViewModel)main.Content!;
+
+        _app.Picker.WillReturn(folder);
+        await welcome.CreateLibraryCommand.ExecuteAsync(null);
+        Assert.True(welcome.IsConfirmingCreate);
+        Assert.False(File.Exists(Path.Combine(folder, LibraryLayout.ManifestFileName)));
+
+        welcome.CancelCreateCommand.Execute(null);
+        Assert.False(welcome.IsConfirmingCreate);
+
+        _app.Picker.WillReturn(folder);
+        await welcome.CreateLibraryCommand.ExecuteAsync(null);
+        await welcome.ConfirmCreateCommand.ExecuteAsync(null);
+
+        Assert.IsType<ShellViewModel>(main.Content);
+        Assert.True(File.Exists(Path.Combine(folder, "foto.jpg")), "existing files are not touched");
+    }
 }

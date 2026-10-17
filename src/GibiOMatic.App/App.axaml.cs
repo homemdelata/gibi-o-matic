@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using GibiOMatic.App.Services;
 using GibiOMatic.App.ViewModels;
 using GibiOMatic.App.Views;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,6 +33,11 @@ public partial class App : Application
             var window = new MainWindow { DataContext = viewModel };
             window.Opened += async (_, _) => await viewModel.InitializeAsync();
             desktop.MainWindow = window;
+
+            // Stop the background import cleanly: a copy in progress is discarded and resumes next time.
+            // It runs off the UI thread, which is blocked here waiting for it.
+            desktop.Exit += (_, _) => Task.Run(() => _services.GetRequiredService<LibrarySession>().DisposeAsync().AsTask())
+                .Wait(TimeSpan.FromSeconds(10));
         }
 
         base.OnFrameworkInitializationCompleted();

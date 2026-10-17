@@ -64,6 +64,7 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         try
         {
             var shell = _createShell();
+            (Content as IDisposable)?.Dispose();
             Content = shell;
             await shell.InitializeAsync();
         }

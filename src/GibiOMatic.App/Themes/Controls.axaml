@@ -49,6 +49,11 @@
     <Setter Property="FontSize" Value="12" />
     <Setter Property="LetterSpacing" Value="0.96" />
   </Style>
+  <Style Selector="TextBlock.number">
+    <Setter Property="FontFamily" Value="{StaticResource FontDisplay}" />
+    <Setter Property="FontSize" Value="30" />
+    <Setter Property="FontWeight" Value="Bold" />
+  </Style>
   <Style Selector="TextBlock.mono">
     <Setter Property="FontFamily" Value="{StaticResource FontMono}" />
     <Setter Property="FontSize" Value="13" />
@@ -176,6 +181,115 @@
     <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
     <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
     <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+  </Style>
+
+  <!-- Filter chip and segmented buttons driven by a "selected" class (no two-way toggle state) -->
+  <Style Selector="Button.chip">
+    <Setter Property="MinHeight" Value="38" />
+    <Setter Property="Padding" Value="14,0" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusPill}" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="FontWeight" Value="Medium" />
+  </Style>
+  <Style Selector="Button.chip:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
+  </Style>
+  <Style Selector="Button.chip.selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
+    <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+  </Style>
+
+  <Style Selector="Button.segment">
+    <Setter Property="MinHeight" Value="36" />
+    <Setter Property="Padding" Value="14,0" />
+    <Setter Property="CornerRadius" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="FontWeight" Value="Normal" />
+    <Setter Property="FontSize" Value="13" />
+  </Style>
+  <Style Selector="Button.segment:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource InputBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+  </Style>
+  <Style Selector="Button.segment.selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+  </Style>
+  <Style Selector="Button.segment.decision.selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource OnAccentBrush}" />
+  </Style>
+  <Style Selector="Button.segment.selected">
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+
+  <!-- Small square icon button (reorder arrows) -->
+  <Style Selector="Button.icon">
+    <Setter Property="MinHeight" Value="34" />
+    <Setter Property="Width" Value="34" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
+    <Setter Property="BorderThickness" Value="1" />
+    <Setter Property="HorizontalContentAlignment" Value="Center" />
+  </Style>
+
+  <!-- Book and series cards in the grid: the whole card is the button -->
+  <Style Selector="Button.cover-card">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Padding" Value="0" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    <Setter Property="VerticalContentAlignment" Value="Top" />
+    <Setter Property="FontWeight" Value="Normal" />
+  </Style>
+  <Style Selector="Button.cover-card:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="Button.cover-card:pressed /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+  <Style Selector="Button.cover-card:pointerover Border.cover-frame">
+    <Setter Property="BorderBrush" Value="#40FFFFFF" />
+  </Style>
+
+  <Style Selector="Border.badge">
+    <Setter Property="Background" Value="{DynamicResource BgBrush}" />
+    <Setter Property="CornerRadius" Value="6" />
+    <Setter Property="Padding" Value="7,3" />
+    <Setter Property="Margin" Value="8" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Top" />
+  </Style>
+  <Style Selector="Border.format-chip">
+    <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
+    <Setter Property="CornerRadius" Value="5" />
+    <Setter Property="Padding" Value="6,2" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.pill">
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusPill}" />
+    <Setter Property="Padding" Value="12,6" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
+  <!-- Drop zone: highlighted while files are dragged over it (FileDrop adds the "dragover" class) -->
+  <Style Selector="Rectangle.dropzone">
+    <Setter Property="Stroke" Value="#34373F" />
+  </Style>
+  <Style Selector=".dragover Rectangle.dropzone">
+    <Setter Property="Stroke" Value="{DynamicResource AccentBrush}" />
   </Style>
 
   <!-- Card -->

@@ -32,7 +32,7 @@
   <data name="Library_SubtitleOne" xml:space="preserve"><value>1 livro</value></data>
   <data name="Library_SubtitleMany" xml:space="preserve"><value>{0} livros</value></data>
   <data name="Library_EmptyTitle" xml:space="preserve"><value>Sua biblioteca está vazia</value></data>
-  <data name="Library_EmptyHelp" xml:space="preserve"><value>A importação de quadrinhos chega na próxima versão. A biblioteca já está criada em:</value></data>
+  <data name="Library_EmptyHelp" xml:space="preserve"><value>Importe os quadrinhos que você baixou. Os originais são copiados sem nenhuma alteração para:</value></data>
   <data name="Library_Import" xml:space="preserve"><value>Importar arquivos…</value></data>
   <data name="Inbox_Subtitle" xml:space="preserve"><value>Arquivos novos chegam aqui para serem identificados e importados.</value></data>
   <data name="Review_Subtitle" xml:space="preserve"><value>Livros cujos metadados precisam da sua confirmação.</value></data>
@@ -61,4 +61,125 @@
   <data name="Theme_Light" xml:space="preserve"><value>Claro (em breve)</value></data>
   <data name="Theme_System" xml:space="preserve"><value>Seguir o sistema (em breve)</value></data>
   <data name="Common_Choose" xml:space="preserve"><value>Escolher</value></data>
+  <data name="Picker_BookFiles" xml:space="preserve"><value>Quadrinhos (PDF, CBZ, CBR, EPUB)</value></data>
+  <data name="Picker_AllFiles" xml:space="preserve"><value>Todos os arquivos</value></data>
+  <data name="Picker_ImportTitle" xml:space="preserve"><value>Escolha os arquivos para importar</value></data>
+  <data name="Picker_ImportFolderTitle" xml:space="preserve"><value>Escolha a pasta com os downloads</value></data>
+  <data name="Quality_BadgeOk" xml:space="preserve"><value>OK</value></data>
+  <data name="Quality_BadgeReview" xml:space="preserve"><value>REVISAR</value></data>
+  <data name="Quality_BadgeBad" xml:space="preserve"><value>RUIM</value></data>
+  <data name="Issue_TitleAllLowercase" xml:space="preserve"><value>tudo em minúsculas</value></data>
+  <data name="Issue_TitleGluedWords" xml:space="preserve"><value>parece nome de arquivo</value></data>
+  <data name="Issue_TitleFileName" xml:space="preserve"><value>tem _ ou extensão de arquivo</value></data>
+  <data name="Issue_TitleGeneric" xml:space="preserve"><value>genérico (Untitled)</value></data>
+  <data name="Issue_TitleExtraSpaces" xml:space="preserve"><value>espaços sobrando</value></data>
+  <data name="Issue_TitleAllCaps" xml:space="preserve"><value>TUDO EM MAIÚSCULAS</value></data>
+  <data name="Issue_TitleJunk" xml:space="preserve"><value>lixo no título (prop, colchetes)</value></data>
+  <data name="Issue_TitleLeadingZero" xml:space="preserve"><value>zero à esquerda (Vol. 01)</value></data>
+  <data name="Issue_AuthorUnknown" xml:space="preserve"><value>desconhecido</value></data>
+  <data name="Issue_AuthorSingleName" xml:space="preserve"><value>nome de uma palavra só: {0}</value></data>
+  <data name="Issue_AuthorsGlued" xml:space="preserve"><value>vários nomes grudados num só</value></data>
+  <data name="Issue_AuthorBackslash" xml:space="preserve"><value>barra invertida no nome</value></data>
+  <data name="Issue_AuthorDuplicate" xml:space="preserve"><value>autor repetido</value></data>
+  <data name="Issue_AuthorsTooMany" xml:space="preserve"><value>{0} autores (coloristas e letristas misturados?)</value></data>
+  <data name="Issue_DateMissing" xml:space="preserve"><value>vazia</value></data>
+  <data name="Issue_DateHumble" xml:space="preserve"><value>{0} (data do Humble Bundle?)</value></data>
+  <data name="Issue_DateRepeated" xml:space="preserve"><value>{0} (repetida em {1} livros)</value></data>
+  <data name="Issue_DateSameAsAdded" xml:space="preserve"><value>{0} (igual à data de importação)</value></data>
+  <data name="Issue_SeriesInTitleOnly" xml:space="preserve"><value>vazia; o título indica {0}</value></data>
+  <data name="Issue_SeriesNumberMismatch" xml:space="preserve"><value>nº {0} na série, {1} no título</value></data>
+  <data name="Issue_InvalidIsbn" xml:space="preserve"><value>ISBN inválido ({0})</value></data>
+  <data name="Issue_NoPublisher" xml:space="preserve"><value>sem editora</value></data>
+  <data name="Library_NoPublisher" xml:space="preserve"><value>Sem editora</value></data>
+  <data name="Library_NoDate" xml:space="preserve"><value>sem data</value></data>
+  <data name="Library_NoSeries" xml:space="preserve"><value>sem série</value></data>
+  <data name="Library_SeriesBooksOne" xml:space="preserve"><value>1 livro</value></data>
+  <data name="Library_SeriesBooksMany" xml:space="preserve"><value>{0} livros</value></data>
+  <data name="Library_Summary" xml:space="preserve"><value>{0} · {1} séries · {2} com metadados completos</value></data>
+  <data name="Library_SearchPlaceholder" xml:space="preserve"><value>Buscar título, série, autor…</value></data>
+  <data name="Library_ImportShort" xml:space="preserve"><value>Importar</value></data>
+  <data name="Library_FetchMetadata" xml:space="preserve"><value>Buscar metadados</value></data>
+  <data name="Library_Soon" xml:space="preserve"><value>Chega numa próxima fase</value></data>
+  <data name="Library_ViewSeries" xml:space="preserve"><value>Séries</value></data>
+  <data name="Library_ViewBooks" xml:space="preserve"><value>Livros</value></data>
+  <data name="Library_BackToSeries" xml:space="preserve"><value>Todas as séries</value></data>
+  <data name="Library_NoResults" xml:space="preserve"><value>Nenhum livro com esse filtro ou busca.</value></data>
+  <data name="Library_CardComplete" xml:space="preserve"><value>COMPLETOS</value></data>
+  <data name="Library_CardNoDate" xml:space="preserve"><value>SEM DATA</value></data>
+  <data name="Library_CardNoSeries" xml:space="preserve"><value>SEM SÉRIE</value></data>
+  <data name="Library_CardNeedsReview" xml:space="preserve"><value>PRECISA REVISÃO</value></data>
+  <data name="Library_CardBooks" xml:space="preserve"><value>livros</value></data>
+  <data name="Library_CardPriority" xml:space="preserve"><value>prioridade</value></data>
+  <data name="Library_Grid" xml:space="preserve"><value>Livros</value></data>
+  <data name="Library_Filters" xml:space="preserve"><value>Filtros</value></data>
+  <data name="Filter_All" xml:space="preserve"><value>Todos</value></data>
+  <data name="Filter_NeedsReview" xml:space="preserve"><value>Precisa revisão</value></data>
+  <data name="Filter_NoDate" xml:space="preserve"><value>Sem data</value></data>
+  <data name="Filter_NoSeries" xml:space="preserve"><value>Sem série</value></data>
+  <data name="Filter_UnknownAuthor" xml:space="preserve"><value>Autor desconhecido</value></data>
+  <data name="Filter_Complete" xml:space="preserve"><value>Completos</value></data>
+  <data name="Details_Title" xml:space="preserve"><value>Título</value></data>
+  <data name="Details_Authors" xml:space="preserve"><value>Autores</value></data>
+  <data name="Details_Date" xml:space="preserve"><value>Data</value></data>
+  <data name="Details_Series" xml:space="preserve"><value>Série</value></data>
+  <data name="Details_NoSeriesOk" xml:space="preserve"><value>sem série</value></data>
+  <data name="Details_Files" xml:space="preserve"><value>ARQUIVOS</value></data>
+  <data name="Details_FileOriginal" xml:space="preserve"><value>Original</value></data>
+  <data name="Details_FileExtra" xml:space="preserve"><value>Formato extra</value></data>
+  <data name="Details_Score" xml:space="preserve"><value>Nota {0} · {1}</value></data>
+  <data name="Details_Review" xml:space="preserve"><value>Revisar metadados</value></data>
+  <data name="Details_Edit" xml:space="preserve"><value>Editar</value></data>
+  <data name="Details_SendKindle" xml:space="preserve"><value>Enviar ao Kindle</value></data>
+  <data name="Details_NoSelection" xml:space="preserve"><value>Escolha um livro para ver os detalhes.</value></data>
+  <data name="Details_Panel" xml:space="preserve"><value>Detalhes do livro</value></data>
+  <data name="Inbox_AddFiles" xml:space="preserve"><value>Adicionar arquivos…</value></data>
+  <data name="Inbox_AddFolder" xml:space="preserve"><value>Adicionar pasta…</value></data>
+  <data name="Inbox_DropTitle" xml:space="preserve"><value>Arraste arquivos ou pastas para cá</value></data>
+  <data name="Inbox_DropHelp" xml:space="preserve"><value>PDF, CBZ, CBR ou EPUB. Nada é copiado até você clicar em Importar, e o original é copiado sem nenhuma alteração.</value></data>
+  <data name="Inbox_ListHeader" xml:space="preserve"><value>{0} arquivos · {1} em análise · {2} prontos para importar</value></data>
+  <data name="Inbox_NoEmbeddedMetadata" xml:space="preserve"><value>sem metadados no arquivo</value></data>
+  <data name="Inbox_DupSameFileLibrary" xml:space="preserve"><value>Este arquivo já está na biblioteca: {0}</value></data>
+  <data name="Inbox_DupSameFileList" xml:space="preserve"><value>Arquivo repetido nesta lista.</value></data>
+  <data name="Inbox_DupSameBookLibrary" xml:space="preserve"><value>Já existe: {0} ({1})</value></data>
+  <data name="Inbox_DupSameBookList" xml:space="preserve"><value>Mesmo livro de outro arquivo da lista: {0}</value></data>
+  <data name="Inbox_LooksConverted" xml:space="preserve"><value>Parece convertido (Calibre), não o original da editora.</value></data>
+  <data name="Inbox_StatePending" xml:space="preserve"><value>Na fila de análise</value></data>
+  <data name="Inbox_StateAnalyzing" xml:space="preserve"><value>Analisando…</value></data>
+  <data name="Inbox_StateReady" xml:space="preserve"><value>Pronto para importar</value></data>
+  <data name="Inbox_StateDuplicate" xml:space="preserve"><value>Duplicado</value></data>
+  <data name="Inbox_StateAlreadyThere" xml:space="preserve"><value>Já está na biblioteca</value></data>
+  <data name="Inbox_StateWillSkip" xml:space="preserve"><value>Vai ser ignorado</value></data>
+  <data name="Inbox_StateQueued" xml:space="preserve"><value>Na fila de importação</value></data>
+  <data name="Inbox_StateImporting" xml:space="preserve"><value>Importando…</value></data>
+  <data name="Inbox_StateImported" xml:space="preserve"><value>Importado</value></data>
+  <data name="Inbox_StateSkipped" xml:space="preserve"><value>Ignorado</value></data>
+  <data name="Inbox_StateFailed" xml:space="preserve"><value>Erro</value></data>
+  <data name="Inbox_ReasonNotFound" xml:space="preserve"><value>arquivo não encontrado</value></data>
+  <data name="Inbox_ReasonUnsupported" xml:space="preserve"><value>não é PDF, CBZ, CBR nem EPUB</value></data>
+  <data name="Inbox_ReasonSourceChanged" xml:space="preserve"><value>o arquivo mudou depois da análise; adicione de novo</value></data>
+  <data name="Inbox_ReasonAlreadyInLibrary" xml:space="preserve"><value>já está na biblioteca</value></data>
+  <data name="Inbox_ReasonDuplicateInList" xml:space="preserve"><value>repetido na lista</value></data>
+  <data name="Inbox_DecisionImport" xml:space="preserve"><value>Importar</value></data>
+  <data name="Inbox_DecisionReplace" xml:space="preserve"><value>Substituir o atual</value></data>
+  <data name="Inbox_DecisionKeepBoth" xml:space="preserve"><value>Manter os dois</value></data>
+  <data name="Inbox_DecisionSkip" xml:space="preserve"><value>Ignorar</value></data>
+  <data name="Inbox_Decisions" xml:space="preserve"><value>O que fazer com o duplicado</value></data>
+  <data name="Inbox_ConfirmSummary" xml:space="preserve"><value>Ao importar: {0} novos, {1} substituem o atual, {2} como formato extra, {3} ignorados.</value></data>
+  <data name="Inbox_DoneSummary" xml:space="preserve"><value>Importação concluída: {0} importados, {1} ignorados, {2} com erro.</value></data>
+  <data name="Inbox_SkipAll" xml:space="preserve"><value>Ignorar todos</value></data>
+  <data name="Inbox_ClearFinished" xml:space="preserve"><value>Limpar concluídos</value></data>
+  <data name="Inbox_Import" xml:space="preserve"><value>Importar</value></data>
+  <data name="Inbox_Pause" xml:space="preserve"><value>Pausar</value></data>
+  <data name="Inbox_Resume" xml:space="preserve"><value>Retomar</value></data>
+  <data name="Inbox_PausedNote" xml:space="preserve"><value>Pausado. A fila continua de onde parou ao retomar, mesmo depois de fechar o app.</value></data>
+  <data name="Inbox_ProgressAnalyzing" xml:space="preserve"><value>Analisando {0}… {1:0%}</value></data>
+  <data name="Inbox_ProgressImporting" xml:space="preserve"><value>Copiando {0}… {1:0%}</value></data>
+  <data name="Inbox_Files" xml:space="preserve"><value>Arquivos da Entrada</value></data>
+  <data name="Settings_FormatsLabel" xml:space="preserve"><value>Formato preferido do original</value></data>
+  <data name="Settings_FormatsHelp" xml:space="preserve"><value>Quando o mesmo livro chega em vários formatos, o primeiro da lista vira o original principal e os outros ficam como formatos extras.</value></data>
+  <data name="Settings_MoveUp" xml:space="preserve"><value>Subir</value></data>
+  <data name="Settings_MoveDown" xml:space="preserve"><value>Descer</value></data>
+  <data name="Welcome_NotEmpty" xml:space="preserve"><value>A pasta {0} já tem arquivos. Criar a biblioteca aqui mesmo assim? Os arquivos que já estão nela não serão tocados.</value></data>
+  <data name="Welcome_CreateAnyway" xml:space="preserve"><value>Criar mesmo assim</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>Cancelar</value></data>
 </root>

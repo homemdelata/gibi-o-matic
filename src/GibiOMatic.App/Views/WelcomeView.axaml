@@ -43,6 +43,16 @@
         </Button>
       </Grid>
 
+      <Border Classes="card" BorderBrush="{DynamicResource WarnBrush}" IsVisible="{Binding IsConfirmingCreate}">
+        <StackPanel Spacing="14">
+          <TextBlock TextWrapping="Wrap" Text="{Binding PendingCreateFolder, StringFormat={x:Static r:Strings.Welcome_NotEmpty}}" />
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <Button Classes="primary" Content="{x:Static r:Strings.Welcome_CreateAnyway}" Command="{Binding ConfirmCreateCommand}" />
+            <Button Classes="secondary" Content="{x:Static r:Strings.Common_Cancel}" Command="{Binding CancelCreateCommand}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
       <TextBlock Classes="error" Text="{Binding ErrorMessage}"
                  IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 

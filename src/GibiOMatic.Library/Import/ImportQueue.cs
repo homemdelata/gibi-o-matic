@@ -422,10 +422,10 @@ public sealed class ImportQueue : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        await _stop.CancelAsync();
+        await _stop.CancelAsync().ConfigureAwait(false);
         try
         {
-            await _worker;
+            await _worker.ConfigureAwait(false);
         }
         catch (OperationCanceledException)
         {

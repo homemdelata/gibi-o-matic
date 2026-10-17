@@ -2,35 +2,387 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:GibiOMatic.App.ViewModels"
              xmlns:c="using:GibiOMatic.App.Controls"
+             xmlns:conv="using:GibiOMatic.App.Converters"
              xmlns:r="using:GibiOMatic.App.Resources"
              x:Class="GibiOMatic.App.Views.LibraryPageView"
-             x:DataType="vm:LibraryPageViewModel">
-  <DockPanel Margin="{StaticResource PagePadding}">
-    <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,22">
-      <TextBlock Classes="h1" Text="{Binding Title}" />
-      <TextBlock Classes="muted" Text="{Binding Subtitle}" />
-    </StackPanel>
-
-    <!-- Empty state -->
-    <StackPanel IsVisible="{Binding IsEmpty}" MaxWidth="520" Spacing="14"
-                HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,80">
-      <Border Width="72" Height="72" CornerRadius="18" HorizontalAlignment="Center"
-              Background="{DynamicResource CardBrush}"
-              BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-        <c:StrokeIcon Data="{StaticResource Icon.Library}" Width="32" Height="32"
-                      Foreground="{DynamicResource AccentBrush}" />
-      </Border>
-      <TextBlock Classes="h2" HorizontalAlignment="Center" Text="{x:Static r:Strings.Library_EmptyTitle}" />
-      <TextBlock Classes="muted" TextAlignment="Center" TextWrapping="Wrap"
-                 Text="{x:Static r:Strings.Library_EmptyHelp}" />
-      <SelectableTextBlock Classes="mono" HorizontalAlignment="Center" TextWrapping="Wrap"
-                           Foreground="{DynamicResource TextSecondaryBrush}" Text="{Binding LibraryPath}" />
-      <Button Classes="secondary" HorizontalAlignment="Center" Margin="0,8,0,0" IsEnabled="False">
-        <StackPanel Orientation="Horizontal" Spacing="8">
-          <c:StrokeIcon Data="{StaticResource Icon.Import}" Width="17" Height="17" />
-          <TextBlock Text="{x:Static r:Strings.Library_Import}" VerticalAlignment="Center" />
+             x:DataType="vm:LibraryPageViewModel"
+             c:FileDrop.Command="{Binding DropFilesCommand}">
+  <UserControl.DataTemplates>
+    <!-- Book card -->
+    <DataTemplate DataType="vm:BookCardViewModel">
+      <Button Classes="cover-card" Command="{Binding SelectCommand}" Margin="-6,-6,12,0" Padding="6"
+              AutomationProperties.Name="{Binding Title}">
+        <StackPanel Spacing="9">
+          <Panel>
+            <Border Margin="-6" CornerRadius="15" BorderThickness="3" BorderBrush="{DynamicResource AccentBrush}"
+                    IsVisible="{Binding IsSelected}" />
+            <c:AspectBox>
+              <Border CornerRadius="{StaticResource RadiusCover}" BoxShadow="0 8 22 0 #66000000">
+                <Border Classes="cover-frame" CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True"
+                        BorderThickness="1" BorderBrush="#10FFFFFF">
+                  <Border.Background>
+                    <SolidColorBrush Color="{Binding PlaceholderColor}" />
+                  </Border.Background>
+                  <Panel>
+                    <Border Background="{StaticResource HalftoneBrush}" />
+                    <TextBlock Text="{Binding Title}" Margin="12" VerticalAlignment="Bottom" TextWrapping="Wrap"
+                               FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="18"
+                               LineHeight="19" Foreground="White" MaxLines="4" TextTrimming="CharacterEllipsis"
+                               IsVisible="{Binding !HasThumbnail}" />
+                    <Image Source="{Binding Thumbnail}" Stretch="UniformToFill" />
+                    <Border Classes="badge">
+                      <TextBlock Classes="mono" FontSize="10.5" FontWeight="Medium" LetterSpacing="0.4" Text="{Binding Badge}"
+                                 Foreground="{Binding Band, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
+                    </Border>
+                  </Panel>
+                </Border>
+              </Border>
+            </c:AspectBox>
+          </Panel>
+          <StackPanel Spacing="2">
+            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13.5" TextWrapping="Wrap" MaxLines="2"
+                       TextTrimming="CharacterEllipsis" />
+            <TextBlock Classes="muted" FontSize="12" Text="{Binding MetaLine}" TextTrimming="CharacterEllipsis" />
+          </StackPanel>
         </StackPanel>
       </Button>
-    </StackPanel>
-  </DockPanel>
+    </DataTemplate>
+
+    <!-- Series card: a small stack of covers -->
+    <DataTemplate DataType="vm:SeriesCardViewModel">
+      <Button Classes="cover-card" Command="{Binding OpenCommand}" Margin="-6,-6,12,0" Padding="6"
+              AutomationProperties.Name="{Binding Name}">
+        <StackPanel Spacing="9">
+          <Panel Margin="0,6,6,0">
+            <Border Margin="6,-6,-6,6" CornerRadius="{StaticResource RadiusCover}" Background="{DynamicResource HoverBrush}"
+                    BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1" />
+            <c:AspectBox>
+              <Border CornerRadius="{StaticResource RadiusCover}" BoxShadow="0 8 22 0 #66000000">
+                <Border Classes="cover-frame" CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True"
+                        BorderThickness="1" BorderBrush="#10FFFFFF">
+                  <Border.Background>
+                    <SolidColorBrush Color="{Binding Cover.PlaceholderColor}" />
+                  </Border.Background>
+                  <Panel>
+                    <Border Background="{StaticResource HalftoneBrush}" />
+                    <TextBlock Text="{Binding Name}" Margin="12" VerticalAlignment="Bottom" TextWrapping="Wrap"
+                               FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="18"
+                               LineHeight="19" Foreground="White" MaxLines="4" TextTrimming="CharacterEllipsis"
+                               IsVisible="{Binding !Cover.HasThumbnail}" />
+                    <Image Source="{Binding Cover.Thumbnail}" Stretch="UniformToFill" />
+                    <Border Classes="badge">
+                      <TextBlock Classes="mono" FontSize="10.5" FontWeight="Medium" LetterSpacing="0.4" Text="{Binding Badge}"
+                                 Foreground="{Binding Band, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
+                    </Border>
+                  </Panel>
+                </Border>
+              </Border>
+            </c:AspectBox>
+          </Panel>
+          <StackPanel Spacing="2">
+            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13.5" TextWrapping="Wrap" MaxLines="2"
+                       TextTrimming="CharacterEllipsis" />
+            <TextBlock Classes="muted" FontSize="12" Text="{Binding MetaLine}" TextTrimming="CharacterEllipsis" />
+          </StackPanel>
+        </StackPanel>
+      </Button>
+    </DataTemplate>
+  </UserControl.DataTemplates>
+
+  <UserControl.Styles>
+    <!-- Defaults live in styles (not local values) so the container query below can change them. -->
+    <Style Selector="UniformGrid.summary">
+      <Setter Property="Columns" Value="4" />
+    </Style>
+    <Style Selector="UniformGrid.summary > Border">
+      <Setter Property="Margin" Value="0,0,12,12" />
+    </Style>
+    <Style Selector="Border.details">
+      <Setter Property="Width" Value="340" />
+    </Style>
+    <Style Selector="TextBox.search">
+      <Setter Property="Width" Value="360" />
+    </Style>
+
+    <!-- Narrow windows (1024 px): slimmer detail panel, 2×2 summary, icon-only secondary actions. -->
+    <ContainerQuery Name="libraryPage" Query="max-width:1000">
+      <Style Selector="UniformGrid.summary">
+        <Setter Property="Columns" Value="2" />
+      </Style>
+      <Style Selector="Border.details">
+        <Setter Property="Width" Value="270" />
+      </Style>
+      <Style Selector="TextBox.search">
+        <Setter Property="Width" Value="240" />
+      </Style>
+      <Style Selector="TextBlock.collapsible">
+        <Setter Property="IsVisible" Value="False" />
+      </Style>
+    </ContainerQuery>
+  </UserControl.Styles>
+
+  <Grid ColumnDefinitions="*,Auto" Container.Name="libraryPage" Container.Sizing="Width">
+    <DockPanel Margin="{StaticResource PagePadding}">
+      <!-- Header -->
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,22">
+        <StackPanel Spacing="4" VerticalAlignment="Center" Margin="0,0,16,0">
+          <TextBlock Classes="h1" Text="{Binding Title}" />
+          <TextBlock Classes="muted" Text="{Binding Subtitle}" TextTrimming="CharacterEllipsis" />
+        </StackPanel>
+        <Button Grid.Column="1" Classes="secondary" Margin="0,0,10,0" VerticalAlignment="Center" Command="{Binding ImportCommand}">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <c:StrokeIcon Data="{StaticResource Icon.Import}" Width="17" Height="17" />
+            <TextBlock Text="{x:Static r:Strings.Library_ImportShort}" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+        <Button Grid.Column="2" Classes="primary" IsEnabled="False" VerticalAlignment="Center"
+                ToolTip.Tip="{x:Static r:Strings.Library_Soon}" ToolTip.ShowOnDisabled="True"
+                AutomationProperties.Name="{x:Static r:Strings.Library_FetchMetadata}">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <c:StrokeIcon Data="{StaticResource Icon.Sparkle}" Width="17" Height="17" StrokeThickness="2.2" />
+            <TextBlock Classes="collapsible" Text="{x:Static r:Strings.Library_FetchMetadata}" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+      </Grid>
+
+      <!-- Health of the library -->
+      <UniformGrid DockPanel.Dock="Top" Classes="summary" Margin="0,0,-12,10" IsVisible="{Binding HasBooks}">
+        <Border Classes="card">
+          <StackPanel Spacing="6">
+            <TextBlock Classes="section-label" Text="{x:Static r:Strings.Library_CardComplete}" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBlock Classes="number" Text="{Binding CompleteCount}" />
+              <TextBlock Foreground="{DynamicResource OkBrush}" FontWeight="Medium" VerticalAlignment="Bottom" Margin="0,0,0,6"
+                         Text="{Binding CompletePercent}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+        <Border Classes="card">
+          <StackPanel Spacing="6">
+            <TextBlock Classes="section-label" Text="{x:Static r:Strings.Library_CardNoDate}" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBlock Classes="number" Text="{Binding NoDateCount}" />
+              <TextBlock Classes="muted" VerticalAlignment="Bottom" Margin="0,0,0,6" Text="{x:Static r:Strings.Library_CardBooks}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+        <Border Classes="card">
+          <StackPanel Spacing="6">
+            <TextBlock Classes="section-label" Text="{x:Static r:Strings.Library_CardNoSeries}" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBlock Classes="number" Text="{Binding NoSeriesCount}" />
+              <TextBlock Classes="muted" VerticalAlignment="Bottom" Margin="0,0,0,6" Text="{x:Static r:Strings.Library_CardBooks}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+        <Border Classes="card">
+          <StackPanel Spacing="6">
+            <TextBlock Classes="section-label" Text="{x:Static r:Strings.Library_CardNeedsReview}" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBlock Classes="number" Text="{Binding NeedsReviewCount}" />
+              <TextBlock Foreground="{DynamicResource WarnBrush}" FontWeight="Medium" VerticalAlignment="Bottom" Margin="0,0,0,6"
+                         Text="{x:Static r:Strings.Library_CardPriority}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+      </UniformGrid>
+
+      <!-- Search and view mode -->
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,14" IsVisible="{Binding HasBooks}">
+        <TextBox Classes="search" HorizontalAlignment="Left" Text="{Binding SearchText}"
+                 PlaceholderText="{x:Static r:Strings.Library_SearchPlaceholder}"
+                 AutomationProperties.Name="{x:Static r:Strings.Library_SearchPlaceholder}">
+          <TextBox.InnerLeftContent>
+            <c:StrokeIcon Data="{StaticResource Icon.Search}" Width="17" Height="17" Margin="12,0,0,0"
+                          Foreground="{DynamicResource TextMutedBrush}" />
+          </TextBox.InnerLeftContent>
+        </TextBox>
+        <Border Grid.Column="1" VerticalAlignment="Center" BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1"
+                CornerRadius="10" ClipToBounds="True" Margin="12,0,0,0">
+          <StackPanel Orientation="Horizontal">
+            <Button Classes="segment" Classes.selected="{Binding IsSeriesView}" Content="{x:Static r:Strings.Library_ViewSeries}"
+                    Command="{Binding SetViewModeCommand}" CommandParameter="{x:Static vm:LibraryViewMode.Series}" />
+            <Button Classes="segment" Classes.selected="{Binding IsBooksView}" Content="{x:Static r:Strings.Library_ViewBooks}"
+                    Command="{Binding SetViewModeCommand}" CommandParameter="{x:Static vm:LibraryViewMode.Books}" />
+          </StackPanel>
+        </Border>
+      </Grid>
+
+      <!-- Filters -->
+      <Grid DockPanel.Dock="Top" Margin="0,0,0,22" IsVisible="{Binding HasBooks}">
+        <ItemsControl ItemsSource="{Binding Filters}" AutomationProperties.Name="{x:Static r:Strings.Library_Filters}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel ItemSpacing="8" LineSpacing="8" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:FilterChipViewModel">
+              <Button Classes="chip" Classes.selected="{Binding IsSelected}" Command="{Binding PickCommand}">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+                  <TextBlock Classes="mono" FontSize="12" Opacity="0.75" Text="{Binding Count}" VerticalAlignment="Center" />
+                </StackPanel>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </Grid>
+
+      <!-- Inside a series -->
+      <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="12" Margin="0,0,0,18" IsVisible="{Binding IsInSeries}">
+        <Button Classes="secondary" MinHeight="36" Padding="10,0" Command="{Binding BackToSeriesCommand}">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <c:StrokeIcon Data="{StaticResource Icon.ChevronLeft}" Width="16" Height="16" />
+            <TextBlock Text="{x:Static r:Strings.Library_BackToSeries}" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+        <TextBlock Classes="h3" Text="{Binding OpenSeries.Name, FallbackValue={x:Null}}" VerticalAlignment="Center" />
+      </StackPanel>
+
+      <Panel>
+        <!-- Empty library -->
+        <StackPanel IsVisible="{Binding IsEmpty}" MaxWidth="520" Spacing="14"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,80">
+          <Border Width="72" Height="72" CornerRadius="18" HorizontalAlignment="Center"
+                  Background="{DynamicResource CardBrush}"
+                  BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+            <c:StrokeIcon Data="{StaticResource Icon.Library}" Width="32" Height="32"
+                          Foreground="{DynamicResource AccentBrush}" />
+          </Border>
+          <TextBlock Classes="h2" HorizontalAlignment="Center" Text="{x:Static r:Strings.Library_EmptyTitle}" />
+          <TextBlock Classes="muted" TextAlignment="Center" TextWrapping="Wrap"
+                     Text="{x:Static r:Strings.Library_EmptyHelp}" />
+          <SelectableTextBlock Classes="mono" HorizontalAlignment="Center" TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextSecondaryBrush}" Text="{Binding LibraryPath}" />
+          <Button Classes="primary" HorizontalAlignment="Center" Margin="0,8,0,0" Command="{Binding ImportCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <c:StrokeIcon Data="{StaticResource Icon.Import}" Width="17" Height="17" />
+              <TextBlock Text="{x:Static r:Strings.Library_Import}" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+
+        <TextBlock Classes="muted" IsVisible="{Binding HasNoResults}" Text="{x:Static r:Strings.Library_NoResults}"
+                   HorizontalAlignment="Center" Margin="0,60,0,0" />
+
+        <!-- Cover grid: rows of cards, virtualized -->
+        <ScrollViewer x:Name="GridScroller" IsVisible="{Binding HasResults}" HorizontalScrollBarVisibility="Disabled"
+                      Padding="0,8,8,0" Margin="0,-8,-8,0">
+          <ItemsControl x:Name="GridRows" ItemsSource="{Binding Rows}" AutomationProperties.Name="{x:Static r:Strings.Library_Grid}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <VirtualizingStackPanel />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:CardRow">
+                <ItemsControl ItemsSource="{Binding Cards}" Margin="0,0,-18,24">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <UniformGrid Columns="{Binding Columns}" />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                </ItemsControl>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </Panel>
+    </DockPanel>
+
+    <!-- Detail panel -->
+    <Border Grid.Column="1" Classes="details" Background="{DynamicResource SurfaceBrush}" IsVisible="{Binding HasBooks}"
+            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0"
+            AutomationProperties.Name="{x:Static r:Strings.Details_Panel}">
+      <Panel>
+        <TextBlock Classes="muted" Margin="24" TextWrapping="Wrap" Text="{x:Static r:Strings.Details_NoSelection}"
+                   IsVisible="{Binding Selected, Converter={x:Static ObjectConverters.IsNull}}" />
+        <ScrollViewer DataContext="{Binding Selected}" x:DataType="vm:BookDetailsViewModel"
+                      IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}">
+          <StackPanel Margin="24,28" Spacing="20">
+            <Border Width="150" HorizontalAlignment="Left" CornerRadius="{StaticResource RadiusCover}" BoxShadow="0 12 30 0 #73000000">
+              <c:AspectBox>
+                <Border CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True">
+                  <Border.Background>
+                    <SolidColorBrush Color="{Binding Card.PlaceholderColor}" />
+                  </Border.Background>
+                  <Panel>
+                    <Border Background="{StaticResource HalftoneBrush}" />
+                    <TextBlock Text="{Binding Title}" Margin="14" VerticalAlignment="Bottom" TextWrapping="Wrap"
+                               FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="19"
+                               LineHeight="20" Foreground="White" MaxLines="5" TextTrimming="CharacterEllipsis" />
+                    <Image Source="{Binding Cover}" Stretch="UniformToFill" />
+                  </Panel>
+                </Border>
+              </c:AspectBox>
+            </Border>
+
+            <StackPanel Spacing="6">
+              <SelectableTextBlock Text="{Binding Title}" TextWrapping="Wrap"
+                                   FontFamily="{StaticResource FontDisplay}" FontSize="22" FontWeight="Bold" />
+              <TextBlock Classes="muted" TextWrapping="Wrap" LineHeight="21" Text="{Binding CreditsLine}" />
+            </StackPanel>
+
+            <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1" Padding="0,6">
+              <StackPanel>
+                <ItemsControl ItemsSource="{Binding Checks}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:CheckRow">
+                      <Grid ColumnDefinitions="Auto,72,*" Margin="0,8">
+                        <Border Width="20" Height="20" CornerRadius="10" VerticalAlignment="Top"
+                                Background="{Binding Status, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Fill}">
+                          <TextBlock Text="{Binding Icon}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource OnAccentBrush}"
+                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <TextBlock Grid.Column="1" Classes="muted" Margin="10,1,0,0" Text="{Binding Field}" />
+                        <TextBlock Grid.Column="2" Margin="0,1,0,0" Text="{Binding Value}" TextWrapping="Wrap" />
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Classes="mono muted" FontSize="12" Margin="30,4,0,6" Text="{Binding ScoreLine}" />
+              </StackPanel>
+            </Border>
+
+            <StackPanel Spacing="8">
+              <TextBlock Classes="section-label" Text="{x:Static r:Strings.Details_Files}" />
+              <ItemsControl ItemsSource="{Binding Files}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:FileRow">
+                    <Border Background="{DynamicResource InputBrush}" CornerRadius="10" Padding="12,10" Margin="0,0,0,8"
+                            ToolTip.Tip="{Binding DownloadedAs}">
+                      <Grid ColumnDefinitions="Auto,*,Auto">
+                        <Border Classes="format-chip">
+                          <TextBlock Classes="mono" FontSize="12" Text="{Binding Format}" />
+                        </Border>
+                        <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Label}" />
+                          <TextBlock Classes="muted" FontSize="11.5" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                        <TextBlock Grid.Column="2" Classes="mono muted" FontSize="12" VerticalAlignment="Center" Text="{Binding Size}" />
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <SelectableTextBlock Classes="mono" FontSize="11.5" Foreground="{DynamicResource TextFaintBrush}"
+                                   TextWrapping="Wrap" Text="{Binding FolderPath}" />
+            </StackPanel>
+
+            <StackPanel Spacing="8">
+              <Button Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False"
+                      Content="{x:Static r:Strings.Details_Review}" ToolTip.Tip="{x:Static r:Strings.Library_Soon}" ToolTip.ShowOnDisabled="True" />
+              <Grid ColumnDefinitions="*,8,*">
+                <Button Classes="secondary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False"
+                        Content="{x:Static r:Strings.Details_Edit}" ToolTip.Tip="{x:Static r:Strings.Library_Soon}" ToolTip.ShowOnDisabled="True" />
+                <Button Grid.Column="2" Classes="secondary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False"
+                        Content="{x:Static r:Strings.Details_SendKindle}" ToolTip.Tip="{x:Static r:Strings.Library_Soon}" ToolTip.ShowOnDisabled="True" />
+              </Grid>
+            </StackPanel>
+          </StackPanel>
+        </ScrollViewer>
+      </Panel>
+    </Border>
+  </Grid>
 </UserControl>

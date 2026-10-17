@@ -103,6 +103,40 @@
           </Grid>
           <TextBlock Classes="help" FontSize="13" Foreground="{DynamicResource WarnTextBrush}"
                      Text="{x:Static r:Strings.Settings_RestartNotice}" IsVisible="{Binding RestartRequired}" />
+
+          <Border Classes="card" Margin="0,8,0,0">
+            <Grid ColumnDefinitions="260,*">
+              <StackPanel Spacing="2" Margin="0,0,16,0" VerticalAlignment="Top">
+                <TextBlock Classes="strong" Text="{x:Static r:Strings.Settings_FormatsLabel}" />
+                <TextBlock Classes="help" Text="{x:Static r:Strings.Settings_FormatsHelp}" />
+              </StackPanel>
+              <ItemsControl Grid.Column="1" ItemsSource="{Binding Formats}" HorizontalAlignment="Left"
+                            AutomationProperties.Name="{x:Static r:Strings.Settings_FormatsLabel}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:FormatOption">
+                    <Grid ColumnDefinitions="28,72,Auto,Auto" Margin="0,0,0,8">
+                      <TextBlock Classes="mono muted" VerticalAlignment="Center" Text="{Binding Rank}" />
+                      <Border Grid.Column="1" Classes="format-chip" HorizontalAlignment="Left" Padding="10,4">
+                        <TextBlock Classes="mono" Text="{Binding Label}" />
+                      </Border>
+                      <Button Grid.Column="2" Classes="icon" Margin="0,0,6,0"
+                              Command="{Binding $parent[UserControl].((vm:SettingsPageViewModel)DataContext).MoveFormatUpCommand}"
+                              CommandParameter="{Binding}" AutomationProperties.Name="{x:Static r:Strings.Settings_MoveUp}"
+                              ToolTip.Tip="{x:Static r:Strings.Settings_MoveUp}">
+                        <c:StrokeIcon Data="{StaticResource Icon.ChevronUp}" Width="16" Height="16" />
+                      </Button>
+                      <Button Grid.Column="3" Classes="icon"
+                              Command="{Binding $parent[UserControl].((vm:SettingsPageViewModel)DataContext).MoveFormatDownCommand}"
+                              CommandParameter="{Binding}" AutomationProperties.Name="{x:Static r:Strings.Settings_MoveDown}"
+                              ToolTip.Tip="{x:Static r:Strings.Settings_MoveDown}">
+                        <c:StrokeIcon Data="{StaticResource Icon.ChevronDown}" Width="16" Height="16" />
+                      </Button>
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Grid>
+          </Border>
         </StackPanel>
       </TabItem>
     </TabControl>

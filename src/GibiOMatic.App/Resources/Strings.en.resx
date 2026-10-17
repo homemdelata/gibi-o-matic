@@ -32,7 +32,7 @@
   <data name="Library_SubtitleOne" xml:space="preserve"><value>1 book</value></data>
   <data name="Library_SubtitleMany" xml:space="preserve"><value>{0} books</value></data>
   <data name="Library_EmptyTitle" xml:space="preserve"><value>Your library is empty</value></data>
-  <data name="Library_EmptyHelp" xml:space="preserve"><value>Importing comics arrives in the next version. The library is already set up at:</value></data>
+  <data name="Library_EmptyHelp" xml:space="preserve"><value>Import the comics you downloaded. The originals are copied, unchanged, to:</value></data>
   <data name="Library_Import" xml:space="preserve"><value>Import files…</value></data>
   <data name="Inbox_Subtitle" xml:space="preserve"><value>New files arrive here to be identified and imported.</value></data>
   <data name="Review_Subtitle" xml:space="preserve"><value>Books whose metadata need your confirmation.</value></data>
@@ -61,4 +61,125 @@
   <data name="Theme_Light" xml:space="preserve"><value>Light (coming soon)</value></data>
   <data name="Theme_System" xml:space="preserve"><value>Follow system (coming soon)</value></data>
   <data name="Common_Choose" xml:space="preserve"><value>Choose</value></data>
+  <data name="Picker_BookFiles" xml:space="preserve"><value>Comics (PDF, CBZ, CBR, EPUB)</value></data>
+  <data name="Picker_AllFiles" xml:space="preserve"><value>All files</value></data>
+  <data name="Picker_ImportTitle" xml:space="preserve"><value>Choose the files to import</value></data>
+  <data name="Picker_ImportFolderTitle" xml:space="preserve"><value>Choose the folder with your downloads</value></data>
+  <data name="Quality_BadgeOk" xml:space="preserve"><value>OK</value></data>
+  <data name="Quality_BadgeReview" xml:space="preserve"><value>REVIEW</value></data>
+  <data name="Quality_BadgeBad" xml:space="preserve"><value>POOR</value></data>
+  <data name="Issue_TitleAllLowercase" xml:space="preserve"><value>all lowercase</value></data>
+  <data name="Issue_TitleGluedWords" xml:space="preserve"><value>looks like a file name</value></data>
+  <data name="Issue_TitleFileName" xml:space="preserve"><value>has _ or a file extension</value></data>
+  <data name="Issue_TitleGeneric" xml:space="preserve"><value>generic (Untitled)</value></data>
+  <data name="Issue_TitleExtraSpaces" xml:space="preserve"><value>extra spaces</value></data>
+  <data name="Issue_TitleAllCaps" xml:space="preserve"><value>ALL CAPS</value></data>
+  <data name="Issue_TitleJunk" xml:space="preserve"><value>junk in the title (prop, brackets)</value></data>
+  <data name="Issue_TitleLeadingZero" xml:space="preserve"><value>leading zero (Vol. 01)</value></data>
+  <data name="Issue_AuthorUnknown" xml:space="preserve"><value>unknown</value></data>
+  <data name="Issue_AuthorSingleName" xml:space="preserve"><value>single-word name: {0}</value></data>
+  <data name="Issue_AuthorsGlued" xml:space="preserve"><value>several names glued into one</value></data>
+  <data name="Issue_AuthorBackslash" xml:space="preserve"><value>backslash in the name</value></data>
+  <data name="Issue_AuthorDuplicate" xml:space="preserve"><value>repeated author</value></data>
+  <data name="Issue_AuthorsTooMany" xml:space="preserve"><value>{0} authors (colorists and letterers mixed in?)</value></data>
+  <data name="Issue_DateMissing" xml:space="preserve"><value>empty</value></data>
+  <data name="Issue_DateHumble" xml:space="preserve"><value>{0} (Humble Bundle date?)</value></data>
+  <data name="Issue_DateRepeated" xml:space="preserve"><value>{0} (repeated in {1} books)</value></data>
+  <data name="Issue_DateSameAsAdded" xml:space="preserve"><value>{0} (same as the import date)</value></data>
+  <data name="Issue_SeriesInTitleOnly" xml:space="preserve"><value>empty; the title says {0}</value></data>
+  <data name="Issue_SeriesNumberMismatch" xml:space="preserve"><value>#{0} in the series, {1} in the title</value></data>
+  <data name="Issue_InvalidIsbn" xml:space="preserve"><value>invalid ISBN ({0})</value></data>
+  <data name="Issue_NoPublisher" xml:space="preserve"><value>no publisher</value></data>
+  <data name="Library_NoPublisher" xml:space="preserve"><value>No publisher</value></data>
+  <data name="Library_NoDate" xml:space="preserve"><value>no date</value></data>
+  <data name="Library_NoSeries" xml:space="preserve"><value>no series</value></data>
+  <data name="Library_SeriesBooksOne" xml:space="preserve"><value>1 book</value></data>
+  <data name="Library_SeriesBooksMany" xml:space="preserve"><value>{0} books</value></data>
+  <data name="Library_Summary" xml:space="preserve"><value>{0} · {1} series · {2} with complete metadata</value></data>
+  <data name="Library_SearchPlaceholder" xml:space="preserve"><value>Search title, series, author…</value></data>
+  <data name="Library_ImportShort" xml:space="preserve"><value>Import</value></data>
+  <data name="Library_FetchMetadata" xml:space="preserve"><value>Fetch metadata</value></data>
+  <data name="Library_Soon" xml:space="preserve"><value>Coming in a later phase</value></data>
+  <data name="Library_ViewSeries" xml:space="preserve"><value>Series</value></data>
+  <data name="Library_ViewBooks" xml:space="preserve"><value>Books</value></data>
+  <data name="Library_BackToSeries" xml:space="preserve"><value>All series</value></data>
+  <data name="Library_NoResults" xml:space="preserve"><value>No books match this filter or search.</value></data>
+  <data name="Library_CardComplete" xml:space="preserve"><value>COMPLETE</value></data>
+  <data name="Library_CardNoDate" xml:space="preserve"><value>NO DATE</value></data>
+  <data name="Library_CardNoSeries" xml:space="preserve"><value>NO SERIES</value></data>
+  <data name="Library_CardNeedsReview" xml:space="preserve"><value>NEEDS REVIEW</value></data>
+  <data name="Library_CardBooks" xml:space="preserve"><value>books</value></data>
+  <data name="Library_CardPriority" xml:space="preserve"><value>priority</value></data>
+  <data name="Library_Grid" xml:space="preserve"><value>Books</value></data>
+  <data name="Library_Filters" xml:space="preserve"><value>Filters</value></data>
+  <data name="Filter_All" xml:space="preserve"><value>All</value></data>
+  <data name="Filter_NeedsReview" xml:space="preserve"><value>Needs review</value></data>
+  <data name="Filter_NoDate" xml:space="preserve"><value>No date</value></data>
+  <data name="Filter_NoSeries" xml:space="preserve"><value>No series</value></data>
+  <data name="Filter_UnknownAuthor" xml:space="preserve"><value>Unknown author</value></data>
+  <data name="Filter_Complete" xml:space="preserve"><value>Complete</value></data>
+  <data name="Details_Title" xml:space="preserve"><value>Title</value></data>
+  <data name="Details_Authors" xml:space="preserve"><value>Authors</value></data>
+  <data name="Details_Date" xml:space="preserve"><value>Date</value></data>
+  <data name="Details_Series" xml:space="preserve"><value>Series</value></data>
+  <data name="Details_NoSeriesOk" xml:space="preserve"><value>no series</value></data>
+  <data name="Details_Files" xml:space="preserve"><value>FILES</value></data>
+  <data name="Details_FileOriginal" xml:space="preserve"><value>Original</value></data>
+  <data name="Details_FileExtra" xml:space="preserve"><value>Extra format</value></data>
+  <data name="Details_Score" xml:space="preserve"><value>Score {0} · {1}</value></data>
+  <data name="Details_Review" xml:space="preserve"><value>Review metadata</value></data>
+  <data name="Details_Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Details_SendKindle" xml:space="preserve"><value>Send to Kindle</value></data>
+  <data name="Details_NoSelection" xml:space="preserve"><value>Pick a book to see its details.</value></data>
+  <data name="Details_Panel" xml:space="preserve"><value>Book details</value></data>
+  <data name="Inbox_AddFiles" xml:space="preserve"><value>Add files…</value></data>
+  <data name="Inbox_AddFolder" xml:space="preserve"><value>Add folder…</value></data>
+  <data name="Inbox_DropTitle" xml:space="preserve"><value>Drag files or folders here</value></data>
+  <data name="Inbox_DropHelp" xml:space="preserve"><value>PDF, CBZ, CBR or EPUB. Nothing is copied until you click Import, and the original is copied unchanged.</value></data>
+  <data name="Inbox_ListHeader" xml:space="preserve"><value>{0} files · {1} being analysed · {2} ready to import</value></data>
+  <data name="Inbox_NoEmbeddedMetadata" xml:space="preserve"><value>no metadata in the file</value></data>
+  <data name="Inbox_DupSameFileLibrary" xml:space="preserve"><value>This file is already in the library: {0}</value></data>
+  <data name="Inbox_DupSameFileList" xml:space="preserve"><value>This file appears twice in this list.</value></data>
+  <data name="Inbox_DupSameBookLibrary" xml:space="preserve"><value>Already in the library: {0} ({1})</value></data>
+  <data name="Inbox_DupSameBookList" xml:space="preserve"><value>Same book as another file in this list: {0}</value></data>
+  <data name="Inbox_LooksConverted" xml:space="preserve"><value>Looks converted (Calibre), not the publisher's original.</value></data>
+  <data name="Inbox_StatePending" xml:space="preserve"><value>Waiting for analysis</value></data>
+  <data name="Inbox_StateAnalyzing" xml:space="preserve"><value>Analysing…</value></data>
+  <data name="Inbox_StateReady" xml:space="preserve"><value>Ready to import</value></data>
+  <data name="Inbox_StateDuplicate" xml:space="preserve"><value>Duplicate</value></data>
+  <data name="Inbox_StateAlreadyThere" xml:space="preserve"><value>Already in the library</value></data>
+  <data name="Inbox_StateWillSkip" xml:space="preserve"><value>Will be skipped</value></data>
+  <data name="Inbox_StateQueued" xml:space="preserve"><value>Waiting to import</value></data>
+  <data name="Inbox_StateImporting" xml:space="preserve"><value>Importing…</value></data>
+  <data name="Inbox_StateImported" xml:space="preserve"><value>Imported</value></data>
+  <data name="Inbox_StateSkipped" xml:space="preserve"><value>Skipped</value></data>
+  <data name="Inbox_StateFailed" xml:space="preserve"><value>Error</value></data>
+  <data name="Inbox_ReasonNotFound" xml:space="preserve"><value>file not found</value></data>
+  <data name="Inbox_ReasonUnsupported" xml:space="preserve"><value>not a PDF, CBZ, CBR or EPUB</value></data>
+  <data name="Inbox_ReasonSourceChanged" xml:space="preserve"><value>the file changed after the analysis; add it again</value></data>
+  <data name="Inbox_ReasonAlreadyInLibrary" xml:space="preserve"><value>already in the library</value></data>
+  <data name="Inbox_ReasonDuplicateInList" xml:space="preserve"><value>repeated in the list</value></data>
+  <data name="Inbox_DecisionImport" xml:space="preserve"><value>Import</value></data>
+  <data name="Inbox_DecisionReplace" xml:space="preserve"><value>Replace the current one</value></data>
+  <data name="Inbox_DecisionKeepBoth" xml:space="preserve"><value>Keep both</value></data>
+  <data name="Inbox_DecisionSkip" xml:space="preserve"><value>Skip</value></data>
+  <data name="Inbox_Decisions" xml:space="preserve"><value>What to do with the duplicate</value></data>
+  <data name="Inbox_ConfirmSummary" xml:space="preserve"><value>On import: {0} new, {1} replace the current one, {2} as extra format, {3} skipped.</value></data>
+  <data name="Inbox_DoneSummary" xml:space="preserve"><value>Import finished: {0} imported, {1} skipped, {2} with errors.</value></data>
+  <data name="Inbox_SkipAll" xml:space="preserve"><value>Skip all</value></data>
+  <data name="Inbox_ClearFinished" xml:space="preserve"><value>Clear finished</value></data>
+  <data name="Inbox_Import" xml:space="preserve"><value>Import</value></data>
+  <data name="Inbox_Pause" xml:space="preserve"><value>Pause</value></data>
+  <data name="Inbox_Resume" xml:space="preserve"><value>Resume</value></data>
+  <data name="Inbox_PausedNote" xml:space="preserve"><value>Paused. The queue picks up where it stopped when resumed, even after closing the app.</value></data>
+  <data name="Inbox_ProgressAnalyzing" xml:space="preserve"><value>Analysing {0}… {1:0%}</value></data>
+  <data name="Inbox_ProgressImporting" xml:space="preserve"><value>Copying {0}… {1:0%}</value></data>
+  <data name="Inbox_Files" xml:space="preserve"><value>Inbox files</value></data>
+  <data name="Settings_FormatsLabel" xml:space="preserve"><value>Preferred original format</value></data>
+  <data name="Settings_FormatsHelp" xml:space="preserve"><value>When the same book arrives in several formats, the first in this list becomes the main original and the others are kept as extra formats.</value></data>
+  <data name="Settings_MoveUp" xml:space="preserve"><value>Move up</value></data>
+  <data name="Settings_MoveDown" xml:space="preserve"><value>Move down</value></data>
+  <data name="Welcome_NotEmpty" xml:space="preserve"><value>The folder {0} already has files. Create the library here anyway? The files already in it will not be touched.</value></data>
+  <data name="Welcome_CreateAnyway" xml:space="preserve"><value>Create anyway</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
 </root>
