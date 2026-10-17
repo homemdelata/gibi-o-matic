@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\GibiOMatic.Core\GibiOMatic.Core.csproj" />
+    <ProjectReference Include="..\GibiOMatic.Conversion\GibiOMatic.Conversion.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" />

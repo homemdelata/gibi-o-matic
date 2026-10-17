@@ -62,6 +62,9 @@ public sealed class LibraryService(AppPaths paths, ILogger<LibraryService> logge
     public Task<int> CountBooksAsync(LibraryInfo library, CancellationToken ct = default) =>
         IndexFor(library).CountBooksAsync(ct);
 
+    /// <summary>The local index of an open library.</summary>
+    public LibraryIndex GetIndex(LibraryInfo library) => IndexFor(library);
+
     private LibraryIndex IndexFor(LibraryInfo library) =>
         new(Path.Combine(paths.IndexDirectory, library.Id + ".db"));
 
@@ -114,6 +117,21 @@ public sealed class LibraryService(AppPaths paths, ILogger<LibraryService> logge
         logger.LogInformation("Rebuilt index for library {LibraryId}: {Count} books, {Issues} issues",
             library.Id, books.Count, issues.Count);
         return new IndexRebuildResult(books.Count, issues);
+    }
+
+    /// <summary>
+    /// True when the folder already has files or folders the user can see (hidden and system
+    /// entries such as desktop.ini do not count). Used to warn before creating a library there.
+    /// </summary>
+    public static bool HasVisibleContent(string folder)
+    {
+        if (!Directory.Exists(folder))
+        {
+            return false;
+        }
+
+        var options = new EnumerationOptions { AttributesToSkip = FileAttributes.Hidden | FileAttributes.System, IgnoreInaccessible = true };
+        return Directory.EnumerateFileSystemEntries(folder, "*", options).Any(e => !Path.GetFileName(e).StartsWith('.'));
     }
 
     private static string NormalizeRoot(string rootPath) =>

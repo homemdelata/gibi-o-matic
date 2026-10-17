@@ -10,6 +10,7 @@ public sealed record AppPaths(string ConfigDirectory, string DataDirectory)
     public string SecretsDirectory => Path.Combine(ConfigDirectory, "secrets");
     public string IndexDirectory => Path.Combine(DataDirectory, "index");
     public string LogsDirectory => Path.Combine(DataDirectory, "logs");
+    public string ThumbnailsDirectory => Path.Combine(DataDirectory, "thumbs");
 
     /// <summary>
     /// Windows: %APPDATA%\GibiOMatic and %LOCALAPPDATA%\GibiOMatic.

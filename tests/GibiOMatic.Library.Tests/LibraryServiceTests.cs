@@ -175,3 +175,32 @@ public sealed class LibraryServiceTests : IDisposable
         await File.WriteAllTextAsync(Path.Combine(dir, "metadata.json"), content, Ct);
     }
 }
+
+public sealed class FolderContentTests : IDisposable
+{
+    private readonly TempDirectory _temp = new();
+
+    public void Dispose() => _temp.Dispose();
+
+    [Fact]
+    public void Only_visible_entries_count_as_content()
+    {
+        var folder = _temp.Combine("pasta");
+        Directory.CreateDirectory(folder);
+        Assert.False(LibraryService.HasVisibleContent(folder));
+
+        File.WriteAllText(Path.Combine(folder, ".DS_Store"), "");
+        if (OperatingSystem.IsWindows())
+        {
+            var ini = Path.Combine(folder, "desktop.ini");
+            File.WriteAllText(ini, "");
+            File.SetAttributes(ini, FileAttributes.Hidden | FileAttributes.System);
+        }
+
+        Assert.False(LibraryService.HasVisibleContent(folder));
+
+        File.WriteAllText(Path.Combine(folder, "foto.jpg"), "");
+        Assert.True(LibraryService.HasVisibleContent(folder));
+        Assert.False(LibraryService.HasVisibleContent(_temp.Combine("nao-existe")));
+    }
+}

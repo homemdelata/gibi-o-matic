@@ -27,6 +27,38 @@ internal static class IndexMigrations
         CREATE INDEX ix_books_series ON books (series_name);
         CREATE INDEX ix_books_publisher ON books (publisher);
         """,
+
+        // 2: files of each book (exact-duplicate lookup by hash), the inbox queue and app state
+        """
+        CREATE TABLE book_files (
+            book_id   TEXT NOT NULL,
+            name      TEXT NOT NULL,
+            role      TEXT NOT NULL,
+            format    TEXT NOT NULL,
+            sha256    TEXT NOT NULL,
+            bytes     INTEGER NOT NULL,
+            PRIMARY KEY (book_id, name)
+        );
+        CREATE INDEX ix_book_files_sha256 ON book_files (sha256);
+
+        CREATE TABLE inbox_items (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_path     TEXT NOT NULL,
+            state           TEXT NOT NULL,
+            analysis_json   TEXT,
+            decision        TEXT,
+            book_id         TEXT,
+            message         TEXT,
+            added_at        TEXT NOT NULL,
+            updated_at      TEXT NOT NULL
+        );
+        CREATE INDEX ix_inbox_state ON inbox_items (state);
+
+        CREATE TABLE app_state (
+            key    TEXT PRIMARY KEY,
+            value  TEXT NOT NULL
+        );
+        """,
     ];
 
     public static int LatestVersion => All.Count;
