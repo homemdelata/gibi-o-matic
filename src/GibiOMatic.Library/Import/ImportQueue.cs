@@ -28,7 +28,8 @@ public sealed class ImportQueue : IAsyncDisposable
     private readonly ILogger<ImportQueue> _logger;
     private readonly SemaphoreSlim _wake = new(0);
     private readonly CancellationTokenSource _stop = new();
-    private CancellationTokenSource? _current;
+    private volatile CancellationTokenSource? _current;
+    private volatile bool _paused;
     private Task _worker = Task.CompletedTask;
 
     public ImportQueue(LibraryInfo library, LibraryIndex index, ImportAnalyzer analyzer, BookImporter importer,
@@ -55,7 +56,11 @@ public sealed class ImportQueue : IAsyncDisposable
 
     public LibraryInfo Library => _library;
 
-    public bool IsPaused { get; private set; }
+    public bool IsPaused
+    {
+        get => _paused;
+        private set => _paused = value;
+    }
 
     public ImportProgress? Current { get; private set; }
 
@@ -271,7 +276,7 @@ public sealed class ImportQueue : IAsyncDisposable
                 var item = IsPaused
                     ? null
                     : await _store.NextAsync(InboxItemState.Pending, stop) ?? await _store.NextAsync(InboxItemState.Queued, stop);
-                if (item is null)
+                if (item is null || IsPaused)
                 {
                     await _wake.WaitAsync(stop);
                     continue;
@@ -279,6 +284,13 @@ public sealed class ImportQueue : IAsyncDisposable
 
                 using var current = CancellationTokenSource.CreateLinkedTokenSource(stop);
                 _current = current;
+                if (IsPaused)
+                {
+                    // Paused while the item was being fetched; from here on a pause cancels it instead.
+                    _current = null;
+                    continue;
+                }
+
                 try
                 {
                     if (item.State == InboxItemState.Pending)
