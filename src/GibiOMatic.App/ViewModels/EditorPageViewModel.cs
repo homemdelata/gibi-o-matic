@@ -9,6 +9,7 @@ using GibiOMatic.Conversion;
 using GibiOMatic.Core.Domain;
 using GibiOMatic.Core.Text;
 using GibiOMatic.Destinations;
+using GibiOMatic.Destinations.Komga;
 using GibiOMatic.Library;
 using GibiOMatic.Library.Editing;
 using GibiOMatic.Library.Index;
@@ -304,7 +305,10 @@ public sealed partial class EditorPageViewModel : PageViewModel
         }
 
         var preview = Apply(_books[0].Metadata, 0, out _);
-        KomgaPreview = OutputNames.Komga(preview);
+        // The first Komga destination's names, or the defaults when there is none yet.
+        KomgaPreview = _session.Destinations?.Destinations.FirstOrDefault(d => d.Config.Type == KomgaDestinationType.TypeId)?.Config is { } komga
+            ? OutputNames.KomgaPath(preview, komga.OneShotsFolder, komga.SeriesTemplate, komga.OneShotTemplate) + ".cbz"
+            : OutputNames.Komga(preview);
         KindlePreview = OutputNames.Kindle(preview);
     }
 

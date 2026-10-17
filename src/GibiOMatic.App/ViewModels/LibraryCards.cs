@@ -290,6 +290,9 @@ public sealed partial class BookDetailsViewModel : ViewModelBase
     [ObservableProperty]
     public partial Bitmap? Cover { get; private set; }
 
+    /// <summary>The book's copy in each destination (filled after the panel opens).</summary>
+    public System.Collections.ObjectModel.ObservableCollection<CopyRow> Copies { get; } = [];
+
     private static CheckRow Check(string field, QualityReport report, QualityField qualityField, string value)
     {
         if (report.WorstIn(qualityField) is not { } problem)
@@ -308,3 +311,6 @@ public sealed partial class BookDetailsViewModel : ViewModelBase
         }
     }
 }
+
+/// <summary>A book's copy in one destination: "Komga de casa · Em dia".</summary>
+public sealed record CopyRow(string Destination, string State, StatusKind Kind, string? Path);

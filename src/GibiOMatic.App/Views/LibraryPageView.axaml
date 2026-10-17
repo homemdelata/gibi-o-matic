@@ -236,13 +236,31 @@
 
       <!-- Selection mode -->
       <Border DockPanel.Dock="Top" Classes="card" Padding="16,10" Margin="0,0,0,16" IsVisible="{Binding IsSelecting}">
-        <Grid ColumnDefinitions="*,Auto,Auto,Auto">
-          <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="{Binding CheckedText}" />
+        <Grid ColumnDefinitions="*,Auto,Auto,Auto" RowDefinitions="Auto,Auto">
+          <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="{Binding CheckedText}" TextWrapping="Wrap" />
           <Button Grid.Column="1" Classes="secondary" MinHeight="36" Margin="0,0,8,0" Content="{x:Static r:Strings.Library_SelectAll}"
                   Command="{Binding CheckAllVisibleCommand}" />
           <Button Grid.Column="2" Classes="primary" MinHeight="36" Margin="0,0,8,0" Content="{x:Static r:Strings.Library_EditBatch}"
                   Command="{Binding EditCheckedCommand}" />
           <Button Grid.Column="3" Classes="secondary" MinHeight="36" Content="{x:Static r:Strings.Common_Cancel}" Command="{Binding ToggleSelectingCommand}" />
+          <ItemsControl Grid.Row="1" Grid.ColumnSpan="4" Margin="0,10,0,0" ItemsSource="{Binding ChosenDestinations}"
+                        IsVisible="{Binding ChosenDestinations.Count}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <WrapPanel ItemSpacing="8" LineSpacing="8" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:DestinationChoiceViewModel">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Button Classes="secondary" MinHeight="34" Content="{Binding IncludeText}" Command="{Binding IncludeCommand}"
+                          IsEnabled="{Binding $parent[UserControl].((vm:LibraryPageViewModel)DataContext).HasChecked}" />
+                  <Button Classes="secondary" MinHeight="34" Content="{Binding RemoveText}" Command="{Binding RemoveCommand}"
+                          IsEnabled="{Binding $parent[UserControl].((vm:LibraryPageViewModel)DataContext).HasChecked}" />
+                </StackPanel>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
         </Grid>
       </Border>
 
@@ -408,6 +426,24 @@
               </ItemsControl>
               <SelectableTextBlock Classes="mono" FontSize="11.5" Foreground="{DynamicResource TextFaintBrush}"
                                    TextWrapping="Wrap" Text="{Binding FolderPath}" />
+            </StackPanel>
+
+            <StackPanel Spacing="8" IsVisible="{Binding Copies.Count}">
+              <TextBlock Classes="section-label" Text="{x:Static r:Strings.Book_Copies}" />
+              <ItemsControl ItemsSource="{Binding Copies}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:CopyRow">
+                    <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,6" ToolTip.Tip="{Binding Path}">
+                      <TextBlock VerticalAlignment="Center" Text="{Binding Destination}" TextTrimming="CharacterEllipsis" />
+                      <Border Grid.Column="1" Classes="pill"
+                              Background="{Binding Kind, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Background}">
+                        <TextBlock FontSize="12" FontWeight="SemiBold" Text="{Binding State}"
+                                   Foreground="{Binding Kind, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
+                      </Border>
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
             </StackPanel>
 
             <StackPanel Spacing="8">

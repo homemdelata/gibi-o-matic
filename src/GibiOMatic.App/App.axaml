@@ -14,6 +14,7 @@
     <DataTemplate DataType="vm:ReviewPageViewModel"><v:ReviewPageView /></DataTemplate>
     <DataTemplate DataType="vm:EditorPageViewModel"><v:EditorPageView /></DataTemplate>
     <DataTemplate DataType="vm:SettingsPageViewModel"><v:SettingsPageView /></DataTemplate>
+    <DataTemplate DataType="vm:DestinationsPageViewModel"><v:DestinationsPageView /></DataTemplate>
     <DataTemplate DataType="vm:PlaceholderPageViewModel"><v:PlaceholderPageView /></DataTemplate>
   </Application.DataTemplates>
 

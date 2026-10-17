@@ -4,6 +4,9 @@ using GibiOMatic.Core;
 using GibiOMatic.Core.Libraries;
 using GibiOMatic.Core.Secrets;
 using GibiOMatic.Core.Settings;
+using GibiOMatic.Destinations;
+using GibiOMatic.Destinations.Komga;
+using GibiOMatic.Destinations.Sync;
 using GibiOMatic.Library;
 using GibiOMatic.Library.Editing;
 using GibiOMatic.Library.Identification;
@@ -11,6 +14,7 @@ using GibiOMatic.Library.Import;
 using GibiOMatic.Metadata;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Serilog;
 
 namespace GibiOMatic.App.Services;
@@ -50,6 +54,9 @@ public static class ServiceRegistration
         services.AddMetadataSources(paths);
         services.AddSingleton<BookEditor>();
         services.AddSingleton<IdentificationQueueFactory>();
+        services.AddSingleton(sp => new KomgaClient(new HttpClient { Timeout = TimeSpan.FromSeconds(15) }, sp.GetRequiredService<ILogger<KomgaClient>>()));
+        services.AddSingleton<IDestinationType, KomgaDestinationType>();
+        services.AddSingleton<DestinationServiceFactory>();
 
         // UI services
         services.AddSingleton<IUiThread, AvaloniaUiThread>();
@@ -67,6 +74,7 @@ public static class ServiceRegistration
         services.AddTransient<InboxPageViewModel>();
         services.AddTransient<ReviewPageViewModel>();
         services.AddTransient<EditorPageViewModel>();
+        services.AddTransient<DestinationsPageViewModel>();
         services.AddTransient<SettingsPageViewModel>();
         services.AddSingleton<Func<WelcomeViewModel>>(sp => sp.GetRequiredService<WelcomeViewModel>);
         services.AddSingleton<Func<ShellViewModel>>(sp => sp.GetRequiredService<ShellViewModel>);

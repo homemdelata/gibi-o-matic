@@ -325,4 +325,105 @@
   <data name="Review_LinkNotFound" xml:space="preserve"><value>O ComicVine não encontrou nada nesse link.</value></data>
   <data name="Review_LoadingLink" xml:space="preserve"><value>Carregando o livro do link do ComicVine…</value></data>
   <data name="Reason_ChosenByUser" xml:space="preserve"><value>escolhido por você</value></data>
+  <data name="Destination_KomgaType" xml:space="preserve"><value>Tipo Komga · CBZ + ComicInfo.xml</value></data>
+  <data name="Destination_AllBooks" xml:space="preserve"><value>Todos os livros</value></data>
+  <data name="Destination_ChosenBooks" xml:space="preserve"><value>Livros que eu escolher</value></data>
+  <data name="Destination_Automatic" xml:space="preserve"><value>Automático</value></data>
+  <data name="Destination_Manual" xml:space="preserve"><value>Manual</value></data>
+  <data name="Destination_StatusNoFolder" xml:space="preserve"><value>Falta escolher a pasta</value></data>
+  <data name="Destination_StatusUnavailable" xml:space="preserve"><value>Pasta indisponível: {0}</value></data>
+  <data name="Destination_StatusFirstSync" xml:space="preserve"><value>Primeira atualização pendente · {0} livros entram</value></data>
+  <data name="Destination_StatusPending" xml:space="preserve"><value>{0} para atualizar · {1} em dia</value></data>
+  <data name="Destination_StatusUpToDate" xml:space="preserve"><value>Em dia · {0} livros</value></data>
+  <data name="Copy_UpToDate" xml:space="preserve"><value>Em dia</value></data>
+  <data name="Copy_Outdated" xml:space="preserve"><value>Desatualizado</value></data>
+  <data name="Copy_NotGenerated" xml:space="preserve"><value>Não gerado</value></data>
+  <data name="Copy_NotIncluded" xml:space="preserve"><value>Não incluído</value></data>
+  <data name="Destination_OneShotsMismatch" xml:space="preserve"><value>Na biblioteca "{0}" do Komga, a pasta de one-shots é "{1}". Use o mesmo nome aqui (ou mude no Komga), senão os one-shots aparecem como séries.</value></data>
+  <data name="Destination_Empty" xml:space="preserve"><value>(vazia)</value></data>
+  <data name="Picker_DestinationFolder" xml:space="preserve"><value>Pasta onde o Komga procura os quadrinhos</value></data>
+  <data name="Destination_Testing" xml:space="preserve"><value>Testando…</value></data>
+  <data name="Destination_NeedUrlAndKey" xml:space="preserve"><value>Informe o endereço e a chave de API do Komga.</value></data>
+  <data name="Destination_ServerOk" xml:space="preserve"><value>Conectado · {0} bibliotecas</value></data>
+  <data name="Destination_ServerKeyRejected" xml:space="preserve"><value>O Komga recusou a chave. Confira a chave de API (Configurações da conta no Komga).</value></data>
+  <data name="Destination_ServerError" xml:space="preserve"><value>Não foi possível falar com o Komga: {0}</value></data>
+  <data name="Destination_Saved" xml:space="preserve"><value>Alterações salvas.</value></data>
+  <data name="Wizard_Title" xml:space="preserve"><value>Adicionar destino</value></data>
+  <data name="Wizard_KomgaHelp" xml:space="preserve"><value>Servidor de quadrinhos para ler no tablet, celular ou navegador.</value></data>
+  <data name="Wizard_KindleHelp" xml:space="preserve"><value>Gera arquivos prontos para o Kindle, com leitura quadro a quadro.</value></data>
+  <data name="Wizard_KavitaHelp" xml:space="preserve"><value>Outro servidor de leitura.</value></data>
+  <data name="Wizard_FolderName" xml:space="preserve"><value>Pasta simples</value></data>
+  <data name="Wizard_FolderHelp" xml:space="preserve"><value>Copia para uma pasta, no formato que você escolher.</value></data>
+  <data name="Wizard_Selected" xml:space="preserve"><value>Selecionado</value></data>
+  <data name="Wizard_NextPhase" xml:space="preserve"><value>Em breve</value></data>
+  <data name="Wizard_Soon" xml:space="preserve"><value>Em breve</value></data>
+  <data name="Wizard_StepType" xml:space="preserve"><value>1. Tipo</value></data>
+  <data name="Wizard_StepDetails" xml:space="preserve"><value>2. Detalhes</value></data>
+  <data name="Wizard_StepRules" xml:space="preserve"><value>3. Nome e regras</value></data>
+  <data name="Wizard_Step1Subtitle" xml:space="preserve"><value>Para onde seus quadrinhos devem ir?</value></data>
+  <data name="Wizard_Step2Subtitle" xml:space="preserve"><value>Onde fica o seu Komga?</value></data>
+  <data name="Wizard_Step3Subtitle" xml:space="preserve"><value>Quase lá</value></data>
+  <data name="Wizard_NeedFolder" xml:space="preserve"><value>Escolha a pasta antes de continuar.</value></data>
+  <data name="Wizard_NeedNameAndFolder" xml:space="preserve"><value>O destino precisa de um nome e de uma pasta.</value></data>
+  <data name="Wizard_DefaultKomgaName" xml:space="preserve"><value>Komga de casa</value></data>
+  <data name="Wizard_FolderQuestion" xml:space="preserve"><value>Em qual pasta o Komga procura os quadrinhos?</value></data>
+  <data name="Wizard_FolderHint" xml:space="preserve"><value>A pasta raiz de uma biblioteca do Komga (ex.: Z:\Quadrinhos). Para testar, use uma pasta vazia.</value></data>
+  <data name="Wizard_ServerLabel" xml:space="preserve"><value>Endereço do servidor (opcional)</value></data>
+  <data name="Wizard_ServerHelp" xml:space="preserve"><value>Com o endereço e uma chave de API, o Gibi-o-matic avisa o Komga para atualizar a biblioteca sozinho e confere a pasta de one-shots. A chave precisa ser de um usuário administrador.</value></data>
+  <data name="Wizard_ApiKeyLabel" xml:space="preserve"><value>Chave de API do Komga</value></data>
+  <data name="Wizard_ApiKeyPlaceholder" xml:space="preserve"><value>Cole a chave (fica guardada protegida)</value></data>
+  <data name="Wizard_LibraryLabel" xml:space="preserve"><value>Biblioteca do Komga</value></data>
+  <data name="Wizard_Test" xml:space="preserve"><value>Testar</value></data>
+  <data name="Wizard_PreviewLabel" xml:space="preserve"><value>Como os arquivos vão ficar</value></data>
+  <data name="Wizard_PreviewHelp" xml:space="preserve"><value>Dá para mudar depois, em Avançado.</value></data>
+  <data name="Wizard_NameLabel" xml:space="preserve"><value>Nome do destino</value></data>
+  <data name="Wizard_WhichLabel" xml:space="preserve"><value>Quais livros?</value></data>
+  <data name="Wizard_WhichAll" xml:space="preserve"><value>Toda a biblioteca</value></data>
+  <data name="Wizard_WhichChosen" xml:space="preserve"><value>Só os que eu escolher</value></data>
+  <data name="Wizard_WhenLabel" xml:space="preserve"><value>Quando?</value></data>
+  <data name="Wizard_WhenAuto" xml:space="preserve"><value>Automaticamente</value></data>
+  <data name="Wizard_WhenManual" xml:space="preserve"><value>Quando eu mandar</value></data>
+  <data name="Wizard_RulesHelp" xml:space="preserve"><value>Só entram livros já revisados (dá para mudar em Avançado). Antes da primeira cópia, você vê um resumo e confirma.</value></data>
+  <data name="Wizard_Back" xml:space="preserve"><value>Voltar</value></data>
+  <data name="Wizard_Next" xml:space="preserve"><value>Continuar</value></data>
+  <data name="Wizard_Create" xml:space="preserve"><value>Criar destino</value></data>
+  <data name="Wizard_Cancel" xml:space="preserve"><value>Cancelar</value></data>
+  <data name="Destinations_Add" xml:space="preserve"><value>Adicionar destino</value></data>
+  <data name="Destinations_AddHelp" xml:space="preserve"><value>Um servidor Komga, outro Kindle…</value></data>
+  <data name="Destinations_Soon" xml:space="preserve"><value>Em breve: Kindle, Kavita, Kobo, pasta simples, servidor OPDS</value></data>
+  <data name="Destinations_Configure" xml:space="preserve"><value>Configurar</value></data>
+  <data name="Destinations_SyncNow" xml:space="preserve"><value>Atualizar agora</value></data>
+  <data name="Destinations_Empty" xml:space="preserve"><value>Nenhum destino ainda. Adicione um Komga para gerar as cópias de leitura.</value></data>
+  <data name="Destination_BackToList" xml:space="preserve"><value>Destinos</value></data>
+  <data name="Destination_SyncSection" xml:space="preserve"><value>Cópias</value></data>
+  <data name="Destination_SettingsSection" xml:space="preserve"><value>Configurações</value></data>
+  <data name="Destination_Advanced" xml:space="preserve"><value>Avançado</value></data>
+  <data name="Destination_OneShotsLabel" xml:space="preserve"><value>Pasta de one-shots</value></data>
+  <data name="Destination_OneShotsHelp" xml:space="preserve"><value>Igual à configurada na biblioteca do Komga. Vazio: cada one-shot fica numa pasta própria.</value></data>
+  <data name="Destination_SeriesTemplateLabel" xml:space="preserve"><value>Nome dos livros de série</value></data>
+  <data name="Destination_OneShotTemplateLabel" xml:space="preserve"><value>Nome dos one-shots</value></data>
+  <data name="Destination_TemplateHelp" xml:space="preserve"><value>Use {series}, {num}, {number}, {year}, {title}, {publisher} e {oneshots}. Cada / cria uma pasta.</value></data>
+  <data name="Destination_IncludeUnreviewed" xml:space="preserve"><value>Incluir livros ainda não revisados</value></data>
+  <data name="Destination_IncludeTextBooks" xml:space="preserve"><value>Incluir livros de texto (como EPUB)</value></data>
+  <data name="Destination_Save" xml:space="preserve"><value>Salvar alterações</value></data>
+  <data name="Destination_Remove" xml:space="preserve"><value>Remover destino</value></data>
+  <data name="Destination_RemoveConfirm" xml:space="preserve"><value>Remover este destino? As cópias já geradas continuam na pasta; o Gibi-o-matic só deixa de cuidar delas.</value></data>
+  <data name="Destination_RemoveYes" xml:space="preserve"><value>Remover</value></data>
+  <data name="Destination_KeyStored" xml:space="preserve"><value>Deixe vazio para manter a chave guardada.</value></data>
+  <data name="Plan_Create" xml:space="preserve"><value>Criar</value></data>
+  <data name="Plan_Update" xml:space="preserve"><value>Atualizar</value></data>
+  <data name="Plan_Delete" xml:space="preserve"><value>Apagar</value></data>
+  <data name="Plan_More" xml:space="preserve"><value>… e mais {0}</value></data>
+  <data name="Plan_Nothing" xml:space="preserve"><value>Nada a fazer: as cópias estão em dia.</value></data>
+  <data name="Plan_Summary" xml:space="preserve"><value>{0} para criar · {1} para atualizar · {2} para apagar. Confirma?</value></data>
+  <data name="Plan_Confirm" xml:space="preserve"><value>Confirmar e gerar</value></data>
+  <data name="Plan_Cancel" xml:space="preserve"><value>Agora não</value></data>
+  <data name="Sync_Done" xml:space="preserve"><value>Pronto: {0} cópias geradas, {1} apagadas.</value></data>
+  <data name="Sync_DoneWithErrors" xml:space="preserve"><value>{0} geradas, {1} apagadas, {2} com erro: {3}</value></data>
+  <data name="Sync_Progress" xml:space="preserve"><value>Gerando {0} ({1} de {2})…</value></data>
+  <data name="Book_Copies" xml:space="preserve"><value>CÓPIAS</value></data>
+  <data name="Library_IncludeInDestination" xml:space="preserve"><value>Incluir em {0}</value></data>
+  <data name="Library_RemoveFromDestination" xml:space="preserve"><value>Tirar de {0}</value></data>
+  <data name="Library_IncludedIn" xml:space="preserve"><value>{0} livros incluídos em {1}.</value></data>
+  <data name="Library_RemovedFrom" xml:space="preserve"><value>{0} livros tirados de {1}.</value></data>
 </root>

@@ -1,7 +1,9 @@
 using GibiOMatic.App.Resources;
 using GibiOMatic.Core.Libraries;
 using GibiOMatic.Core.Settings;
+using GibiOMatic.Destinations.Sync;
 using GibiOMatic.Library;
+using GibiOMatic.Library.Editing;
 using GibiOMatic.Library.Identification;
 using GibiOMatic.Library.Import;
 using GibiOMatic.Library.Index;
@@ -16,7 +18,9 @@ public sealed class LibrarySession(
     LibraryService libraries,
     ISettingsService settings,
     ImportQueueFactory queues,
-    IdentificationQueueFactory identifications) : IAsyncDisposable, IDisposable
+    IdentificationQueueFactory identifications,
+    DestinationServiceFactory destinations,
+    BookEditor editor) : IAsyncDisposable, IDisposable
 {
     public LibraryInfo? Current { get; private set; }
 
@@ -25,6 +29,9 @@ public sealed class LibrarySession(
 
     /// <summary>Online identification of the current library's books, running in the background.</summary>
     public IdentificationQueue? Identification { get; private set; }
+
+    /// <summary>Komga, Kindle…: copies generated in the background.</summary>
+    public DestinationService? Destinations { get; private set; }
 
     public LibraryIndex? Index => Current is null ? null : libraries.GetIndex(Current);
 
@@ -51,10 +58,23 @@ public sealed class LibrarySession(
         var identification = identifications.Create(library);
         // Every imported book is identified afterwards (decision of 2026-10-17).
         queue.BookImported += (_, bookId) => _ = identification.EnqueueAsync([bookId], force: false);
+        var destinationService = destinations.Create(library);
+        // Every saved book (approval, edit, new cover) and every import reaches the automatic destinations.
+        queue.BookImported += (_, bookId) => destinationService.OnBookChanged(bookId);
+        _onBookSaved = (_, e) =>
+        {
+            if (e.LibraryId == library.Id)
+            {
+                destinationService.OnBookChanged(e.BookId);
+            }
+        };
+        editor.BookSaved += _onBookSaved;
         await queue.StartAsync(ct);
         await identification.StartAsync(ct);
+        destinationService.Start();
         Queue = queue;
         Identification = identification;
+        Destinations = destinationService;
         Current = library;
         Changed?.Invoke(this, library);
         return library;
@@ -63,8 +83,22 @@ public sealed class LibrarySession(
     /// <summary>Stops the background import; an item in progress resumes on the next start.</summary>
     public ValueTask DisposeAsync() => new(StopQueuesAsync());
 
+    private EventHandler<BookSavedEventArgs>? _onBookSaved;
+
     private async Task StopQueuesAsync()
     {
+        if (_onBookSaved is not null)
+        {
+            editor.BookSaved -= _onBookSaved;
+            _onBookSaved = null;
+        }
+
+        if (Destinations is not null)
+        {
+            await Destinations.DisposeAsync().ConfigureAwait(false);
+            Destinations = null;
+        }
+
         if (Queue is not null)
         {
             await Queue.DisposeAsync().ConfigureAwait(false);

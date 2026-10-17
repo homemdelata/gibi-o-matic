@@ -7,6 +7,8 @@ using GibiOMatic.App.Services;
 using GibiOMatic.Conversion;
 using GibiOMatic.Core.Domain;
 using GibiOMatic.Core.Quality;
+using GibiOMatic.Core.Settings;
+using GibiOMatic.Destinations.Sync;
 using GibiOMatic.Library;
 using Microsoft.Extensions.Logging;
 
@@ -58,18 +60,20 @@ public sealed partial class LibraryPageViewModel : PageViewModel
     private readonly ThumbnailCache _thumbnails;
     private readonly ICoverLoader _covers;
     private readonly IFilePicker _filePicker;
+    private readonly ISettingsService _settings;
     private readonly ILogger<LibraryPageViewModel> _logger;
     private readonly Debouncer _reload;
     private List<BookCardViewModel> _books = [];
     private double _viewportWidth;
 
     public LibraryPageViewModel(LibrarySession session, ThumbnailCache thumbnails, ICoverLoader covers, IFilePicker filePicker,
-        IUiThread ui, ILogger<LibraryPageViewModel> logger)
+        ISettingsService settings, IUiThread ui, ILogger<LibraryPageViewModel> logger)
     {
         _session = session;
         _thumbnails = thumbnails;
         _covers = covers;
         _filePicker = filePicker;
+        _settings = settings;
         _logger = logger;
         _reload = new Debouncer(ui, TimeSpan.FromMilliseconds(400), () => LoadAsync());
         Status = new IdentificationStatusViewModel(session, ui);
@@ -395,6 +399,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel
     private void ToggleSelecting()
     {
         IsSelecting = !IsSelecting;
+        LoadChosenDestinations();
         if (!IsSelecting)
         {
             foreach (var book in _books)
@@ -419,6 +424,42 @@ public sealed partial class LibraryPageViewModel : PageViewModel
         }
 
         UpdateChecked();
+    }
+
+    /// <summary>"Livros que eu escolher" destinations, offered in the selection bar.</summary>
+    public ObservableCollection<DestinationChoiceViewModel> ChosenDestinations { get; } = [];
+
+    private void LoadChosenDestinations()
+    {
+        ChosenDestinations.Clear();
+        foreach (var destination in _settings.Current.Destinations.Where(d => d.Which == DestinationScope.ChosenBooks))
+        {
+            ChosenDestinations.Add(new DestinationChoiceViewModel(destination.Id, destination.Name, SetChosenAsync));
+        }
+    }
+
+    /// <summary>Adds the checked books to (or removes them from) a destination's list.</summary>
+    private async Task SetChosenAsync(string destinationId, bool include)
+    {
+        if (_settings.Current.Destinations.FirstOrDefault(d => d.Id == destinationId) is not { } destination)
+        {
+            return;
+        }
+
+        var ids = _books.Where(b => b.IsChecked).Select(b => b.Id).ToList();
+        var chosen = include ? destination.ChosenBookIds.Union(ids).ToList() : destination.ChosenBookIds.Except(ids).ToList();
+        var updated = destination with { ChosenBookIds = chosen };
+        await _settings.SaveAsync(_settings.Current with
+        {
+            Destinations = _settings.Current.Destinations.Select(d => d.Id == destinationId ? updated : d).ToList(),
+        });
+
+        foreach (var id in ids)
+        {
+            _session.Destinations?.OnBookChanged(id);
+        }
+
+        CheckedText = string.Format(CultureInfo.CurrentCulture, include ? Strings.Library_IncludedIn : Strings.Library_RemovedFrom, ids.Count, destination.Name);
     }
 
     [RelayCommand(CanExecute = nameof(HasChecked))]
@@ -492,6 +533,33 @@ public sealed partial class LibraryPageViewModel : PageViewModel
 
         card.IsSelected = true;
         Selected = new BookDetailsViewModel(card, library, _covers);
+        _ = LoadCopiesAsync(Selected);
+    }
+
+    private async Task LoadCopiesAsync(BookDetailsViewModel details)
+    {
+        if (_session.Destinations is not { } destinations)
+        {
+            return;
+        }
+
+        try
+        {
+            foreach (var (destination, state, path) in await destinations.CopiesOfAsync(details.Card.Book))
+            {
+                var kind = state switch
+                {
+                    CopyState.UpToDate => StatusKind.Ok,
+                    CopyState.Outdated or CopyState.NotGenerated => StatusKind.Warn,
+                    _ => StatusKind.Neutral,
+                };
+                details.Copies.Add(new CopyRow(destination.Name, DestinationText.Copy(state), kind, path));
+            }
+        }
+        catch (Exception ex) when (LibrarySession.IsExpectedFailure(ex))
+        {
+            _logger.LogWarning(ex, "Could not read the copies of {Book}", details.Card.Id);
+        }
     }
 
     [RelayCommand]
@@ -533,4 +601,17 @@ public sealed partial class LibraryPageViewModel : PageViewModel
         _reload.Dispose();
         Status.Dispose();
     }
+}
+
+/// <summary>A "Livros que eu escolher" destination in the selection bar.</summary>
+public sealed partial class DestinationChoiceViewModel(string id, string name, Func<string, bool, Task> set) : ViewModelBase
+{
+    public string IncludeText { get; } = string.Format(CultureInfo.CurrentCulture, Strings.Library_IncludeInDestination, name);
+    public string RemoveText { get; } = string.Format(CultureInfo.CurrentCulture, Strings.Library_RemoveFromDestination, name);
+
+    [RelayCommand]
+    private Task IncludeAsync() => set(id, true);
+
+    [RelayCommand]
+    private Task RemoveAsync() => set(id, false);
 }

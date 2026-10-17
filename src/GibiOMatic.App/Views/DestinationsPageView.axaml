@@ -1,0 +1,361 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GibiOMatic.App.ViewModels"
+             xmlns:c="using:GibiOMatic.App.Controls"
+             xmlns:r="using:GibiOMatic.App.Resources"
+             xmlns:conv="using:GibiOMatic.App.Converters"
+             xmlns:komga="using:GibiOMatic.Destinations.Komga"
+             x:Class="GibiOMatic.App.Views.DestinationsPageView"
+             x:DataType="vm:DestinationsPageViewModel">
+  <UserControl.Resources>
+    <DataTemplate x:Key="KomgaServerFields" x:DataType="vm:DestinationFormViewModel">
+      <StackPanel Spacing="6">
+        <TextBlock Classes="field-label" Text="{x:Static r:Strings.Wizard_ServerLabel}" />
+        <TextBox Classes="mono" Text="{Binding ServerUrl}" PlaceholderText="http://192.168.0.10:25600"
+                 AutomationProperties.Name="{x:Static r:Strings.Wizard_ServerLabel}" />
+        <TextBlock Classes="field-label" Margin="0,6,0,0" Text="{x:Static r:Strings.Wizard_ApiKeyLabel}" />
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBox Classes="mono" PasswordChar="•" Text="{Binding ApiKeyInput}" PlaceholderText="{x:Static r:Strings.Wizard_ApiKeyPlaceholder}"
+                   AutomationProperties.Name="{x:Static r:Strings.Wizard_ApiKeyLabel}" />
+          <Button Grid.Column="1" Classes="secondary" Margin="8,0,0,0" Content="{x:Static r:Strings.Wizard_Test}"
+                  Command="{Binding TestServerCommand}" />
+        </Grid>
+        <TextBlock Classes="help" Text="{x:Static r:Strings.Wizard_ServerHelp}" TextWrapping="Wrap" />
+        <TextBlock Classes="help" Text="{Binding ServerStatus}" TextWrapping="Wrap" Foreground="{DynamicResource TextSecondaryBrush}"
+                   IsVisible="{Binding !ServerStatusIsError}" />
+        <TextBlock Classes="error" Text="{Binding ServerStatus}" TextWrapping="Wrap" IsVisible="{Binding ServerStatusIsError}" />
+        <StackPanel Spacing="6" IsVisible="{Binding Libraries.Count}" Margin="0,6,0,0">
+          <TextBlock Classes="field-label" Text="{x:Static r:Strings.Wizard_LibraryLabel}" />
+          <ComboBox ItemsSource="{Binding Libraries}" SelectedItem="{Binding SelectedLibrary}" MinWidth="280"
+                    AutomationProperties.Name="{x:Static r:Strings.Wizard_LibraryLabel}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="komga:KomgaLibrary">
+                <TextBlock Text="{Binding Name}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+        </StackPanel>
+        <TextBlock Classes="help" FontSize="13" Foreground="{DynamicResource WarnTextBrush}" TextWrapping="Wrap"
+                   Text="{Binding OneShotsWarning}" IsVisible="{Binding OneShotsWarning, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="DestinationRules" x:DataType="vm:DestinationFormViewModel">
+      <StackPanel Spacing="14">
+        <StackPanel Spacing="6">
+          <TextBlock Classes="field-label" Text="{x:Static r:Strings.Wizard_NameLabel}" />
+          <TextBox Text="{Binding Name}" AutomationProperties.Name="{x:Static r:Strings.Wizard_NameLabel}" />
+        </StackPanel>
+        <StackPanel Spacing="6">
+          <TextBlock Classes="field-label" Text="{x:Static r:Strings.Wizard_WhichLabel}" />
+          <StackPanel Orientation="Horizontal" Spacing="16">
+            <RadioButton GroupName="{Binding Name, StringFormat='which-{0}'}" Content="{x:Static r:Strings.Wizard_WhichAll}" IsChecked="{Binding IsAllBooks}" />
+            <RadioButton GroupName="{Binding Name, StringFormat='which-{0}'}" Content="{x:Static r:Strings.Wizard_WhichChosen}" IsChecked="{Binding IsChosenBooks}" />
+          </StackPanel>
+        </StackPanel>
+        <StackPanel Spacing="6">
+          <TextBlock Classes="field-label" Text="{x:Static r:Strings.Wizard_WhenLabel}" />
+          <StackPanel Orientation="Horizontal" Spacing="16">
+            <RadioButton GroupName="{Binding Name, StringFormat='when-{0}'}" Content="{x:Static r:Strings.Wizard_WhenAuto}" IsChecked="{Binding IsAutomatic}" />
+            <RadioButton GroupName="{Binding Name, StringFormat='when-{0}'}" Content="{x:Static r:Strings.Wizard_WhenManual}" IsChecked="{Binding IsManual}" />
+          </StackPanel>
+        </StackPanel>
+        <TextBlock Classes="help" Text="{x:Static r:Strings.Wizard_RulesHelp}" TextWrapping="Wrap" />
+      </StackPanel>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <UserControl.Styles>
+    <Style Selector="Border.step">
+      <Setter Property="Height" Value="4" />
+      <Setter Property="CornerRadius" Value="99" />
+      <Setter Property="Background" Value="{DynamicResource BorderBrush}" />
+    </Style>
+    <Style Selector="Border.step.done">
+      <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+    </Style>
+    <Style Selector="TextBlock.step">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
+    </Style>
+    <Style Selector="TextBlock.step.current">
+      <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Button.choice.selected">
+      <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+    </Style>
+    <Style Selector="Button.choice:disabled">
+      <Setter Property="Opacity" Value="0.55" />
+    </Style>
+  </UserControl.Styles>
+
+  <Panel>
+    <!-- List -->
+    <ScrollViewer IsVisible="{Binding IsList}">
+      <StackPanel Margin="{StaticResource PagePadding}" Spacing="18" MaxWidth="1100" HorizontalAlignment="Left">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Spacing="4">
+            <TextBlock Classes="h1" Text="{Binding Title}" />
+            <TextBlock Classes="muted" Text="{Binding Subtitle}" TextWrapping="Wrap" />
+          </StackPanel>
+          <Button Grid.Column="1" Classes="primary" Padding="18,0" VerticalAlignment="Center"
+                  Command="{Binding AddDestinationCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <c:StrokeIcon Data="{StaticResource Icon.FolderPlus}" Width="16" Height="16" />
+              <TextBlock Text="{x:Static r:Strings.Destinations_Add}" VerticalAlignment="Center" />
+            </StackPanel>
+          </Button>
+        </Grid>
+
+        <TextBlock Classes="muted" Text="{x:Static r:Strings.Destinations_Empty}" TextWrapping="Wrap"
+                   IsVisible="{Binding !Cards.Count}" />
+
+        <ItemsControl ItemsSource="{Binding Cards}" AutomationProperties.Name="{x:Static r:Strings.Nav_Destinations}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:DestinationCardViewModel">
+              <Border Classes="card" Margin="0,0,0,12">
+                <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto">
+                  <Border Classes="icon-tile" VerticalAlignment="Top" Margin="0,0,14,0">
+                    <c:StrokeIcon Data="{StaticResource Icon.Destinations}" Width="20" Height="20" />
+                  </Border>
+                  <StackPanel Grid.Column="1" Spacing="6">
+                    <TextBlock Classes="h3" Text="{Binding Name}" />
+                    <TextBlock Classes="help" Text="{Binding TypeLine}" />
+                    <WrapPanel Orientation="Horizontal" Margin="0,4,0,0">
+                      <Border Classes="format-chip" Padding="10,3" Margin="0,0,6,6">
+                        <TextBlock FontSize="12" Text="{Binding WhichText}" />
+                      </Border>
+                      <Border Classes="format-chip" Padding="10,3" Margin="0,0,6,6">
+                        <TextBlock FontSize="12" Text="{Binding WhenText}" />
+                      </Border>
+                      <Border Classes="format-chip" Padding="10,3" Margin="0,0,6,6" IsVisible="{Binding Folder, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <TextBlock Classes="mono" FontSize="12" Text="{Binding Folder}" />
+                      </Border>
+                    </WrapPanel>
+                    <Border Classes="pill" HorizontalAlignment="Left"
+                            Background="{Binding StatusKind, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Background}">
+                      <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding StatusText}" TextWrapping="Wrap"
+                                 Foreground="{Binding StatusKind, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
+                    </Border>
+                  </StackPanel>
+                  <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
+                    <Button Classes="secondary" Content="{x:Static r:Strings.Destinations_Configure}" Command="{Binding ConfigureCommand}" />
+                    <Button Classes="primary" Content="{x:Static r:Strings.Destinations_SyncNow}" Command="{Binding SyncNowCommand}" />
+                  </StackPanel>
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <Button Classes="dashed" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Padding="18,14"
+                Command="{Binding AddDestinationCommand}">
+          <StackPanel Spacing="2">
+            <TextBlock Classes="strong" Text="{x:Static r:Strings.Destinations_Add}" />
+            <TextBlock Classes="help" Text="{x:Static r:Strings.Destinations_AddHelp}" />
+          </StackPanel>
+        </Button>
+        <TextBlock Classes="help" Text="{x:Static r:Strings.Destinations_Soon}" />
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- Wizard -->
+    <ScrollViewer IsVisible="{Binding IsWizard}">
+      <StackPanel Margin="{StaticResource PagePadding}" Spacing="20" MaxWidth="820" HorizontalAlignment="Left"
+                  DataContext="{Binding Wizard}" x:DataType="vm:DestinationWizardViewModel">
+        <StackPanel Spacing="4">
+          <TextBlock Classes="h1" Text="{x:Static r:Strings.Wizard_Title}" />
+          <TextBlock Classes="muted" Text="{Binding Subtitle}" />
+        </StackPanel>
+
+        <Grid ColumnDefinitions="*,12,*,12,*" RowDefinitions="Auto,Auto">
+          <Border Classes="step done" />
+          <Border Grid.Column="2" Classes="step" Classes.done="{Binding Step2Done}" />
+          <Border Grid.Column="4" Classes="step" Classes.done="{Binding Step3Done}" />
+          <TextBlock Grid.Row="1" Margin="0,8,0,0" Classes="step" Classes.current="{Binding IsStep1}" Text="{x:Static r:Strings.Wizard_StepType}" />
+          <TextBlock Grid.Row="1" Grid.Column="2" Margin="0,8,0,0" Classes="step" Classes.current="{Binding IsStep2}" Text="{x:Static r:Strings.Wizard_StepDetails}" />
+          <TextBlock Grid.Row="1" Grid.Column="4" Margin="0,8,0,0" Classes="step" Classes.current="{Binding IsStep3}" Text="{x:Static r:Strings.Wizard_StepRules}" />
+        </Grid>
+
+        <!-- Step 1: type -->
+        <ItemsControl ItemsSource="{Binding Types}" IsVisible="{Binding IsStep1}" Margin="0,0,-12,-12">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:DestinationTypeOption">
+              <Button Classes="choice" Margin="0,0,12,12" MinHeight="130" IsEnabled="{Binding IsAvailable}"
+                      BorderThickness="2" Classes.selected="{Binding IsAvailable}">
+                <StackPanel Spacing="6">
+                  <TextBlock Classes="h3" Text="{Binding Name}" />
+                  <TextBlock Classes="help" Text="{Binding Help}" TextWrapping="Wrap" />
+                  <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" Text="{Binding Tag}" />
+                </StackPanel>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- Step 2: Komga details -->
+        <Panel IsVisible="{Binding IsStep2}">
+        <StackPanel Spacing="16" DataContext="{Binding Form}" x:DataType="vm:DestinationFormViewModel">
+          <StackPanel Spacing="6">
+            <TextBlock Classes="field-label" Text="{x:Static r:Strings.Wizard_FolderQuestion}" />
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBox Classes="mono" Text="{Binding Folder}" AutomationProperties.Name="{x:Static r:Strings.Wizard_FolderQuestion}" />
+              <Button Grid.Column="1" Classes="secondary" Margin="8,0,0,0" Content="{x:Static r:Strings.Common_Choose}"
+                      Command="{Binding ChooseFolderCommand}" />
+            </Grid>
+            <TextBlock Classes="help" Text="{x:Static r:Strings.Wizard_FolderHint}" TextWrapping="Wrap" />
+          </StackPanel>
+          <ContentControl Content="{Binding}" ContentTemplate="{StaticResource KomgaServerFields}" />
+          <Border Classes="card">
+            <StackPanel Spacing="4">
+              <TextBlock Classes="field-label" Text="{x:Static r:Strings.Wizard_PreviewLabel}" />
+              <TextBlock Classes="mono" Text="{Binding Preview}" TextWrapping="Wrap" />
+              <TextBlock Classes="mono" Text="{Binding OneShotPreview}" TextWrapping="Wrap" />
+              <TextBlock Classes="help" Text="{x:Static r:Strings.Wizard_PreviewHelp}" />
+            </StackPanel>
+          </Border>
+        </StackPanel>
+        </Panel>
+
+        <!-- Step 3: name and rules -->
+        <Panel IsVisible="{Binding IsStep3}">
+        <StackPanel Spacing="16" DataContext="{Binding Form}" x:DataType="vm:DestinationFormViewModel">
+          <ContentControl Content="{Binding}" ContentTemplate="{StaticResource DestinationRules}" />
+        </StackPanel>
+        </Panel>
+
+        <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+          <Button Classes="secondary" Content="{x:Static r:Strings.Wizard_Cancel}" Command="{Binding CancelCommand}" />
+          <Button Grid.Column="2" Classes="secondary" Margin="0,0,8,0" Content="{x:Static r:Strings.Wizard_Back}" Command="{Binding BackCommand}" />
+          <Panel Grid.Column="3">
+            <Button Classes="primary" Padding="22,0" Content="{x:Static r:Strings.Wizard_Next}" Command="{Binding NextCommand}"
+                    IsVisible="{Binding !IsLastStep}" />
+            <Button Classes="primary" Padding="22,0" Content="{x:Static r:Strings.Wizard_Create}" Command="{Binding CreateCommand}"
+                    IsVisible="{Binding IsLastStep}" />
+          </Panel>
+        </Grid>
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- Detail -->
+    <ScrollViewer IsVisible="{Binding IsDetail}">
+      <StackPanel Margin="{StaticResource PagePadding}" Spacing="18" MaxWidth="980" HorizontalAlignment="Left"
+                  DataContext="{Binding Detail}" x:DataType="vm:DestinationDetailViewModel">
+        <Button Classes="link" HorizontalAlignment="Left" Command="{Binding BackCommand}">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <c:StrokeIcon Data="{StaticResource Icon.ChevronLeft}" Width="14" Height="14" />
+            <TextBlock Text="{x:Static r:Strings.Destination_BackToList}" />
+          </StackPanel>
+        </Button>
+        <StackPanel Spacing="6">
+          <TextBlock Classes="h1" Text="{Binding Title}" />
+          <Border Classes="pill" HorizontalAlignment="Left"
+                  Background="{Binding StatusKind, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Background}">
+            <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding StatusText}"
+                       Foreground="{Binding StatusKind, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
+          </Border>
+        </StackPanel>
+
+        <!-- Copies: plan, confirmation, progress -->
+        <Border Classes="card">
+          <StackPanel Spacing="12">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Classes="h3" Text="{x:Static r:Strings.Destination_SyncSection}" VerticalAlignment="Center" />
+              <Button Grid.Column="1" Classes="secondary" Content="{x:Static r:Strings.Destinations_SyncNow}"
+                      Command="{Binding ShowPlanCommand}" IsEnabled="{Binding !IsRunning}" />
+            </Grid>
+            <StackPanel Spacing="6" IsVisible="{Binding IsRunning}">
+              <TextBlock Classes="help" Text="{Binding ProgressText}" />
+              <ProgressBar Minimum="0" Maximum="1" Value="{Binding ProgressValue}" Height="4"
+                           Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+            </StackPanel>
+            <TextBlock Classes="success" Text="{Binding ResultText}" TextWrapping="Wrap"
+                       IsVisible="{Binding ResultText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" Classes.error="{Binding ResultIsError}" />
+            <StackPanel Spacing="10" IsVisible="{Binding HasPlan}">
+              <TextBlock Classes="strong" Text="{Binding PlanText}" TextWrapping="Wrap" />
+              <Border Background="{DynamicResource InputBrush}" CornerRadius="8" Padding="12,8" MaxHeight="260"
+                      IsVisible="{Binding PlanItems.Count}">
+                <ScrollViewer>
+                  <ItemsControl ItemsSource="{Binding PlanItems}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="x:String">
+                        <TextBlock Classes="mono" FontSize="12" Text="{Binding}" Margin="0,2" TextTrimming="CharacterEllipsis" />
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </ScrollViewer>
+              </Border>
+              <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                <Button Classes="secondary" Content="{x:Static r:Strings.Plan_Cancel}" Command="{Binding CancelPlanCommand}" />
+                <Button Classes="primary" Content="{x:Static r:Strings.Plan_Confirm}" Command="{Binding SyncCommand}"
+                        IsVisible="{Binding CanSync}" />
+              </StackPanel>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <!-- Settings -->
+        <Border Classes="card">
+          <StackPanel Spacing="16" DataContext="{Binding Form}" x:DataType="vm:DestinationFormViewModel">
+            <TextBlock Classes="h3" Text="{x:Static r:Strings.Destination_SettingsSection}" />
+            <StackPanel Spacing="6">
+              <TextBlock Classes="field-label" Text="{x:Static r:Strings.Wizard_FolderQuestion}" />
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBox Classes="mono" Text="{Binding Folder}" AutomationProperties.Name="{x:Static r:Strings.Wizard_FolderQuestion}" />
+                <Button Grid.Column="1" Classes="secondary" Margin="8,0,0,0" Content="{x:Static r:Strings.Common_Choose}"
+                        Command="{Binding ChooseFolderCommand}" />
+              </Grid>
+            </StackPanel>
+            <ContentControl Content="{Binding}" ContentTemplate="{StaticResource KomgaServerFields}" />
+            <TextBlock Classes="help" Text="{x:Static r:Strings.Destination_KeyStored}" />
+            <ContentControl Content="{Binding}" ContentTemplate="{StaticResource DestinationRules}" />
+
+            <ToggleButton Classes="chip" HorizontalAlignment="Left" IsChecked="{Binding ShowAdvanced}"
+                          Content="{x:Static r:Strings.Destination_Advanced}" />
+            <StackPanel Spacing="14" IsVisible="{Binding ShowAdvanced}">
+              <StackPanel Spacing="6">
+                <TextBlock Classes="field-label" Text="{x:Static r:Strings.Destination_OneShotsLabel}" />
+                <TextBox Classes="mono" Text="{Binding OneShotsFolder}" MaxWidth="320" HorizontalAlignment="Left" MinWidth="240"
+                         AutomationProperties.Name="{x:Static r:Strings.Destination_OneShotsLabel}" />
+                <TextBlock Classes="help" Text="{x:Static r:Strings.Destination_OneShotsHelp}" TextWrapping="Wrap" />
+              </StackPanel>
+              <StackPanel Spacing="6">
+                <TextBlock Classes="field-label" Text="{x:Static r:Strings.Destination_SeriesTemplateLabel}" />
+                <TextBox Classes="mono" Text="{Binding SeriesTemplate}" AutomationProperties.Name="{x:Static r:Strings.Destination_SeriesTemplateLabel}" />
+                <TextBlock Classes="field-label" Text="{x:Static r:Strings.Destination_OneShotTemplateLabel}" Margin="0,6,0,0" />
+                <TextBox Classes="mono" Text="{Binding OneShotTemplate}" AutomationProperties.Name="{x:Static r:Strings.Destination_OneShotTemplateLabel}" />
+                <TextBlock Classes="help" Text="{x:Static r:Strings.Destination_TemplateHelp}" TextWrapping="Wrap" />
+                <TextBlock Classes="mono" FontSize="12" Text="{Binding Preview}" TextWrapping="Wrap" />
+                <TextBlock Classes="mono" FontSize="12" Text="{Binding OneShotPreview}" TextWrapping="Wrap" />
+              </StackPanel>
+              <CheckBox Content="{x:Static r:Strings.Destination_IncludeUnreviewed}" IsChecked="{Binding IncludeUnreviewed}" />
+              <CheckBox Content="{x:Static r:Strings.Destination_IncludeTextBooks}" IsChecked="{Binding IncludeTextBooks}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <Grid ColumnDefinitions="Auto,*,Auto">
+          <Button Classes="secondary" Content="{x:Static r:Strings.Destination_Remove}" Command="{Binding AskRemoveCommand}"
+                  IsVisible="{Binding !ConfirmingRemove}" />
+          <TextBlock Grid.Column="1" Classes="success" Margin="12,0" VerticalAlignment="Center" Text="{Binding SaveMessage}" />
+          <Button Grid.Column="2" Classes="primary" Padding="22,0" Content="{x:Static r:Strings.Destination_Save}" Command="{Binding SaveCommand}" />
+        </Grid>
+        <Border Classes="card" IsVisible="{Binding ConfirmingRemove}" BorderBrush="{DynamicResource WarnBrush}">
+          <StackPanel Spacing="10">
+            <TextBlock Text="{x:Static r:Strings.Destination_RemoveConfirm}" TextWrapping="Wrap" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Classes="secondary" Content="{x:Static r:Strings.Wizard_Cancel}" Command="{Binding CancelRemoveCommand}" />
+              <Button Classes="primary" Content="{x:Static r:Strings.Destination_RemoveYes}" Command="{Binding ConfirmRemoveCommand}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+  </Panel>
+</UserControl>

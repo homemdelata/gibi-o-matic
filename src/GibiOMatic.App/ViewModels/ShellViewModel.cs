@@ -46,7 +46,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
     private readonly Debouncer _counts;
 
     public ShellViewModel(LibrarySession session, LibraryPageViewModel libraryPage, InboxPageViewModel inboxPage,
-        ReviewPageViewModel reviewPage, EditorPageViewModel editorPage, SettingsPageViewModel settingsPage, IUiThread ui)
+        ReviewPageViewModel reviewPage, EditorPageViewModel editorPage, DestinationsPageViewModel destinationsPage, SettingsPageViewModel settingsPage, IUiThread ui)
     {
         _session = session;
         LibraryPath = session.Current?.RootPath ?? string.Empty;
@@ -57,7 +57,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
             new NavItemViewModel(NavPage.Inbox, Strings.Nav_Inbox, inboxPage) { IsBadge = true },
             new NavItemViewModel(NavPage.Review, Strings.Nav_Review, reviewPage) { IsBadge = true, IsWarnBadge = true },
             new NavItemViewModel(NavPage.Editor, Strings.Nav_Editor, editorPage),
-            new NavItemViewModel(NavPage.Destinations, Strings.Nav_Destinations, new PlaceholderPageViewModel(Strings.Nav_Destinations, Strings.Destinations_Subtitle)),
+            new NavItemViewModel(NavPage.Destinations, Strings.Nav_Destinations, destinationsPage),
             new NavItemViewModel(NavPage.Settings, Strings.Nav_Settings, settingsPage),
         ];
 
@@ -83,6 +83,11 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
         if (session.Identification is { } identification)
         {
             identification.Changed += OnQueueChanged;
+        }
+
+        if (session.Destinations is { } destinations)
+        {
+            destinations.Changed += OnQueueChanged;
         }
     }
 
@@ -151,6 +156,12 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
             var toReview = (await identification.GetCountsAsync()).ToReview;
             NavItems[2].Count = toReview > 0 ? toReview.ToString(CultureInfo.CurrentCulture) : null;
         }
+
+        if (_session.Destinations is { } destinations)
+        {
+            var count = destinations.Destinations.Count;
+            NavItems[4].Count = count > 0 ? count.ToString(CultureInfo.CurrentCulture) : null;
+        }
     }
 
     private void OnQueueChanged(object? sender, EventArgs e) => _counts.Trigger();
@@ -165,6 +176,11 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
         if (_session.Identification is { } identification)
         {
             identification.Changed -= OnQueueChanged;
+        }
+
+        if (_session.Destinations is { } destinations)
+        {
+            destinations.Changed -= OnQueueChanged;
         }
 
         _counts.Dispose();
