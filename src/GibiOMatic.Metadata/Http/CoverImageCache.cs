@@ -12,7 +12,8 @@ namespace GibiOMatic.Metadata.Http;
 /// </summary>
 public sealed class CoverImageCache(HttpClient http, string directory, ILogger<CoverImageCache> logger)
 {
-    private const long MaxBytes = 5 * 1024 * 1024;
+    // Full-size ComicVine uploads can be a few MB; the cover.jpg made from them is scaled down.
+    private const long MaxBytes = 20 * 1024 * 1024;
 
     private static readonly string[] AllowedHosts =
         ["comicvine.gamespot.com", "covers.openlibrary.org", "books.google.com", "books.googleusercontent.com"];

@@ -8,6 +8,7 @@ using GibiOMatic.Library.Identification;
 using GibiOMatic.Library.Import;
 using GibiOMatic.Library.Index;
 using GibiOMatic.Metadata;
+using GibiOMatic.Metadata.Http;
 using GibiOMatic.Metadata.Identification;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -42,6 +43,7 @@ internal sealed class FakeIdentifier : IBookIdentifier
         Credits = [new Credit(CreditRole.Writer, "Brian K. Vaughan"), new Credit(CreditRole.Artist, "Fiona Staples")],
         ComicVineId = "4000-1",
         Isbn = "9781607066019",
+        CoverFullUrl = "https://comicvine.gamespot.com/a/uploads/original/saga.jpg",
     }, confidence, reasons);
 }
 
@@ -53,6 +55,7 @@ public sealed class EditingAndIdentificationTests : IAsyncLifetime
     private readonly JsonSettingsService _settings;
     private readonly BookEditor _editor;
     private readonly FakeIdentifier _identifier = new();
+    private readonly CoverImageCache _covers;
     private readonly ImportQueueFactory _imports;
     private LibraryInfo _library = null!;
     private IdentificationQueue _queue = null!;
@@ -65,6 +68,7 @@ public sealed class EditingAndIdentificationTests : IAsyncLifetime
         var reader = new BookFileReader(NullLogger<BookFileReader>.Instance);
         var thumbnails = new ThumbnailCache(_paths, NullLogger<ThumbnailCache>.Instance);
         _editor = new BookEditor(_libraries, reader, NullLogger<BookEditor>.Instance);
+        _covers = new CoverImageCache(new HttpClient(new LimeCovers()), _temp.Combine("covers"), NullLogger<CoverImageCache>.Instance);
         _imports = new ImportQueueFactory(_libraries, new ImportAnalyzer(reader, thumbnails),
             new BookImporter(reader, NullLogger<BookImporter>.Instance), thumbnails, _settings, NullLogger<ImportQueue>.Instance);
     }
@@ -99,7 +103,7 @@ public sealed class EditingAndIdentificationTests : IAsyncLifetime
 
     private async Task<IdentificationQueue> StartQueueAsync()
     {
-        _queue = new IdentificationQueueFactory(_libraries, _identifier, _editor, _settings, NullLogger<IdentificationQueue>.Instance).Create(_library);
+        _queue = new IdentificationQueueFactory(_libraries, _identifier, _editor, _covers, _settings, NullLogger<IdentificationQueue>.Instance).Create(_library);
         await _queue.StartAsync(Ct);
         await _queue.WaitUntilIdleAsync(Ct);
         return _queue;
@@ -202,6 +206,40 @@ public sealed class EditingAndIdentificationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task The_source_cover_replaces_the_file_cover_only_when_chosen()
+    {
+        var book = await ImportAsync("saga_vol1.pdf");
+        var cover = Path.Combine(_library.RootPath, book.Folder, LibraryLayout.CoverFileName);
+        _identifier.Respond = (b, _) => new IdentificationResult(BookQuery.From(b), [FakeIdentifier.Saga(0.7)], []);
+        var queue = await StartQueueAsync();
+        var candidate = (await queue.GetReviewItemsAsync(Ct)).Single().Result!.Best!;
+
+        var rows = Proposal.Compare(book.Metadata, candidate.Record);
+        Assert.Contains(rows, r => r.Field == ProposalField.Cover);
+        Assert.DoesNotContain(ProposalField.Cover, Proposal.DefaultSelection(rows));
+
+        await queue.ApproveAsync(book.Metadata.Id, candidate, new HashSet<ProposalField> { ProposalField.Title, ProposalField.Cover }, Ct);
+
+        var folder = (await Index.GetBookAsync(book.Metadata.Id, Ct))!.Folder;
+        cover = Path.Combine(_library.RootPath, folder, LibraryLayout.CoverFileName);
+        Assert.True(SyntheticImages.Near(SyntheticImages.Inspect(await File.ReadAllBytesAsync(cover, Ct)).Center, SkiaSharp.SKColors.Lime));
+    }
+
+    [Fact]
+    public async Task Automatic_approval_keeps_the_file_cover()
+    {
+        var book = await ImportAsync("saga_vol1.pdf");
+        _identifier.Respond = (b, _) => new IdentificationResult(BookQuery.From(b), [FakeIdentifier.Saga(0.98, MatchReason.Isbn, MatchReason.SecondSource)], []);
+
+        await StartQueueAsync();
+
+        var saved = (await Index.GetBookAsync(book.Metadata.Id, Ct))!;
+        Assert.Equal(MatchedBy.Auto, saved.Metadata.Review.MatchedBy);
+        var cover = Path.Combine(_library.RootPath, saved.Folder, LibraryLayout.CoverFileName);
+        Assert.True(SyntheticImages.Near(SyntheticImages.Inspect(await File.ReadAllBytesAsync(cover, Ct)).Center, SyntheticBooks.CoverColor));
+    }
+
+    [Fact]
     public async Task No_match_can_be_searched_again_with_other_words_and_skipped()
     {
         var book = await ImportAsync("houseofslaughter_vol1.pdf");
@@ -247,7 +285,7 @@ public sealed class EditingAndIdentificationTests : IAsyncLifetime
     public async Task Pause_stops_identification_and_is_remembered()
     {
         await ImportAsync("a.pdf");
-        _queue = new IdentificationQueueFactory(_libraries, _identifier, _editor, _settings, NullLogger<IdentificationQueue>.Instance).Create(_library);
+        _queue = new IdentificationQueueFactory(_libraries, _identifier, _editor, _covers, _settings, NullLogger<IdentificationQueue>.Instance).Create(_library);
         await _queue.PauseAsync(Ct);
         await _queue.StartAsync(Ct);
         await Task.Delay(100, Ct);
@@ -259,4 +297,14 @@ public sealed class EditingAndIdentificationTests : IAsyncLifetime
         await _queue.WaitUntilIdleAsync(Ct);
         Assert.Single(_identifier.Asked);
     }
+}
+
+/// <summary>Every cover download answers a lime image.</summary>
+internal sealed class LimeCovers : HttpMessageHandler
+{
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+        Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+        {
+            Content = new ByteArrayContent(SyntheticImages.Jpeg(300, 450, SkiaSharp.SKColors.Lime)) { Headers = { ContentType = new("image/jpeg") } },
+        });
 }

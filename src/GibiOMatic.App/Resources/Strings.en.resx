@@ -310,4 +310,8 @@
   <data name="Review_SearchingHelp" xml:space="preserve"><value>It can take a few seconds: ComicVine requests are spaced to respect its limit.</value></data>
   <data name="Review_LoadingDetails" xml:space="preserve"><value>Loading the candidate's credits and summary…</value></data>
   <data name="Review_NothingFor" xml:space="preserve"><value>Nothing found for “{0}”.</value></data>
+  <data name="Field_Cover" xml:space="preserve"><value>Cover</value></data>
+  <data name="Review_CoverFile" xml:space="preserve"><value>the file's cover</value></data>
+  <data name="Review_CoverSource" xml:space="preserve"><value>the source's cover (the one on the chosen card)</value></data>
+  <data name="Review_DownloadingCover" xml:space="preserve"><value>Downloading the source cover and applying…</value></data>
 </root>

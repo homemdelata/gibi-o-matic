@@ -8,7 +8,8 @@ namespace GibiOMatic.Metadata.Sources;
 
 public sealed record CvVolume(int Id, string Name, int? StartYear, string? Publisher, int IssueCount);
 
-public sealed record CvIssueSummary(int Id, int VolumeId, string VolumeName, string? IssueNumber, string? Name, PartialDate? Date, string? CoverUrl = null);
+public sealed record CvIssueSummary(int Id, int VolumeId, string VolumeName, string? IssueNumber, string? Name, PartialDate? Date,
+    string? CoverUrl = null, string? CoverFullUrl = null);
 
 public sealed record CvIssue(
     int Id,
@@ -20,7 +21,8 @@ public sealed record CvIssue(
     IReadOnlyList<Credit> Credits,
     string? Description,
     string? SiteUrl,
-    string? CoverUrl = null);
+    string? CoverUrl = null,
+    string? CoverFullUrl = null);
 
 /// <summary>
 /// ComicVine API (personal key per user). Collected editions are volumes of their own
@@ -67,7 +69,7 @@ public sealed class ComicVineClient(SourceClient client, IComicVineKeyProvider k
         using var doc = await GetAsync("issues", url, ct);
         return doc.RootElement.Items("results")
             .Select(i => new CvIssueSummary(i.Int("id") ?? 0, i.Prop("volume")?.Int("id") ?? 0, i.Prop("volume")?.Str("name") ?? string.Empty,
-                i.Str("issue_number"), i.Str("name"), DateOf(i), CoverOf(i)))
+                i.Str("issue_number"), i.Str("name"), DateOf(i), CoverOf(i), FullCoverOf(i)))
             .Where(i => i.Id > 0)
             .ToList();
     }
@@ -109,7 +111,8 @@ public sealed class ComicVineClient(SourceClient client, IComicVineKeyProvider k
             credits.OrderBy(c => c.Role).ToList(),
             Json.HtmlToText(i.Str("description")) ?? Json.Clean(i.Str("deck")),
             i.Str("site_detail_url"),
-            CoverOf(i));
+            CoverOf(i),
+            FullCoverOf(i));
     }
 
     /// <summary>Checks the key with the smallest possible request.</summary>
@@ -145,6 +148,10 @@ public sealed class ComicVineClient(SourceClient client, IComicVineKeyProvider k
     /// <summary>A small rendition of the cover (about 160 px wide), enough to recognise the book.</summary>
     private static string? CoverOf(JsonElement issue) =>
         issue.Prop("image") is { } image ? image.Str("small_url") ?? image.Str("medium_url") ?? image.Str("thumb_url") : null;
+
+    /// <summary>The original upload (or the largest scaled one), for replacing the book's cover.</summary>
+    private static string? FullCoverOf(JsonElement issue) =>
+        issue.Prop("image") is { } image ? image.Str("original_url") ?? image.Str("super_url") ?? image.Str("screen_large_url") : null;
 
     /// <summary>The on-sale date is the real publication date; the cover date runs months ahead.</summary>
     private static PartialDate? DateOf(JsonElement issue) => Json.Date(issue.Str("store_date")) ?? Json.Date(issue.Str("cover_date"));

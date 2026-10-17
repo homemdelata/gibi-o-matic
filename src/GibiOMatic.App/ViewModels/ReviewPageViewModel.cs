@@ -109,7 +109,14 @@ public sealed partial class FieldRowViewModel(FieldChange change, Action changed
     public string Current => Display(Change.Current);
     public string Proposed => Display(Change.Proposed);
 
-    private string Display(string? value) => Change.Field == ProposalField.Kind && value is not null
+    private string Display(string? value) => value switch
+    {
+        "cover:file" => Strings.Review_CoverFile,
+        "cover:source" => Strings.Review_CoverSource,
+        _ => DisplayKind(value),
+    };
+
+    private string DisplayKind(string? value) => Change.Field == ProposalField.Kind && value is not null
         ? value switch
         {
             "issue" => Strings.Kind_Issue,
@@ -124,8 +131,9 @@ public sealed partial class FieldRowViewModel(FieldChange change, Action changed
     /// <summary>Only rows that change something can be applied.</summary>
     public bool CanApply => Change.Changed;
 
+    /// <summary>Changes are checked by default, except conflicts and the cover (the file's is kept unless chosen).</summary>
     [ObservableProperty]
-    public partial bool IsApplied { get; set; } = change.Changed && !change.Conflict;
+    public partial bool IsApplied { get; set; } = change.Changed && !change.Conflict && change.Field != ProposalField.Cover;
 
     partial void OnIsAppliedChanged(bool value) => changed();
 }
@@ -459,7 +467,17 @@ public sealed partial class ReviewPageViewModel : PageViewModel
 
         var fields = Rows.Where(r => r.IsApplied).Select(r => r.Change.Field).ToHashSet();
         var index = Items.IndexOf(item);
-        await queue.ApproveAsync(item.BookId, candidate.Candidate, fields, ct);
+        // Downloading the full-size cover takes a moment.
+        SetBusy(fields.Contains(ProposalField.Cover) ? Strings.Review_DownloadingCover : null);
+        try
+        {
+            await queue.ApproveAsync(item.BookId, candidate.Candidate, fields, ct);
+        }
+        finally
+        {
+            SetBusy(null);
+        }
+
         await MoveToNextAsync(index, ct);
     }
 

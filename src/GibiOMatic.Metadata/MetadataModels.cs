@@ -46,6 +46,9 @@ public sealed record MetadataRecord
 
     /// <summary>Small cover image of the record, to compare with the book in the Review.</summary>
     public string? CoverUrl { get; init; }
+
+    /// <summary>The largest cover image of the source, used when the user chooses it as the book's cover.</summary>
+    public string? CoverFullUrl { get; init; }
 }
 
 /// <summary>What made a candidate match; shown as "94% · título + número + editora".</summary>

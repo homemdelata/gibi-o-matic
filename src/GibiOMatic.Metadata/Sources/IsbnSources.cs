@@ -42,6 +42,7 @@ public sealed class OpenLibraryClient(SourceClient client) : IIsbnSource
             Summary = book.Str("notes"),
             SourceUrl = book.Str("url"),
             CoverUrl = book.Prop("cover")?.Str("medium") ?? book.Prop("cover")?.Str("small"),
+            CoverFullUrl = book.Prop("cover")?.Str("large") ?? book.Prop("cover")?.Str("medium"),
             Credits = book.Items("authors").Select(a => a.Str("name")).OfType<string>().Select(n => new Credit(CreditRole.Other, n)).ToList(),
         };
     }
@@ -75,6 +76,8 @@ public sealed class GoogleBooksClient(SourceClient client) : IIsbnSource
             Language = info.Str("language"),
             SourceUrl = info.Str("infoLink"),
             CoverUrl = info.Prop("imageLinks")?.Str("thumbnail")?.Replace("http://", "https://", StringComparison.Ordinal),
+            CoverFullUrl = (info.Prop("imageLinks")?.Str("extraLarge") ?? info.Prop("imageLinks")?.Str("large") ?? info.Prop("imageLinks")?.Str("thumbnail"))
+                ?.Replace("http://", "https://", StringComparison.Ordinal),
             Credits = info.Items("authors").Select(a => a.ValueKind == JsonValueKind.String ? a.GetString() : null)
                 .OfType<string>().Select(n => new Credit(CreditRole.Other, n)).ToList(),
         };

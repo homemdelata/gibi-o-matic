@@ -106,6 +106,7 @@ public static class IdentificationText
         ProposalField.Isbn => Strings.Field_Isbn,
         ProposalField.Summary => Strings.Field_Summary,
         ProposalField.OneShot => Strings.Field_OneShot,
+        ProposalField.Cover => Strings.Field_Cover,
         _ => field.ToString(),
     };
 

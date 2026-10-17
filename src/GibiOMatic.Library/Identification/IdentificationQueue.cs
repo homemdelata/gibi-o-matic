@@ -7,6 +7,7 @@ using GibiOMatic.Core.Settings;
 using GibiOMatic.Library.Editing;
 using GibiOMatic.Library.Index;
 using GibiOMatic.Metadata;
+using GibiOMatic.Metadata.Http;
 using GibiOMatic.Metadata.Identification;
 using Microsoft.Extensions.Logging;
 
@@ -46,6 +47,7 @@ public sealed class IdentificationQueue : IAsyncDisposable
     private readonly LibraryIndex _index;
     private readonly IBookIdentifier _identifier;
     private readonly BookEditor _editor;
+    private readonly CoverImageCache _covers;
     private readonly ISettingsService _settings;
     private readonly ILogger<IdentificationQueue> _logger;
     private readonly SemaphoreSlim _wake = new(0);
@@ -54,8 +56,9 @@ public sealed class IdentificationQueue : IAsyncDisposable
     private Task _worker = Task.CompletedTask;
 
     public IdentificationQueue(LibraryInfo library, LibraryIndex index, IBookIdentifier identifier, BookEditor editor,
-        ISettingsService settings, ILogger<IdentificationQueue> logger)
+        CoverImageCache covers, ISettingsService settings, ILogger<IdentificationQueue> logger)
     {
+        _covers = covers;
         _library = library;
         _index = index;
         _identifier = identifier;
@@ -160,6 +163,13 @@ public sealed class IdentificationQueue : IAsyncDisposable
         {
             Review = new ReviewInfo { Status = ReviewStatus.Approved, ApprovedAt = DateTimeOffset.UtcNow, MatchedBy = matchedBy, Confidence = candidate.Confidence },
         }, ct);
+        // The source's cover only when the user checked it; a failed download keeps the file's cover.
+        if (fields.Contains(ProposalField.Cover) && await _covers.GetAsync(candidate.Record.CoverFullUrl, ct) is { } image
+            && !await _editor.SetCoverAsync(_library, bookId, image, ct))
+        {
+            _logger.LogWarning("The cover of {Source} could not be used for book {BookId}", candidate.Record.Source, bookId);
+        }
+
         await SetStateAsync(bookId, IdentificationState.Approved, null, null, ct);
         BookUpdated?.Invoke(this, bookId);
         OnChanged();
@@ -384,9 +394,10 @@ public sealed class IdentificationQueueFactory(
     LibraryService libraries,
     IBookIdentifier identifier,
     BookEditor editor,
+    CoverImageCache covers,
     ISettingsService settings,
     ILogger<IdentificationQueue> logger)
 {
     public IdentificationQueue Create(LibraryInfo library) =>
-        new(library, libraries.GetIndex(library), identifier, editor, settings, logger);
+        new(library, libraries.GetIndex(library), identifier, editor, covers, settings, logger);
 }

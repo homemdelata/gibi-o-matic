@@ -23,6 +23,9 @@ public enum ProposalField
     Isbn,
     Summary,
     OneShot,
+
+    /// <summary>Replace the book's cover.jpg with the source's cover. Never chosen by default.</summary>
+    Cover,
 }
 
 /// <summary>A row of the "campo · atual · proposto" table.</summary>
@@ -70,6 +73,12 @@ public static class Proposal
         rows.Add(Row(ProposalField.Isbn, book.Identifiers.Isbn, record.Isbn, (a, b) => Isbn.Normalize(a) == Isbn.Normalize(b),
             !report.HasProblemIn(QualityField.Identifier)));
         rows.Add(Row(ProposalField.Summary, book.Summary, record.Summary, (a, b) => a.Trim() == b.Trim(), isGood: false));
+        if (record.CoverFullUrl is not null)
+        {
+            // Texts for the table; the images themselves are shown next to the title and in the candidate.
+            rows.Add(new FieldChange(ProposalField.Cover, "cover:file", "cover:source", Changed: true, Conflict: false));
+        }
+
         if (record.IsOneShot && book.OneShot != true)
         {
             rows.Add(new FieldChange(ProposalField.OneShot, book.OneShot == false ? "não" : null, "sim", Changed: true, Conflict: false));
@@ -78,9 +87,12 @@ public static class Proposal
         return rows;
     }
 
-    /// <summary>The fields to apply by default: those that change.</summary>
+    /// <summary>
+    /// The fields to apply by default: those that change. The cover is never among them: the
+    /// file's own cover is kept unless the user picks the source's (decision of 2026-10-17).
+    /// </summary>
     public static IReadOnlySet<ProposalField> DefaultSelection(IEnumerable<FieldChange> rows) =>
-        rows.Where(r => r.Changed).Select(r => r.Field).ToHashSet();
+        rows.Where(r => r.Changed && r.Field != ProposalField.Cover).Select(r => r.Field).ToHashSet();
 
     public static BookMetadata Apply(BookMetadata book, MetadataRecord record, IReadOnlySet<ProposalField> fields)
     {
