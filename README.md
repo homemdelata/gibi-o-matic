@@ -13,4 +13,4 @@ App desktop (C# / Avalonia) para organizar uma coleção pessoal de quadrinhos d
 MIT — veja [`LICENSE`](LICENSE).
 
 ## Design
-Protótipo da interface: Claude Design (link privado do autor).
+Protótipo da interface: [`docs/DESIGN.md`](docs/DESIGN.md) e [`docs/design/prototype/`](docs/design/prototype/).

@@ -1,0 +1,174 @@
+# Roadmap
+
+Status: ⬜ não iniciada · 🟨 em andamento · ✅ concluída. Seções `§` referem-se ao `SPEC.md`.
+
+| Fase | Nome | Status |
+|---|---|---|
+| F0 | Fundação | ⬜ |
+| F1 | Importação + Biblioteca | ⬜ |
+| F2 | Metadados | ⬜ |
+| F3 | Destino Komga | ⬜ |
+| F4 | Destino Kindle | ⬜ |
+| F5 | Entrada automática | ⬜ |
+| F6 | Polimento e distribuição | ⬜ |
+
+Ao terminar cada fase: build e testes verdes → atualizar este arquivo → commit e push → **parar e explicar ao usuário como testar**.
+
+---
+
+## F0 · Fundação
+
+**Objetivo**: esqueleto sólido do app, rodando, com o visual do protótipo e a biblioteca vazia criada no disco.
+
+- [ ] Verificar o .NET 10 SDK; se não houver, pedir autorização e instalar (`winget install Microsoft.DotNet.SDK.10`). Criar o `global.json`.
+- [ ] `GibiOMatic.sln` com os projetos `src/` e `tests/` do `CLAUDE.md`.
+  - `Directory.Build.props`: `Nullable=enable`, `TreatWarningsAsErrors=true`, `LangVersion=latest`, `ImplicitUsings`.
+  - `Directory.Packages.props`: versões centralizadas.
+- [ ] **Shell da interface (Avalonia)**:
+  - janela principal com o menu lateral do protótipo (Biblioteca, Entrada, Revisão, Editor, Destinos, Configurações);
+  - páginas vazias com título;
+  - navegação via ViewModels.
+- [ ] **Tema**: tokens de `docs/DESIGN.md` como recursos (cores, raios, espaçamentos), estilos dos componentes básicos (botão primário e secundário, chip, card, campo de texto, item de menu) e fontes embutidas (Bricolage Grotesque, IBM Plex Sans/Mono; licença OFL — registrar em `THIRD-PARTY.md`).
+- [ ] **i18n**: `resx` com pt-BR (padrão) e en; troca de idioma nas Configurações (pode exigir reiniciar).
+- [ ] **Configurações** (§11):
+  - `ISettingsService` persistindo em `%APPDATA%\GibiOMatic\settings.json`, com escrita atômica;
+  - `ISecretStore` com implementação DPAPI no Windows e um *stub* para Linux, a fazer.
+- [ ] **Formato da biblioteca** (§4):
+  - criar e abrir uma biblioteca, gerando `gibiomatic-library.json` (id, versão do formato), `Livros/` e `.gibiomatic/`;
+  - índice SQLite em `%LOCALAPPDATA%\GibiOMatic\index\<libraryId>.db`, com migrações de schema versionadas;
+  - "reconstruir índice" varrendo os `metadata.json`.
+- [ ] **Primeira execução**: tela de boas-vindas → "Criar biblioteca nova" ou "Abrir existente" → escolher a pasta → app abre na Biblioteca (vazia, com estado vazio amigável). Na próxima abertura, lembra a biblioteca.
+- [ ] Log com Serilog em `%LOCALAPPDATA%\GibiOMatic\logs`.
+- [ ] Testes: serialização das configurações, criação e abertura da biblioteca, reconstrução do índice com `metadata.json` sintéticos.
+- [ ] **CI**: `.github/workflows/ci.yml` com build e testes em `windows-latest` e `ubuntu-latest`.
+- [ ] Iniciar `docs/DECISIONS.md` e `docs/THIRD-PARTY.md` com o que for adicionado.
+
+**Pronto quando**:
+- o app abre no visual do protótipo;
+- o usuário cria uma biblioteca numa pasta de teste;
+- ao fechar e abrir, a biblioteca é lembrada;
+- o CI fica verde.
+
+---
+
+## F1 · Importação + Biblioteca
+
+**Objetivo**: trazer os originais baixados para o Arquivo e vê-los na Biblioteca com nota de qualidade.
+
+- [ ] **Detecção de formato** pelo conteúdo (*magic bytes*): PDF, ZIP/CBZ, RAR/CBR, EPUB.
+- [ ] **Importação manual** (§6): botão "Importar arquivos…" e arrastar e soltar.
+  - Calcula o SHA-256;
+  - detecta duplicado exato (mesmo hash);
+  - copia para `Livros/{Editora}/{Série}/{Título} [{id6}]/` (sem metadados ainda, cai em `_Sem editora/…`), com o nome limpo e o `downloadedAs` registrado;
+  - escreve o `metadata.json` (§4.3) de forma atômica.
+- [ ] **Importação em massa** (§10):
+  - fila persistida no índice, em segundo plano, com progresso, pausar e retomar;
+  - sobrevive ao fechamento do app;
+  - resumo final.
+- [ ] **Duplicados de formato**: o mesmo livro em vários formatos vira um livro só, com o original principal escolhido pela preferência CBZ > PDF > EPUB > CBR (configurável) e os demais como formatos extras. Na F1, a identificação do "mesmo livro" usa ISBN embutido ou título normalizado e número; a F2 refina.
+- [ ] **Metadados embutidos**: `ComicInfo.xml` (CBZ/CBR), OPF (EPUB) e Info/XMP (PDF) → preenchimento inicial do `metadata.json`.
+- [ ] **Capa** (`cover.jpg`):
+  - CBZ/CBR: primeira imagem em ordem natural;
+  - EPUB: a imagem de capa declarada no OPF;
+  - PDF: renderizar a página 1 com PDFium (ver §13 e `reference/python/pdf2epub.py`).
+  - Gerar miniaturas em cache local.
+- [ ] **Nota de qualidade** (§5): portar `reference/python/analyze.py` para `GibiOMatic.Core`, com testes cobrindo cada regra (títulos colados, "Desconhecido", autores grudados, "Untitled", série no título sem campo série etc.).
+- [ ] **Tela Biblioteca** (protótipo `Main.dc.html`):
+  - grade virtualizada de capas com selo OK, Revisar ou Ruim;
+  - alternância Séries/Livros;
+  - busca;
+  - filtros (Precisa revisão, Sem data, Sem série, Autor desconhecido, Completos);
+  - cartões de resumo;
+  - painel de detalhes do livro selecionado: o que falta, arquivos e ações, ainda desabilitadas.
+- [ ] **Tela Entrada**, versão manual (protótipo `Entrada.dc.html`): lista do que está sendo importado e tratamento de duplicados (Substituir, Manter os dois, Ignorar).
+- [ ] Desempenho: abrir uma biblioteca de 1000 livros em menos de 2 s com o índice pronto, e rolagem fluida.
+
+**Pronto quando**: o usuário importa a pasta com os downloads novos e vê todos na Biblioteca, com capa e nota de qualidade, e os originais no Arquivo com o hash conferido.
+
+---
+
+## F2 · Metadados (§7, §8)
+
+- [ ] `IMetadataSource`: Open Library (ISBN), ComicVine (busca de volumes e edições, detalhes, créditos por função) e Google Books (opcional, desligado por padrão). Cada um com cache, limite de requisições e novas tentativas.
+- [ ] Identificação:
+  - normalização do título (série, número, tipo TPB/avulsa);
+  - candidatos;
+  - pontuação;
+  - filtros de editora, idioma e ano;
+  - detecção de one-shot.
+- [ ] Aprovação automática segura (§8.2, item 3), com a marcação `matchedBy: auto` e o filtro "Aprovados automaticamente".
+- [ ] **Tela Revisão** (`Revisao.dc.html`): fila por gravidade, candidatos, tabela campo a campo com caixas de seleção, Aprovar e próximo, Pular.
+- [ ] **Editor** (`Editor.dc.html`):
+  - um livro e lote;
+  - créditos por função;
+  - capa (trocar ou usar a página 1);
+  - "É one-shot";
+  - prévia dos nomes de saída por destino.
+- [ ] Histórico (`.gibiomatic/history`) e desfazer.
+- [ ] Renomear a pasta do livro quando editora, série ou título mudarem.
+- [ ] Configurações → Metadados: ordem e liga/desliga das fontes, chave do ComicVine (DPAPI), "Sempre revisar".
+
+**Pronto quando**: a coleção inteira passa pela identificação, e a fila de Revisão é tratável em poucos cliques por livro.
+
+---
+
+## F3 · Destino Komga (§9.1, §9.2)
+
+- [ ] Modelo de destinos: `IDestinationType`/`IDestination`, regras "quais livros" e "quando", capacidades por tipo, estado de sincronização por livro (hashes).
+- [ ] Montagem do CBZ a partir de CBZ, CBR, PDF e EPUB:
+  - PDF: extrai o JPEG original sem recompressão quando a página é uma imagem única que a cobre inteira; senão, renderiza (§9.2);
+  - escreve o `ComicInfo.xml`.
+- [ ] Modelos de nome (padrão sem pasta de editora) e pasta de one-shots configurável.
+- [ ] Opção "Incluir livros que não são quadrinhos" (EPUB de texto vai direto).
+- [ ] Opcional: URL e chave do Komga para disparar o scan da biblioteca e comparar a configuração de one-shots. Confirmar os endpoints na documentação oficial.
+- [ ] **Telas**: Destinos (cartões), detalhe do destino Komga e assistente "Adicionar destino" (`Destinos.dc.html`, `NovoDestino.dc.html`).
+- [ ] Testar com o usuário se `Editora/Série/` funciona no Komga dele (questão em aberto 3).
+
+**Pronto quando**: a biblioteca aparece no Komga do usuário com séries, one-shots e metadados corretos, e editar um livro atualiza a cópia automaticamente.
+
+---
+
+## F4 · Destino Kindle (§9.3)
+
+- [ ] Integração com o KCC (`kcc-c2e`):
+  - localizar ou configurar o executável;
+  - perfil do aparelho (Colorsoft = `KCS`);
+  - formato AZW3/MOBI;
+  - progresso e timeout.
+  - Avaliar distribuir o KCC junto com o app (licença ISC: manter o aviso).
+- [ ] Entrega via MTP no Windows (detectar o Kindle conectado, copiar para `documents/`). Linux: **a fazer**. O botão "Abrir pasta" funciona sempre.
+- [ ] **Tela do destino Kindle** (`DestinoKindle.dc.html`):
+  - aba Enviar (escolher livros, gerar o que falta, enviar);
+  - aba Configurações com "Avançado" recolhido.
+
+**Pronto quando**: um livro escolhido chega ao Colorsoft do usuário e abre com a visualização de painéis.
+
+---
+
+## F5 · Entrada automática (§6)
+
+- [ ] Pasta observada (FileSystemWatcher) e espera do fim da escrita.
+- [ ] Identificação na chegada; aprovados vão direto para a biblioteca e para os destinos automáticos.
+- [ ] Substituição de original por versão melhor.
+- [ ] Mover os processados para `_importados/`.
+
+**Pronto quando**: um download novo do Humble vai do download ao Komga sem passos manuais, ou só com a aprovação.
+
+---
+
+## F6 · Polimento e distribuição
+
+- [ ] Interface em inglês completa, tema claro e "seguir o sistema".
+- [ ] Instalador para Windows (ex.: Velopack ou MSIX) e build para Linux (AppImage ou tar).
+- [ ] Documentação de usuário (README com capturas) e `CONTRIBUTING.md`.
+- [ ] Revisão de acessibilidade (teclado, contraste).
+
+---
+
+## Backlog
+- Detecção real de quadros (Panel View com regiões por quadro).
+- Destinos: Kavita, Kobo, Pasta simples, OPDS, Calibre-Web.
+- Kindle: livros de texto; MTP no Linux.
+- OCR do ISBN na página de créditos.
+- Sugerir volumes faltantes de uma série.
+- Atualização automática do app; modo servidor/Docker.

@@ -493,3 +493,6 @@ gibiteca.local.json
 *.epub
 *.azw3
 *.mobi
+
+# Claude Code (configurações locais do usuário)
+.claude/settings.local.json
