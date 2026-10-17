@@ -23,6 +23,12 @@ public sealed record BookMetadata
     public string? Language { get; init; }
     public BookIdentifiers Identifiers { get; init; } = new();
     public IReadOnlyList<string> Tags { get; init; } = [];
+
+    /// <summary>
+    /// A stand-alone book (graphic novel, a series of one book): destinations such as Komga put it
+    /// in their one-shots folder (SPEC §9.2). <c>null</c> = not decided.
+    /// </summary>
+    public bool? OneShot { get; init; }
     public IReadOnlyList<BookFile> Files { get; init; } = [];
     public ReviewInfo Review { get; init; } = new();
     public DateTimeOffset CreatedAt { get; init; }

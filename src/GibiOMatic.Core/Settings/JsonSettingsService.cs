@@ -78,6 +78,12 @@ public sealed class JsonSettingsService(AppPaths paths, ILogger<JsonSettingsServ
             .Concat(AppSettings.DefaultFormatPreference)
             .Distinct()
             .ToList();
-        return preference.SequenceEqual(settings.FormatPreference ?? []) ? settings : settings with { FormatPreference = preference };
+        if (!preference.SequenceEqual(settings.FormatPreference ?? []))
+        {
+            settings = settings with { FormatPreference = preference };
+        }
+
+        var metadata = (settings.Metadata ?? new MetadataSettings()).Normalized();
+        return ReferenceEquals(metadata, settings.Metadata) ? settings : settings with { Metadata = metadata };
     }
 }

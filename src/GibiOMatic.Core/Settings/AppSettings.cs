@@ -28,6 +28,8 @@ public sealed record AppSettings
     /// </summary>
     public IReadOnlyList<BookFormat> FormatPreference { get; init; } = DefaultFormatPreference;
 
+    public MetadataSettings Metadata { get; init; } = new();
+
     public static IReadOnlyList<BookFormat> DefaultFormatPreference { get; } =
         [BookFormat.Cbz, BookFormat.Pdf, BookFormat.Epub, BookFormat.Cbr];
 

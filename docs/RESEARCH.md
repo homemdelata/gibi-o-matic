@@ -20,12 +20,21 @@ Tudo aqui foi verificado em 2026-10-16/17, numa sessão de análise da antiga bi
   - edições estrangeiras também aparecem (Urban Comics, Cross Cult), e é preciso filtrar por editora e idioma.
 - Limites de uso: há limite por recurso por hora (documentação oficial; confirmar o número atual). Use cache, limite de requisições e espera entre tentativas.
 - Termos: a chave é pessoal; cada usuário do app usa a sua.
+- **Verificado em 2026-10-17 com chamadas reais** (F2):
+  - Limite documentado: 200 requisições por recurso (`search`, `issues`, `issue`…) por hora, mais detecção de velocidade. O app espaça 1,2 s entre chamadas e para em 190 por recurso por hora.
+  - O encadernado é um volume próprio com 1 edição, e o **nome da edição** traz o número do TPB: "Deadly Class: A Fond Farewell Part One" → edição "Volume 11"; "Deadly Class: Reagan Youth" → "Vol. 1". A descrição do volume diz "Trade paperback collecting …".
+  - `issues/?filter=volume:A|B|C` traz as edições de vários volumes numa chamada; `filter=volume:A|B,issue_number:11` combina os dois filtros (funcionou).
+  - Detalhe da edição (`issue/4000-ID`): `person_credits` com `role` por pessoa, às vezes várias separadas por vírgula ("letterer, designer"); `store_date` (data de venda) e `cover_date` (meses à frente). O app usa `store_date`.
+  - Respostas de erro vêm com HTTP 200 e `status_code`: 100 = chave inválida, 107 = limite excedido, 101 = não encontrado.
+  - Não há busca por ISBN no ComicVine; o ISBN vai para a Open Library, e o título dela orienta a busca no ComicVine.
+  - Custo por livro: 1 busca + 1 ou 2 listagens de edições + 1 detalhe ≈ 200 livros por hora.
 
 ### Open Library
 - `https://openlibrary.org/api/books?bibkeys=ISBN:<isbn>&format=json&jscmd=data` acertou de primeira:
   - `9781534321236` → *Deadly Class, Vol. 11* (Rick Remender, Wes Craig, 2022);
   - `9781607067238` → *Saga* (Brian K. Vaughan, Fiona Staples, 2012).
 - Sem chave. Bom primeiro passo quando há ISBN.
+- Os autores vêm **sem função** (`9781534321236` lista o roteirista Rick Remender e o desenhista Wes Craig como autores), por isso o app não usa esses nomes como créditos; os créditos vêm do ComicVine.
 
 ### Google Books
 - `https://www.googleapis.com/books/v1/volumes?q=isbn:...` respondeu **429** (muitas requisições) sem chave. Por isso fica opcional e desligado por padrão.
