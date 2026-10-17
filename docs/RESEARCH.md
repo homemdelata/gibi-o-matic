@@ -56,7 +56,7 @@ Observado em 3 livros:
 - **Radiant Black Vol. 5** (170 p.): só 17 páginas são assim. As demais têm várias imagens sobrepostas (PNG com máscara) e **letreiramento vetorial** por cima, então precisam ser **renderizadas**: na resolução da maior imagem (cerca de 2000×3060), JPEG qualidade 92.
 - Heurística validada (`reference/python/pdf2epub.py`): imagem única + cobre a página (tolerância de 2 pt) + sem rotação + sem texto + sem desenhos vetoriais + JPEG RGB/cinza sem máscara → copiar os bytes. Senão → renderizar.
 - Tamanhos: PDF de 104 MB → saída de 105 MB (cópia sem perda); 381 MB → 255 MB (renderizado).
-- O script usa PyMuPDF (**AGPL — não usar no app**). Em C#: PdfPig (Apache-2.0) para inspecionar e extrair imagens, PDFium para renderizar.
+- O script usa PyMuPDF (**AGPL — não usar no app**). Em C#, o próprio PDFium faz as duas coisas: `FPDFPage_CountObjects`/`FPDFPage_GetObject`, `FPDFPageObj_GetBounds`/`GetMatrix`, `FPDFImageObj_GetImageFilter` e `GetImageDataRaw` (bytes do JPEG sem decodificar) para inspecionar e extrair, e `FPDF_RenderPageBitmap` para renderizar.
 
 ### EPUBs
 - A conversão PDF→EPUB do Calibre gera EPUB reflow com PNGs de até 50 MB por página e arquivos 2–3× maiores que o PDF. Evitar.
@@ -77,12 +77,15 @@ Observado em 3 livros:
   - Para one-shots, o título e a sinopse da série vêm do livro, o status fica "Ended" e a contagem fica em 1.
 - Formatos: CBZ, CBR, PDF, EPUB. Importa metadados do `ComicInfo.xml` (CBZ/CBR) e do OPF (EPUB).
 - EPUB: suportado desde a 1.8.0, com leitor web próprio para reflow. Desde a 1.9.0, EPUBs pré-paginados só de imagens usam o leitor de quadrinhos.
-- API REST para disparar o scan: **a confirmar** na referência da API.
+- API REST (conferida no código-fonte, `LibraryController.kt` do gotson/komga):
+  - autenticação por chave de API no cabeçalho `X-API-Key` (a chave é criada na conta do usuário, no Komga);
+  - `GET /api/v1/libraries` → lista com `id`, `name`, `root` e `oneshotsDirectory` (entre outros);
+  - `POST /api/v1/libraries/{id}/scan` (parâmetro opcional `deep`) → 202; exige papel ADMIN, senão 403.
 - Sincronização com o KOReader: OPDS v1 e o papel `KOREADER_SYNC`.
 
 ## Fontes
 - KCC: https://github.com/ciromattia/kcc · licença: https://github.com/ciromattia/kcc/blob/master/LICENSE.txt
-- Komga: https://komga.org/docs/guides/scan-analysis-refresh · https://komga.org/docs/guides/oneshots · https://komga.org/docs/introduction · https://komga.org/blog/ebook-support · https://komga.org/docs/guides/koreader
+- Komga: https://github.com/gotson/komga/blob/master/komga/src/main/kotlin/org/gotson/komga/interfaces/api/rest/LibraryController.kt · https://komga.org/docs/guides/scan-analysis-refresh · https://komga.org/docs/guides/oneshots · https://komga.org/docs/introduction · https://komga.org/blog/ebook-support · https://komga.org/docs/guides/koreader
 - MTP nos Kindles novos: https://goodereader.com/blog/kindle/new-kindle-e-readers-no-longer-appear-on-computers
 - Calibre FAQ: https://manual.calibre-ebook.com/faq.html
 - MobileRead (Colorsoft + KCC): https://www.mobileread.com/forums/showthread.php?p=4461987

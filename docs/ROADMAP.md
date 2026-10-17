@@ -7,7 +7,7 @@ Status: ⬜ não iniciada · 🟨 em andamento · ✅ concluída. Seções `§` 
 | F0 | Fundação | ✅ |
 | F1 | Importação + Biblioteca | ✅ |
 | F2 | Metadados | ✅ |
-| F3 | Destino Komga | ⬜ |
+| F3 | Destino Komga | ✅ (falta o teste no Komga do usuário) |
 | F4 | Destino Kindle | ⬜ |
 | F5 | Entrada automática | ⬜ |
 | F6 | Polimento e distribuição | ⬜ |
@@ -114,14 +114,15 @@ Ao terminar cada fase: build e testes verdes → atualizar este arquivo → comm
 
 ## F3 · Destino Komga (§9.1, §9.2)
 
-- [ ] Modelo de destinos: `IDestinationType`/`IDestination`, regras "quais livros" e "quando", capacidades por tipo, estado de sincronização por livro (hashes).
-- [ ] Montagem do CBZ a partir de CBZ, CBR, PDF e EPUB:
+- [x] Modelo de destinos: `IDestinationType`/`IDestination`, regras "quais livros" e "quando", capacidades por tipo, estado de sincronização por livro (hashes).
+- [x] Montagem do CBZ a partir de CBZ, CBR, PDF e EPUB:
   - PDF: extrai o JPEG original sem recompressão quando a página é uma imagem única que a cobre inteira; senão, renderiza (§9.2);
   - escreve o `ComicInfo.xml`.
-- [ ] Modelos de nome (padrão sem pasta de editora) e pasta de one-shots configurável.
-- [ ] Opção "Incluir livros que não são quadrinhos" (EPUB de texto vai direto).
-- [ ] Opcional: URL e chave do Komga para disparar o scan da biblioteca e comparar a configuração de one-shots. Confirmar os endpoints na documentação oficial.
-- [ ] **Telas**: Destinos (cartões), detalhe do destino Komga e assistente "Adicionar destino" (`Destinos.dc.html`, `NovoDestino.dc.html`).
+- [x] Modelos de nome (padrão sem pasta de editora) e pasta de one-shots configurável.
+- [x] Opção "Incluir livros que não são quadrinhos" (EPUB de texto vai direto).
+- [x] Opcional: URL e chave do Komga para disparar o scan da biblioteca e comparar a configuração de one-shots. Endpoints confirmados no código-fonte do Komga (ver `RESEARCH.md`).
+- [x] **Telas**: Destinos (cartões), detalhe do destino Komga e assistente "Adicionar destino" (`Destinos.dc.html`, `NovoDestino.dc.html`).
+- [x] Estado da cópia de cada livro por destino no painel da Biblioteca; "Incluir em …" / "Tirar de …" na seleção, para destinos "Livros que eu escolher".
 - [ ] Testar com o usuário se `Editora/Série/` funciona no Komga dele (questão em aberto 3).
 
 **Pronto quando**: a biblioteca aparece no Komga do usuário com séries, one-shots e metadados corretos, e editar um livro atualiza a cópia automaticamente.

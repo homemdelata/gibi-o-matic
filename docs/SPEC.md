@@ -319,7 +319,7 @@ GibiOMatic.sln
 | UI | Avalonia, CommunityToolkit.Mvvm | MIT |
 | Banco/índice | Microsoft.Data.Sqlite + Dapper | MIT / Apache-2.0 |
 | Renderizar PDF | PDFium (binários bblanchon/pdfium-binaries, P/Invoke próprio) | BSD/Apache |
-| Extrair imagens do PDF sem perda | UglyToad.PdfPig | Apache-2.0 |
+| Extrair imagens do PDF sem perda | PDFium (objetos da página, bytes crus do JPEG) | BSD/Apache |
 | CBR (RAR) | SharpCompress | MIT |
 | Imagens | SkiaSharp (já vem com o Avalonia) | MIT |
 | Log | Serilog | Apache-2.0 |
@@ -353,9 +353,8 @@ Detecção real de quadros (Panel View com regiões por quadro), outros destinos
 
 ## 16. Questões em aberto
 
-1. Endpoints e autenticação da API do Komga para disparar o scan.
-2. Comportamento do KCC sem KindleGen no Linux.
-3. Pastas de editora no Komga (`Editora/Série/`): testar na F3.
+1. Comportamento do KCC sem KindleGen no Linux.
+2. Pastas de editora no Komga (`Editora/Série/`): o modelo de nome permite `{publisher}/{series}/…`; falta testar no Komga do usuário.
 
 **Decididas (2026-10-17)**:
 - Nome: **Gibi-o-matic** (repositório `gibi-o-matic`, namespace `GibiOMatic`).
@@ -364,3 +363,4 @@ Detecção real de quadros (Panel View com regiões por quadro), outros destinos
 - Aprovação automática ligada, com as regras de segurança da seção 8.2.
 - Livros que não são HQ: opção por destino, conforme a capacidade do tipo.
 - Cópia para o Kindle no Linux: a fazer.
+- API do Komga: `GET /api/v1/libraries` e `POST /api/v1/libraries/{id}/scan`, com o cabeçalho `X-API-Key` (ver `RESEARCH.md`).
