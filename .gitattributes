@@ -3,3 +3,4 @@
 *.sln text eol=crlf
 *.ttf binary
 *.png binary
+*.ico binary
