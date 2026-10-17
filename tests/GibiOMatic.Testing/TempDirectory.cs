@@ -1,4 +1,4 @@
-namespace GibiOMatic.Tests;
+namespace GibiOMatic.Testing;
 
 /// <summary>A unique folder under the system temp directory, deleted on dispose.</summary>
 public sealed class TempDirectory : IDisposable

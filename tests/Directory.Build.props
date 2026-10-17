@@ -1,12 +1,17 @@
 <Project>
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
+    <IsTestSupport Condition="'$(MSBuildProjectName)' == 'GibiOMatic.Testing'">true</IsTestSupport>
   </PropertyGroup>
-  <ItemGroup>
+  <!-- Test projects: xUnit v3 executables that share the synthetic-file helpers. -->
+  <PropertyGroup Condition="'$(IsTestSupport)' != 'true'">
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(IsTestSupport)' != 'true'">
     <PackageReference Include="xunit.v3" />
     <Using Include="Xunit" />
-    <Compile Include="$(MSBuildThisFileDirectory)Shared\**\*.cs" Link="Shared\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Using Include="GibiOMatic.Testing" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)GibiOMatic.Testing\GibiOMatic.Testing.csproj" />
   </ItemGroup>
 </Project>

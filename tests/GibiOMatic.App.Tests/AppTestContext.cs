@@ -1,6 +1,5 @@
 using GibiOMatic.App.Services;
 using GibiOMatic.Core;
-using GibiOMatic.Tests;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

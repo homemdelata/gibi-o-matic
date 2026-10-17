@@ -4,7 +4,6 @@ using GibiOMatic.Core.Domain;
 using GibiOMatic.Core.Ids;
 using GibiOMatic.Core.Libraries;
 using GibiOMatic.Library.Index;
-using GibiOMatic.Tests;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace GibiOMatic.Library.Tests;
