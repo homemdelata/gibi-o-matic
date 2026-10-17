@@ -101,6 +101,34 @@ public sealed class ReviewAndEditorTests : IDisposable
     }
 
     [Fact]
+    public async Task Searching_again_shows_that_it_is_searching_and_then_what_was_not_found()
+    {
+        _app.Identifier.Respond = (_, text) => text is null ? [FakeIdentifier.Candidate("Saga, Vol. 1", "Saga", "1", 0.6)] : [];
+        await ImportAsync("a.pdf");
+        var review = _app.Get<ReviewPageViewModel>();
+        await review.OnNavigatedToAsync(Ct);
+        Assert.True(review.ShowCandidates);
+
+        _app.Identifier.Gate = new TaskCompletionSource();
+        review.SearchText = "Bee and PuppyCat";
+        var search = review.SearchAgainCommand.ExecuteAsync(null);
+
+        Assert.True(review.IsBusy);
+        Assert.Contains("Bee and PuppyCat", review.BusyText);
+        Assert.Empty(review.Candidates);
+        Assert.False(review.ShowCandidates);
+        Assert.False(review.ShowNoCandidateHint);
+        Assert.False(review.SearchAgainCommand.CanExecute(null));
+
+        _app.Identifier.Gate.SetResult();
+        await search;
+
+        Assert.False(review.IsBusy);
+        Assert.True(review.ShowNoCandidateHint);
+        Assert.Contains("Bee and PuppyCat", review.NoCandidateText);
+    }
+
+    [Fact]
     public async Task Safe_matches_are_approved_automatically_and_listed_by_the_library_filter()
     {
         _app.Identifier.Respond = (_, _) => [FakeIdentifier.Candidate("Saga, Vol. 1", "Saga", "1", 0.98, MatchReason.Isbn, MatchReason.SecondSource)];

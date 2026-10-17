@@ -8,7 +8,7 @@ namespace GibiOMatic.Metadata.Sources;
 
 public sealed record CvVolume(int Id, string Name, int? StartYear, string? Publisher, int IssueCount);
 
-public sealed record CvIssueSummary(int Id, int VolumeId, string VolumeName, string? IssueNumber, string? Name, PartialDate? Date);
+public sealed record CvIssueSummary(int Id, int VolumeId, string VolumeName, string? IssueNumber, string? Name, PartialDate? Date, string? CoverUrl = null);
 
 public sealed record CvIssue(
     int Id,
@@ -19,7 +19,8 @@ public sealed record CvIssue(
     PartialDate? Date,
     IReadOnlyList<Credit> Credits,
     string? Description,
-    string? SiteUrl);
+    string? SiteUrl,
+    string? CoverUrl = null);
 
 /// <summary>
 /// ComicVine API (personal key per user). Collected editions are volumes of their own
@@ -62,18 +63,18 @@ public sealed class ComicVineClient(SourceClient client, IComicVineKeyProvider k
             filter += ",issue_number:" + Uri.EscapeDataString(issueNumber);
         }
 
-        var url = $"{Base}/issues/?format=json&limit=100&sort=cover_date:asc&field_list=id,name,issue_number,cover_date,store_date,volume&filter={filter}";
+        var url = $"{Base}/issues/?format=json&limit=100&sort=cover_date:asc&field_list=id,name,issue_number,cover_date,store_date,volume,image&filter={filter}";
         using var doc = await GetAsync("issues", url, ct);
         return doc.RootElement.Items("results")
             .Select(i => new CvIssueSummary(i.Int("id") ?? 0, i.Prop("volume")?.Int("id") ?? 0, i.Prop("volume")?.Str("name") ?? string.Empty,
-                i.Str("issue_number"), i.Str("name"), DateOf(i)))
+                i.Str("issue_number"), i.Str("name"), DateOf(i), CoverOf(i)))
             .Where(i => i.Id > 0)
             .ToList();
     }
 
     public async Task<CvIssue?> GetIssueAsync(int id, CancellationToken ct)
     {
-        var url = $"{Base}/issue/4000-{id.ToString(CultureInfo.InvariantCulture)}/?format=json&field_list=id,name,issue_number,cover_date,store_date,volume,person_credits,description,deck,site_detail_url";
+        var url = $"{Base}/issue/4000-{id.ToString(CultureInfo.InvariantCulture)}/?format=json&field_list=id,name,issue_number,cover_date,store_date,volume,person_credits,description,deck,site_detail_url,image";
         using var doc = await GetAsync("issue", url, ct);
         if (doc.RootElement.Prop("results") is not { ValueKind: JsonValueKind.Object } i)
         {
@@ -107,7 +108,8 @@ public sealed class ComicVineClient(SourceClient client, IComicVineKeyProvider k
             DateOf(i),
             credits.OrderBy(c => c.Role).ToList(),
             Json.HtmlToText(i.Str("description")) ?? Json.Clean(i.Str("deck")),
-            i.Str("site_detail_url"));
+            i.Str("site_detail_url"),
+            CoverOf(i));
     }
 
     /// <summary>Checks the key with the smallest possible request.</summary>
@@ -139,6 +141,10 @@ public sealed class ComicVineClient(SourceClient client, IComicVineKeyProvider k
         "translator" => CreditRole.Translator,
         _ => null,
     };
+
+    /// <summary>A small rendition of the cover (about 160 px wide), enough to recognise the book.</summary>
+    private static string? CoverOf(JsonElement issue) =>
+        issue.Prop("image") is { } image ? image.Str("small_url") ?? image.Str("medium_url") ?? image.Str("thumb_url") : null;
 
     /// <summary>The on-sale date is the real publication date; the cover date runs months ahead.</summary>
     private static PartialDate? DateOf(JsonElement issue) => Json.Date(issue.Str("store_date")) ?? Json.Date(issue.Str("cover_date"));

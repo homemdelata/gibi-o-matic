@@ -85,8 +85,18 @@ public sealed class FakeIdentifier : IBookIdentifier
 {
     public Func<BookMetadata, string?, IReadOnlyList<MetadataCandidate>> Respond { get; set; } = (_, _) => [];
 
-    public Task<IdentificationResult> IdentifyAsync(BookMetadata book, MetadataSettings settings, string? searchText, CancellationToken ct) =>
-        Task.FromResult(new IdentificationResult(BookQuery.From(book, searchText), Respond(book, searchText), []));
+    /// <summary>When set, searches wait for it (to see what the screen shows meanwhile).</summary>
+    public TaskCompletionSource? Gate { get; set; }
+
+    public async Task<IdentificationResult> IdentifyAsync(BookMetadata book, MetadataSettings settings, string? searchText, CancellationToken ct)
+    {
+        if (Gate is { } gate)
+        {
+            await gate.Task;
+        }
+
+        return new IdentificationResult(BookQuery.From(book, searchText), Respond(book, searchText), []);
+    }
 
     public Task<MetadataCandidate> CompleteAsync(MetadataCandidate candidate, CancellationToken ct) =>
         Task.FromResult(candidate with { Record = candidate.Record with { IsDetailed = true } });

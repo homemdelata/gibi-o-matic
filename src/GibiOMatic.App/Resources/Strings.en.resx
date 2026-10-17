@@ -304,4 +304,10 @@
   <data name="Source_GoogleBooksHelp" xml:space="preserve"><value>By ISBN. Without a key it often refuses requests; off by default.</value></data>
   <data name="Source_OpenLibraryHelp" xml:space="preserve"><value>Lookup by ISBN. No key.</value></data>
   <data name="Review_NoCandidateHelp" xml:space="preserve"><value>No source found this book. Try searching with other words (the title as printed on the cover) or edit it by hand.</value></data>
+  <data name="Review_YourCover" xml:space="preserve"><value>Your file's cover</value></data>
+  <data name="Review_Searching" xml:space="preserve"><value>Searching “{0}”…</value></data>
+  <data name="Review_SearchingSources" xml:space="preserve"><value>Looking this book up in the sources…</value></data>
+  <data name="Review_SearchingHelp" xml:space="preserve"><value>It can take a few seconds: ComicVine requests are spaced to respect its limit.</value></data>
+  <data name="Review_LoadingDetails" xml:space="preserve"><value>Loading the candidate's credits and summary…</value></data>
+  <data name="Review_NothingFor" xml:space="preserve"><value>Nothing found for “{0}”.</value></data>
 </root>

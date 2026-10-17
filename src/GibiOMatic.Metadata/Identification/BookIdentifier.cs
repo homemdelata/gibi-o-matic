@@ -125,6 +125,7 @@ public sealed class BookIdentifier(
 
             var merged = candidate.Record with
             {
+                CoverUrl = candidate.Record.CoverUrl ?? agreeing.CoverUrl,
                 Isbn = agreeing.Isbn,
                 PageCount = candidate.Record.PageCount ?? agreeing.PageCount,
                 Date = candidate.Record.Date ?? agreeing.Date,
@@ -183,6 +184,7 @@ public sealed class BookIdentifier(
                 Summary = issue.Description ?? candidate.Record.Summary,
                 Date = issue.Date ?? candidate.Record.Date,
                 SourceUrl = issue.SiteUrl,
+                CoverUrl = candidate.Record.CoverUrl ?? issue.CoverUrl,
                 IsDetailed = true,
             },
         };
@@ -348,6 +350,7 @@ public sealed class BookIdentifier(
             VolumeIssueCount = volume.IssueCount,
             IsOneShot = oneShot,
             IsDetailed = false,
+            CoverUrl = issue.CoverUrl,
         };
 
         return new MetadataCandidate(record, Math.Round(Math.Clamp(confidence, 0, 1), 2), reasons);

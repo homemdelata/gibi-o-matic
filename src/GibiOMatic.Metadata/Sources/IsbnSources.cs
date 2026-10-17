@@ -41,6 +41,7 @@ public sealed class OpenLibraryClient(SourceClient client) : IIsbnSource
             PageCount = book.Int("number_of_pages"),
             Summary = book.Str("notes"),
             SourceUrl = book.Str("url"),
+            CoverUrl = book.Prop("cover")?.Str("medium") ?? book.Prop("cover")?.Str("small"),
             Credits = book.Items("authors").Select(a => a.Str("name")).OfType<string>().Select(n => new Credit(CreditRole.Other, n)).ToList(),
         };
     }
@@ -73,6 +74,7 @@ public sealed class GoogleBooksClient(SourceClient client) : IIsbnSource
             Summary = info.Str("description"),
             Language = info.Str("language"),
             SourceUrl = info.Str("infoLink"),
+            CoverUrl = info.Prop("imageLinks")?.Str("thumbnail")?.Replace("http://", "https://", StringComparison.Ordinal),
             Credits = info.Items("authors").Select(a => a.ValueKind == JsonValueKind.String ? a.GetString() : null)
                 .OfType<string>().Select(n => new Credit(CreditRole.Other, n)).ToList(),
         };

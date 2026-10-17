@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GibiOMatic.App.Resources;
@@ -10,6 +11,7 @@ using GibiOMatic.Library;
 using GibiOMatic.Library.Identification;
 using GibiOMatic.Library.Index;
 using GibiOMatic.Metadata;
+using GibiOMatic.Metadata.Http;
 using GibiOMatic.Metadata.Identification;
 using Microsoft.Extensions.Logging;
 
@@ -36,9 +38,32 @@ public sealed partial class ReviewItemViewModel(BookCardViewModel card, BookIden
     private void Select() => select(this);
 }
 
-public sealed partial class CandidateViewModel(MetadataCandidate candidate, Action<CandidateViewModel> pick) : ViewModelBase
+public sealed partial class CandidateViewModel : ViewModelBase
 {
-    public MetadataCandidate Candidate { get; private set; } = candidate;
+    private readonly Action<CandidateViewModel> _pick;
+    private readonly Func<string?, Task<Bitmap?>> _loadCover;
+
+    public CandidateViewModel(MetadataCandidate candidate, Action<CandidateViewModel> pick, Func<string?, Task<Bitmap?>> loadCover)
+    {
+        Candidate = candidate;
+        _pick = pick;
+        _loadCover = loadCover;
+        _ = LoadCoverAsync();
+    }
+
+    public MetadataCandidate Candidate { get; private set; }
+
+    /// <summary>The source's cover, to compare with the book's own cover.</summary>
+    [ObservableProperty]
+    public partial Bitmap? Cover { get; private set; }
+
+    private async Task LoadCoverAsync()
+    {
+        if (Cover is null && Candidate.Record.CoverUrl is { } url)
+        {
+            Cover = await _loadCover(url);
+        }
+    }
 
     public string Title => Candidate.Record.Title ?? "—";
 
@@ -69,10 +94,11 @@ public sealed partial class CandidateViewModel(MetadataCandidate candidate, Acti
     {
         Candidate = detailed;
         OnPropertyChanged(string.Empty);
+        _ = LoadCoverAsync();
     }
 
     [RelayCommand]
-    private void Pick() => pick(this);
+    private void Pick() => _pick(this);
 }
 
 /// <summary>A row of the "campo · atual · proposto" table, with its check box.</summary>
@@ -113,14 +139,17 @@ public sealed partial class ReviewPageViewModel : PageViewModel
     private readonly LibrarySession _session;
     private readonly ThumbnailCache _thumbnails;
     private readonly ICoverLoader _covers;
+    private readonly CoverImageCache _remoteCovers;
     private readonly ILogger<ReviewPageViewModel> _logger;
     private readonly Debouncer _refresh;
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
     private string? _pendingBookId;
     private CatalogBook? _book;
 
-    public ReviewPageViewModel(LibrarySession session, ThumbnailCache thumbnails, ICoverLoader covers, IUiThread ui, ILogger<ReviewPageViewModel> logger)
+    public ReviewPageViewModel(LibrarySession session, ThumbnailCache thumbnails, ICoverLoader covers, CoverImageCache remoteCovers, IUiThread ui,
+        ILogger<ReviewPageViewModel> logger)
     {
+        _remoteCovers = remoteCovers;
         _session = session;
         _thumbnails = thumbnails;
         _covers = covers;
@@ -163,11 +192,13 @@ public sealed partial class ReviewPageViewModel : PageViewModel
     public ObservableCollection<CandidateViewModel> Candidates { get; } = [];
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasCandidate))]
+    [NotifyPropertyChangedFor(nameof(HasCandidate), nameof(ShowNoCandidateHint), nameof(ShowCandidates))]
     [NotifyCanExecuteChangedFor(nameof(ApproveCommand))]
     public partial CandidateViewModel? SelectedCandidate { get; private set; }
 
     public bool HasCandidate => SelectedCandidate is not null;
+
+    private bool CanApprove => HasCandidate && !IsBusy;
 
     public ObservableCollection<FieldRowViewModel> Rows { get; } = [];
 
@@ -183,8 +214,31 @@ public sealed partial class ReviewPageViewModel : PageViewModel
     [ObservableProperty]
     public partial string? AppliedSummary { get; private set; }
 
+    /// <summary>A search or a details request is running (it can take seconds: the sources are spaced).</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowNoCandidateHint), nameof(ShowCandidates))]
+    [NotifyCanExecuteChangedFor(nameof(ApproveCommand), nameof(SkipCommand), nameof(SearchAgainCommand))]
     public partial bool IsBusy { get; private set; }
+
+    [ObservableProperty]
+    public partial string? BusyText { get; private set; }
+
+    /// <summary>What was searched last, so "nothing found" says for what.</summary>
+    [ObservableProperty]
+    public partial string? NoCandidateText { get; private set; }
+
+    public bool ShowNoCandidateHint => !IsBusy && !HasCandidate;
+
+    public bool ShowCandidates => !IsBusy && HasCandidate;
+
+    public bool IsIdle => !IsBusy;
+
+    private void SetBusy(string? text)
+    {
+        BusyText = text;
+        IsBusy = text is not null;
+        OnPropertyChanged(nameof(IsIdle));
+    }
 
     public override void SetBooks(IReadOnlyList<string> bookIds) => _pendingBookId = bookIds.FirstOrDefault();
 
@@ -200,14 +254,14 @@ public sealed partial class ReviewPageViewModel : PageViewModel
             var identification = await queue.GetAsync(bookId, ct);
             if (identification?.State is null or IdentificationState.Queued or IdentificationState.AutoApproved or IdentificationState.Approved)
             {
-                IsBusy = true;
+                SetBusy(Strings.Review_SearchingSources);
                 try
                 {
                     await queue.SearchAgainAsync(bookId, null, ct);
                 }
                 finally
                 {
-                    IsBusy = false;
+                    SetBusy(null);
                 }
             }
         }
@@ -328,10 +382,11 @@ public sealed partial class ReviewPageViewModel : PageViewModel
         FolderPath = Path.Combine(library.RootPath, _book.Folder);
         var result = item.Identification.Result;
         SearchText = result?.Query.SearchText ?? BookQuery.From(_book.Metadata).SearchText;
+        NoCandidateText = string.Format(CultureInfo.CurrentCulture, Strings.Review_NothingFor, SearchText);
         NotesText = IdentificationText.Notes(item.Identification.Message);
         foreach (var candidate in result?.Candidates ?? [])
         {
-            Candidates.Add(new CandidateViewModel(candidate, c => _ = PickAsync(c, CancellationToken.None)));
+            Candidates.Add(new CandidateViewModel(candidate, c => _ = PickAsync(c, CancellationToken.None), LoadRemoteCoverAsync));
         }
 
         if (Candidates.Count > 0)
@@ -357,7 +412,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel
         {
             try
             {
-                IsBusy = true;
+                SetBusy(Strings.Review_LoadingDetails);
                 candidate.Update(await queue.CompleteAsync(candidate.Candidate, ct));
             }
             catch (Exception ex) when (ex is Metadata.Http.MetadataSourceException or HttpRequestException)
@@ -367,7 +422,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel
             }
             finally
             {
-                IsBusy = false;
+                SetBusy(null);
             }
         }
 
@@ -387,10 +442,14 @@ public sealed partial class ReviewPageViewModel : PageViewModel
         UpdateSummary();
     }
 
+    /// <summary>Downloads (once) and decodes a candidate's cover; <c>null</c> when it cannot be had.</summary>
+    private async Task<Bitmap?> LoadRemoteCoverAsync(string? url) =>
+        await _remoteCovers.GetAsync(url) is { } path ? await _covers.LoadAsync(path, 160) : null;
+
     private void UpdateSummary() =>
         AppliedSummary = string.Format(CultureInfo.CurrentCulture, Strings.Review_AppliedSummary, Rows.Count(r => r.IsApplied), Rows.Count(r => r.CanApply));
 
-    [RelayCommand(CanExecute = nameof(HasCandidate))]
+    [RelayCommand(CanExecute = nameof(CanApprove))]
     private async Task ApproveAsync(CancellationToken ct)
     {
         if (Selected is not { } item || SelectedCandidate is not { } candidate || _session.Identification is not { } queue)
@@ -404,7 +463,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel
         await MoveToNextAsync(index, ct);
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(IsIdle))]
     private async Task SkipAsync(CancellationToken ct)
     {
         if (Selected is not { } item || _session.Identification is not { } queue)
@@ -433,7 +492,11 @@ public sealed partial class ReviewPageViewModel : PageViewModel
         }
     }
 
-    [RelayCommand]
+    /// <summary>
+    /// Clears the old result right away and says what is being searched, so the wait (seconds,
+    /// the sources are spaced) never looks like "nothing found".
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(IsIdle))]
     private async Task SearchAgainAsync(CancellationToken ct)
     {
         if (Selected is not { } item || _session.Identification is not { } queue)
@@ -441,16 +504,25 @@ public sealed partial class ReviewPageViewModel : PageViewModel
             return;
         }
 
-        IsBusy = true;
+        var text = string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim();
+        Candidates.Clear();
+        Rows.Clear();
+        SelectedCandidate = null;
+        ConfidenceText = null;
+        AppliedSummary = null;
+        SetBusy(string.Format(CultureInfo.CurrentCulture, Strings.Review_Searching, text ?? item.Title));
         try
         {
-            await queue.SearchAgainAsync(item.BookId, string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim(), ct);
+            await queue.SearchAgainAsync(item.BookId, text, ct);
+            SetBusy(null);
             Selected = null;
             await RefreshAsync(ct, item.BookId);
+            SearchText = text ?? SearchText;
+            NoCandidateText = string.Format(CultureInfo.CurrentCulture, Strings.Review_NothingFor, text ?? item.Title);
         }
         finally
         {
-            IsBusy = false;
+            SetBusy(null);
         }
     }
 

@@ -304,4 +304,10 @@
   <data name="Source_GoogleBooksHelp" xml:space="preserve"><value>Por ISBN. Sem chave, recusa consultas com frequência; desligada por padrão.</value></data>
   <data name="Source_OpenLibraryHelp" xml:space="preserve"><value>Busca por ISBN. Sem chave.</value></data>
   <data name="Review_NoCandidateHelp" xml:space="preserve"><value>Nenhuma fonte encontrou este livro. Tente buscar com outras palavras (o título como está na capa) ou edite à mão.</value></data>
+  <data name="Review_YourCover" xml:space="preserve"><value>Capa do seu arquivo</value></data>
+  <data name="Review_Searching" xml:space="preserve"><value>Buscando “{0}”…</value></data>
+  <data name="Review_SearchingSources" xml:space="preserve"><value>Buscando este livro nas fontes…</value></data>
+  <data name="Review_SearchingHelp" xml:space="preserve"><value>Pode levar alguns segundos: as consultas ao ComicVine são espaçadas para respeitar o limite dele.</value></data>
+  <data name="Review_LoadingDetails" xml:space="preserve"><value>Carregando créditos e sinopse do candidato…</value></data>
+  <data name="Review_NothingFor" xml:space="preserve"><value>Nada encontrado para “{0}”.</value></data>
 </root>

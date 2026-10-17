@@ -43,6 +43,9 @@ public sealed record MetadataRecord
     public bool IsDetailed { get; init; } = true;
 
     public string? SourceUrl { get; init; }
+
+    /// <summary>Small cover image of the record, to compare with the book in the Review.</summary>
+    public string? CoverUrl { get; init; }
 }
 
 /// <summary>What made a candidate match; shown as "94% · título + número + editora".</summary>

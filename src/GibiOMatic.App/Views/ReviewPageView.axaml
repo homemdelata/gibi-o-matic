@@ -71,14 +71,25 @@
 
     <!-- Comparison -->
     <DockPanel Grid.Column="1" Margin="{StaticResource PagePadding}" IsVisible="{Binding HasSelection}">
-      <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,18">
-        <StackPanel Spacing="6" Margin="0,0,16,0">
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,18">
+        <!-- The book's own cover, to compare with the candidates' -->
+        <Border Width="64" Height="96" CornerRadius="6" ClipToBounds="True" Margin="0,0,16,0" VerticalAlignment="Top"
+                ToolTip.Tip="{x:Static r:Strings.Review_YourCover}">
+          <Border.Background>
+            <SolidColorBrush Color="{Binding Selected.Card.PlaceholderColor, FallbackValue=#262931}" />
+          </Border.Background>
+          <Panel>
+            <Border Background="{StaticResource HalftoneBrush}" />
+            <Image Source="{Binding Selected.Card.Thumbnail, FallbackValue={x:Null}}" Stretch="UniformToFill" />
+          </Panel>
+        </Border>
+        <StackPanel Grid.Column="1" Spacing="6" Margin="0,0,16,0">
           <SelectableTextBlock Classes="mono" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" Text="{Binding FolderPath}"
                                TextWrapping="Wrap" />
           <TextBlock FontFamily="{StaticResource FontDisplay}" FontSize="26" FontWeight="Bold" TextWrapping="Wrap"
                      Text="{Binding Selected.Title, FallbackValue={x:Null}}" />
         </StackPanel>
-        <Border Grid.Column="1" Classes="pill" Padding="14,8" VerticalAlignment="Top"
+        <Border Grid.Column="2" Classes="pill" Padding="14,8" VerticalAlignment="Top"
                 Background="{Binding ConfidenceLevel, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Background}">
           <TextBlock FontWeight="SemiBold" Text="{Binding ConfidenceText}" TextWrapping="Wrap" MaxWidth="360"
                      Foreground="{Binding ConfidenceLevel, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
@@ -97,7 +108,7 @@
           </TextBox.InnerLeftContent>
         </TextBox>
         <Button Grid.Column="1" Classes="secondary" Margin="10,0,0,0" Content="{x:Static r:Strings.Review_SearchAgain}"
-                Command="{Binding SearchAgainCommand}" IsEnabled="{Binding !IsBusy}" />
+                Command="{Binding SearchAgainCommand}" />
       </Grid>
 
       <!-- Footer -->
@@ -110,10 +121,22 @@
 
       <ScrollViewer>
         <StackPanel Spacing="18">
-          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{x:Static r:Strings.Review_NoCandidateHelp}" IsVisible="{Binding !HasCandidate}" />
+          <!-- Searching: the old result is gone and the wait is visible -->
+          <Border Classes="card" IsVisible="{Binding IsBusy}">
+            <StackPanel Spacing="10">
+              <TextBlock FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding BusyText}" />
+              <ProgressBar IsIndeterminate="True" Height="4" Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+              <TextBlock Classes="help" Text="{x:Static r:Strings.Review_SearchingHelp}" />
+            </StackPanel>
+          </Border>
+
+          <StackPanel Spacing="6" IsVisible="{Binding ShowNoCandidateHint}">
+            <TextBlock FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding NoCandidateText}" />
+            <TextBlock Classes="muted" TextWrapping="Wrap" Text="{x:Static r:Strings.Review_NoCandidateHelp}" />
+          </StackPanel>
 
           <!-- Candidates -->
-          <StackPanel Spacing="10" IsVisible="{Binding HasCandidate}">
+          <StackPanel Spacing="10" IsVisible="{Binding ShowCandidates}">
             <TextBlock Classes="section-label" Text="{x:Static r:Strings.Review_Candidates}" />
             <ItemsControl ItemsSource="{Binding Candidates}">
               <ItemsControl.ItemsPanel>
@@ -124,13 +147,22 @@
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:CandidateViewModel">
                   <Button Classes="candidate" Classes.selected="{Binding IsSelected}" Command="{Binding PickCommand}" Margin="0,0,12,12">
-                    <StackPanel Spacing="4">
+                    <Grid ColumnDefinitions="Auto,*">
+                    <Border Width="64" Height="96" CornerRadius="6" ClipToBounds="True" VerticalAlignment="Top" Margin="0,0,12,0"
+                            Background="{DynamicResource HoverBrush}">
+                      <Panel>
+                        <Border Background="{StaticResource HalftoneBrush}" />
+                        <Image Source="{Binding Cover}" Stretch="UniformToFill" />
+                      </Panel>
+                    </Border>
+                    <StackPanel Grid.Column="1" Spacing="4">
                       <TextBlock FontWeight="SemiBold" Text="{Binding Title}" TextWrapping="Wrap" MaxLines="3" TextTrimming="CharacterEllipsis" />
                       <TextBlock Classes="muted" FontSize="12" Text="{Binding MetaLine}" TextWrapping="Wrap" />
                       <TextBlock Classes="muted" FontSize="12" Text="{Binding SourceText}" />
                       <TextBlock Classes="mono" FontSize="12" FontWeight="Medium" Margin="0,2,0,0" Text="{Binding ConfidenceText}"
                                  Foreground="{Binding Level, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
                     </StackPanel>
+                    </Grid>
                   </Button>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
@@ -139,7 +171,7 @@
 
           <!-- Field by field -->
           <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="14" ClipToBounds="True"
-                  IsVisible="{Binding HasCandidate}">
+                  IsVisible="{Binding ShowCandidates}">
             <StackPanel>
               <Grid ColumnDefinitions="48,150,*,1.4*" Background="{DynamicResource CardBrush}">
                 <TextBlock Grid.Column="1" Classes="section-label" Margin="8,12" Text="{x:Static r:Strings.Review_ColField}" />

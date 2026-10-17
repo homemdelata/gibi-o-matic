@@ -135,7 +135,8 @@ public sealed class SourceParsingTests : IDisposable
              "cover_date":"2022-05-01","store_date":"2022-06-01","volume":{"id":144057,"name":"Deadly Class: A Fond Farewell Part One"},
              "person_credits":[{"name":"Lee Loughridge","role":"colorist"},{"name":"Rick Remender","role":"writer"},
                {"name":"Rus Wooton","role":"letterer, designer"},{"name":"Wes Craig","role":"artist"},{"name":"Some Editor","role":"editor"}],
-             "description":"<p>Trade paperback collecting <a href=\"/x\">Deadly Class</a> #49-52.</p>","site_detail_url":"https://comicvine/x"}}
+             "description":"<p>Trade paperback collecting <a href=\"/x\">Deadly Class</a> #49-52.</p>","site_detail_url":"https://comicvine/x",
+             "image":{"small_url":"https://comicvine.gamespot.com/a/uploads/scale_small/1.jpg","original_url":"https://x/o.jpg"}}}
             """));
         var cv = new ComicVineClient(Client(http), new FixedKey("k"));
 
@@ -143,6 +144,7 @@ public sealed class SourceParsingTests : IDisposable
 
         Assert.NotNull(issue);
         Assert.Equal(new PartialDate(2022, 6, 1), issue.Date);
+        Assert.Equal("https://comicvine.gamespot.com/a/uploads/scale_small/1.jpg", issue.CoverUrl);
         Assert.Equal("Trade paperback collecting Deadly Class #49-52.", issue.Description);
         Assert.Equal(
             [new Credit(CreditRole.Writer, "Rick Remender"), new Credit(CreditRole.Artist, "Wes Craig"),
@@ -199,3 +201,35 @@ public sealed class SourceParsingTests : IDisposable
     public void Dates_in_api_formats(string text, int year, int? month, int? day) =>
         Assert.Equal(new PartialDate(year, month, day), Json.Date(text));
 }
+
+public sealed class CoverImageCacheTests : IDisposable
+{
+    private readonly TempDirectory _temp = new();
+
+    public void Dispose() => _temp.Dispose();
+
+    private static CancellationToken Ct => TestContext.Current.CancellationToken;
+
+    [Fact]
+    public async Task Downloads_known_cover_hosts_once_and_refuses_others()
+    {
+        var http = new FakeHttp(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new ByteArrayContent(SyntheticImages.Jpeg(20, 30, SkiaSharp.SKColors.Red)) { Headers = { ContentType = new("image/jpeg") } },
+        });
+        var cache = new CoverImageCache(new HttpClient(http), _temp.Path, NullLogger<CoverImageCache>.Instance);
+
+        var first = await cache.GetAsync("https://comicvine.gamespot.com/a/uploads/scale_small/1.jpg", Ct);
+        var second = await cache.GetAsync("https://comicvine.gamespot.com/a/uploads/scale_small/1.jpg", Ct);
+
+        Assert.NotNull(first);
+        Assert.Equal(first, second);
+        Assert.Single(http.Requests);
+        Assert.Contains("GibiOMatic", http.Requests[0].Headers.UserAgent.ToString());
+        Assert.Null(await cache.GetAsync("https://evil.example/x.jpg", Ct));
+        Assert.Null(await cache.GetAsync("http://covers.openlibrary.org/b/id/1-M.jpg", Ct));
+        Assert.Null(await cache.GetAsync(null, Ct));
+        Assert.Single(http.Requests);
+    }
+}
+
