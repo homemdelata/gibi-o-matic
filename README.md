@@ -7,7 +7,16 @@ App desktop (C# / Avalonia) para organizar uma coleção pessoal de quadrinhos d
 - **Komga** — publica cópias em CBZ com `ComicInfo.xml`, organizadas por editora/série.
 - **Kindle** — gera versões AZW3 via Kindle Comic Converter, prontas para copiar por USB.
 
-> Status: em planejamento. Veja [`docs/SPEC.md`](docs/SPEC.md).
+> Status: em desenvolvimento — fase F0 (fundação) concluída. Veja [`docs/ROADMAP.md`](docs/ROADMAP.md) e [`docs/SPEC.md`](docs/SPEC.md).
+
+## Desenvolvimento
+Requer o .NET 10 SDK (versão fixada em `global.json`).
+
+```
+dotnet build GibiOMatic.sln
+dotnet test --solution GibiOMatic.sln
+dotnet run --project src/GibiOMatic.App
+```
 
 ## Licença
 MIT — veja [`LICENSE`](LICENSE).

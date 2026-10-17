@@ -4,7 +4,7 @@ Status: ⬜ não iniciada · 🟨 em andamento · ✅ concluída. Seções `§` 
 
 | Fase | Nome | Status |
 |---|---|---|
-| F0 | Fundação | ⬜ |
+| F0 | Fundação | ✅ |
 | F1 | Importação + Biblioteca | ⬜ |
 | F2 | Metadados | ⬜ |
 | F3 | Destino Komga | ⬜ |
@@ -20,28 +20,28 @@ Ao terminar cada fase: build e testes verdes → atualizar este arquivo → comm
 
 **Objetivo**: esqueleto sólido do app, rodando, com o visual do protótipo e a biblioteca vazia criada no disco.
 
-- [ ] Verificar o .NET 10 SDK; se não houver, pedir autorização e instalar (`winget install Microsoft.DotNet.SDK.10`). Criar o `global.json`.
-- [ ] `GibiOMatic.sln` com os projetos `src/` e `tests/` do `CLAUDE.md`.
+- [x] Verificar o .NET 10 SDK; se não houver, pedir autorização e instalar (`winget install Microsoft.DotNet.SDK.10`). Criar o `global.json`.
+- [x] `GibiOMatic.sln` com os projetos `src/` e `tests/` do `CLAUDE.md`.
   - `Directory.Build.props`: `Nullable=enable`, `TreatWarningsAsErrors=true`, `LangVersion=latest`, `ImplicitUsings`.
   - `Directory.Packages.props`: versões centralizadas.
-- [ ] **Shell da interface (Avalonia)**:
+- [x] **Shell da interface (Avalonia)**:
   - janela principal com o menu lateral do protótipo (Biblioteca, Entrada, Revisão, Editor, Destinos, Configurações);
   - páginas vazias com título;
   - navegação via ViewModels.
-- [ ] **Tema**: tokens de `docs/DESIGN.md` como recursos (cores, raios, espaçamentos), estilos dos componentes básicos (botão primário e secundário, chip, card, campo de texto, item de menu) e fontes embutidas (Bricolage Grotesque, IBM Plex Sans/Mono; licença OFL — registrar em `THIRD-PARTY.md`).
-- [ ] **i18n**: `resx` com pt-BR (padrão) e en; troca de idioma nas Configurações (pode exigir reiniciar).
-- [ ] **Configurações** (§11):
+- [x] **Tema**: tokens de `docs/DESIGN.md` como recursos (cores, raios, espaçamentos), estilos dos componentes básicos (botão primário e secundário, chip, card, campo de texto, item de menu) e fontes embutidas (Bricolage Grotesque, IBM Plex Sans/Mono; licença OFL — registrar em `THIRD-PARTY.md`).
+- [x] **i18n**: `resx` com pt-BR (padrão) e en; troca de idioma nas Configurações (pode exigir reiniciar).
+- [x] **Configurações** (§11):
   - `ISettingsService` persistindo em `%APPDATA%\GibiOMatic\settings.json`, com escrita atômica;
   - `ISecretStore` com implementação DPAPI no Windows e um *stub* para Linux, a fazer.
-- [ ] **Formato da biblioteca** (§4):
+- [x] **Formato da biblioteca** (§4):
   - criar e abrir uma biblioteca, gerando `gibiomatic-library.json` (id, versão do formato), `Livros/` e `.gibiomatic/`;
   - índice SQLite em `%LOCALAPPDATA%\GibiOMatic\index\<libraryId>.db`, com migrações de schema versionadas;
   - "reconstruir índice" varrendo os `metadata.json`.
-- [ ] **Primeira execução**: tela de boas-vindas → "Criar biblioteca nova" ou "Abrir existente" → escolher a pasta → app abre na Biblioteca (vazia, com estado vazio amigável). Na próxima abertura, lembra a biblioteca.
-- [ ] Log com Serilog em `%LOCALAPPDATA%\GibiOMatic\logs`.
-- [ ] Testes: serialização das configurações, criação e abertura da biblioteca, reconstrução do índice com `metadata.json` sintéticos.
-- [ ] **CI**: `.github/workflows/ci.yml` com build e testes em `windows-latest` e `ubuntu-latest`.
-- [ ] Iniciar `docs/DECISIONS.md` e `docs/THIRD-PARTY.md` com o que for adicionado.
+- [x] **Primeira execução**: tela de boas-vindas → "Criar biblioteca nova" ou "Abrir existente" → escolher a pasta → app abre na Biblioteca (vazia, com estado vazio amigável). Na próxima abertura, lembra a biblioteca.
+- [x] Log com Serilog em `%LOCALAPPDATA%\GibiOMatic\logs`.
+- [x] Testes: serialização das configurações, criação e abertura da biblioteca, reconstrução do índice com `metadata.json` sintéticos.
+- [x] **CI**: `.github/workflows/ci.yml` com build e testes em `windows-latest` e `ubuntu-latest`.
+- [x] Iniciar `docs/DECISIONS.md` e `docs/THIRD-PARTY.md` com o que for adicionado.
 
 **Pronto quando**:
 - o app abre no visual do protótipo;

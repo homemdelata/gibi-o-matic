@@ -55,7 +55,7 @@ Licença MIT. Repositório privado por enquanto (`github.com/homemdelata/gibi-o-
 - Avalonia 11, CommunityToolkit.Mvvm, Microsoft.Data.Sqlite + Dapper, Serilog, xUnit. Gerenciamento central de pacotes (`Directory.Packages.props`).
 - Comandos (depois da F0):
   - `dotnet build GibiOMatic.sln`
-  - `dotnet test GibiOMatic.sln`
+  - `dotnet test --solution GibiOMatic.sln` (Microsoft.Testing.Platform, ver `global.json`)
   - `dotnet run --project src/GibiOMatic.App`
 - Ambiente: Windows 11; shells PowerShell 5.1 e Git Bash. Caminhos com espaços (`G:\Meu Drive`) precisam de aspas.
 
