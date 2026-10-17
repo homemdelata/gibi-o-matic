@@ -247,6 +247,7 @@ public sealed partial class InboxPageViewModel : PageViewModel
     private readonly IUiThread _ui;
     private readonly ILogger<InboxPageViewModel> _logger;
     private readonly Debouncer _refresh;
+    private readonly SemaphoreSlim _refreshGate = new(1, 1);
 
     public InboxPageViewModel(LibrarySession session, IFilePicker filePicker, IFolderPicker folderPicker, ThumbnailCache thumbnails,
         ICoverLoader covers, IUiThread ui, ILogger<InboxPageViewModel> logger)
@@ -322,6 +323,9 @@ public sealed partial class InboxPageViewModel : PageViewModel
             return;
         }
 
+        // A queue event and a user action may refresh at the same time; interleaved refreshes
+        // would add the same file twice.
+        await _refreshGate.WaitAsync(ct);
         try
         {
             var entries = await queue.GetEntriesAsync(ct);
@@ -354,6 +358,10 @@ public sealed partial class InboxPageViewModel : PageViewModel
         catch (Exception ex) when (LibrarySession.IsExpectedFailure(ex))
         {
             _logger.LogError(ex, "Could not read the inbox");
+        }
+        finally
+        {
+            _refreshGate.Release();
         }
     }
 
