@@ -245,6 +245,8 @@
 
   <!-- Book and series cards in the grid: the whole card is the button -->
   <Style Selector="Button.cover-card">
+    <!-- Cards of a row line up by the top even when a title takes two lines. -->
+    <Setter Property="VerticalAlignment" Value="Top" />
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
     <Setter Property="Padding" Value="0" />

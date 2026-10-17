@@ -10,7 +10,7 @@
   <UserControl.DataTemplates>
     <!-- Book card -->
     <DataTemplate DataType="vm:BookCardViewModel">
-      <Button Classes="cover-card" Command="{Binding SelectCommand}" Margin="-6,-6,12,0" Padding="6"
+      <Button Classes="cover-card" Command="{Binding SelectCommand}" Margin="3,0" Padding="6"
               AutomationProperties.Name="{Binding Title}">
         <StackPanel Spacing="9">
           <Panel>
@@ -50,7 +50,7 @@
 
     <!-- Series card: a small stack of covers -->
     <DataTemplate DataType="vm:SeriesCardViewModel">
-      <Button Classes="cover-card" Command="{Binding OpenCommand}" Margin="-6,-6,12,0" Padding="6"
+      <Button Classes="cover-card" Command="{Binding OpenCommand}" Margin="3,0" Padding="6"
               AutomationProperties.Name="{Binding Name}">
         <StackPanel Spacing="9">
           <Panel Margin="0,6,6,0">
@@ -267,8 +267,10 @@
                    HorizontalAlignment="Center" Margin="0,60,0,0" />
 
         <!-- Cover grid: rows of cards, virtualized -->
+        <!-- Each card keeps 9 px around its cover (margin 3 + padding 6) for the selection outline, so
+             nothing is drawn outside its container; the grid area grows by those 9 px to keep covers aligned. -->
         <ScrollViewer x:Name="GridScroller" IsVisible="{Binding HasResults}" HorizontalScrollBarVisibility="Disabled"
-                      Padding="0,8,8,0" Margin="0,-8,-8,0">
+                      Margin="-9,-9,-9,0">
           <ItemsControl x:Name="GridRows" ItemsSource="{Binding Rows}" AutomationProperties.Name="{x:Static r:Strings.Library_Grid}">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate>
@@ -277,7 +279,7 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="vm:CardRow">
-                <ItemsControl ItemsSource="{Binding Cards}" Margin="0,0,-18,24">
+                <ItemsControl ItemsSource="{Binding Cards}" Margin="0,3,0,12">
                   <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                       <UniformGrid Columns="{Binding Columns}" />
