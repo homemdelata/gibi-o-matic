@@ -1,7 +1,6 @@
 using System.Text.Json;
 using GibiOMatic.Core;
 using GibiOMatic.Core.Settings;
-using GibiOMatic.Tests;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace GibiOMatic.Core.Tests.Settings;

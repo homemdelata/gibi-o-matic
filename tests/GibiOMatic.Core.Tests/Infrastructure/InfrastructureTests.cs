@@ -1,7 +1,6 @@
 using GibiOMatic.Core.Ids;
 using GibiOMatic.Core.IO;
 using GibiOMatic.Core.Secrets;
-using GibiOMatic.Tests;
 
 namespace GibiOMatic.Core.Tests.Infrastructure;
 

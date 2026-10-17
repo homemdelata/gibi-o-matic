@@ -65,8 +65,19 @@ public sealed class JsonSettingsService(AppPaths paths, ILogger<JsonSettingsServ
         }
     }
 
-    private static AppSettings Normalize(AppSettings settings) =>
-        AppSettings.SupportedLanguages.Contains(settings.Language)
-            ? settings
-            : settings with { Language = AppSettings.DefaultLanguage };
+    private static AppSettings Normalize(AppSettings settings)
+    {
+        if (!AppSettings.SupportedLanguages.Contains(settings.Language))
+        {
+            settings = settings with { Language = AppSettings.DefaultLanguage };
+        }
+
+        // Every format must appear exactly once; unknown or missing ones fall back to the default order.
+        var preference = (settings.FormatPreference ?? [])
+            .Where(Enum.IsDefined)
+            .Concat(AppSettings.DefaultFormatPreference)
+            .Distinct()
+            .ToList();
+        return preference.SequenceEqual(settings.FormatPreference ?? []) ? settings : settings with { FormatPreference = preference };
+    }
 }

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using GibiOMatic.Core.Domain;
 
 namespace GibiOMatic.Core.Settings;
 
@@ -20,6 +21,15 @@ public sealed record AppSettings
 
     /// <summary>Folder watched for new downloads (used from F5 on).</summary>
     public string? InboxPath { get; init; }
+
+    /// <summary>
+    /// Which format becomes the main original when a book exists in several (SPEC §10),
+    /// best first. Default CBZ &gt; PDF &gt; EPUB &gt; CBR.
+    /// </summary>
+    public IReadOnlyList<BookFormat> FormatPreference { get; init; } = DefaultFormatPreference;
+
+    public static IReadOnlyList<BookFormat> DefaultFormatPreference { get; } =
+        [BookFormat.Cbz, BookFormat.Pdf, BookFormat.Epub, BookFormat.Cbr];
 
     /// <summary>Keys written by newer versions of the app, preserved on save.</summary>
     [JsonExtensionData]
