@@ -30,6 +30,9 @@ public sealed record AppSettings
 
     public MetadataSettings Metadata { get; init; } = new();
 
+    /// <summary>Komga, Kindle… (SPEC §9). Per machine.</summary>
+    public IReadOnlyList<DestinationConfig> Destinations { get; init; } = [];
+
     public static IReadOnlyList<BookFormat> DefaultFormatPreference { get; } =
         [BookFormat.Cbz, BookFormat.Pdf, BookFormat.Epub, BookFormat.Cbr];
 

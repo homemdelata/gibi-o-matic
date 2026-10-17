@@ -21,6 +21,9 @@ public sealed class BookEditor(LibraryService libraries, IBookFileReader reader,
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
 
+    /// <summary>A book's metadata or cover was saved (destinations regenerate its copies).</summary>
+    public event EventHandler<BookSavedEventArgs>? BookSaved;
+
     /// <summary>Applies <paramref name="change"/> to the book as it is on disk and saves it. Returns the saved book.</summary>
     public async Task<CatalogBook> UpdateAsync(LibraryInfo library, string bookId, Func<BookMetadata, BookMetadata> change, CancellationToken ct = default)
     {
@@ -50,6 +53,7 @@ public sealed class BookEditor(LibraryService libraries, IBookFileReader reader,
             var saved = new IndexedBook(updated, folder, File.GetLastWriteTimeUtc(Path.Combine(library.RootPath, folder, LibraryLayout.MetadataFileName)));
             await index.UpsertBookAsync(saved, ct);
             logger.LogInformation("Saved book {BookId} ({Title})", updated.Id, updated.Title);
+            BookSaved?.Invoke(this, new BookSavedEventArgs(library.Id, updated.Id));
             return new CatalogBook(updated, folder);
         }
         finally
@@ -122,6 +126,7 @@ public sealed class BookEditor(LibraryService libraries, IBookFileReader reader,
 
         await AtomicFile.WriteAllBytesAsync(Path.Combine(library.RootPath, entry.Folder, LibraryLayout.CoverFileName), jpeg, ct);
         logger.LogInformation("Changed the cover of book {BookId}", bookId);
+        BookSaved?.Invoke(this, new BookSavedEventArgs(library.Id, bookId));
         return true;
     }
 
@@ -154,4 +159,10 @@ public sealed class BookEditor(LibraryService libraries, IBookFileReader reader,
 
         return renamed;
     }
+}
+
+public sealed class BookSavedEventArgs(string libraryId, string bookId) : EventArgs
+{
+    public string LibraryId { get; } = libraryId;
+    public string BookId { get; } = bookId;
 }

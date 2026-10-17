@@ -1,5 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\GibiOMatic.Core\GibiOMatic.Core.csproj" />
+    <ProjectReference Include="..\GibiOMatic.Conversion\GibiOMatic.Conversion.csproj" />
+    <ProjectReference Include="..\GibiOMatic.Library\GibiOMatic.Library.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Dapper" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="GibiOMatic.Destinations.Tests" />
   </ItemGroup>
 </Project>

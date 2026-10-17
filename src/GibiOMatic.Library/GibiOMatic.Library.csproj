@@ -11,5 +11,6 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="GibiOMatic.Library.Tests" />
+    <InternalsVisibleTo Include="GibiOMatic.Destinations" />
   </ItemGroup>
 </Project>

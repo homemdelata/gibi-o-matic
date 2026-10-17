@@ -73,6 +73,18 @@ internal static class IndexMigrations
         );
         CREATE INDEX ix_identifications_state ON identifications (state);
         """,
+
+        // 4: copies generated for each destination (to know what is up to date and what to remove)
+        """
+        CREATE TABLE destination_outputs (
+            destination_id  TEXT NOT NULL,
+            book_id         TEXT NOT NULL,
+            path            TEXT NOT NULL,
+            content_hash    TEXT NOT NULL,
+            generated_at    TEXT NOT NULL,
+            PRIMARY KEY (destination_id, book_id)
+        );
+        """,
     ];
 
     public static int LatestVersion => All.Count;
