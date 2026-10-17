@@ -1,3 +1,3 @@
 # Documentação
 
-- `SPEC.md` — especificação (a escrever)
+- [`SPEC.md`](SPEC.md) — especificação funcional e técnica
