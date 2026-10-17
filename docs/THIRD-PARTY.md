@@ -4,7 +4,7 @@ Toda dependência precisa de licença compatível com MIT (sem AGPL/GPL). Atuali
 
 | Componente | Versão | Uso | Licença | Status |
 |---|---|---|---|---|
-| Avalonia (+ Desktop, Themes.Fluent) | 11.3.22 | UI | MIT | em uso (F0) |
+| Avalonia (+ Desktop, Themes.Fluent) | 12.1.4 | UI | MIT | em uso (F0) |
 | CommunityToolkit.Mvvm | 8.4.2 | MVVM | MIT | em uso (F0) |
 | Microsoft.Extensions.DependencyInjection / Configuration / Configuration.UserSecrets / Logging | 10.0.x | DI, configuração, log | MIT | em uso (F0) |
 | System.Security.Cryptography.ProtectedData | 10.0.x | DPAPI (segredos no Windows) | MIT | em uso (F0) |

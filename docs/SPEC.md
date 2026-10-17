@@ -299,7 +299,7 @@ Baseada no protótipo do Claude Design. Telas:
 ## 13. Arquitetura técnica
 
 - **.NET 10 (LTS)**. O suporte ao .NET 8 termina em nov/2026; é preciso instalar o SDK 10.
-- **Avalonia 11** com MVVM (CommunityToolkit.Mvvm).
+- **Avalonia 12** com MVVM (CommunityToolkit.Mvvm).
 
 ```
 GibiOMatic.sln

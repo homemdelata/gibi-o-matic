@@ -1,6 +1,6 @@
 # Gibi-o-matic
 
-App desktop (C# / .NET 10 / Avalonia 11) para organizar uma coleção pessoal de quadrinhos digitais comprados (Humble Bundle etc.):
+App desktop (C# / .NET 10 / Avalonia 12) para organizar uma coleção pessoal de quadrinhos digitais comprados (Humble Bundle etc.):
 arquivo de originais intocados + metadados corretos → cópias de leitura geradas para **destinos** (Komga, Kindle).
 Licença MIT. Repositório privado por enquanto (`github.com/homemdelata/gibi-o-matic`), com intenção de abrir no futuro.
 
@@ -52,7 +52,7 @@ Licença MIT. Repositório privado por enquanto (`github.com/homemdelata/gibi-o-
 
 ## Stack e comandos
 - **.NET 10 SDK.** Se `dotnet --list-sdks` não mostrar 10.x, peça autorização e instale com `winget install Microsoft.DotNet.SDK.10`. A máquina tem SDKs 6/7/8 instalados. Fixe a versão com `global.json`.
-- Avalonia 11, CommunityToolkit.Mvvm, Microsoft.Data.Sqlite + Dapper, Serilog, xUnit. Gerenciamento central de pacotes (`Directory.Packages.props`).
+- Avalonia 12, CommunityToolkit.Mvvm, Microsoft.Data.Sqlite + Dapper, Serilog, xUnit. Gerenciamento central de pacotes (`Directory.Packages.props`).
 - Comandos (depois da F0):
   - `dotnet build GibiOMatic.sln`
   - `dotnet test --solution GibiOMatic.sln` (Microsoft.Testing.Platform, ver `global.json`)
