@@ -186,7 +186,18 @@ public sealed class MtpKindleDevices(ILogger<MtpKindleDevices> logger) : IKindle
                             device.DeleteFile(full);
                         }
 
-                        device.Rename(partial, full[(full.LastIndexOf('\\') + 1)..]);
+                        try
+                        {
+                            device.Rename(partial, full[(full.LastIndexOf('\\') + 1)..]);
+                        }
+                        catch (COMException ex)
+                        {
+                            // Not every MTP device renames: then the file is written again under its own name.
+                            logger.LogInformation(ex, "The Kindle did not rename {File}; writing it directly", partial);
+                            TryDelete(partial);
+                            using var again = new ProgressStream(File.OpenRead(localFile), progress, ct);
+                            device.UploadFile(again, full);
+                        }
                     }
                     catch
                     {

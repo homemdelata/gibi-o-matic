@@ -40,6 +40,89 @@
       </StackPanel>
     </DataTemplate>
 
+    <DataTemplate x:Key="KindleFields" x:DataType="vm:KindleFormViewModel">
+      <StackPanel Spacing="16">
+        <Grid ColumnDefinitions="*,16,*">
+          <StackPanel Spacing="6">
+            <TextBlock Classes="field-label" Text="{x:Static r:Strings.Wizard_NameLabel}" />
+            <TextBox Text="{Binding Name}" AutomationProperties.Name="{x:Static r:Strings.Wizard_NameLabel}" />
+          </StackPanel>
+          <StackPanel Grid.Column="2" Spacing="6">
+            <TextBlock Classes="field-label" Text="{x:Static r:Strings.Kindle_ModelLabel}" />
+            <ComboBox ItemsSource="{Binding Models}" SelectedItem="{Binding SelectedModel}" HorizontalAlignment="Stretch"
+                      AutomationProperties.Name="{x:Static r:Strings.Kindle_ModelLabel}">
+              <ComboBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:KindleModel">
+                  <TextBlock Text="{Binding Name}" />
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+          </StackPanel>
+        </Grid>
+        <StackPanel Spacing="4">
+          <CheckBox Content="{x:Static r:Strings.Kindle_Color}" IsChecked="{Binding Color}" />
+          <TextBlock Classes="help" Margin="28,0,0,0" Text="{x:Static r:Strings.Kindle_ColorHelp}" TextWrapping="Wrap" />
+        </StackPanel>
+        <CheckBox Content="{x:Static r:Strings.Kindle_Manga}" IsChecked="{Binding Manga}" />
+
+        <!-- The converter -->
+        <Border Classes="card" Padding="16,14">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="strong" Text="{x:Static r:Strings.Kindle_KccLabel}" />
+            <TextBlock Classes="help" Text="{x:Static r:Strings.Kindle_KccHelp}" TextWrapping="Wrap" />
+            <SelectableTextBlock Classes="mono" FontSize="12" Text="{Binding KccStatus}" TextWrapping="Wrap"
+                                 Foreground="{DynamicResource TextSecondaryBrush}" />
+            <ProgressBar Minimum="0" Maximum="1" Value="{Binding DownloadProgress}" Height="4" MaxWidth="360" HorizontalAlignment="Left"
+                         IsVisible="{Binding IsDownloading}" Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+            <WrapPanel ItemSpacing="8" LineSpacing="8">
+              <Button Classes="primary" Content="{Binding DownloadText}" Command="{Binding DownloadKccCommand}" IsVisible="{Binding CanDownloadKcc}" />
+              <Button Classes="secondary" Content="{x:Static r:Strings.Kindle_ChooseKcc}" Command="{Binding ChooseKccCommand}" />
+            </WrapPanel>
+            <TextBlock Classes="help" FontSize="13" Foreground="{DynamicResource WarnTextBrush}" TextWrapping="Wrap"
+                       Text="{x:Static r:Strings.Kindle_KindleGenMissing}" IsVisible="{Binding KindleGenMissing}" />
+          </StackPanel>
+        </Border>
+
+        <ToggleButton Classes="chip" HorizontalAlignment="Left" IsChecked="{Binding ShowAdvanced}" Content="{x:Static r:Strings.Destination_Advanced}" />
+        <StackPanel Spacing="14" IsVisible="{Binding ShowAdvanced}">
+          <Grid ColumnDefinitions="*,16,*">
+            <StackPanel Spacing="6">
+              <TextBlock Classes="field-label" Text="{x:Static r:Strings.Kindle_SplitLabel}" />
+              <ComboBox ItemsSource="{Binding Splitters}" SelectedItem="{Binding Splitter}" HorizontalAlignment="Stretch"
+                        AutomationProperties.Name="{x:Static r:Strings.Kindle_SplitLabel}">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="vm:KccChoice">
+                    <TextBlock Text="{Binding Label}" />
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Spacing="6">
+              <TextBlock Classes="field-label" Text="{x:Static r:Strings.Kindle_CropLabel}" />
+              <ComboBox ItemsSource="{Binding Croppings}" SelectedItem="{Binding Cropping}" HorizontalAlignment="Stretch"
+                        AutomationProperties.Name="{x:Static r:Strings.Kindle_CropLabel}">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="vm:KccChoice">
+                    <TextBlock Text="{Binding Label}" />
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+            </StackPanel>
+          </Grid>
+          <StackPanel Spacing="6">
+            <TextBlock Classes="field-label" Text="{x:Static r:Strings.Kindle_ExtraLabel}" />
+            <TextBox Classes="mono" Text="{Binding ExtraArguments}" AutomationProperties.Name="{x:Static r:Strings.Kindle_ExtraLabel}" />
+            <TextBlock Classes="help" Text="{x:Static r:Strings.Kindle_ExtraHelp}" TextWrapping="Wrap" />
+          </StackPanel>
+          <StackPanel Spacing="6">
+            <TextBlock Classes="field-label" Text="{x:Static r:Strings.Kindle_FolderLabel}" />
+            <SelectableTextBlock Classes="mono" FontSize="12" Text="{Binding Folder}" TextWrapping="Wrap" />
+            <TextBlock Classes="help" Text="{x:Static r:Strings.Kindle_FolderHelp}" TextWrapping="Wrap" />
+          </StackPanel>
+        </StackPanel>
+      </StackPanel>
+    </DataTemplate>
+
     <DataTemplate x:Key="DestinationRules" x:DataType="vm:DestinationFormViewModel">
       <StackPanel Spacing="14">
         <StackPanel Spacing="6">
@@ -129,8 +212,8 @@
                       <Border Classes="format-chip" Padding="10,3" Margin="0,0,6,6">
                         <TextBlock FontSize="12" Text="{Binding WhenText}" />
                       </Border>
-                      <Border Classes="format-chip" Padding="10,3" Margin="0,0,6,6" IsVisible="{Binding Folder, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-                        <TextBlock Classes="mono" FontSize="12" Text="{Binding Folder}" />
+                      <Border Classes="format-chip" Padding="10,3" Margin="0,0,6,6" IsVisible="{Binding FolderChip, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <TextBlock Classes="mono" FontSize="12" Text="{Binding FolderChip}" />
                       </Border>
                     </WrapPanel>
                     <Border Classes="pill" HorizontalAlignment="Left" IsVisible="{Binding !IsRunning}"
@@ -156,7 +239,7 @@
                   </StackPanel>
                   <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
                     <Button Classes="secondary" Content="{x:Static r:Strings.Destinations_Configure}" Command="{Binding ConfigureCommand}" />
-                    <Button Classes="primary" Content="{x:Static r:Strings.Destinations_SyncNow}" Command="{Binding SyncNowCommand}" />
+                    <Button Classes="primary" Content="{Binding ActionText}" Command="{Binding SyncNowCommand}" />
                   </StackPanel>
                 </Grid>
               </Border>
@@ -187,10 +270,11 @@
         <Grid ColumnDefinitions="*,12,*,12,*" RowDefinitions="Auto,Auto">
           <Border Classes="step done" />
           <Border Grid.Column="2" Classes="step" Classes.done="{Binding Step2Done}" />
-          <Border Grid.Column="4" Classes="step" Classes.done="{Binding Step3Done}" />
+          <Border Grid.Column="4" Classes="step" Classes.done="{Binding Step3Done}" IsVisible="{Binding IsKomga}" />
           <TextBlock Grid.Row="1" Margin="0,8,0,0" Classes="step" Classes.current="{Binding IsStep1}" Text="{x:Static r:Strings.Wizard_StepType}" />
           <TextBlock Grid.Row="1" Grid.Column="2" Margin="0,8,0,0" Classes="step" Classes.current="{Binding IsStep2}" Text="{x:Static r:Strings.Wizard_StepDetails}" />
-          <TextBlock Grid.Row="1" Grid.Column="4" Margin="0,8,0,0" Classes="step" Classes.current="{Binding IsStep3}" Text="{x:Static r:Strings.Wizard_StepRules}" />
+          <TextBlock Grid.Row="1" Grid.Column="4" Margin="0,8,0,0" Classes="step" Classes.current="{Binding IsStep3}" Text="{x:Static r:Strings.Wizard_StepRules}"
+                     IsVisible="{Binding IsKomga}" />
         </Grid>
 
         <!-- Step 1: type -->
@@ -201,7 +285,7 @@
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="vm:DestinationTypeOption">
               <Button Classes="choice" Margin="0,0,12,12" MinHeight="130" IsEnabled="{Binding IsAvailable}"
-                      BorderThickness="2" Classes.selected="{Binding IsAvailable}">
+                      BorderThickness="2" Classes.selected="{Binding IsSelected}" Command="{Binding PickCommand}">
                 <StackPanel Spacing="6">
                   <TextBlock Classes="h3" Text="{Binding Name}" />
                   <TextBlock Classes="help" Text="{Binding Help}" TextWrapping="Wrap" />
@@ -212,8 +296,13 @@
           </ItemsControl.ItemTemplate>
         </ItemsControl>
 
+        <!-- Step 2: Kindle -->
+        <Panel IsVisible="{Binding IsKindleStep2}">
+          <ContentControl Content="{Binding KindleForm}" ContentTemplate="{StaticResource KindleFields}" />
+        </Panel>
+
         <!-- Step 2: Komga details -->
-        <Panel IsVisible="{Binding IsStep2}">
+        <Panel IsVisible="{Binding IsKomgaStep2}">
         <StackPanel Spacing="16" DataContext="{Binding Form}" x:DataType="vm:DestinationFormViewModel">
           <StackPanel Spacing="6">
             <TextBlock Classes="field-label" Text="{x:Static r:Strings.Wizard_FolderQuestion}" />
@@ -255,6 +344,278 @@
                     IsVisible="{Binding IsLastStep}" />
           </Panel>
         </Grid>
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- Kindle detail -->
+    <ScrollViewer IsVisible="{Binding IsKindleDetail}">
+      <StackPanel Margin="{StaticResource PagePadding}" Spacing="18" MaxWidth="980" HorizontalAlignment="Left"
+                  DataContext="{Binding KindleDetail}" x:DataType="vm:KindleDetailViewModel">
+        <Button Classes="link" HorizontalAlignment="Left" Command="{Binding BackCommand}">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <c:StrokeIcon Data="{StaticResource Icon.ChevronLeft}" Width="14" Height="14" />
+            <TextBlock Text="{x:Static r:Strings.Destination_BackToList}" />
+          </StackPanel>
+        </Button>
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="h1" Text="{Binding Title}" />
+            <WrapPanel ItemSpacing="8" LineSpacing="8">
+              <Border Classes="pill"
+                      Background="{Binding DeviceKind, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Background}">
+                <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding DeviceText}"
+                           Foreground="{Binding DeviceKind, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
+              </Border>
+              <Border Classes="pill" IsVisible="{Binding !Form.HasKcc}"
+                      Background="{Binding Source={x:Static vm:StatusKind.Bad}, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Background}">
+                <TextBlock FontSize="13" FontWeight="SemiBold" Text="{x:Static r:Strings.Kindle_StatusNoKcc}"
+                           Foreground="{Binding Source={x:Static vm:StatusKind.Bad}, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
+              </Border>
+            </WrapPanel>
+          </StackPanel>
+          <Border Grid.Column="1" VerticalAlignment="Top" BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1"
+                  CornerRadius="10" ClipToBounds="True">
+            <StackPanel Orientation="Horizontal">
+              <Button Classes="segment" Classes.selected="{Binding IsSendTab}" Content="{x:Static r:Strings.Kindle_TabSend}"
+                      Command="{Binding SetTabCommand}" CommandParameter="{x:Static vm:KindleTab.Send}" />
+              <Button Classes="segment" Classes.selected="{Binding IsDeviceTab}" Content="{x:Static r:Strings.Kindle_TabDevice}"
+                      Command="{Binding SetTabCommand}" CommandParameter="{x:Static vm:KindleTab.Device}" />
+              <Button Classes="segment" Classes.selected="{Binding IsSettingsTab}" Content="{x:Static r:Strings.Kindle_TabSettings}"
+                      Command="{Binding SetTabCommand}" CommandParameter="{x:Static vm:KindleTab.Settings}" />
+              <Button Classes="segment" Classes.selected="{Binding IsHistoryTab}" Content="{x:Static r:Strings.Kindle_TabHistory}"
+                      Command="{Binding SetTabCommand}" CommandParameter="{x:Static vm:KindleTab.History}" />
+            </StackPanel>
+          </Border>
+        </Grid>
+
+        <!-- Preparing, in the background -->
+        <StackPanel Spacing="6" IsVisible="{Binding IsRunning}" MaxWidth="640" HorizontalAlignment="Left">
+          <TextBlock Classes="help" Text="{Binding ProgressText}" TextTrimming="CharacterEllipsis" />
+          <ProgressBar Minimum="0" Maximum="1" Value="{Binding ProgressValue}" Height="4" MinWidth="320"
+                       Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+          <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding FileProgressText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+            <ProgressBar Minimum="0" Maximum="1" Value="{Binding FileProgressValue}" Height="2" MinHeight="2" MinWidth="240"
+                         VerticalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}" Background="{DynamicResource HoverBrush}" />
+            <TextBlock Grid.Column="1" Classes="help mono" FontSize="11" Margin="10,0,0,0" Text="{Binding FileProgressText}" />
+          </Grid>
+        </StackPanel>
+
+        <!-- Tab: send -->
+        <StackPanel Spacing="14" IsVisible="{Binding IsSendTab}">
+          <TextBlock Classes="help" Text="{x:Static r:Strings.Kindle_ListHelp}" TextWrapping="Wrap" />
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBox Classes="search" MaxWidth="360" HorizontalAlignment="Left" MinWidth="240" Text="{Binding SearchText}"
+                     PlaceholderText="{x:Static r:Strings.Kindle_Search}" AutomationProperties.Name="{x:Static r:Strings.Kindle_Search}">
+              <TextBox.InnerLeftContent>
+                <c:StrokeIcon Data="{StaticResource Icon.Search}" Width="17" Height="17" Margin="12,0,0,0" Foreground="{DynamicResource TextMutedBrush}" />
+              </TextBox.InnerLeftContent>
+            </TextBox>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" Margin="12,0,0,0">
+              <Button Classes="chip" Classes.selected="{Binding IsChosenFilter}" Command="{Binding SetFilterCommand}" CommandParameter="{x:Static vm:KindleListFilter.Chosen}">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="{x:Static r:Strings.Kindle_FilterChosen}" VerticalAlignment="Center" />
+                  <TextBlock Classes="mono" FontSize="12" Opacity="0.75" Text="{Binding ChosenCount}" VerticalAlignment="Center" />
+                </StackPanel>
+              </Button>
+              <Button Classes="chip" Classes.selected="{Binding IsSentFilter}" Command="{Binding SetFilterCommand}" CommandParameter="{x:Static vm:KindleListFilter.Sent}">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="{x:Static r:Strings.Kindle_FilterSent}" VerticalAlignment="Center" />
+                  <TextBlock Classes="mono" FontSize="12" Opacity="0.75" Text="{Binding SentCount}" VerticalAlignment="Center" />
+                </StackPanel>
+              </Button>
+              <Button Classes="chip" Classes.selected="{Binding IsLibraryFilter}" Command="{Binding SetFilterCommand}" CommandParameter="{x:Static vm:KindleListFilter.Library}"
+                      Content="{x:Static r:Strings.Kindle_FilterLibrary}" />
+            </StackPanel>
+          </Grid>
+
+          <Border Classes="card" Padding="6,4">
+            <Panel>
+              <TextBlock Classes="muted" Margin="12" Text="{Binding EmptyText}" TextWrapping="Wrap"
+                         IsVisible="{Binding EmptyText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              <ScrollViewer MaxHeight="420" IsVisible="{Binding Rows.Count}">
+                <ItemsControl ItemsSource="{Binding Rows}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <VirtualizingStackPanel />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:KindleBookRowViewModel">
+                      <Grid ColumnDefinitions="Auto,*,Auto" Margin="8,6">
+                        <CheckBox IsChecked="{Binding IsChosen}" VerticalAlignment="Center" AutomationProperties.Name="{Binding Title}" />
+                        <StackPanel Grid.Column="1" Spacing="1" Margin="4,0,12,0" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                          <TextBlock Classes="muted" FontSize="12" Text="{Binding MetaLine}" TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                        <Border Grid.Column="2" Classes="pill" Padding="10,3" VerticalAlignment="Center"
+                                IsVisible="{Binding StateText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                Background="{Binding StateKind, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Background}">
+                          <TextBlock FontSize="12" FontWeight="SemiBold" Text="{Binding StateText}"
+                                     Foreground="{Binding StateKind, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
+                        </Border>
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </Panel>
+          </Border>
+
+          <!-- Send: summary, confirmation, progress -->
+          <Border Classes="card">
+            <StackPanel Spacing="12">
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Spacing="4" VerticalAlignment="Center">
+                  <TextBlock Classes="strong" Text="{Binding ReadyText}" IsVisible="{Binding ReadyText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                  <TextBlock Classes="help" Text="{x:Static r:Strings.Kindle_ConnectHelp}" TextWrapping="Wrap" IsVisible="{Binding !IsConnected}" />
+                </StackPanel>
+                <Button Grid.Column="1" Classes="primary" Padding="20,0" Margin="12,0,0,0" Content="{x:Static r:Strings.Kindle_SendButton}"
+                        Command="{Binding ShowSendPlanCommand}" />
+              </Grid>
+              <StackPanel Spacing="10" IsVisible="{Binding HasPlan}">
+                <TextBlock Classes="strong" Text="{Binding PlanText}" TextWrapping="Wrap" />
+                <Border Background="{DynamicResource InputBrush}" CornerRadius="8" Padding="12,8" MaxHeight="260">
+                  <ScrollViewer>
+                    <ItemsControl ItemsSource="{Binding PlanRows}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:KindleSendRow">
+                          <Grid ColumnDefinitions="*,Auto" Margin="0,3">
+                            <TextBlock Classes="mono" FontSize="12" Text="{Binding DeviceFile}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Grid.Column="1" FontSize="12" Margin="12,0,0,0" Text="{Binding KindText}" Classes.error="{Binding IsBlocked}"
+                                       Foreground="{DynamicResource TextSecondaryBrush}" />
+                          </Grid>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                </Border>
+                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                  <Button Classes="secondary" Content="{x:Static r:Strings.Plan_Cancel}" Command="{Binding CancelSendCommand}" />
+                  <Button Classes="primary" Content="{x:Static r:Strings.Kindle_ConfirmSend}" Command="{Binding ConfirmSendCommand}" />
+                </StackPanel>
+              </StackPanel>
+              <StackPanel Spacing="6" IsVisible="{Binding IsSending}">
+                <TextBlock Classes="help" Text="{Binding SendProgressText}" TextTrimming="CharacterEllipsis" />
+                <ProgressBar Minimum="0" Maximum="1" Value="{Binding SendProgressValue}" Height="4"
+                             Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+              </StackPanel>
+              <TextBlock Classes="success" Text="{Binding SendResultText}" TextWrapping="Wrap" Classes.error="{Binding SendResultIsError}"
+                         IsVisible="{Binding SendResultText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            </StackPanel>
+          </Border>
+
+          <Grid ColumnDefinitions="*,Auto">
+            <Border Classes="card" Padding="16,12">
+              <StackPanel Spacing="4">
+                <TextBlock Classes="strong" Text="{x:Static r:Strings.Kindle_PanelTipTitle}" />
+                <TextBlock Classes="help" Text="{x:Static r:Strings.Kindle_PanelTip}" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+            <StackPanel Grid.Column="1" Spacing="8" Margin="12,0,0,0" VerticalAlignment="Center">
+              <Button Classes="secondary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="{x:Static r:Strings.Kindle_PrepareAgain}"
+                      Command="{Binding PrepareAgainCommand}" ToolTip.Tip="{x:Static r:Strings.Kindle_PrepareAgainTip}" />
+              <Button Classes="secondary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Content="{x:Static r:Strings.Kindle_OpenFolder}"
+                      Command="{Binding OpenFolderCommand}" />
+            </StackPanel>
+          </Grid>
+        </StackPanel>
+
+        <!-- Tab: on the Kindle (the manager; deletes only what the user ticks) -->
+        <Border Classes="card" IsVisible="{Binding IsDeviceTab}">
+          <StackPanel Spacing="12">
+            <Grid ColumnDefinitions="*,Auto">
+              <StackPanel Spacing="4">
+                <TextBlock Classes="h3" Text="{x:Static r:Strings.Kindle_DeviceTitle}" />
+                <TextBlock Classes="help" Text="{Binding DeviceSpaceText}" IsVisible="{Binding DeviceSpaceText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
+              <Button Grid.Column="1" Classes="secondary" VerticalAlignment="Top" Content="{x:Static r:Strings.Kindle_DeviceRefresh}" Command="{Binding RefreshDeviceCommand}" />
+            </Grid>
+            <TextBlock Classes="help" Text="{x:Static r:Strings.Kindle_DeviceHelp}" TextWrapping="Wrap" />
+            <TextBlock Classes="muted" Text="{x:Static r:Strings.Kindle_DeviceConnectFirst}" IsVisible="{Binding !IsConnected}" />
+            <ProgressBar IsIndeterminate="True" Height="4" IsVisible="{Binding IsLoadingDevice}" Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+            <TextBlock Classes="success" Text="{Binding DeviceMessage}" TextWrapping="Wrap" Classes.error="{Binding DeviceMessageIsError}"
+                       IsVisible="{Binding DeviceMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            <Border Background="{DynamicResource InputBrush}" CornerRadius="8" Padding="8,4" MaxHeight="420" IsVisible="{Binding DeviceFiles.Count}">
+              <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding DeviceFiles}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:KindleDeviceFileViewModel">
+                      <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto" Margin="4,4">
+                        <CheckBox IsChecked="{Binding IsChecked}" VerticalAlignment="Center" AutomationProperties.Name="{Binding Name}" />
+                        <TextBlock Grid.Column="1" Margin="4,0,12,0" VerticalAlignment="Center" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                        <Border Grid.Column="2" Classes="format-chip" Padding="8,2" Margin="0,0,12,0" VerticalAlignment="Center" IsVisible="{Binding SentByApp}">
+                          <TextBlock FontSize="11" Text="{x:Static r:Strings.Kindle_SentByApp}" />
+                        </Border>
+                        <TextBlock Grid.Column="3" Classes="mono muted" FontSize="12" Margin="0,0,12,0" VerticalAlignment="Center" Text="{Binding DateText}" />
+                        <TextBlock Grid.Column="4" Classes="mono muted" FontSize="12" MinWidth="64" TextAlignment="Right" VerticalAlignment="Center" Text="{Binding SizeText}" />
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </Border>
+            <Button Classes="secondary" HorizontalAlignment="Left" Content="{x:Static r:Strings.Kindle_DeleteChecked}" Command="{Binding AskDeleteCommand}"
+                    IsVisible="{Binding DeviceFiles.Count}" />
+            <Border Classes="card" IsVisible="{Binding ConfirmingDelete}" BorderBrush="{DynamicResource WarnBrush}">
+              <StackPanel Spacing="10">
+                <TextBlock Text="{Binding DeleteText}" TextWrapping="Wrap" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <Button Classes="secondary" Content="{x:Static r:Strings.Wizard_Cancel}" Command="{Binding CancelDeleteCommand}" />
+                  <Button Classes="primary" Content="{x:Static r:Strings.Kindle_DeleteYes}" Command="{Binding ConfirmDeleteCommand}" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </Border>
+
+        <!-- Tab: settings -->
+        <StackPanel Spacing="16" IsVisible="{Binding IsSettingsTab}">
+          <Border Classes="card">
+            <ContentControl Content="{Binding Form}" ContentTemplate="{StaticResource KindleFields}" />
+          </Border>
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <Button Classes="secondary" Content="{x:Static r:Strings.Destination_Remove}" Command="{Binding AskRemoveCommand}"
+                    IsVisible="{Binding !ConfirmingRemove}" />
+            <TextBlock Grid.Column="1" Classes="success" Margin="12,0" VerticalAlignment="Center" Text="{Binding SaveMessage}" />
+            <Button Grid.Column="2" Classes="primary" Padding="22,0" Content="{x:Static r:Strings.Destination_Save}" Command="{Binding SaveCommand}" />
+          </Grid>
+          <Border Classes="card" IsVisible="{Binding ConfirmingRemove}" BorderBrush="{DynamicResource WarnBrush}">
+            <StackPanel Spacing="10">
+              <TextBlock Text="{x:Static r:Strings.Destination_RemoveConfirm}" TextWrapping="Wrap" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Classes="secondary" Content="{x:Static r:Strings.Wizard_Cancel}" Command="{Binding CancelRemoveCommand}" />
+                <Button Classes="primary" Content="{x:Static r:Strings.Destination_RemoveYes}" Command="{Binding ConfirmRemoveCommand}" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+
+        <!-- Tab: history -->
+        <Border Classes="card" IsVisible="{Binding IsHistoryTab}">
+          <StackPanel Spacing="10">
+            <TextBlock Classes="h3" Text="{x:Static r:Strings.History_Title}" />
+            <TextBlock Classes="help" Text="{x:Static r:Strings.History_Empty}" TextWrapping="Wrap" IsVisible="{Binding !History.Count}" />
+            <Border Background="{DynamicResource InputBrush}" CornerRadius="8" Padding="12,8" MaxHeight="420" IsVisible="{Binding History.Count}">
+              <ScrollViewer>
+                <ItemsControl ItemsSource="{Binding History}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:HistoryRow">
+                      <Grid ColumnDefinitions="130,*" Margin="0,3">
+                        <TextBlock Classes="mono muted" FontSize="12" Text="{Binding When}" />
+                        <StackPanel Grid.Column="1" Spacing="1">
+                          <TextBlock FontSize="13" Text="{Binding Text}" TextWrapping="Wrap" Classes.error="{Binding IsError}" />
+                          <SelectableTextBlock Classes="mono" FontSize="12" Text="{Binding Detail}" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource TextSecondaryBrush}"
+                                               IsVisible="{Binding Detail, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                        </StackPanel>
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+            </Border>
+          </StackPanel>
+        </Border>
       </StackPanel>
     </ScrollViewer>
 

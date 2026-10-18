@@ -153,6 +153,28 @@ public sealed class KccTests : IDisposable
         await Assert.ThrowsAsync<KccException>(() => runner.ConvertAsync(Job(_temp.Combine("nope.exe")), null, Ct));
     }
 
+    /// <summary>
+    /// The real KCC, when GIBIOMATIC_KCC points to kcc-c2e (it is not in the repository nor in CI):
+    /// a colour CBZ becomes a MOBI with the Colorsoft profile.
+    /// </summary>
+    [Fact]
+    public async Task The_real_kcc_writes_a_kindle_book()
+    {
+        var tool = Environment.GetEnvironmentVariable("GIBIOMATIC_KCC");
+        Assert.SkipWhen(string.IsNullOrWhiteSpace(tool) || !File.Exists(tool), "Set GIBIOMATIC_KCC to kcc-c2e to run against the real KCC.");
+        var input = SyntheticBooks.Cbz(_temp.Combine("in", "saga.cbz"), pages: 4);
+        var steps = new List<double>();
+
+        var mobi = await new KccRunner(NullLogger<KccRunner>.Instance).ConvertAsync(
+            new KccJob(tool!, input, _temp.Combine("out"), new KccOptions(), "Saga, Vol. 1", "Brian K. Vaughan", TimeSpan.FromMinutes(5)),
+            new SyncProgress(steps), Ct);
+
+        var bytes = await File.ReadAllBytesAsync(mobi, Ct);
+        Assert.Equal("BOOKMOBI", System.Text.Encoding.ASCII.GetString(bytes, 60, 8));
+        Assert.True(bytes.AsSpan().IndexOf("Saga, Vol. 1"u8) >= 0, "the title is in the book");
+        Assert.Equal(1, steps[^1]);
+    }
+
     /// <summary>Reports synchronously (Progress&lt;T&gt; would post to the thread pool).</summary>
     private sealed class SyncProgress(List<double> steps) : IProgress<double>
     {

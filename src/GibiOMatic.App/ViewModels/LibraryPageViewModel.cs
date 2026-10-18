@@ -8,6 +8,7 @@ using GibiOMatic.Conversion;
 using GibiOMatic.Core.Domain;
 using GibiOMatic.Core.Quality;
 using GibiOMatic.Core.Settings;
+using GibiOMatic.Destinations.Kindle;
 using GibiOMatic.Destinations.Sync;
 using GibiOMatic.Library;
 using GibiOMatic.Library.Reading;
@@ -563,6 +564,47 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IReadingAction
         }
     }
 
+    /// <summary>"Enviar ao Kindle": puts the book in the Kindle's list (it is prepared at once), or takes it out.</summary>
+    [RelayCommand]
+    private async Task ToggleKindleAsync()
+    {
+        if (Selected?.Card is not { } card)
+        {
+            return;
+        }
+
+        if (_settings.Current.Destinations.FirstOrDefault(d => d.Type == KindleDestinationType.TypeId) is not { } kindle)
+        {
+            // No Kindle yet: the Destinos page is where one is added.
+            RequestNavigation(NavPage.Destinations);
+            return;
+        }
+
+        var inList = kindle.ChosenBookIds.Contains(card.Id);
+        var ids = inList ? kindle.ChosenBookIds.Where(id => id != card.Id).ToList() : kindle.ChosenBookIds.Append(card.Id).ToList();
+        await _settings.SaveAsync(_settings.Current with
+        {
+            Destinations = _settings.Current.Destinations.Select(d => d.Id == kindle.Id ? d with { ChosenBookIds = ids } : d).ToList(),
+        });
+        _session.Destinations?.OnBookChanged(card.Id);
+        UpdateKindleButton();
+        if (Selected is { } details)
+        {
+            details.Copies.Clear();
+            await LoadCopiesAsync(details);
+        }
+    }
+
+    /// <summary>"Enviar ao Kindle", or "Na lista do Kindle" when the book is in it.</summary>
+    [ObservableProperty]
+    public partial string KindleButtonText { get; private set; } = Strings.Details_SendKindle;
+
+    private void UpdateKindleButton() =>
+        KindleButtonText = Selected?.Card is { } card
+                           && _settings.Current.Destinations.Any(d => d.Type == KindleDestinationType.TypeId && d.ChosenBookIds.Contains(card.Id))
+            ? Strings.Details_KindleInList
+            : Strings.Details_SendKindle;
+
     [RelayCommand]
     private void EditSelected()
     {
@@ -622,6 +664,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IReadingAction
 
         card.IsSelected = true;
         Selected = new BookDetailsViewModel(card, library, _covers, file => _reader.Open(ReaderRequest.For(library, card.Book, file)), this);
+        UpdateKindleButton();
         _ = LoadCopiesAsync(Selected);
     }
 
@@ -634,8 +677,21 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IReadingAction
 
         try
         {
+            var kindles = destinations.Destinations.OfType<KindleDestination>().ToList();
             foreach (var (destination, state, path) in await destinations.CopiesOfAsync(details.Card.Book))
             {
+                // A Kindle copy is prepared, sent or still waiting, not "em dia".
+                if (kindles.FirstOrDefault(k => k.Config.Id == destination.Id) is { } kindle)
+                {
+                    if ((await destinations.Kindle.StatusAsync(kindle, CancellationToken.None)).GetValueOrDefault(details.Card.Id) is { } status)
+                    {
+                        details.Copies.Add(new CopyRow(destination.Name, KindleText(status.State),
+                            status.State == KindleBookState.Waiting ? StatusKind.Warn : StatusKind.Ok, null));
+                    }
+
+                    continue;
+                }
+
                 var kind = state switch
                 {
                     CopyState.UpToDate => StatusKind.Ok,
@@ -650,6 +706,14 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IReadingAction
             _logger.LogWarning(ex, "Could not read the copies of {Book}", details.Card.Id);
         }
     }
+
+    private static string KindleText(KindleBookState state) => state switch
+    {
+        KindleBookState.Ready => Strings.Copy_KindleReady,
+        KindleBookState.ReadyToReplace => Strings.Copy_KindleReady,
+        KindleBookState.Sent => Strings.Copy_KindleSent,
+        _ => Strings.Copy_KindleWaiting,
+    };
 
     [RelayCommand]
     private async Task ImportAsync(CancellationToken ct)

@@ -5,6 +5,8 @@ using GibiOMatic.Core.Libraries;
 using GibiOMatic.Core.Secrets;
 using GibiOMatic.Core.Settings;
 using GibiOMatic.Destinations;
+using GibiOMatic.Conversion.Kcc;
+using GibiOMatic.Destinations.Kindle;
 using GibiOMatic.Destinations.Komga;
 using GibiOMatic.Destinations.Sync;
 using GibiOMatic.Library;
@@ -56,6 +58,11 @@ public static class ServiceRegistration
         services.AddSingleton<IdentificationQueueFactory>();
         services.AddSingleton(sp => new KomgaClient(new HttpClient { Timeout = TimeSpan.FromSeconds(15) }, sp.GetRequiredService<ILogger<KomgaClient>>()));
         services.AddSingleton<IDestinationType, KomgaDestinationType>();
+        services.AddSingleton<IKccRunner, KccRunner>();
+        services.AddSingleton<IDestinationType, KindleDestinationType>();
+        services.AddSingleton<IKindleDevices, MtpKindleDevices>();
+        // The KCC download is big: no overall timeout, the user can cancel.
+        services.AddSingleton(sp => new KccInstaller(new HttpClient { Timeout = Timeout.InfiniteTimeSpan }, paths, sp.GetRequiredService<ILogger<KccInstaller>>()));
         services.AddSingleton<DestinationServiceFactory>();
 
         // UI services
@@ -67,6 +74,7 @@ public static class ServiceRegistration
         services.AddSingleton<IReaderImages, AvaloniaReaderImages>();
         services.AddSingleton<IReaderLauncher, ReaderWindowLauncher>();
         services.AddSingleton<ReadingTracker>();
+        services.AddSingleton<KindleWatcher>();
         services.AddSingleton<LibrarySession>();
 
         // View models (a new shell and pages for each opened library)

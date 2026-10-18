@@ -349,7 +349,7 @@
   <data name="Destination_Saved" xml:space="preserve"><value>Alterações salvas.</value></data>
   <data name="Wizard_Title" xml:space="preserve"><value>Adicionar destino</value></data>
   <data name="Wizard_KomgaHelp" xml:space="preserve"><value>Servidor de quadrinhos para ler no tablet, celular ou navegador.</value></data>
-  <data name="Wizard_KindleHelp" xml:space="preserve"><value>Gera arquivos prontos para o Kindle, com leitura quadro a quadro.</value></data>
+  <data name="Wizard_KindleHelp" xml:space="preserve"><value>Converte os livros que você escolher e envia pelo cabo USB, com leitura quadro a quadro.</value></data>
   <data name="Wizard_KavitaHelp" xml:space="preserve"><value>Outro servidor de leitura.</value></data>
   <data name="Wizard_FolderName" xml:space="preserve"><value>Pasta simples</value></data>
   <data name="Wizard_FolderHelp" xml:space="preserve"><value>Copia para uma pasta, no formato que você escolher.</value></data>
@@ -512,4 +512,110 @@
   <data name="Library_UniverseSeriesMany" xml:space="preserve"><value>{0} séries</value></data>
   <data name="Library_NoUniverses" xml:space="preserve"><value>Nenhum universo ainda. Para criar um, selecione os livros (ex.: Radiant Black, Red e Pink), clique em Editar e preencha "Universo".</value></data>
   <data name="Details_Universes" xml:space="preserve"><value>Universo</value></data>
+  <data name="Destination_KindleType" xml:space="preserve"><value>Kindle · conversão com o KCC, envio pelo cabo USB</value></data>
+  <data name="History_Sent" xml:space="preserve"><value>Enviado ao Kindle</value></data>
+  <data name="History_RemovedFromDevice" xml:space="preserve"><value>Apagado do Kindle (por você)</value></data>
+  <data name="Picker_Programs" xml:space="preserve"><value>Programas</value></data>
+  <data name="Wizard_DefaultKindleName" xml:space="preserve"><value>Meu Kindle</value></data>
+  <data name="Wizard_KindleSubtitle" xml:space="preserve"><value>Qual é o seu Kindle e onde está o conversor.</value></data>
+  <data name="Wizard_NeedName" xml:space="preserve"><value>Dê um nome ao destino.</value></data>
+  <data name="Kindle_SendShort" xml:space="preserve"><value>Enviar</value></data>
+  <data name="Kindle_TabSend" xml:space="preserve"><value>Enviar</value></data>
+  <data name="Kindle_TabDevice" xml:space="preserve"><value>No Kindle</value></data>
+  <data name="Kindle_TabSettings" xml:space="preserve"><value>Configurações</value></data>
+  <data name="Kindle_TabHistory" xml:space="preserve"><value>Histórico</value></data>
+  <data name="Kindle_FilterChosen" xml:space="preserve"><value>Na lista</value></data>
+  <data name="Kindle_FilterSent" xml:space="preserve"><value>Já no Kindle</value></data>
+  <data name="Kindle_FilterLibrary" xml:space="preserve"><value>Toda a biblioteca</value></data>
+  <data name="Kindle_Search" xml:space="preserve"><value>Buscar na biblioteca</value></data>
+  <data name="Kindle_ListHelp" xml:space="preserve"><value>Marque os livros que você quer no Kindle. Eles são convertidos sozinhos, um por vez, mesmo com o Kindle desconectado; quando você conectar, é só enviar.</value></data>
+  <data name="Kindle_EmptyList" xml:space="preserve"><value>A lista está vazia. Em "Toda a biblioteca", marque os livros que quer no Kindle.</value></data>
+  <data name="Kindle_EmptySent" xml:space="preserve"><value>Nenhum livro da lista foi enviado ainda.</value></data>
+  <data name="Kindle_StateWaiting" xml:space="preserve"><value>Na fila para preparar</value></data>
+  <data name="Kindle_StatePreparing" xml:space="preserve"><value>Preparando…</value></data>
+  <data name="Kindle_StateReady" xml:space="preserve"><value>Pronto para enviar · {0}</value></data>
+  <data name="Kindle_StateReadyToReplace" xml:space="preserve"><value>Pronto · substitui a versão que está no Kindle</value></data>
+  <data name="Kindle_StateSent" xml:space="preserve"><value>No Kindle desde {0}</value></data>
+  <data name="Kindle_ReadySummary" xml:space="preserve"><value>{0} prontos para enviar · cerca de {1}</value></data>
+  <data name="Kindle_SendButton" xml:space="preserve"><value>Enviar para o Kindle</value></data>
+  <data name="Kindle_ConnectHelp" xml:space="preserve"><value>Para enviar, conecte o Kindle pelo cabo USB, desbloqueie a tela e escolha "Transferir arquivos" no aviso de USB.</value></data>
+  <data name="Kindle_PlanSummary" xml:space="preserve"><value>Enviar {0} livros (cerca de {1}) para o Kindle?</value></data>
+  <data name="Kindle_PlanNothing" xml:space="preserve"><value>Nada para enviar: os arquivos abaixo já existem no Kindle e não foram enviados pelo app, então não serão substituídos.</value></data>
+  <data name="Kindle_PlanReplace" xml:space="preserve"><value>substitui a versão anterior (as anotações ficam)</value></data>
+  <data name="Kindle_PlanBlocked" xml:space="preserve"><value>não enviado: já existe no Kindle um arquivo com esse nome que não veio do app</value></data>
+  <data name="Kindle_ConfirmSend" xml:space="preserve"><value>Enviar</value></data>
+  <data name="Kindle_Sending" xml:space="preserve"><value>Enviando {0} ({1} de {2})…</value></data>
+  <data name="Kindle_SentDone" xml:space="preserve"><value>{0} livros enviados. Pode desconectar o Kindle.</value></data>
+  <data name="Kindle_SentWithErrors" xml:space="preserve"><value>{0} enviados, {1} com erro: {2}</value></data>
+  <data name="Kindle_DeviceConnected" xml:space="preserve"><value>{0} conectado</value></data>
+  <data name="Kindle_DeviceAway" xml:space="preserve"><value>Kindle desconectado</value></data>
+  <data name="Kindle_DeviceUnsupported" xml:space="preserve"><value>Enviar pelo cabo ainda só funciona no Windows. Use "Abrir pasta de preparo" e copie os arquivos.</value></data>
+  <data name="Kindle_DeviceError" xml:space="preserve"><value>Não foi possível falar com o Kindle: {0}</value></data>
+  <data name="Kindle_PanelTipTitle" xml:space="preserve"><value>Ler quadro a quadro</value></data>
+  <data name="Kindle_PanelTip" xml:space="preserve"><value>No Kindle, abra o livro, toque em Aa e ative a visualização de painéis. Depois, toque duas vezes num quadro.</value></data>
+  <data name="Kindle_PrepareAgain" xml:space="preserve"><value>Preparar de novo</value></data>
+  <data name="Kindle_PrepareAgainTip" xml:space="preserve"><value>Tenta de novo os livros que falharam ou ficaram na fila</value></data>
+  <data name="Kindle_OpenFolder" xml:space="preserve"><value>Abrir pasta de preparo</value></data>
+  <data name="Kindle_DeviceTitle" xml:space="preserve"><value>Livros no Kindle</value></data>
+  <data name="Kindle_DeviceHelp" xml:space="preserve"><value>O app nunca apaga nada do Kindle sozinho. Aqui você apaga o que marcar; as anotações e a posição de leitura de cada livro apagado saem junto.</value></data>
+  <data name="Kindle_DeviceRefresh" xml:space="preserve"><value>Atualizar</value></data>
+  <data name="Kindle_DeviceEmpty" xml:space="preserve"><value>Nenhum livro na pasta documents do Kindle.</value></data>
+  <data name="Kindle_DeviceConnectFirst" xml:space="preserve"><value>Conecte o Kindle para ver os livros que estão nele.</value></data>
+  <data name="Kindle_Space" xml:space="preserve"><value>{0} livres</value></data>
+  <data name="Kindle_SentByApp" xml:space="preserve"><value>enviado pelo app</value></data>
+  <data name="Kindle_DeleteChecked" xml:space="preserve"><value>Apagar os marcados</value></data>
+  <data name="Kindle_DeleteNothing" xml:space="preserve"><value>Marque os livros que quer apagar.</value></data>
+  <data name="Kindle_DeleteConfirm" xml:space="preserve"><value>Apagar {0} livros do Kindle ({1})? As anotações e a posição de leitura deles também serão apagadas. Os que o app enviou saem também da lista do Kindle.</value></data>
+  <data name="Kindle_DeleteYes" xml:space="preserve"><value>Apagar do Kindle</value></data>
+  <data name="Kindle_Deleted" xml:space="preserve"><value>{0} livros apagados do Kindle.</value></data>
+  <data name="Kindle_ModelLabel" xml:space="preserve"><value>Modelo</value></data>
+  <data name="Kindle_Color" xml:space="preserve"><value>Manter as cores</value></data>
+  <data name="Kindle_ColorHelp" xml:space="preserve"><value>Para Kindles coloridos (Colorsoft). Desligado, as páginas ficam em tons de cinza.</value></data>
+  <data name="Kindle_Manga" xml:space="preserve"><value>Ler da direita para a esquerda (mangá)</value></data>
+  <data name="Kindle_SplitLabel" xml:space="preserve"><value>Páginas duplas</value></data>
+  <data name="Kindle_SplitDefault" xml:space="preserve"><value>Padrão do KCC (dividir)</value></data>
+  <data name="Kindle_SplitSplit" xml:space="preserve"><value>Dividir em duas</value></data>
+  <data name="Kindle_SplitRotate" xml:space="preserve"><value>Girar a página</value></data>
+  <data name="Kindle_SplitBoth" xml:space="preserve"><value>Dividir e girar</value></data>
+  <data name="Kindle_CropLabel" xml:space="preserve"><value>Margens brancas</value></data>
+  <data name="Kindle_CropDefault" xml:space="preserve"><value>Padrão do KCC (cortar margens e números de página)</value></data>
+  <data name="Kindle_CropNone" xml:space="preserve"><value>Não cortar</value></data>
+  <data name="Kindle_CropMargins" xml:space="preserve"><value>Cortar as margens</value></data>
+  <data name="Kindle_CropNumbers" xml:space="preserve"><value>Cortar margens e números de página</value></data>
+  <data name="Kindle_ExtraLabel" xml:space="preserve"><value>Outras opções do KCC</value></data>
+  <data name="Kindle_ExtraHelp" xml:space="preserve"><value>Do jeito da linha de comando do KCC, por exemplo --gamma 1.8. Mudar opções prepara de novo os livros da lista.</value></data>
+  <data name="Kindle_KccLabel" xml:space="preserve"><value>Kindle Comic Converter (KCC)</value></data>
+  <data name="Kindle_KccHelp" xml:space="preserve"><value>O KCC (gratuito, de código aberto) converte os quadrinhos para o Kindle. O app não vem com ele: baixe aqui, do site oficial, ou escolha o kcc-c2e que você já tem.</value></data>
+  <data name="Kindle_KccFound" xml:space="preserve"><value>KCC: {0}</value></data>
+  <data name="Kindle_KccMissing" xml:space="preserve"><value>KCC não encontrado.</value></data>
+  <data name="Kindle_KccMissingAt" xml:space="preserve"><value>KCC não encontrado em {0}.</value></data>
+  <data name="Kindle_ChooseKcc" xml:space="preserve"><value>Escolher arquivo…</value></data>
+  <data name="Kindle_ChooseKccTitle" xml:space="preserve"><value>Escolha o kcc-c2e</value></data>
+  <data name="Kindle_DownloadKcc" xml:space="preserve"><value>Baixar o KCC {0} ({1})</value></data>
+  <data name="Kindle_Downloading" xml:space="preserve"><value>Baixando o KCC…</value></data>
+  <data name="Kindle_DownloadFailed" xml:space="preserve"><value>Não foi possível baixar o KCC: {0}</value></data>
+  <data name="Kindle_KindleGenMissing" xml:space="preserve"><value>O KCC precisa do Kindle Previewer (gratuito, da Amazon) para gerar arquivos de Kindle. Ele não foi encontrado: instale-o pelo site da Amazon.</value></data>
+  <data name="Kindle_FolderLabel" xml:space="preserve"><value>Pasta de preparo</value></data>
+  <data name="Kindle_FolderHelp" xml:space="preserve"><value>Os livros convertidos esperam aqui até serem enviados; depois de enviados, são apagados desta pasta (só desta pasta).</value></data>
+  <data name="Kindle_StatusNoKcc" xml:space="preserve"><value>Falta o KCC (Kindle Comic Converter)</value></data>
+  <data name="Kindle_StatusPreparing" xml:space="preserve"><value>{0} para preparar · {1} prontos ou no Kindle</value></data>
+  <data name="Kindle_StatusReady" xml:space="preserve"><value>{0} prontos ou no Kindle</value></data>
+  <data name="Kindle_StatusEmpty" xml:space="preserve"><value>Lista vazia: escolha os livros na Biblioteca ou aqui</value></data>
+  <data name="Shell_KindleReady" xml:space="preserve"><value>Kindle conectado: {0} livros prontos para enviar.</value></data>
+  <data name="Shell_KindleSend" xml:space="preserve"><value>Ver e enviar</value></data>
+  <data name="Shell_KindleLater" xml:space="preserve"><value>Agora não</value></data>
+  <data name="Details_KindleInList" xml:space="preserve"><value>Na lista do Kindle (tirar)</value></data>
+  <data name="Details_SendKindleTip" xml:space="preserve"><value>Põe o livro na lista do Kindle: ele é preparado sozinho e enviado quando você conectar o aparelho</value></data>
+  <data name="Copy_KindleWaiting" xml:space="preserve"><value>Na fila para preparar</value></data>
+  <data name="Copy_KindleReady" xml:space="preserve"><value>Pronto para enviar</value></data>
+  <data name="Copy_KindleSent" xml:space="preserve"><value>No Kindle</value></data>
+  <data name="Sidebar_NoKcc" xml:space="preserve"><value>falta o KCC</value></data>
+  <data name="Sidebar_ToPrepare" xml:space="preserve"><value>{0} para preparar</value></data>
+  <data name="Sidebar_InList" xml:space="preserve"><value>{0} na lista</value></data>
+  <data name="Kindle_ReadySummaryOne" xml:space="preserve"><value>{0} pronto para enviar · cerca de {1}</value></data>
+  <data name="Kindle_PlanSummaryOne" xml:space="preserve"><value>Enviar {0} livro (cerca de {1}) para o Kindle?</value></data>
+  <data name="Kindle_SentDoneOne" xml:space="preserve"><value>{0} livro enviado. Pode desconectar o Kindle.</value></data>
+  <data name="Kindle_DeletedOne" xml:space="preserve"><value>{0} livro apagado do Kindle.</value></data>
+  <data name="Kindle_DeleteConfirmOne" xml:space="preserve"><value>Apagar {0} livro do Kindle ({1})? As anotações e a posição de leitura dele também serão apagadas. Se foi o app que o enviou, ele sai também da lista do Kindle.</value></data>
+  <data name="Shell_KindleReadyOne" xml:space="preserve"><value>Kindle conectado: {0} livro pronto para enviar.</value></data>
 </root>

@@ -1,7 +1,9 @@
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using GibiOMatic.App.Resources;
 using GibiOMatic.App.Services;
+using GibiOMatic.Destinations.Kindle;
 
 namespace GibiOMatic.App.ViewModels;
 
@@ -44,11 +46,20 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
 {
     private readonly LibrarySession _session;
     private readonly Debouncer _counts;
+    private readonly KindleWatcher _kindle;
+    private readonly DestinationsPageViewModel _destinationsPage;
+    private bool _kindleDismissed;
+    private string? _kindleToOpen;
 
     public ShellViewModel(LibrarySession session, LibraryPageViewModel libraryPage, InboxPageViewModel inboxPage,
-        ReviewPageViewModel reviewPage, EditorPageViewModel editorPage, DestinationsPageViewModel destinationsPage, SettingsPageViewModel settingsPage, IUiThread ui)
+        ReviewPageViewModel reviewPage, EditorPageViewModel editorPage, DestinationsPageViewModel destinationsPage, SettingsPageViewModel settingsPage, IUiThread ui,
+        KindleWatcher kindle)
     {
         _session = session;
+        _kindle = kindle;
+        _destinationsPage = destinationsPage;
+        kindle.Changed += OnKindleChanged;
+        destinationsPage.KindleSent += OnKindleChanged;
         LibraryPath = session.Current?.RootPath ?? string.Empty;
 
         NavItems =
@@ -117,7 +128,74 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
         NavigateTo(NavPage.Library);
         await UpdateCountsAsync();
         await DestinationsStatus.RefreshAsync();
+        _kindle.Start();
+        await UpdateKindleBannerAsync();
         await CurrentNavigation;
+    }
+
+    // ---- Kindle connected ----
+
+    /// <summary>"Kindle conectado: 3 livros prontos para enviar." Nothing is sent from here: it opens the confirmation.</summary>
+    [ObservableProperty]
+    public partial string? KindleBannerText { get; private set; }
+
+    [ObservableProperty]
+    public partial bool ShowKindleBanner { get; private set; }
+
+    private void OnKindleChanged(object? sender, EventArgs e) => _ = UpdateKindleBannerAsync();
+
+    /// <summary>Counts the prepared books of the Kindle destinations while a Kindle is connected.</summary>
+    public async Task UpdateKindleBannerAsync()
+    {
+        if (_kindle.Device is null || _session.Destinations is not { } service)
+        {
+            // Unplugged: the next connection asks again.
+            _kindleDismissed = false;
+            ShowKindleBanner = false;
+            return;
+        }
+
+        var ready = 0;
+        _kindleToOpen = null;
+        try
+        {
+            foreach (var destination in service.Destinations.OfType<KindleDestination>())
+            {
+                var count = (await service.Kindle.StatusAsync(destination, CancellationToken.None)).Values
+                    .Count(s => s.State is KindleBookState.Ready or KindleBookState.ReadyToReplace);
+                if (count > 0)
+                {
+                    _kindleToOpen ??= destination.Config.Id;
+                    ready += count;
+                }
+            }
+        }
+        catch (Exception ex) when (LibrarySession.IsExpectedFailure(ex))
+        {
+            ready = 0;
+        }
+
+        KindleBannerText = string.Format(CultureInfo.CurrentCulture, ready == 1 ? Strings.Shell_KindleReadyOne : Strings.Shell_KindleReady, ready);
+        ShowKindleBanner = ready > 0 && !_kindleDismissed;
+    }
+
+    [RelayCommand]
+    private async Task SendToKindleAsync()
+    {
+        ShowKindleBanner = false;
+        if (_kindleToOpen is { } id)
+        {
+            NavigateTo(NavPage.Destinations);
+            await CurrentNavigation;
+            await _destinationsPage.OpenAsync(id, showPlan: true);
+        }
+    }
+
+    [RelayCommand]
+    private void DismissKindle()
+    {
+        _kindleDismissed = true;
+        ShowKindleBanner = false;
     }
 
     public void NavigateTo(NavPage page) => SelectedNavItem = NavItems.First(i => i.Page == page);
@@ -172,6 +250,12 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
             var count = destinations.Destinations.Count;
             NavItems[4].Count = count > 0 ? count.ToString(CultureInfo.CurrentCulture) : null;
         }
+
+        // A book finished preparing while the Kindle is connected.
+        if (_kindle.Device is not null)
+        {
+            await UpdateKindleBannerAsync();
+        }
     }
 
     private void OnQueueChanged(object? sender, EventArgs e) => _counts.Trigger();
@@ -193,6 +277,8 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
             destinations.Changed -= OnQueueChanged;
         }
 
+        _kindle.Changed -= OnKindleChanged;
+        _destinationsPage.KindleSent -= OnKindleChanged;
         _counts.Dispose();
         DestinationsStatus.Dispose();
         foreach (var item in NavItems)

@@ -615,8 +615,10 @@
                         Content="{x:Static r:Strings.Details_Edit}"
                         Command="{Binding $parent[UserControl].((vm:LibraryPageViewModel)DataContext).EditSelectedCommand}" />
               </Grid>
-              <Button Classes="secondary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" IsEnabled="False"
-                      Content="{x:Static r:Strings.Details_SendKindle}" ToolTip.Tip="{x:Static r:Strings.Library_Soon}" ToolTip.ShowOnDisabled="True" />
+              <Button Classes="secondary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                      Content="{Binding $parent[UserControl].((vm:LibraryPageViewModel)DataContext).KindleButtonText}"
+                      Command="{Binding $parent[UserControl].((vm:LibraryPageViewModel)DataContext).ToggleKindleCommand}"
+                      ToolTip.Tip="{x:Static r:Strings.Details_SendKindleTip}" />
             </StackPanel>
           </StackPanel>
         </ScrollViewer>

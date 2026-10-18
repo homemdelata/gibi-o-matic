@@ -97,6 +97,18 @@ public sealed partial class DestinationsStatusViewModel : ViewModelBase, IDispos
     private static void Show(SidebarDestinationViewModel item, DestinationSummary s, SyncResult? last)
     {
         item.IsRunning = false;
+        if (s.Config.Type == GibiOMatic.Destinations.Kindle.KindleDestinationType.TypeId)
+        {
+            (item.StatusText, item.Kind) = s.Status.Health switch
+            {
+                DestinationHealth.NotConfigured => (Strings.Sidebar_NoKcc, StatusKind.Warn),
+                _ when last?.Failures.Count > 0 => (string.Format(CultureInfo.CurrentCulture, Strings.Sidebar_Errors, last.Failures.Count), StatusKind.Bad),
+                _ when s.Pending > 0 => (string.Format(CultureInfo.CurrentCulture, Strings.Sidebar_ToPrepare, s.Pending), StatusKind.Warn),
+                _ => (string.Format(CultureInfo.CurrentCulture, Strings.Sidebar_InList, s.Included), StatusKind.Ok),
+            };
+            return;
+        }
+
         (item.StatusText, item.Kind) = s.Status.Health switch
         {
             DestinationHealth.NotConfigured => (Strings.Sidebar_NoFolder, StatusKind.Warn),

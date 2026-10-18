@@ -10,6 +10,7 @@ using GibiOMatic.Core.Ids;
 using GibiOMatic.Core.Secrets;
 using GibiOMatic.Core.Settings;
 using GibiOMatic.Destinations;
+using GibiOMatic.Destinations.Kindle;
 using GibiOMatic.Destinations.Komga;
 using GibiOMatic.Destinations.Sync;
 using Microsoft.Extensions.Logging;
@@ -30,7 +31,11 @@ public sealed partial class DestinationCardViewModel(DestinationSummary summary,
     public DestinationSummary Summary { get; } = summary;
     public string Id => Summary.Config.Id;
     public string Name => Summary.Config.Name;
-    public string TypeLine => Strings.Destination_KomgaType;
+    public bool IsKindle => Summary.Config.Type == KindleDestinationType.TypeId;
+    public string TypeLine => IsKindle ? Strings.Destination_KindleType : Strings.Destination_KomgaType;
+
+    /// <summary>Komga: "Atualizar agora"; Kindle: "Enviar" (opens the list and, with the device connected, the confirmation).</summary>
+    public string ActionText => IsKindle ? Strings.Kindle_SendShort : Strings.Destinations_SyncNow;
     public string WhichText => Summary.Config.Which == DestinationScope.AllBooks ? Strings.Destination_AllBooks : Strings.Destination_ChosenBooks;
     public string WhenText => Summary.Config.When == DestinationTiming.Automatic ? Strings.Destination_Automatic : Strings.Destination_Manual;
     public string? Folder => Summary.Config.Folder;
@@ -38,6 +43,9 @@ public sealed partial class DestinationCardViewModel(DestinationSummary summary,
     public StatusKind StatusKind => Summary.Status.Health != DestinationHealth.Ready || lastResult?.Failures.Count > 0
         ? StatusKind.Bad
         : !Summary.Confirmed || Summary.Pending > 0 ? StatusKind.Warn : StatusKind.Ok;
+
+    /// <summary>The folder chip: a Kindle's local folder says little, its status line says more.</summary>
+    public string? FolderChip => IsKindle ? null : Folder;
 
     public string StatusText => lastResult?.Failures.Count > 0 && Summary.Status.Health == DestinationHealth.Ready
         ? string.Format(CultureInfo.CurrentCulture, Strings.Destination_StatusLastErrors, lastResult.Failures.Count, DestinationText.Status(Summary))
@@ -90,6 +98,15 @@ public static class DestinationText
 {
     public static string Status(DestinationSummary s)
     {
+        if (s.Config.Type == KindleDestinationType.TypeId)
+        {
+            return s.Status.Health == DestinationHealth.NotConfigured
+                ? Strings.Kindle_StatusNoKcc
+                : s.Pending > 0
+                    ? string.Format(CultureInfo.CurrentCulture, Strings.Kindle_StatusPreparing, s.Pending, s.UpToDate)
+                    : s.Included == 0 ? Strings.Kindle_StatusEmpty : string.Format(CultureInfo.CurrentCulture, Strings.Kindle_StatusReady, s.UpToDate);
+        }
+
         if (s.Status.Health == DestinationHealth.NotConfigured)
         {
             return Strings.Destination_StatusNoFolder;
@@ -136,6 +153,8 @@ public static class DestinationText
             DestinationLogKind.Failed => new(when, string.Format(CultureInfo.CurrentCulture, Strings.History_Failed, item), e.Message, true),
             DestinationLogKind.ScanRequested => new(when, Strings.History_ScanRequested, null, false),
             DestinationLogKind.ScanFailed => new(when, Strings.History_ScanFailed, e.Message, true),
+            DestinationLogKind.Sent => new(when, Strings.History_Sent, item, false),
+            DestinationLogKind.RemovedFromDevice => new(when, Strings.History_RemovedFromDevice, item, false),
             _ => new(when, Finished(e.Message), null, e.Message?.EndsWith("/0", StringComparison.Ordinal) == false),
         };
     }
@@ -157,7 +176,21 @@ public static class DestinationText
     };
 }
 
-public sealed record DestinationTypeOption(string Id, string Name, string Help, bool IsAvailable, string? Tag);
+public sealed partial class DestinationTypeOption(string id, string name, string help, bool isAvailable, string? tag, Action<DestinationTypeOption>? pick = null)
+    : ViewModelBase
+{
+    public string Id { get; } = id;
+    public string Name { get; } = name;
+    public string Help { get; } = help;
+    public bool IsAvailable { get; } = isAvailable;
+    public string? Tag { get; } = tag;
+
+    [ObservableProperty]
+    public partial bool IsSelected { get; set; }
+
+    [RelayCommand]
+    private void Pick() => pick?.Invoke(this);
+}
 
 /// <summary>The fields of a Komga destination, shared by the wizard and the detail.</summary>
 public sealed partial class DestinationFormViewModel : ViewModelBase
@@ -372,41 +405,73 @@ public sealed partial class DestinationWizardViewModel : ViewModelBase
     private readonly Func<DestinationConfig, string?, Task> _create;
     private readonly Action _cancel;
     private readonly DestinationConfig _draft;
+    private readonly DestinationConfig _kindleDraft;
 
-    public DestinationWizardViewModel(DestinationConfig draft, DestinationFormViewModel form, Func<DestinationConfig, string?, Task> create, Action cancel)
+    public DestinationWizardViewModel(DestinationConfig draft, DestinationFormViewModel form, DestinationConfig kindleDraft, KindleFormViewModel kindleForm,
+        Func<DestinationConfig, string?, Task> create, Action cancel)
     {
         _draft = draft;
+        _kindleDraft = kindleDraft;
         Form = form;
+        KindleForm = kindleForm;
         _create = create;
         _cancel = cancel;
         Types =
         [
-            new(KomgaDestinationType.TypeId, "Komga", Strings.Wizard_KomgaHelp, true, Strings.Wizard_Selected),
-            new("kindle", "Kindle", Strings.Wizard_KindleHelp, false, Strings.Wizard_NextPhase),
+            new(KomgaDestinationType.TypeId, "Komga", Strings.Wizard_KomgaHelp, true, null, PickType),
+            new(KindleDestinationType.TypeId, "Kindle", Strings.Wizard_KindleHelp, true, null, PickType),
             new("kavita", "Kavita", Strings.Wizard_KavitaHelp, false, Strings.Wizard_Soon),
             new("folder", Strings.Wizard_FolderName, Strings.Wizard_FolderHelp, false, Strings.Wizard_Soon),
         ];
+        Types[0].IsSelected = true;
     }
 
     public DestinationFormViewModel Form { get; }
 
+    public KindleFormViewModel KindleForm { get; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsKindle), nameof(IsKomga), nameof(IsLastStep), nameof(IsKomgaStep2), nameof(IsKindleStep2), nameof(StepCount))]
+    public partial string Type { get; private set; } = KomgaDestinationType.TypeId;
+
+    public bool IsKindle => Type == KindleDestinationType.TypeId;
+    public bool IsKomga => !IsKindle;
+
+    /// <summary>A Kindle takes only its own page: it always gets the books chosen by hand.</summary>
+    public int StepCount => IsKindle ? 2 : 3;
+
+    public bool IsKomgaStep2 => IsStep2 && IsKomga;
+    public bool IsKindleStep2 => IsStep2 && IsKindle;
+
+    private void PickType(DestinationTypeOption option)
+    {
+        foreach (var type in Types)
+        {
+            type.IsSelected = type == option;
+        }
+
+        Type = option.Id;
+    }
+
     public IReadOnlyList<DestinationTypeOption> Types { get; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsStep1), nameof(IsStep2), nameof(IsStep3), nameof(IsLastStep), nameof(Subtitle), nameof(Step2Done), nameof(Step3Done))]
+    [NotifyPropertyChangedFor(nameof(IsStep1), nameof(IsStep2), nameof(IsStep3), nameof(IsLastStep), nameof(Subtitle), nameof(Step2Done), nameof(Step3Done),
+        nameof(IsKomgaStep2), nameof(IsKindleStep2))]
     [NotifyCanExecuteChangedFor(nameof(BackCommand))]
     public partial int Step { get; private set; } = 1;
 
     public bool IsStep1 => Step == 1;
     public bool IsStep2 => Step == 2;
     public bool IsStep3 => Step == 3;
-    public bool IsLastStep => Step == 3;
+    public bool IsLastStep => Step == StepCount;
     public bool Step2Done => Step >= 2;
     public bool Step3Done => Step >= 3;
 
     public string Subtitle => Step switch
     {
         1 => Strings.Wizard_Step1Subtitle,
+        2 when IsKindle => Strings.Wizard_KindleSubtitle,
         2 => Strings.Wizard_Step2Subtitle,
         _ => Strings.Wizard_Step3Subtitle,
     };
@@ -418,13 +483,13 @@ public sealed partial class DestinationWizardViewModel : ViewModelBase
     private void Next()
     {
         Error = null;
-        if (Step == 2 && string.IsNullOrWhiteSpace(Form.Folder))
+        if (Step == 2 && IsKomga && string.IsNullOrWhiteSpace(Form.Folder))
         {
             Error = Strings.Wizard_NeedFolder;
             return;
         }
 
-        Step = Math.Min(3, Step + 1);
+        Step = Math.Min(StepCount, Step + 1);
     }
 
     private bool CanGoBack => Step > 1;
@@ -438,6 +503,18 @@ public sealed partial class DestinationWizardViewModel : ViewModelBase
     [RelayCommand]
     private async Task CreateAsync()
     {
+        if (IsKindle)
+        {
+            if (!KindleForm.IsValid)
+            {
+                Error = Strings.Wizard_NeedName;
+                return;
+            }
+
+            await _create(KindleForm.ToConfig(_kindleDraft), null);
+            return;
+        }
+
         if (!Form.IsValid)
         {
             Error = Strings.Wizard_NeedNameAndFolder;
@@ -625,12 +702,19 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
     private readonly ILogger<DestinationsPageViewModel> _logger;
     private readonly IUrlOpener _urls;
     private readonly AppPaths _paths;
+    private readonly KindleWatcher _kindle;
+    private readonly KccInstaller _kccInstaller;
+    private readonly IFilePicker _files;
     private readonly Debouncer _refresh;
 
     public DestinationsPageViewModel(LibrarySession session, ISettingsService settings, ISecretStore secrets, KomgaClient komga,
         IFolderPicker folders, IEnumerable<IDestinationType> types, IUiThread ui, IUrlOpener urls, AppPaths paths,
-        ILogger<DestinationsPageViewModel> logger)
+        KindleWatcher kindle, KccInstaller kccInstaller, IFilePicker files, ILogger<DestinationsPageViewModel> logger)
     {
+        _kindle = kindle;
+        _kccInstaller = kccInstaller;
+        _files = files;
+        kindle.Changed += OnKindleChanged;
         _urls = urls;
         _paths = paths;
         _session = session;
@@ -655,17 +739,23 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
     public ObservableCollection<DestinationCardViewModel> Cards { get; } = [];
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsList), nameof(IsWizard), nameof(IsDetail))]
+    [NotifyPropertyChangedFor(nameof(IsList), nameof(IsWizard), nameof(IsDetail), nameof(IsKindleDetail))]
     public partial DestinationsMode Mode { get; private set; }
 
     public bool IsList => Mode == DestinationsMode.List;
     public bool IsWizard => Mode == DestinationsMode.Wizard;
-    public bool IsDetail => Mode == DestinationsMode.Detail;
+    public bool IsDetail => Mode == DestinationsMode.Detail && Detail is not null;
+    public bool IsKindleDetail => Mode == DestinationsMode.Detail && KindleDetail is not null;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsDetail), nameof(IsKindleDetail))]
+    public partial KindleDetailViewModel? KindleDetail { get; private set; }
 
     [ObservableProperty]
     public partial DestinationWizardViewModel? Wizard { get; private set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsDetail), nameof(IsKindleDetail))]
     public partial DestinationDetailViewModel? Detail { get; private set; }
 
     /// <summary>Coming back to Destinos shows the list, not the destination (or wizard) left open.</summary>
@@ -708,6 +798,13 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
                 Cards.Add(card);
             }
 
+            if (KindleDetail is { } kindle)
+            {
+                ShowActivity(service, kindle, kindle.Config.Id);
+                await kindle.RefreshAsync(ct);
+                await kindle.LoadHistoryAsync();
+            }
+
             if (Detail is { } detail && summaries.FirstOrDefault(s => s.Config.Id == detail.Config.Id) is { } current)
             {
                 detail.StatusText = DestinationText.Status(current);
@@ -742,10 +839,16 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
     {
         var type = _types.First(t => t.Id == KomgaDestinationType.TypeId);
         var draft = type.CreateDefault(Ulid.NewUlid(), Cards.Count == 0 ? Strings.Wizard_DefaultKomgaName : $"{Strings.Wizard_DefaultKomgaName} {Cards.Count + 1}");
-        Wizard = new DestinationWizardViewModel(draft, await FormAsync(draft, ct), CreateAsync, ShowList);
+        var kindles = Cards.Count(c => c.IsKindle);
+        var kindleDraft = _types.First(t => t.Id == KindleDestinationType.TypeId)
+            .CreateDefault(Ulid.NewUlid(), kindles == 0 ? Strings.Wizard_DefaultKindleName : $"{Strings.Wizard_DefaultKindleName} {kindles + 1}");
+        Wizard = new DestinationWizardViewModel(draft, await FormAsync(draft, ct), kindleDraft, KindleForm(kindleDraft), CreateAsync, ShowList);
         Detail = null;
+        KindleDetail = null;
         Mode = DestinationsMode.Wizard;
     }
+
+    private KindleFormViewModel KindleForm(DestinationConfig config) => new(config, _kccInstaller, _files, _ui, _logger, _paths.ToolsDirectory);
 
     private async Task<DestinationFormViewModel> FormAsync(DestinationConfig config, CancellationToken ct)
     {
@@ -762,7 +865,13 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
     private async Task CreateAsync(DestinationConfig config, string? apiKey)
     {
         await SaveAsync(config, apiKey, CancellationToken.None);
-        await OpenAsync(config.Id, showPlan: true);
+        if (config.Type == KindleDestinationType.TypeId && _session.Destinations is { } service)
+        {
+            // A Kindle prepares its books as they are chosen: no first sync to confirm.
+            await service.MarkConfirmedAsync(config.Id);
+        }
+
+        await OpenAsync(config.Id, showPlan: config.Type != KindleDestinationType.TypeId);
     }
 
     /// <summary>Saves a destination (new or changed) and its key.</summary>
@@ -804,7 +913,14 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
             return;
         }
 
+        if (config.Type == KindleDestinationType.TypeId)
+        {
+            await OpenKindleAsync(config, showPlan);
+            return;
+        }
+
         Detail = new DestinationDetailViewModel(config, await FormAsync(config, CancellationToken.None), this);
+        KindleDetail = null;
         Wizard = null;
         Mode = DestinationsMode.Detail;
         await RefreshAsync();
@@ -814,10 +930,51 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
         }
     }
 
+    /// <summary>The Kindle's page; <paramref name="showPlan"/> asks to send at once when the device is connected.</summary>
+    private async Task OpenKindleAsync(DestinationConfig config, bool showPlan)
+    {
+        if (_session.Destinations is not { } service)
+        {
+            return;
+        }
+
+        var detail = new KindleDetailViewModel(config, KindleForm(config), service, _kindle, _ui, _logger,
+            async c => await SaveAsync(c, null, CancellationToken.None), RemoveAsync, ShowList,
+            folder =>
+            {
+                Directory.CreateDirectory(folder);
+                return _urls.OpenAsync(new Uri(folder + Path.DirectorySeparatorChar));
+            })
+        {
+            IndexBooksAsync = async ct => (await (_session.Index?.GetBooksAsync(ct) ?? Task.FromResult<IReadOnlyList<Library.Index.CatalogBook>>([])))
+                .Select(b => b.Metadata).ToList(),
+        };
+        detail.Sent += (_, _) => KindleSent?.Invoke(this, EventArgs.Empty);
+        KindleDetail = detail;
+        Detail = null;
+        Wizard = null;
+        Mode = DestinationsMode.Detail;
+        await RefreshAsync();
+        if (showPlan && detail.CanSend)
+        {
+            await detail.ShowSendPlanCommand.ExecuteAsync(null);
+        }
+    }
+
+    /// <summary>Books went to the Kindle (the shell's banner updates).</summary>
+    public event EventHandler? KindleSent;
+
+    private void OnKindleChanged(object? sender, EventArgs e)
+    {
+        KindleDetail?.UpdateDevice();
+        _refresh.Trigger();
+    }
+
     public void ShowList()
     {
         Wizard = null;
         Detail = null;
+        KindleDetail = null;
         Mode = DestinationsMode.List;
         _refresh.Trigger();
     }
@@ -850,6 +1007,11 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
             activities.Add((detail, detail.Config.Id));
         }
 
+        if (KindleDetail is { } kindle)
+        {
+            activities.Add((kindle, kindle.Config.Id));
+        }
+
         foreach (var (activity, id) in activities)
         {
             if (progress is not null && progress.DestinationId == id)
@@ -877,6 +1039,7 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
 
     public override void Dispose()
     {
+        _kindle.Changed -= OnKindleChanged;
         if (_session.Destinations is { } service)
         {
             service.Changed -= OnServiceChanged;

@@ -10,7 +10,7 @@ Status: ⬜ não iniciada · 🟨 em andamento · ✅ concluída. Seções `§` 
 | F3 | Destino Komga | ✅ |
 | F3.5 | Leitor | ✅ |
 | F3.6 | Universos | ✅ |
-| F4 | Destino Kindle | 🔄 |
+| F4 | Destino Kindle | ✅ (falta o teste do usuário com o Kindle) |
 | F5 | Entrada automática | ⬜ |
 | F6 | Polimento e distribuição | ⬜ |
 
@@ -176,22 +176,24 @@ Objetivo: agrupar séries do mesmo universo ou linha editorial (ex.: Radiant Bla
 
 ## F4 · Destino Kindle (§9.3)
 
-- [ ] Integração com o KCC (`kcc-c2e`):
-  - localizar ou configurar o executável;
-  - perfil do aparelho (Colorsoft = `KCS`);
-  - formato AZW3/MOBI;
-  - progresso e timeout.
-  - Avaliar distribuir o KCC junto com o app (licença ISC: manter o aviso).
-- [ ] **Preparar sem o Kindle conectado** (pedido do usuário):
+- [x] Integração com o KCC (`kcc-c2e`):
+  - localizar ou configurar o executável (o baixado pelo app, o escolhido à mão ou o do PATH);
+  - perfil do aparelho (Colorsoft = `KCS`), com cor (`--forcecolor`);
+  - formato MOBI (que também é AZW3);
+  - progresso pelas etapas que o KCC imprime e timeout.
+  - Distribuir o KCC junto: **não** (o executável inclui PyMuPDF, AGPL). O app baixa o release oficial quando o usuário pede, com o SHA-256 conferido.
+- [x] **Preparar sem o Kindle conectado** (pedido do usuário):
   - os livros escolhidos ("Livros que eu escolher") são convertidos em segundo plano, um por vez, numa pasta de preparo local (padrão `%LOCALAPPDATA%\GibiOMatic\kindle`, configurável; nunca no Drive);
   - status por livro: Na fila, Preparando, Pronto para enviar, No Kindle, Desatualizado (metadados mudaram depois de preparar → refaz sozinho).
-- [ ] **Enviar quando conectar**: entrega via MTP no Windows (detectar o Kindle, copiar para `documents/`). Ao conectar, uma faixa oferece "Kindle conectado: N livros prontos. Enviar?", com a lista e confirmação. O app lembra o que já enviou e não manda de novo. Depois de enviada, a cópia preparada é apagada (reenviar converte de novo). Linux: **a fazer**. O botão "Abrir pasta" funciona sempre.
-- [ ] **O app nunca apaga nada do Kindle sozinho.** Tirar um livro da lista não apaga do aparelho.
-- [ ] **Mini gerenciador do Kindle**: listar os livros da pasta `documents/` (marcando os que o app enviou) e apagar os escolhidos, só por ação manual e com confirmação.
-- [ ] **Tela do destino Kindle** (`DestinoKindle.dc.html`):
+- [x] **Enviar quando conectar**: entrega via MTP no Windows (detectar o Kindle, copiar para `documents/`). Ao conectar, uma faixa oferece "Kindle conectado: N livros prontos. Enviar?", com a lista e confirmação. O app lembra o que já enviou e não manda de novo. Depois de enviada, a cópia preparada é apagada (reenviar converte de novo). Linux: **a fazer**. O botão "Abrir pasta" funciona sempre.
+- [x] **O app nunca apaga nada do Kindle sozinho.** Tirar um livro da lista não apaga do aparelho.
+- [x] **Mini gerenciador do Kindle**: listar os livros da pasta `documents/` (marcando os que o app enviou) e apagar os escolhidos, só por ação manual e com confirmação.
+- [x] **Tela do destino Kindle** (`DestinoKindle.dc.html`):
   - aba Enviar (escolher livros, ver o status do preparo, enviar);
   - aba No Kindle (o mini gerenciador);
-  - aba Configurações com "Avançado" recolhido.
+  - aba Configurações com "Avançado" recolhido;
+  - aba Histórico.
+- [x] "Enviar ao Kindle" no painel da Biblioteca (põe ou tira o livro da lista) e o estado da cópia no painel.
 
 **Pronto quando**: um livro escolhido chega ao Colorsoft do usuário e abre com a visualização de painéis.
 

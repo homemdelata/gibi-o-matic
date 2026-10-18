@@ -245,15 +245,16 @@ public interface IDestination {
 - **Padrão**: toda a biblioteca, automático.
 
 ### 9.3 Destino Kindle
-- **Conversão**: Kindle Comic Converter (KCC, `kcc-c2e`) com o perfil do aparelho (Colorsoft = `KCS`, 1272×1696, cor). Entrada: o CBZ gerado para o Komga, se existir, ou um CBZ temporário.
-- **Formato**: AZW3/MOBI (cabo USB, recomendado) ou EPUB (Send to Kindle, com compressão da Amazon).
+- **Conversão**: Kindle Comic Converter (KCC, `kcc-c2e`) com o perfil do aparelho (Colorsoft = `KCS`, 1272×1696, cor com `--forcecolor`). Entrada: um CBZ temporário gerado do original (com o `ComicInfo.xml`).
+- **Formato**: MOBI do KCC, que também é AZW3 ("dual"); a extensão `.mobi` é a que o KCC usa. EPUB para o Send to Kindle fica no backlog.
+- **Preparar e enviar** (decisão do usuário, 2026-10-18): os livros escolhidos são convertidos numa pasta local enquanto o Kindle está longe; o envio acontece quando ele é conectado e o usuário confirma. O app nunca apaga do Kindle sozinho; há um gerenciador para apagar à mão.
 - **Entrega**:
   - Windows: o Kindle 2024+ usa **MTP**; cópia para `documents/` via Windows Portable Devices (por exemplo, o NuGet `MediaDevices`).
   - Linux: **a fazer**. Até lá, o botão "Abrir pasta" permite arrastar à mão, e esse botão existe em todos os sistemas.
 - **Quadro a quadro**: o Kindle oferece "Visualização de painéis" (menu Aa, dois toques) em arquivos do KCC. Detecção real de quadros fica no backlog.
-- **Padrão**: livros escolhidos, manual.
+- **Padrão**: livros escolhidos, preparados assim que escolhidos; envio só com confirmação.
 - **Riscos**: o KCC precisa do KindleGen para gerar MOBI/AZW3. O KindleGen vem no Kindle Previewer, que só existe para Windows e macOS, então no Linux a saída pode ficar limitada a EPUB.
-- **Licença do KCC**: ISC, permissiva. Pode ser distribuído junto com o app, mantendo o aviso de copyright. Como é chamado como processo externo, não impõe nada à licença do GibiOMatic.
+- **Licença do KCC**: ISC. Mas o executável publicado inclui PyMuPDF (AGPL), então o app **não** o distribui: o usuário instala, ou o app baixa o release oficial quando o usuário pede. Chamado como processo externo, não impõe nada à licença do GibiOMatic.
 
 ### 9.4 Backlog de tipos
 Kavita, Kobo (KEPUB via KCC), Pasta simples (copiar em CBZ/PDF/EPUB), servidor OPDS, Calibre-Web.

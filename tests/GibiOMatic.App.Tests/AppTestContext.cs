@@ -35,6 +35,20 @@ public sealed class AppTestContext : IDisposable
     /// <summary>Never calls the real APIs; answers what each test scripts.</summary>
     public FakeIdentifier Identifier { get; } = new();
 
+    /// <summary>A Kindle in memory, connected or not.</summary>
+    public FakeKindleDevice Kindle { get; } = new();
+
+    /// <summary>Writes a small file instead of running the KCC.</summary>
+    public FakeKccRunner Kcc { get; } = new();
+
+    /// <summary>Puts a stand-in KCC where the app looks for the one it downloads.</summary>
+    public void InstallFakeKcc()
+    {
+        var tool = Path.Combine(Paths.ToolsDirectory, "kcc", "kcc-c2e-12.0.0.exe");
+        Directory.CreateDirectory(Path.GetDirectoryName(tool)!);
+        File.WriteAllText(tool, "fake");
+    }
+
     public string Folder(string name) => _temp.Combine(name);
 
     public T Get<T>() where T : notnull => _services.GetRequiredService<T>();
@@ -51,6 +65,8 @@ public sealed class AppTestContext : IDisposable
             .AddSingleton<IUrlOpener>(Urls)
             .AddSingleton<IReaderLauncher>(Reader)
             .AddSingleton<GibiOMatic.App.ViewModels.IReaderImages>(new FakeReaderImages())
+            .AddSingleton<GibiOMatic.Destinations.Kindle.IKindleDevices>(Kindle)
+            .AddSingleton<GibiOMatic.Conversion.Kcc.IKccRunner>(Kcc)
             .BuildServiceProvider();
         // Automatic runs gather changes for 1.5 s in the app; tests do not wait that long.
         services.GetRequiredService<GibiOMatic.Destinations.Sync.DestinationServiceFactory>().GatherDelay = TimeSpan.FromMilliseconds(20);
@@ -86,9 +102,58 @@ public sealed class FakeFilePicker : IFilePicker
     public string? NextImage { get; set; }
 
     public Task<string?> PickImageAsync(string title, CancellationToken ct = default) => Task.FromResult(NextImage);
+
+    public string? NextExecutable { get; set; }
+
+    public Task<string?> PickExecutableAsync(string title, CancellationToken ct = default) => Task.FromResult(NextExecutable);
 }
 
 /// <summary>No UI thread in tests: updates run right away.</summary>
+public sealed class FakeKccRunner : GibiOMatic.Conversion.Kcc.IKccRunner
+{
+    public int Runs { get; private set; }
+
+    public async Task<string> ConvertAsync(GibiOMatic.Conversion.Kcc.KccJob job, IProgress<double>? progress, CancellationToken ct)
+    {
+        Runs++;
+        Directory.CreateDirectory(job.OutputDirectory);
+        var output = Path.Combine(job.OutputDirectory, "book.mobi");
+        await File.WriteAllTextAsync(output, job.Title, ct);
+        return output;
+    }
+}
+
+public sealed class FakeKindleDevice : GibiOMatic.Destinations.Kindle.IKindleDevices, GibiOMatic.Destinations.Kindle.IKindleConnection
+{
+    public Dictionary<string, string> Files { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public bool Connected { get; set; }
+
+    public bool IsSupported => true;
+
+    public string Name => "Kindle Colorsoft";
+
+    public IReadOnlyList<GibiOMatic.Destinations.Kindle.KindleDeviceInfo> Find() => Connected ? [new("usb-1", Name)] : [];
+
+    public GibiOMatic.Destinations.Kindle.IKindleConnection Connect(string deviceId) =>
+        Connected ? this : throw new GibiOMatic.Destinations.Kindle.KindleDeviceException("unplugged");
+
+    public GibiOMatic.Destinations.Kindle.KindleSpace? Space() => new(9_800_000_000, 16_000_000_000);
+
+    public IReadOnlyList<GibiOMatic.Destinations.Kindle.KindleFile> ListBooks() =>
+        Files.Keys.Order().Select(f => new GibiOMatic.Destinations.Kindle.KindleFile(f, Files[f].Length, null)).ToList();
+
+    public bool Exists(string path) => Files.ContainsKey(path);
+
+    public void Upload(string localFile, string path, IProgress<double>? progress, CancellationToken ct) => Files[path] = File.ReadAllText(localFile);
+
+    public void Delete(string path) => Files.Remove(path);
+
+    public void Dispose()
+    {
+    }
+}
+
 public sealed class InlineUiThread : IUiThread
 {
     public void Post(Action action) => action();
