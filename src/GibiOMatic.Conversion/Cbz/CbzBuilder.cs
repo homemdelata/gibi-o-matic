@@ -218,7 +218,7 @@ public static partial class CbzBuilder
     private static ZipArchiveEntry? Find(ZipArchive zip, string path) =>
         zip.GetEntry(path) ?? zip.Entries.FirstOrDefault(e => e.FullName.Equals(path, StringComparison.OrdinalIgnoreCase));
 
-    private static bool IsHidden(string? key) =>
+    internal static bool IsHidden(string? key) =>
         key is null || key.Replace('\\', '/').Split('/').Any(p => p.StartsWith('.') || p.Equals("__MACOSX", StringComparison.OrdinalIgnoreCase));
 
     [GeneratedRegex("""(?:src|xlink:href|href)\s*=\s*["']([^"']+\.(?:jpe?g|png|gif|webp))["']""", RegexOptions.IgnoreCase)]

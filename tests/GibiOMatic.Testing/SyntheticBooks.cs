@@ -93,6 +93,12 @@ public static class SyntheticBooks
         /// <summary>Text-only chapters (a novel) instead of one image per page.</summary>
         public bool TextOnly { get; init; }
 
+        /// <summary>Body of each text chapter ("{n}" is the chapter number); "&lt;p&gt;Chapter n&lt;/p&gt;" by default.</summary>
+        public string? ChapterBody { get; init; }
+
+        /// <summary>An EPUB 3 navigation document listing the text chapters as "Chapter n".</summary>
+        public bool Nav { get; init; }
+
         public string? Generator { get; init; }
     }
 
@@ -129,7 +135,8 @@ public static class SyntheticBooks
             var name = $"p{i:D4}";
             if (options.TextOnly)
             {
-                Text($"OEBPS/{name}.xhtml", $"<html xmlns=\"http://www.w3.org/1999/xhtml\"><body><p>Chapter {i}</p></body></html>");
+                var body = options.ChapterBody?.Replace("{n}", i.ToString(System.Globalization.CultureInfo.InvariantCulture)) ?? $"<p>Chapter {i}</p>";
+                Text($"OEBPS/{name}.xhtml", $"<html xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>{i}</title></head><body>{body}</body></html>");
             }
             else
             {
@@ -142,6 +149,13 @@ public static class SyntheticBooks
 
             manifest.Append($"<item id=\"x{name}\" href=\"{name}.xhtml\" media-type=\"application/xhtml+xml\"/>\n");
             spine.Append($"<itemref idref=\"x{name}\"/>\n");
+        }
+
+        if (options.Nav)
+        {
+            var items = string.Concat(Enumerable.Range(1, options.Pages).Select(i => $"<li><a href=\"p{i:D4}.xhtml\">Chapter {i}</a></li>"));
+            Text("OEBPS/nav.xhtml", $"<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:epub=\"http://www.idpf.org/2007/ops\"><body><nav epub:type=\"toc\"><ol>{items}</ol></nav></body></html>");
+            manifest.Append("<item id=\"nav\" href=\"nav.xhtml\" media-type=\"application/xhtml+xml\" properties=\"nav\"/>\n");
         }
 
         var meta = new StringBuilder();

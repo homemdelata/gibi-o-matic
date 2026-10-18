@@ -88,6 +88,28 @@ internal sealed unsafe class PdfDocument : IDisposable
     }
 
     /// <summary>Renders a page on white, scaled so that its height is <paramref name="targetHeight"/> pixels.</summary>
+    /// <summary>Width and height of a page, in points (1/72 inch).</summary>
+    public (float Width, float Height) GetPageSize(int index)
+    {
+        lock (PdfiumNative.Sync)
+        {
+            var page = PdfiumNative.FPDF_LoadPage(_document, index);
+            if (page == 0)
+            {
+                throw new PdfException($"Page {index + 1} could not be loaded.");
+            }
+
+            try
+            {
+                return (PdfiumNative.FPDF_GetPageWidthF(page), PdfiumNative.FPDF_GetPageHeightF(page));
+            }
+            finally
+            {
+                PdfiumNative.FPDF_ClosePage(page);
+            }
+        }
+    }
+
     public SKBitmap RenderPage(int index, int targetHeight)
     {
         lock (PdfiumNative.Sync)
