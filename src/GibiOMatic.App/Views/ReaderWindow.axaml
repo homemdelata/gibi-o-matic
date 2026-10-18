@@ -179,6 +179,15 @@
     </Border>
 
     <!-- Opening / errors -->
+    <!-- A slow page (huge scans in a PDF): the previous one stays while this shows it is on its way -->
+    <Border Grid.Row="1" Classes="card" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,16,0,0" Padding="16,10"
+            IsHitTestVisible="False" IsVisible="{Binding IsPageLoading}">
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <ProgressBar IsIndeterminate="True" Width="80" Height="4" VerticalAlignment="Center"
+                     Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+        <TextBlock FontSize="13" VerticalAlignment="Center" Text="{x:Static r:Strings.Reader_PageLoading}" />
+      </StackPanel>
+    </Border>
     <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12" IsVisible="{Binding IsLoading}">
       <ProgressBar IsIndeterminate="True" Width="200" Height="4" Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
       <TextBlock Classes="muted" HorizontalAlignment="Center" Text="{x:Static r:Strings.Reader_Loading}" />

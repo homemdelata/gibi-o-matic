@@ -499,4 +499,5 @@
   <data name="Reading_Clear" xml:space="preserve"><value>Clear progress</value></data>
   <data name="Reading_ClearTip" xml:space="preserve"><value>Removes the book from "Continue reading"; it opens at the first page again</value></data>
   <data name="Reading_ReadBadge" xml:space="preserve"><value>Read</value></data>
+  <data name="Reader_PageLoading" xml:space="preserve"><value>Loading page…</value></data>
 </root>

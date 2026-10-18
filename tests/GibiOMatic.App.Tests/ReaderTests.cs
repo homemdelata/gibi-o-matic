@@ -141,9 +141,10 @@ public sealed class ReaderTests : IDisposable
         Assert.Equal(Pages(12, 12), reader.PageText);
         Assert.True(reader.Thumbnails[11].IsCurrent);
 
-        // Thumbnails are rendered when the strip shows them.
-        Assert.Null(reader.Thumbnails[0].Image);
-        await WaitForAsync(() => reader.Thumbnails[0].Image is not null);
+        // Pages shown give their thumbnails; the others are rendered when the strip shows them.
+        Assert.True(reader.Thumbnails[0].HasImage);
+        Assert.Null(reader.Thumbnails[7].Image);
+        await WaitForAsync(() => reader.Thumbnails[7].Image is not null);
 
         await reader.DisposeAsync();
 
@@ -172,6 +173,10 @@ public sealed class ReaderTests : IDisposable
         await reader.LoadAsync(Ct);
         Assert.Equal(Pages(1, 3), reader.PageText);
         Assert.IsType<FakeImage>(reader.LeftImage);
+        Assert.False(reader.IsPageLoading);
+
+        // The thumbnail of a page shown comes from that render (slow PDFs render nothing extra).
+        Assert.True(reader.Thumbnails[0].HasImage);
 
         // A bigger window or zooming in renders a sharper page.
         var before = reader.LeftImage!.Size.Height;

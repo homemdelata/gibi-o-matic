@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using Avalonia.Media;
@@ -58,6 +59,7 @@ public static class ReaderSpreads
 public sealed partial class ThumbnailViewModel(int index, Action<ThumbnailViewModel> load) : ViewModelBase
 {
     private bool _requested;
+    private IImage? _image;
 
     public int Index { get; } = index;
 
@@ -76,10 +78,13 @@ public sealed partial class ThumbnailViewModel(int index, Action<ThumbnailViewMo
                 load(this);
             }
 
-            return field;
+            return _image;
         }
-        internal set => SetProperty(ref field, value);
+        internal set => SetProperty(ref _image, value);
     }
+
+    /// <summary>Without asking for a render, unlike <see cref="Image"/>.</summary>
+    internal bool HasImage => _image is not null;
 }
 
 /// <summary>An entry of a text book's table of contents.</summary>
@@ -107,6 +112,12 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
     private const int DefaultRenderHeight = 1600;
     private const int ThumbnailHeight = 150;
     private const int CacheSize = 10;
+
+    /// <summary>
+    /// Pages slower than this (huge scans in a PDF take seconds each, whatever the size asked for)
+    /// get no extra renders for thumbnails, and only the next pages are rendered ahead.
+    /// </summary>
+    private const double SlowRenderMs = 700;
     private const int MinTextScale = 60;
     private const int MaxTextScale = 200;
 
@@ -133,6 +144,17 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
     private int _showVersion;
     private int _navigationVersion;
     private bool _thumbnailWorkerRunning;
+
+    /// <summary>Work for the page on screen (cancelled when another page is asked for).</summary>
+    private CancellationTokenSource _showCts = new();
+
+    /// <summary>Page renders waiting or running: thumbnails wait for them.</summary>
+    private int _pageRenders;
+
+    /// <summary>Average time to render a page (0 until the first one).</summary>
+    private double _renderMs;
+
+    private bool SlowBook => _renderMs > SlowRenderMs;
 
     public ReaderViewModel(ReaderRequest request, ISettingsService settings, IUiThread ui, IReaderImages images,
         ReadingTracker reading, ILogger logger)
@@ -210,6 +232,10 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowStrip))]
     public partial bool ShowThumbnails { get; set; }
+
+    /// <summary>The page asked for is still being rendered (a slow PDF can take seconds).</summary>
+    [ObservableProperty]
+    public partial bool IsPageLoading { get; private set; }
 
     public int PageCount => _sizes.Length;
 
@@ -489,6 +515,12 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
         }
 
         var version = ++_showVersion;
+        // Synchronously: the counter and the pages asked for change before anything else runs.
+#pragma warning disable CA1849
+        _showCts.Cancel();
+#pragma warning restore CA1849
+        _showCts = new CancellationTokenSource();
+        var ct = _showCts.Token;
         var spread = CurrentSpread;
         CurrentPage = spread[0];
         MarkSeen(spread);
@@ -503,18 +535,21 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
         var screen = RightToLeft ? spread.Reverse().ToArray() : spread;
         var turned = LeftImage is null || CurrentPageChanged(screen);
         _shownPages = screen;
+        IsPageLoading = !screen.All(IsCached);
         try
         {
             var images = new IImage[screen.Length];
             for (var i = 0; i < screen.Length; i++)
             {
-                images[i] = await GetPageAsync(pages, screen[i], _closing.Token);
+                images[i] = await GetPageAsync(pages, screen[i], ct);
             }
 
             if (version != _showVersion)
             {
                 return;
             }
+
+            IsPageLoading = false;
 
             LeftSize = _sizes[screen[0]];
             RightSize = screen.Length > 1 ? _sizes[screen[1]] : default;
@@ -533,17 +568,19 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
                     return;
                 }
 
-                await GetPageAsync(pages, page, _closing.Token);
+                await GetPageAsync(pages, page, ct);
             }
         }
         catch (OperationCanceledException)
         {
+            // Another page was asked for (or the reader closed): that show takes over.
         }
         catch (Exception ex) when (ex is not ObjectDisposedException)
         {
             _logger.LogWarning(ex, "Reader could not show page {Page} of {Path}", CurrentPage + 1, _request.FilePath);
             if (version == _showVersion)
             {
+                IsPageLoading = false;
                 ErrorText = string.Format(CultureInfo.CurrentCulture, Strings.Reader_PageFailed, CurrentPage + 1, ex.Message);
             }
         }
@@ -553,17 +590,18 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
 
     private bool CurrentPageChanged(int[] screen) => !screen.SequenceEqual(_shownPages);
 
+    /// <summary>The next pages first; a slow book renders two spreads ahead and none behind.</summary>
     private IEnumerable<int> Neighbours()
     {
-        if (_spreadIndex + 1 < _spreads.Count)
+        for (var ahead = 1; ahead <= (SlowBook ? 2 : 1) && _spreadIndex + ahead < _spreads.Count; ahead++)
         {
-            foreach (var page in _spreads[_spreadIndex + 1])
+            foreach (var page in _spreads[_spreadIndex + ahead])
             {
                 yield return page;
             }
         }
 
-        if (_spreadIndex > 0)
+        if (_spreadIndex > 0 && !SlowBook)
         {
             foreach (var page in _spreads[_spreadIndex - 1])
             {
@@ -571,6 +609,8 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
             }
         }
     }
+
+    private bool IsCached(int page) => _cache.TryGetValue(page, out var cached) && cached.Height >= TargetHeight(page) * 0.9;
 
     private async Task<IImage> GetPageAsync(IPageSource pages, int page, CancellationToken ct)
     {
@@ -581,16 +621,48 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
             return cached.Image;
         }
 
-        await _renderGate.WaitAsync(ct);
+        var thumbnail = page < Thumbnails.Count && !Thumbnails[page].HasImage ? Thumbnails[page] : null;
         IImage image;
+        IImage? small = null;
+        Interlocked.Increment(ref _pageRenders);
         try
         {
-            ct.ThrowIfCancellationRequested();
-            image = await Task.Run(() => _images.Create(pages.Render(page, int.MaxValue / 4, height, ct)), ct);
+            await _renderGate.WaitAsync(ct);
+            try
+            {
+                ct.ThrowIfCancellationRequested();
+
+                // Rendered ahead while this waited (the next page, usually).
+                if (_cache.TryGetValue(page, out cached) && cached.Height >= height * 0.9)
+                {
+                    Touch(page);
+                    return cached.Image;
+                }
+
+                var started = Stopwatch.GetTimestamp();
+                (image, small) = await Task.Run(() =>
+                {
+                    var bitmap = pages.Render(page, int.MaxValue / 4, height, ct);
+                    // The thumbnail comes from the page just rendered, at no extra cost.
+                    var thumb = thumbnail is null ? null : _images.Create(Downscale(bitmap, ThumbnailHeight));
+                    return (_images.Create(bitmap), thumb);
+                }, CancellationToken.None);
+                var ms = Stopwatch.GetElapsedTime(started).TotalMilliseconds;
+                _renderMs = _renderMs == 0 ? ms : (_renderMs * 0.7) + (ms * 0.3);
+            }
+            finally
+            {
+                _renderGate.Release();
+            }
         }
         finally
         {
-            _renderGate.Release();
+            Interlocked.Decrement(ref _pageRenders);
+        }
+
+        if (small is not null && thumbnail is not null)
+        {
+            thumbnail.Image = small;
         }
 
         if (_cache.Remove(page, out var old) && !IsShown(old.Image))
@@ -602,6 +674,13 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
         Touch(page);
         Evict();
         return image;
+    }
+
+    private static SKBitmap Downscale(SKBitmap bitmap, int height)
+    {
+        var width = Math.Max(1, (int)Math.Round(bitmap.Width * (double)height / Math.Max(1, bitmap.Height)));
+        return bitmap.Resize(new SKImageInfo(width, height, bitmap.ColorType, bitmap.AlphaType), new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear))
+               ?? throw new InvalidOperationException("The thumbnail could not be made.");
     }
 
     private bool IsShown(IImage image) => ReferenceEquals(image, LeftImage) || ReferenceEquals(image, RightImage);
@@ -633,7 +712,13 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
         {
             for (var i = 0; i < sizes.Length; i++)
             {
-                // The gate keeps the file open while it is read (closing the reader waits for it).
+                // The page on screen comes first; the gate keeps the file open while it is read
+                // (closing the reader waits for it).
+                while (Volatile.Read(ref _pageRenders) > 0)
+                {
+                    await Task.Delay(50, ct);
+                }
+
                 await _renderGate.WaitAsync(ct);
                 try
                 {
@@ -705,6 +790,17 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
 
             try
             {
+                // The page on screen comes first.
+                while (Volatile.Read(ref _pageRenders) > 0)
+                {
+                    await Task.Delay(50, _closing.Token);
+                }
+
+                if (next.HasImage || SlowBook)
+                {
+                    continue;
+                }
+
                 await _renderGate.WaitAsync(_closing.Token);
                 IImage image;
                 try
@@ -897,6 +993,7 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
         _savePosition.Dispose();
         await SavePositionAsync();
         await _closing.CancelAsync();
+        await _showCts.CancelAsync();
         // Wait for a page being rendered before closing the file under it.
         await _renderGate.WaitAsync();
         try
