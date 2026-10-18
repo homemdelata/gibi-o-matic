@@ -8,6 +8,7 @@ Status: ⬜ não iniciada · 🟨 em andamento · ✅ concluída. Seções `§` 
 | F1 | Importação + Biblioteca | ✅ |
 | F2 | Metadados | ✅ |
 | F3 | Destino Komga | ✅ |
+| F3.5 | Leitor | 🟨 |
 | F4 | Destino Kindle | ⬜ |
 | F5 | Entrada automática | ⬜ |
 | F6 | Polimento e distribuição | ⬜ |
@@ -129,6 +130,30 @@ Ao terminar cada fase: build e testes verdes → atualizar este arquivo → comm
 
 ---
 
+## F3.5 · Leitor (pedido do usuário)
+
+Objetivo: abrir um livro dentro do app para conferir qual edição é (capa grande, páginas internas, créditos) antes de escolher o metadado. Não substitui o Komga nem o Kindle para ler.
+
+- [ ] Leitor de imagens próprio para CBZ, CBR, PDF e EPUB de quadrinhos (uma imagem por página): só a página atual e as vizinhas na memória, com renderização em segundo plano.
+- [ ] EPUB de texto no `Avalonia.Controls.WebView` (WebView2 no Windows, WebKitGTK no Linux), com sumário, capítulo anterior/próximo, tamanho da fonte e tema escuro.
+- [ ] Segurança:
+  - EPUB servido de dentro do arquivo, sem extrair para o disco, sem JavaScript, sem acesso à internet e sem navegar para fora do livro;
+  - PDF renderizado pelo PDFium sem JavaScript/XFA, sem formulários e sem executar ações (links, arquivos anexos).
+- [ ] Recursos:
+  - navegação por setas, clique nas laterais, roda do mouse, Home/End e contador "12 / 148";
+  - ajuste à altura (padrão), à largura e tamanho real;
+  - zoom com Ctrl+roda e arrastar;
+  - faixa de miniaturas recolhível;
+  - tela cheia (F11, Esc fecha);
+  - página dupla, com a capa sozinha;
+  - leitura da direita para a esquerda;
+  - lembrar a última página de cada livro (no índice, nunca no original).
+- [ ] "Abrir" no painel da Biblioteca, na Revisão (clique na capa) e nos candidatos.
+
+**Pronto quando**: os quatro formatos abrem no leitor a partir da Biblioteca e da Revisão, e um livro reaberto volta à página em que estava.
+
+---
+
 ## F4 · Destino Kindle (§9.3)
 
 - [ ] Integração com o KCC (`kcc-c2e`):
@@ -170,6 +195,7 @@ Ao terminar cada fase: build e testes verdes → atualizar este arquivo → comm
 - Detecção real de quadros (Panel View com regiões por quadro).
 - Destinos: Kavita, Kobo, Pasta simples, OPDS, Calibre-Web.
 - Kindle: livros de texto; MTP no Linux.
+- MOBI/AZW3 como originais (o usuário tem alguns): importação com metadados do cabeçalho (EXTH), capa, leitor (imagens e texto, sem DRM), CBZ para o Komga quando for quadrinho, envio direto ao Kindle.
 - OCR do ISBN na página de créditos.
 - Sugerir volumes faltantes de uma série.
 - Atualização automática do app; modo servidor/Docker.
