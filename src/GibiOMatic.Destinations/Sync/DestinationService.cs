@@ -43,6 +43,7 @@ public sealed class DestinationService : IAsyncDisposable
     private readonly ISettingsService _settings;
     private readonly ILogger<DestinationService> _logger;
     private readonly DestinationSync _sync;
+    private readonly PendingBookStore _pendingBooks;
     private readonly Channel<Func<CancellationToken, Task>> _jobs = Channel.CreateUnbounded<Func<CancellationToken, Task>>();
     private readonly CancellationTokenSource _stop = new();
     private readonly Dictionary<string, SyncResult> _lastResults = [];
@@ -58,6 +59,7 @@ public sealed class DestinationService : IAsyncDisposable
         _settings = settings;
         _logger = logger;
         _sync = new DestinationSync(library, index, logger);
+        _pendingBooks = new PendingBookStore(index);
     }
 
     public event EventHandler? Changed;
@@ -74,7 +76,18 @@ public sealed class DestinationService : IAsyncDisposable
 
     public IDestination? Find(string destinationId) => Destinations.FirstOrDefault(d => d.Config.Id == destinationId);
 
-    public void Start() => _worker = Task.Run(() => RunAsync(_stop.Token), CancellationToken.None);
+    /// <summary>Starts the worker; books changed in an earlier session and not updated yet go first.</summary>
+    public void Start()
+    {
+        Enqueue(async ct =>
+        {
+            foreach (var bookId in await _pendingBooks.GetAsync(ct))
+            {
+                await UpdateBookAsync(bookId, ct);
+            }
+        });
+        _worker = Task.Run(() => RunAsync(_stop.Token), CancellationToken.None);
+    }
 
     public async Task<SyncPlan> PlanAsync(string destinationId, CancellationToken ct = default) =>
         await _sync.PlanAsync(Find(destinationId) ?? throw new InvalidOperationException($"Unknown destination {destinationId}."), ct);
@@ -93,12 +106,43 @@ public sealed class DestinationService : IAsyncDisposable
     });
 
     /// <summary>A book was imported, approved or edited: automatic destinations update its copy.</summary>
-    public void OnBookChanged(string bookId) => Enqueue(async ct =>
+    public void OnBookChanged(string bookId)
     {
+        // Recorded right away: the job may wait in line behind long ones, and the app may close first.
+        var recorded = _pendingBooks.AddAsync(bookId, CancellationToken.None);
+        Enqueue(async ct =>
+        {
+            try
+            {
+                await recorded;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Could not record book {BookId} as pending", bookId);
+            }
+
+            await UpdateBookAsync(bookId, ct);
+        });
+    }
+
+    /// <summary>
+    /// Updates one book's copy in the automatic destinations. It stays pending while a destination
+    /// that should get it is unavailable (a disconnected drive), so the next start tries again.
+    /// </summary>
+    private async Task UpdateBookAsync(string bookId, CancellationToken ct)
+    {
+        var waiting = false;
+        var startedAt = DateTimeOffset.UtcNow;
         foreach (var destination in Destinations.Where(d => d.Config.When == DestinationTiming.Automatic))
         {
-            if (!await IsConfirmedAsync(destination.Config.Id, ct) || destination.GetStatus().Health != DestinationHealth.Ready)
+            if (!await IsConfirmedAsync(destination.Config.Id, ct))
             {
+                continue;
+            }
+
+            if (destination.GetStatus().Health != DestinationHealth.Ready)
+            {
+                waiting = true;
                 continue;
             }
 
@@ -108,7 +152,12 @@ public sealed class DestinationService : IAsyncDisposable
                 _lastResults[destination.Config.Id] = await _sync.ExecuteAsync(destination, plan, Progress(destination), ct);
             }
         }
-    });
+
+        if (!waiting)
+        {
+            await _pendingBooks.RemoveAsync(bookId, startedAt, ct);
+        }
+    }
 
     public async Task<bool> IsConfirmedAsync(string destinationId, CancellationToken ct = default) =>
         await _index.GetStateAsync(ConfirmedKey(destinationId), ct) == "true";

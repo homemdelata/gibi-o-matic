@@ -48,7 +48,18 @@ public sealed class Debouncer(IUiThread ui, TimeSpan delay, Func<Task> action) :
             }
         }
 
-        ui.Post(async () => await action());
+        ui.Post(async () =>
+        {
+            // A background refresh that fails (the library closing under it) must not take the app down.
+            try
+            {
+                await action();
+            }
+            catch (Exception ex)
+            {
+                Serilog.Log.Warning(ex, "Background refresh failed");
+            }
+        });
     }
 
     public void Dispose()

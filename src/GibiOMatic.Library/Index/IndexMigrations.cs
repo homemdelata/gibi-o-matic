@@ -99,6 +99,14 @@ internal static class IndexMigrations
         );
         CREATE INDEX ix_destination_log ON destination_log (destination_id, id);
         """,
+
+        // 6: books whose copies still have to be updated (survives closing the app)
+        """
+        CREATE TABLE destination_pending (
+            book_id  TEXT PRIMARY KEY,
+            since    TEXT NOT NULL
+        );
+        """,
     ];
 
     public static int LatestVersion => All.Count;

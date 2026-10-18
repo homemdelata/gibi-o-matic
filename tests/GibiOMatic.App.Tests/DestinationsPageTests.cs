@@ -142,6 +142,29 @@ public sealed class DestinationsPageTests : IDisposable
     }
 
     [Fact]
+    public async Task A_change_the_destination_missed_is_applied_when_the_library_opens_again()
+    {
+        await ImportSagaAsync();
+        var page = await CreateKomgaAsync();
+        page.Detail!.SyncCommand.Execute(null);
+        await Session.Destinations!.WaitUntilIdleAsync(Ct);
+
+        // The drive is away while the book is edited: the copy cannot follow yet.
+        var away = KomgaFolder + "-away";
+        Directory.Move(KomgaFolder, away);
+        var book = (await Session.Index!.GetBooksAsync(Ct)).Single(b => b.Metadata.Series?.Number == "1");
+        await _app.Get<BookEditor>().UpdateAsync(Session.Current!, book.Metadata.Id, m => m with { Date = new PartialDate(2011) }, Ct);
+        await Session.Destinations.WaitUntilIdleAsync(Ct);
+
+        Directory.Move(away, KomgaFolder);
+        await Session.OpenAsync(Session.Current!.RootPath, Ct);
+        await Session.Destinations!.WaitUntilIdleAsync(Ct);
+
+        Assert.True(File.Exists(Path.Combine(KomgaFolder, "Saga", "Saga v01 (2011).cbz")));
+        Assert.False(File.Exists(Path.Combine(KomgaFolder, "Saga", "Saga v01 (2012).cbz")));
+    }
+
+    [Fact]
     public async Task Chosen_books_are_added_from_the_library_selection()
     {
         await ImportSagaAsync();
