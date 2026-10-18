@@ -6,6 +6,9 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Dapper" />
+    <!-- Kindle over MTP (Windows Portable Devices). 1.10 targets plain net7.0, so this project stays
+         cross-platform; 2.0 only targets net*-windows. Used only when OperatingSystem.IsWindows(). -->
+    <PackageReference Include="MediaDevices" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
   <ItemGroup>

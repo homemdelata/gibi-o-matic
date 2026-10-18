@@ -38,9 +38,12 @@ public static partial class OutputNames
     public static string Komga(BookMetadata book, string? oneShotsFolder = DefaultOneShotsFolder) =>
         KomgaPath(book, oneShotsFolder) + ".cbz";
 
-    /// <summary>Kindle: <c>{Série} v{Número:00} ({Ano}).azw3</c>, or <c>{Título} ({Ano}).azw3</c>.</summary>
+    /// <summary>
+    /// Kindle: <c>{Série} v{Número:00} ({Ano}).mobi</c>, or <c>{Título} ({Ano}).mobi</c>. The KCC writes a
+    /// MOBI that is also an AZW3 and keeps the <c>.mobi</c> extension for compatibility.
+    /// </summary>
     public static string Kindle(BookMetadata book) =>
-        Render(book.OneShot == true || book.Series is null ? "{title} ({year})" : "{series} {num} ({year})", book, null) + ".azw3";
+        Render(book.OneShot == true || book.Series is null ? "{title} ({year})" : "{series} {num} ({year})", book, null) + ".mobi";
 
     public static string Render(string template, BookMetadata book, string? oneShotsFolder)
     {

@@ -20,8 +20,9 @@ Toda dependência precisa de licença compatível com MIT (sem AGPL/GPL). Atuali
 | SkiaSharp (+ NativeAssets.Linux) | 3.119.4 | capas e miniaturas; a mesma versão do Avalonia.Skia | MIT | em uso (F1) |
 | Avalonia.Controls.WebView | 12.1.0 | leitor: EPUB de texto, com o motor web do sistema (WebView2 no Windows, WebKitGTK no Linux); sem Chromium embutido | MIT | em uso (F3.5) |
 | Lucide (ícones do leitor: chevron-right, chevrons, book-open, maximize, list, columns) | — | ícones, como geometria em `Themes/Icons.axaml` | ISC | em uso (F3.5) |
-| MediaDevices | — | MTP no Windows | MIT (confirmar) | planejado (F4) |
-| KCC (Kindle Comic Converter) | — | conversão para Kindle (processo externo) | ISC | planejado (F4) |
+| MediaDevices | 1.10.0 | Kindle por USB (MTP / Windows Portable Devices); a 1.10 tem alvo `net7.0` comum (a 2.0 só tem `net*-windows`), então o projeto continua multiplataforma e o MTP só é usado no Windows | MIT (confirmado no pacote) | em uso (F4) |
+| KCC (Kindle Comic Converter), `kcc-c2e` | 12.0.0 | conversão para Kindle, chamado como **processo externo**. **Não é distribuído com o app**: o usuário instala, ou o app baixa o arquivo do release oficial no GitHub quando o usuário pede, conferindo o SHA-256 fixado no código. O executável do KCC inclui PyMuPDF (AGPL) e 7-Zip; como o app só o executa e não o redistribui, nada disso entra no app | ISC (KCC) | em uso (F4) |
+| KindleGen (do Kindle Previewer, Amazon) | — | usado pelo KCC para gerar MOBI; vem com o Kindle Previewer, que o usuário instala | licença da Amazon (não redistribuído) | dependência externa (F4) |
 
 As licenças das fontes (`OFL-*.txt`) acompanham os arquivos em `src/GibiOMatic.App/Assets/Fonts/`. As fontes são distribuídas sem modificação.
 

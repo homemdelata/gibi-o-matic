@@ -1,11 +1,12 @@
 using GibiOMatic.Core.Domain;
 using GibiOMatic.Core.Libraries;
 using GibiOMatic.Core.Settings;
+using GibiOMatic.Destinations.Sync;
 using GibiOMatic.Library.Index;
 
 namespace GibiOMatic.Destinations;
 
-/// <summary>A kind of destination (SPEC §9.1): Komga now, Kindle in F4.</summary>
+/// <summary>A kind of destination (SPEC §9.1): Komga, Kindle.</summary>
 public interface IDestinationType
 {
     string Id { get; }
@@ -49,6 +50,12 @@ public interface IDestination
     /// generator version). Copies whose hash differs are "desatualizadas".
     /// </summary>
     string ContentSignature(CatalogBook book);
+
+    /// <summary>
+    /// Whether the recorded copy is still there. A Kindle copy also counts once it was sent to the
+    /// device, after which its prepared file is deleted.
+    /// </summary>
+    bool HasCopy(OutputRecord record, string absolutePath) => File.Exists(absolutePath);
 
     /// <summary>Writes the copy of <paramref name="book"/> to <paramref name="target"/> (a temporary file).</summary>
     Task GenerateAsync(LibraryInfo library, CatalogBook book, string target, IProgress<double>? progress, CancellationToken ct);

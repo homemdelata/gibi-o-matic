@@ -3,6 +3,7 @@ using System.Threading.Channels;
 using GibiOMatic.Core.Domain;
 using GibiOMatic.Core.Libraries;
 using GibiOMatic.Core.Settings;
+using GibiOMatic.Destinations.Kindle;
 using GibiOMatic.Library;
 using GibiOMatic.Library.Index;
 using Microsoft.Extensions.Logging;
@@ -70,7 +71,11 @@ public sealed class DestinationService : IAsyncDisposable
         _logger = logger;
         _sync = new DestinationSync(library, index, logger);
         _pendingBooks = new PendingBookStore(index);
+        Kindle = new KindleSender(index, logger);
     }
+
+    /// <summary>Sending prepared books to a connected Kindle, and the Kindle manager's deletions.</summary>
+    public KindleSender Kindle { get; }
 
     public event EventHandler? Changed;
 
@@ -226,6 +231,22 @@ public sealed class DestinationService : IAsyncDisposable
             {
                 await _sync.NotifyServerAsync(destination, ct);
             }
+        }
+    }
+
+    /// <summary>
+    /// A destination that needs no first confirmed sync: a Kindle only prepares copies in a local
+    /// folder, of books the user picked one by one, so it starts preparing at once.
+    /// </summary>
+    public Task MarkConfirmedAsync(string destinationId, CancellationToken ct = default) =>
+        _index.SetStateAsync(ConfirmedKey(destinationId), "true", ct);
+
+    /// <summary>Prepares (again) every book of a destination's list: after the KCC was installed, or to retry failures.</summary>
+    public void Refresh(string destinationId)
+    {
+        foreach (var bookId in Find(destinationId)?.Config.ChosenBookIds ?? [])
+        {
+            OnBookChanged(bookId);
         }
     }
 

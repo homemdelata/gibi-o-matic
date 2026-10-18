@@ -12,6 +12,12 @@ public sealed record AppPaths(string ConfigDirectory, string DataDirectory)
     public string LogsDirectory => Path.Combine(DataDirectory, "logs");
     public string ThumbnailsDirectory => Path.Combine(DataDirectory, "thumbs");
 
+    /// <summary>External tools the app downloaded for the user (the KCC).</summary>
+    public string ToolsDirectory => Path.Combine(DataDirectory, "tools");
+
+    /// <summary>Copies prepared for Kindle destinations, waiting for the device (one folder per destination).</summary>
+    public string KindleDirectory => Path.Combine(DataDirectory, "kindle");
+
     /// <summary>
     /// Windows: %APPDATA%\GibiOMatic and %LOCALAPPDATA%\GibiOMatic.
     /// Linux: ~/.config/gibiomatic and ~/.local/share/gibiomatic.

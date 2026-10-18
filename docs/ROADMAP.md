@@ -8,9 +8,9 @@ Status: ⬜ não iniciada · 🟨 em andamento · ✅ concluída. Seções `§` 
 | F1 | Importação + Biblioteca | ✅ |
 | F2 | Metadados | ✅ |
 | F3 | Destino Komga | ✅ |
-| F3.5 | Leitor | ✅ (falta o teste do usuário) |
-| F3.6 | Universos | ✅ (falta o teste do usuário) |
-| F4 | Destino Kindle | ⬜ |
+| F3.5 | Leitor | ✅ |
+| F3.6 | Universos | ✅ |
+| F4 | Destino Kindle | 🔄 |
 | F5 | Entrada automática | ⬜ |
 | F6 | Polimento e distribuição | ⬜ |
 

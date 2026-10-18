@@ -117,7 +117,7 @@ public sealed class DestinationSync(LibraryInfo library, LibraryIndex index, ILo
                 actions.Add(new SyncAction(SyncActionKind.Create, book.Metadata.Id, book.Metadata.Title, null, path, hash));
             }
             else if (current.ContentHash != hash || !string.Equals(current.Path, path, StringComparison.Ordinal)
-                     || !File.Exists(Absolute(destination, current.Path)))
+                     || !destination.HasCopy(current, Absolute(destination, current.Path)))
             {
                 actions.Add(new SyncAction(SyncActionKind.Update, book.Metadata.Id, book.Metadata.Title, current.Path, path, hash));
             }

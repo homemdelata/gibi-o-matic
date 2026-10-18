@@ -19,6 +19,12 @@ public enum DestinationLogKind
 
     /// <summary>End of a run; the message has "written/deleted/failed" counts.</summary>
     Finished,
+
+    /// <summary>Kindle: a prepared copy was copied to the device (path = file on the device).</summary>
+    Sent,
+
+    /// <summary>Kindle: the user deleted a file from the device in the app.</summary>
+    RemovedFromDevice,
 }
 
 public sealed record DestinationLogEntry(long Id, DateTimeOffset At, DestinationLogKind Kind, string? Title, string? Path, string? Message);
