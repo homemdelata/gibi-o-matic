@@ -29,6 +29,9 @@ public sealed class AppTestContext : IDisposable
 
     public FakeUrlOpener Urls { get; } = new();
 
+    /// <summary>Records the books opened in the reader instead of opening windows.</summary>
+    public FakeReaderLauncher Reader { get; } = new();
+
     /// <summary>Never calls the real APIs; answers what each test scripts.</summary>
     public FakeIdentifier Identifier { get; } = new();
 
@@ -46,6 +49,8 @@ public sealed class AppTestContext : IDisposable
             .AddSingleton<IUiThread>(new InlineUiThread())
             .AddSingleton<IBookIdentifier>(Identifier)
             .AddSingleton<IUrlOpener>(Urls)
+            .AddSingleton<IReaderLauncher>(Reader)
+            .AddSingleton<GibiOMatic.App.ViewModels.IReaderImages>(new FakeReaderImages())
             .BuildServiceProvider();
         // Automatic runs gather changes for 1.5 s in the app; tests do not wait that long.
         services.GetRequiredService<GibiOMatic.Destinations.Sync.DestinationServiceFactory>().GatherDelay = TimeSpan.FromMilliseconds(20);
@@ -140,4 +145,38 @@ public sealed class FakeUrlOpener : IUrlOpener
         Opened.Add(url);
         return Task.CompletedTask;
     }
+}
+
+public sealed class FakeReaderLauncher : IReaderLauncher
+{
+    public List<GibiOMatic.App.ViewModels.ReaderRequest> Opened { get; } = [];
+
+    public void Open(GibiOMatic.App.ViewModels.ReaderRequest request) => Opened.Add(request);
+}
+
+/// <summary>Pages as plain objects that only know their size (no Avalonia platform in tests).</summary>
+public sealed class FakeReaderImages : GibiOMatic.App.ViewModels.IReaderImages
+{
+    public Avalonia.Media.IImage Create(SkiaSharp.SKBitmap bitmap)
+    {
+        using (bitmap)
+        {
+            return new FakeImage(bitmap.Width, bitmap.Height, bitmap.GetPixel(bitmap.Width / 2, bitmap.Height / 2));
+        }
+    }
+}
+
+public sealed class FakeImage(int width, int height, SkiaSharp.SKColor center) : Avalonia.Media.IImage, IDisposable
+{
+    public Avalonia.Size Size { get; } = new(width, height);
+
+    public SkiaSharp.SKColor Center { get; } = center;
+
+    public bool Disposed { get; private set; }
+
+    public void Draw(Avalonia.Media.DrawingContext context, Avalonia.Rect sourceRect, Avalonia.Rect destRect)
+    {
+    }
+
+    public void Dispose() => Disposed = true;
 }

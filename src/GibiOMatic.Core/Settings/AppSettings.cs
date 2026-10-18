@@ -33,12 +33,38 @@ public sealed record AppSettings
     /// <summary>Komga, Kindle… (SPEC §9). Per machine.</summary>
     public IReadOnlyList<DestinationConfig> Destinations { get; init; } = [];
 
+    /// <summary>How the reader shows pages (F3.5).</summary>
+    public ReaderSettings Reader { get; init; } = new();
+
     public static IReadOnlyList<BookFormat> DefaultFormatPreference { get; } =
         [BookFormat.Cbz, BookFormat.Pdf, BookFormat.Epub, BookFormat.Cbr];
 
     /// <summary>Keys written by newer versions of the app, preserved on save.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? UnknownProperties { get; init; }
+}
+
+/// <summary>Reader preferences shared by all books; the reading direction is per book.</summary>
+public sealed record ReaderSettings
+{
+    public ReaderFit Fit { get; init; } = ReaderFit.Height;
+    public bool TwoPages { get; init; }
+    public bool ShowThumbnails { get; init; } = true;
+
+    /// <summary>Text size of text EPUBs, in percent.</summary>
+    public int TextScale { get; init; } = 100;
+}
+
+public enum ReaderFit
+{
+    /// <summary>The whole page fits in the window (default).</summary>
+    Height,
+
+    /// <summary>The page fills the width and scrolls vertically.</summary>
+    Width,
+
+    /// <summary>100%: one image pixel per screen pixel.</summary>
+    Original,
 }
 
 public enum AppTheme

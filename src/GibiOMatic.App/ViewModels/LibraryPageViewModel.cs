@@ -60,6 +60,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel
     private readonly ThumbnailCache _thumbnails;
     private readonly ICoverLoader _covers;
     private readonly IFilePicker _filePicker;
+    private readonly IReaderLauncher _reader;
     private readonly ISettingsService _settings;
     private readonly ILogger<LibraryPageViewModel> _logger;
     private readonly Debouncer _reload;
@@ -67,8 +68,9 @@ public sealed partial class LibraryPageViewModel : PageViewModel
     private double _viewportWidth;
 
     public LibraryPageViewModel(LibrarySession session, ThumbnailCache thumbnails, ICoverLoader covers, IFilePicker filePicker,
-        ISettingsService settings, IUiThread ui, ILogger<LibraryPageViewModel> logger)
+        ISettingsService settings, IUiThread ui, IReaderLauncher reader, ILogger<LibraryPageViewModel> logger)
     {
+        _reader = reader;
         _session = session;
         _thumbnails = thumbnails;
         _covers = covers;
@@ -532,7 +534,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel
         }
 
         card.IsSelected = true;
-        Selected = new BookDetailsViewModel(card, library, _covers);
+        Selected = new BookDetailsViewModel(card, library, _covers, file => _reader.Open(ReaderRequest.For(library, card.Book, file)));
         _ = LoadCopiesAsync(Selected);
     }
 

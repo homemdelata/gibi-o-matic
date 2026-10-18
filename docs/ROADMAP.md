@@ -8,7 +8,7 @@ Status: ⬜ não iniciada · 🟨 em andamento · ✅ concluída. Seções `§` 
 | F1 | Importação + Biblioteca | ✅ |
 | F2 | Metadados | ✅ |
 | F3 | Destino Komga | ✅ |
-| F3.5 | Leitor | 🟨 |
+| F3.5 | Leitor | ✅ (falta o teste do usuário) |
 | F4 | Destino Kindle | ⬜ |
 | F5 | Entrada automática | ⬜ |
 | F6 | Polimento e distribuição | ⬜ |
@@ -134,12 +134,12 @@ Ao terminar cada fase: build e testes verdes → atualizar este arquivo → comm
 
 Objetivo: abrir um livro dentro do app para conferir qual edição é (capa grande, páginas internas, créditos) antes de escolher o metadado. Não substitui o Komga nem o Kindle para ler.
 
-- [ ] Leitor de imagens próprio para CBZ, CBR, PDF e EPUB de quadrinhos (uma imagem por página): só a página atual e as vizinhas na memória, com renderização em segundo plano.
-- [ ] EPUB de texto no `Avalonia.Controls.WebView` (WebView2 no Windows, WebKitGTK no Linux), com sumário, capítulo anterior/próximo, tamanho da fonte e tema escuro.
-- [ ] Segurança:
+- [x] Leitor de imagens próprio para CBZ, CBR, PDF e EPUB de quadrinhos (uma imagem por página): só a página atual e as vizinhas na memória, com renderização em segundo plano.
+- [x] EPUB de texto no `Avalonia.Controls.WebView` (WebView2 no Windows, WebKitGTK no Linux), com sumário, capítulo anterior/próximo, tamanho da fonte e tema escuro.
+- [x] Segurança:
   - EPUB servido de dentro do arquivo, sem extrair para o disco, sem JavaScript, sem acesso à internet e sem navegar para fora do livro;
   - PDF renderizado pelo PDFium sem JavaScript/XFA, sem formulários e sem executar ações (links, arquivos anexos).
-- [ ] Recursos:
+- [x] Recursos:
   - navegação por setas, clique nas laterais, roda do mouse, Home/End e contador "12 / 148";
   - ajuste à altura (padrão), à largura e tamanho real;
   - zoom com Ctrl+roda e arrastar;
@@ -148,7 +148,7 @@ Objetivo: abrir um livro dentro do app para conferir qual edição é (capa gran
   - página dupla, com a capa sozinha;
   - leitura da direita para a esquerda;
   - lembrar a última página de cada livro (no índice, nunca no original).
-- [ ] "Abrir" no painel da Biblioteca, na Revisão (clique na capa) e nos candidatos.
+- [x] "Abrir" no painel da Biblioteca (capa, botão e cada arquivo) e na Revisão (capa e "Abrir livro"). O leitor abre numa janela própria, que pode ficar ao lado da Revisão enquanto os candidatos são comparados.
 
 **Pronto quando**: os quatro formatos abrem no leitor a partir da Biblioteca e da Revisão, e um livro reaberto volta à página em que estava.
 

@@ -107,6 +107,17 @@ internal static class IndexMigrations
             since    TEXT NOT NULL
         );
         """,
+
+        // 7: where each book was left in the reader (never written to the original)
+        """
+        CREATE TABLE reading_state (
+            book_id        TEXT PRIMARY KEY,
+            file           TEXT NOT NULL,
+            position       INTEGER NOT NULL,
+            right_to_left  INTEGER NOT NULL DEFAULT 0,
+            updated_at     TEXT NOT NULL
+        );
+        """,
     ];
 
     public static int LatestVersion => All.Count;

@@ -19,7 +19,7 @@ Gibi-o-matic é um app desktop para quem compra quadrinhos digitais (Humble Bund
 - Poder ser distribuído publicamente no futuro (licenças de dependências permissivas, chaves de API do próprio usuário, interface em pt-BR e inglês).
 
 ### 1.2 Fora do escopo (por enquanto)
-- Leitor de quadrinhos embutido (o Komga e o Kindle fazem isso).
+- Leitor completo de quadrinhos (o Komga e o Kindle fazem isso). Existe um leitor simples, só para conferir qual edição é um livro (F3.5, decisão do usuário de 2026-10-18): páginas, zoom, miniaturas e EPUB de texto, sem anotações nem sincronização de progresso.
 - Loja, download automático de compras, remoção de DRM.
 - Livros de texto "reflow" como foco. Eles podem ser guardados no arquivo e enviados a destinos que os aceitem (seção 9.1), mas sem conversões especiais na primeira versão.
 - Modo servidor/web.

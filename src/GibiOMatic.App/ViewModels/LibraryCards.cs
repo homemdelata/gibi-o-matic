@@ -247,14 +247,17 @@ public sealed record CheckRow(string Field, string Value, CheckStatus Status)
     };
 }
 
-public sealed record FileRow(string Format, string Label, string Size, string Name, string? DownloadedAs);
+public sealed record FileRow(string Format, string Label, string Size, string Name, string? DownloadedAs, IRelayCommand Open);
 
 /// <summary>The detail panel of the selected book.</summary>
 public sealed partial class BookDetailsViewModel : ViewModelBase
 {
-    public BookDetailsViewModel(BookCardViewModel card, LibraryInfo library, ICoverLoader covers)
+    private readonly Action<BookFile>? _open;
+
+    public BookDetailsViewModel(BookCardViewModel card, LibraryInfo library, ICoverLoader covers, Action<BookFile>? open = null)
     {
         Card = card;
+        _open = open;
         var m = card.Book.Metadata;
         var report = card.Report;
 
@@ -279,7 +282,8 @@ public sealed partial class BookDetailsViewModel : ViewModelBase
             f.Role == FileRole.Original ? Strings.Details_FileOriginal : Strings.Details_FileExtra,
             QualityText.SizeOf(f.Bytes),
             f.Name,
-            f.DownloadedAs)).ToList();
+            f.DownloadedAs,
+            new RelayCommand(() => _open?.Invoke(f)))).ToList();
 
         ScoreLine = string.Format(CultureInfo.CurrentCulture, Strings.Details_Score, report.Score, QualityText.BadgeOf(report.Band));
         FolderPath = Path.Combine(library.RootPath, card.Book.Folder);
@@ -288,6 +292,16 @@ public sealed partial class BookDetailsViewModel : ViewModelBase
 
     public BookCardViewModel Card { get; }
     public string Title => Card.Title;
+
+    /// <summary>Opens the main file in the reader.</summary>
+    [RelayCommand]
+    private void Open()
+    {
+        if (Card.Book.MainFile is { } file)
+        {
+            _open?.Invoke(file);
+        }
+    }
     public string CreditsLine { get; }
     public IReadOnlyList<CheckRow> Checks { get; }
     public IReadOnlyList<FileRow> Files { get; }

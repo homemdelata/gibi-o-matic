@@ -18,6 +18,8 @@ Toda dependência precisa de licença compatível com MIT (sem AGPL/GPL). Atuali
 | PDFium (`bblanchon.PDFium.Win32` e `.Linux`) | 157.0.8100 | renderizar páginas do PDF (capa, CBZ), Info do PDF, extrair o JPEG original das páginas; chamado por P/Invoke próprio | Apache-2.0 (binários); PDFium: BSD-3-Clause | em uso (F1) |
 | SharpCompress | 1.0.0 | ler CBZ e CBR (RAR) | MIT (a descompressão de RAR deriva do unrar, cuja licença só proíbe recriar o compressor RAR) | em uso (F1) |
 | SkiaSharp (+ NativeAssets.Linux) | 3.119.4 | capas e miniaturas; a mesma versão do Avalonia.Skia | MIT | em uso (F1) |
+| Avalonia.Controls.WebView | 12.1.0 | leitor: EPUB de texto, com o motor web do sistema (WebView2 no Windows, WebKitGTK no Linux); sem Chromium embutido | MIT | em uso (F3.5) |
+| Lucide (ícones do leitor: chevron-right, chevrons, book-open, maximize, list, columns) | — | ícones, como geometria em `Themes/Icons.axaml` | ISC | em uso (F3.5) |
 | MediaDevices | — | MTP no Windows | MIT (confirmar) | planejado (F4) |
 | KCC (Kindle Comic Converter) | — | conversão para Kindle (processo externo) | ISC | planejado (F4) |
 

@@ -304,7 +304,6 @@
   <data name="Source_GoogleBooksHelp" xml:space="preserve"><value>By ISBN. Without a key it often refuses requests; off by default.</value></data>
   <data name="Source_OpenLibraryHelp" xml:space="preserve"><value>Lookup by ISBN. No key.</value></data>
   <data name="Review_NoCandidateHelp" xml:space="preserve"><value>No source found this book. Try searching with other words (the title as printed on the cover) or edit it by hand.</value></data>
-  <data name="Review_YourCover" xml:space="preserve"><value>Your file's cover</value></data>
   <data name="Review_Searching" xml:space="preserve"><value>Searching “{0}”…</value></data>
   <data name="Review_SearchingSources" xml:space="preserve"><value>Looking this book up in the sources…</value></data>
   <data name="Review_SearchingHelp" xml:space="preserve"><value>It can take a few seconds: ComicVine requests are spaced to respect its limit.</value></data>
@@ -454,4 +453,34 @@
   <data name="Sync_Queued" xml:space="preserve"><value> · {0} more waiting</value></data>
   <data name="Sync_FileProgress" xml:space="preserve"><value>{0:P0} of this book</value></data>
   <data name="Sidebar_ProgressQueued" xml:space="preserve"><value>{0} of {1} · +{2}</value></data>
+  <data name="Reader_WindowTitle" xml:space="preserve"><value>{0} — Reader</value></data>
+  <data name="Reader_Loading" xml:space="preserve"><value>Opening…</value></data>
+  <data name="Reader_CannotOpen" xml:space="preserve"><value>The file could not be opened: {0}</value></data>
+  <data name="Reader_PageFailed" xml:space="preserve"><value>Page {0} could not be shown: {1}</value></data>
+  <data name="Reader_PageOf" xml:space="preserve"><value>{0} / {1}</value></data>
+  <data name="Reader_PagesOf" xml:space="preserve"><value>{0}–{1} / {2}</value></data>
+  <data name="Reader_ChapterN" xml:space="preserve"><value>Chapter {0}</value></data>
+  <data name="Reader_ChapterOf" xml:space="preserve"><value>Chapter {0} of {1}</value></data>
+  <data name="Reader_First" xml:space="preserve"><value>First page (Home)</value></data>
+  <data name="Reader_Last" xml:space="preserve"><value>Last page (End)</value></data>
+  <data name="Reader_Previous" xml:space="preserve"><value>Previous</value></data>
+  <data name="Reader_Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Reader_FitHeight" xml:space="preserve"><value>Fit height (H)</value></data>
+  <data name="Reader_FitWidth" xml:space="preserve"><value>Fit width (W)</value></data>
+  <data name="Reader_FitOriginal" xml:space="preserve"><value>Actual size (O)</value></data>
+  <data name="Reader_TwoPages" xml:space="preserve"><value>Two pages (D)</value></data>
+  <data name="Reader_RightToLeft" xml:space="preserve"><value>Read right to left, like manga (R)</value></data>
+  <data name="Reader_Thumbnails" xml:space="preserve"><value>Thumbnails (T)</value></data>
+  <data name="Reader_FullScreen" xml:space="preserve"><value>Full screen (F11; Esc exits)</value></data>
+  <data name="Reader_Help" xml:space="preserve"><value>Arrows or click the sides to turn · Ctrl+wheel to zoom · drag to move · double click to fit again</value></data>
+  <data name="Reader_PreviousChapter" xml:space="preserve"><value>Previous chapter</value></data>
+  <data name="Reader_NextChapter" xml:space="preserve"><value>Next chapter</value></data>
+  <data name="Reader_TextSmaller" xml:space="preserve"><value>Smaller text</value></data>
+  <data name="Reader_TextBigger" xml:space="preserve"><value>Bigger text</value></data>
+  <data name="Reader_Contents" xml:space="preserve"><value>Contents</value></data>
+  <data name="Reader_WebViewMissing" xml:space="preserve"><value>Text EPUBs need WebView2 (Windows) or WebKitGTK (Linux) on the system. {0}</value></data>
+  <data name="Reader_Open" xml:space="preserve"><value>Open</value></data>
+  <data name="Reader_OpenTip" xml:space="preserve"><value>Open in the reader to see the pages</value></data>
+  <data name="Reader_OpenFile" xml:space="preserve"><value>Open this file in the reader</value></data>
+  <data name="Review_OpenBook" xml:space="preserve"><value>Open book</value></data>
 </root>

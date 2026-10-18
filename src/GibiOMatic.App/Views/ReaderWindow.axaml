@@ -1,0 +1,191 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:GibiOMatic.App.ViewModels"
+        xmlns:c="using:GibiOMatic.App.Controls"
+        xmlns:s="using:GibiOMatic.Core.Settings"
+        xmlns:r="using:GibiOMatic.App.Resources"
+        x:Class="GibiOMatic.App.Views.ReaderWindow"
+        x:DataType="vm:ReaderViewModel"
+        Title="{Binding WindowTitle}"
+        Icon="/Assets/gibiomatic.ico"
+        Width="1100" Height="900" MinWidth="640" MinHeight="480"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource BgBrush}">
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Left" Command="{Binding GoLeftCommand}" />
+    <KeyBinding Gesture="Right" Command="{Binding GoRightCommand}" />
+    <KeyBinding Gesture="PageDown" Command="{Binding NextCommand}" />
+    <KeyBinding Gesture="Space" Command="{Binding NextCommand}" />
+    <KeyBinding Gesture="PageUp" Command="{Binding PreviousCommand}" />
+    <KeyBinding Gesture="Shift+Space" Command="{Binding PreviousCommand}" />
+    <KeyBinding Gesture="Home" Command="{Binding FirstCommand}" />
+    <KeyBinding Gesture="End" Command="{Binding LastCommand}" />
+    <KeyBinding Gesture="F11" Command="{Binding ToggleFullScreenCommand}" />
+    <KeyBinding Gesture="Escape" Command="{Binding EscapeCommand}" />
+    <KeyBinding Gesture="D" Command="{Binding ToggleTwoPagesCommand}" />
+    <KeyBinding Gesture="R" Command="{Binding ToggleRightToLeftCommand}" />
+    <KeyBinding Gesture="T" Command="{Binding ToggleThumbnailsCommand}" />
+    <KeyBinding Gesture="H" Command="{Binding SetFitCommand}" CommandParameter="{x:Static s:ReaderFit.Height}" />
+    <KeyBinding Gesture="W" Command="{Binding SetFitCommand}" CommandParameter="{x:Static s:ReaderFit.Width}" />
+    <KeyBinding Gesture="O" Command="{Binding SetFitCommand}" CommandParameter="{x:Static s:ReaderFit.Original}" />
+  </Window.KeyBindings>
+
+  <Grid RowDefinitions="Auto,*,Auto">
+    <!-- Toolbar -->
+    <Border Grid.Row="0" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1"
+            Padding="12,6" IsVisible="{Binding ShowToolbar}" ZIndex="1">
+      <Grid ColumnDefinitions="*,Auto,*">
+        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <c:StrokeIcon Data="{StaticResource Icon.BookOpen}" Width="18" Height="18" Foreground="{DynamicResource AccentBrush}" />
+          <TextBlock FontWeight="SemiBold" Text="{Binding Title}" TextTrimming="CharacterEllipsis" MaxWidth="360" VerticalAlignment="Center" />
+          <TextBlock Classes="mono muted" FontSize="12" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" MaxWidth="240"
+                     VerticalAlignment="Center" />
+        </StackPanel>
+
+        <!-- Comics and PDFs: page turning and counter -->
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2" IsVisible="{Binding IsPaged}">
+          <Button Classes="tool" Command="{Binding FirstCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_First}">
+            <c:StrokeIcon Data="{StaticResource Icon.ChevronsLeft}" Width="18" Height="18" />
+          </Button>
+          <Button Classes="tool" Command="{Binding GoLeftCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_Previous}">
+            <c:StrokeIcon Data="{StaticResource Icon.ChevronLeft}" Width="18" Height="18" />
+          </Button>
+          <TextBlock Classes="mono" FontSize="13" MinWidth="96" TextAlignment="Center" VerticalAlignment="Center" Text="{Binding PageText}" />
+          <Button Classes="tool" Command="{Binding GoRightCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_Next}">
+            <c:StrokeIcon Data="{StaticResource Icon.ChevronRight}" Width="18" Height="18" />
+          </Button>
+          <Button Classes="tool" Command="{Binding LastCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_Last}">
+            <c:StrokeIcon Data="{StaticResource Icon.ChevronsRight}" Width="18" Height="18" />
+          </Button>
+        </StackPanel>
+
+        <!-- Text EPUBs: chapters and text size -->
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2" IsVisible="{Binding IsText}">
+          <Button Classes="tool" Command="{Binding PreviousChapterCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_PreviousChapter}">
+            <c:StrokeIcon Data="{StaticResource Icon.ChevronLeft}" Width="18" Height="18" />
+          </Button>
+          <TextBlock Classes="mono" FontSize="13" MinWidth="140" TextAlignment="Center" VerticalAlignment="Center" Text="{Binding ChapterText}" />
+          <Button Classes="tool" Command="{Binding NextChapterCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_NextChapter}">
+            <c:StrokeIcon Data="{StaticResource Icon.ChevronRight}" Width="18" Height="18" />
+          </Button>
+        </StackPanel>
+
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2" HorizontalAlignment="Right">
+          <StackPanel Orientation="Horizontal" Spacing="2" IsVisible="{Binding IsPaged}">
+            <Button Classes="tool" Classes.on="{Binding IsFitHeight}" Command="{Binding SetFitCommand}" CommandParameter="{x:Static s:ReaderFit.Height}"
+                    ToolTip.Tip="{x:Static r:Strings.Reader_FitHeight}">
+              <c:StrokeIcon Data="{StaticResource Icon.FitHeight}" Width="18" Height="18" />
+            </Button>
+            <Button Classes="tool" Classes.on="{Binding IsFitWidth}" Command="{Binding SetFitCommand}" CommandParameter="{x:Static s:ReaderFit.Width}"
+                    ToolTip.Tip="{x:Static r:Strings.Reader_FitWidth}">
+              <c:StrokeIcon Data="{StaticResource Icon.FitWidth}" Width="18" Height="18" />
+            </Button>
+            <Button Classes="tool" Classes.on="{Binding IsFitOriginal}" Command="{Binding SetFitCommand}" CommandParameter="{x:Static s:ReaderFit.Original}"
+                    ToolTip.Tip="{x:Static r:Strings.Reader_FitOriginal}">
+              <c:StrokeIcon Data="{StaticResource Icon.ActualSize}" Width="18" Height="18" />
+            </Button>
+            <Border Width="1" Height="20" Margin="6,0" Background="{DynamicResource BorderStrongBrush}" />
+            <Button Classes="tool" Classes.on="{Binding TwoPages}" Command="{Binding ToggleTwoPagesCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_TwoPages}">
+              <c:StrokeIcon Data="{StaticResource Icon.TwoPages}" Width="18" Height="18" />
+            </Button>
+            <Button Classes="tool" Classes.on="{Binding RightToLeft}" Command="{Binding ToggleRightToLeftCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_RightToLeft}">
+              <c:StrokeIcon Data="{StaticResource Icon.RightToLeft}" Width="18" Height="18" />
+            </Button>
+            <Button Classes="tool" Classes.on="{Binding ShowThumbnails}" Command="{Binding ToggleThumbnailsCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_Thumbnails}">
+              <c:StrokeIcon Data="{StaticResource Icon.Thumbnails}" Width="18" Height="18" />
+            </Button>
+          </StackPanel>
+          <StackPanel Orientation="Horizontal" Spacing="2" IsVisible="{Binding IsText}">
+            <Button Classes="tool" Command="{Binding TextSmallerCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_TextSmaller}">
+              <TextBlock Text="A−" FontSize="13" FontWeight="SemiBold" />
+            </Button>
+            <TextBlock Classes="mono muted" FontSize="12" MinWidth="44" TextAlignment="Center" VerticalAlignment="Center" Text="{Binding TextScaleText}" />
+            <Button Classes="tool" Command="{Binding TextBiggerCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_TextBigger}">
+              <TextBlock Text="A+" FontSize="15" FontWeight="SemiBold" />
+            </Button>
+          </StackPanel>
+          <Border Width="1" Height="20" Margin="6,0" Background="{DynamicResource BorderStrongBrush}" />
+          <Button Classes="tool" Classes.on="{Binding IsFullScreen}" Command="{Binding ToggleFullScreenCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_FullScreen}">
+            <c:StrokeIcon Data="{StaticResource Icon.Maximize}" Width="18" Height="18" />
+          </Button>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- Pages -->
+    <c:PageSpreadView x:Name="Pages" Grid.Row="1" IsVisible="{Binding IsPaged}"
+                      LeftImage="{Binding LeftImage}" RightImage="{Binding RightImage}"
+                      LeftSize="{Binding LeftSize}" RightSize="{Binding RightSize}"
+                      Fit="{Binding Fit}" PageTurn="{Binding PageTurn}"
+                      NeededHeight="{Binding NeededHeight, Mode=OneWayToSource}"
+                      NextCommand="{Binding NextCommand}" PreviousCommand="{Binding PreviousCommand}"
+                      LeftCommand="{Binding GoLeftCommand}" RightCommand="{Binding GoRightCommand}"
+                      ToolTip.Tip="{x:Static r:Strings.Reader_Help}" ToolTip.ShowDelay="2500" />
+
+    <!-- Text EPUB: contents on the left, the chapter in a web view -->
+    <Grid Grid.Row="1" ColumnDefinitions="260,*" IsVisible="{Binding IsText}">
+      <Border Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Classes="section-label" Margin="16,14,16,8" Text="{x:Static r:Strings.Reader_Contents}" />
+          <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding Toc}" Margin="6,0,6,12">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:TocItemViewModel">
+                  <Button Classes="toc" Classes.current="{Binding IsCurrent}" Command="{Binding OpenCommand}" Padding="{Binding Indent}">
+                    <TextBlock Text="{Binding Title}" TextWrapping="Wrap" FontSize="13" />
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </DockPanel>
+      </Border>
+      <Panel Grid.Column="1" x:Name="WebHost" />
+    </Grid>
+
+    <!-- Thumbnails -->
+    <Border Grid.Row="2" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0"
+            IsVisible="{Binding ShowStrip}" ZIndex="1">
+      <ListBox x:Name="Strip" ItemsSource="{Binding Thumbnails}" Height="196" Background="Transparent"
+               ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+        <ListBox.ItemsPanel>
+          <ItemsPanelTemplate>
+            <VirtualizingStackPanel Orientation="Horizontal" />
+          </ItemsPanelTemplate>
+        </ListBox.ItemsPanel>
+        <ListBox.Styles>
+          <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="2,8" />
+            <Setter Property="Background" Value="Transparent" />
+          </Style>
+          <Style Selector="ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter, ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent" />
+          </Style>
+        </ListBox.Styles>
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:ThumbnailViewModel">
+            <Button Classes="thumb" Classes.current="{Binding IsCurrent}"
+                    Command="{Binding $parent[Window].((vm:ReaderViewModel)DataContext).GoToPageCommand}" CommandParameter="{Binding Index}">
+              <StackPanel Spacing="4">
+                <Border Width="100" Height="150" Background="{DynamicResource CardBrush}" CornerRadius="3" ClipToBounds="True">
+                  <Image Source="{Binding Image}" Stretch="Uniform" />
+                </Border>
+                <TextBlock Classes="mono muted" FontSize="11" HorizontalAlignment="Center" Text="{Binding Label}" />
+              </StackPanel>
+            </Button>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </Border>
+
+    <!-- Opening / errors -->
+    <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12" IsVisible="{Binding IsLoading}">
+      <ProgressBar IsIndeterminate="True" Width="200" Height="4" Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+      <TextBlock Classes="muted" HorizontalAlignment="Center" Text="{x:Static r:Strings.Reader_Loading}" />
+    </StackPanel>
+    <Border Grid.Row="1" Classes="card" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="560" Padding="20,16"
+            IsVisible="{Binding ErrorText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+      <TextBlock Text="{Binding ErrorText}" TextWrapping="Wrap" Foreground="{DynamicResource WarnTextBrush}" />
+    </Border>
+  </Grid>
+</Window>

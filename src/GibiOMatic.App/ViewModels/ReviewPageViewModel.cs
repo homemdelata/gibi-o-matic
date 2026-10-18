@@ -163,10 +163,12 @@ public sealed partial class ReviewPageViewModel : PageViewModel
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
     private string? _pendingBookId;
     private CatalogBook? _book;
+    private readonly IReaderLauncher _readerWindows;
 
     public ReviewPageViewModel(LibrarySession session, ThumbnailCache thumbnails, ICoverLoader covers, CoverImageCache remoteCovers,
-        IBookFileReader reader, IUrlOpener urls, IUiThread ui, ILogger<ReviewPageViewModel> logger)
+        IBookFileReader reader, IUrlOpener urls, IUiThread ui, IReaderLauncher readerWindows, ILogger<ReviewPageViewModel> logger)
     {
+        _readerWindows = readerWindows;
         _remoteCovers = remoteCovers;
         _reader = reader;
         _urls = urls;
@@ -193,6 +195,16 @@ public sealed partial class ReviewPageViewModel : PageViewModel
     public partial ReviewItemViewModel? Selected { get; private set; }
 
     public bool HasSelection => Selected is not null;
+
+    /// <summary>Opens the book under review in the reader, to see which edition it is.</summary>
+    [RelayCommand]
+    private void OpenBook()
+    {
+        if (_book is { MainFile: { } file } book && _session.Current is { } library)
+        {
+            _readerWindows.Open(ReaderRequest.For(library, book, file));
+        }
+    }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsEmpty))]

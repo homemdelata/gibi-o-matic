@@ -73,8 +73,9 @@
     <DockPanel Grid.Column="1" Margin="{StaticResource PagePadding}" IsVisible="{Binding HasSelection}">
       <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,18">
         <!-- The book's own cover, to compare with the candidates' -->
-        <Border Width="64" Height="96" CornerRadius="6" ClipToBounds="True" Margin="0,0,16,0" VerticalAlignment="Top"
-                ToolTip.Tip="{x:Static r:Strings.Review_YourCover}">
+        <Button Classes="cover-card" Margin="0,0,16,0" VerticalAlignment="Top" Command="{Binding OpenBookCommand}"
+                ToolTip.Tip="{x:Static r:Strings.Reader_OpenTip}" AutomationProperties.Name="{x:Static r:Strings.Review_OpenBook}">
+        <Border Width="64" Height="96" CornerRadius="6" ClipToBounds="True">
           <Border.Background>
             <SolidColorBrush Color="{Binding Selected.Card.PlaceholderColor, FallbackValue=#262931}" />
           </Border.Background>
@@ -83,12 +84,21 @@
             <Image Source="{Binding Selected.Card.Thumbnail, FallbackValue={x:Null}}" Stretch="UniformToFill" />
           </Panel>
         </Border>
+        </Button>
         <StackPanel Grid.Column="1" Spacing="6" Margin="0,0,16,0">
           <SelectableTextBlock Classes="mono" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" Text="{Binding FolderPath}"
                                TextWrapping="Wrap" />
           <TextBlock FontFamily="{StaticResource FontDisplay}" FontSize="26" FontWeight="Bold" TextWrapping="Wrap"
                      Text="{Binding Selected.Title, FallbackValue={x:Null}}" />
-          <TextBlock Classes="mono muted" FontSize="12.5" Text="{Binding FileInfoText}" />
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <TextBlock Classes="mono muted" FontSize="12.5" VerticalAlignment="Center" Text="{Binding FileInfoText}" />
+            <Button Classes="link" Command="{Binding OpenBookCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_OpenTip}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <c:StrokeIcon Data="{StaticResource Icon.BookOpen}" Width="15" Height="15" />
+                <TextBlock Text="{x:Static r:Strings.Review_OpenBook}" />
+              </StackPanel>
+            </Button>
+          </StackPanel>
         </StackPanel>
         <Border Grid.Column="2" Classes="pill" Padding="14,8" VerticalAlignment="Top"
                 Background="{Binding ConfidenceLevel, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Background}">

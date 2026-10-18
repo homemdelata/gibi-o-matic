@@ -304,7 +304,6 @@
   <data name="Source_GoogleBooksHelp" xml:space="preserve"><value>Por ISBN. Sem chave, recusa consultas com frequência; desligada por padrão.</value></data>
   <data name="Source_OpenLibraryHelp" xml:space="preserve"><value>Busca por ISBN. Sem chave.</value></data>
   <data name="Review_NoCandidateHelp" xml:space="preserve"><value>Nenhuma fonte encontrou este livro. Tente buscar com outras palavras (o título como está na capa) ou edite à mão.</value></data>
-  <data name="Review_YourCover" xml:space="preserve"><value>Capa do seu arquivo</value></data>
   <data name="Review_Searching" xml:space="preserve"><value>Buscando “{0}”…</value></data>
   <data name="Review_SearchingSources" xml:space="preserve"><value>Buscando este livro nas fontes…</value></data>
   <data name="Review_SearchingHelp" xml:space="preserve"><value>Pode levar alguns segundos: as consultas ao ComicVine são espaçadas para respeitar o limite dele.</value></data>
@@ -454,4 +453,34 @@
   <data name="Sync_Queued" xml:space="preserve"><value> · mais {0} na fila</value></data>
   <data name="Sync_FileProgress" xml:space="preserve"><value>{0:P0} deste livro</value></data>
   <data name="Sidebar_ProgressQueued" xml:space="preserve"><value>{0} de {1} · +{2}</value></data>
+  <data name="Reader_WindowTitle" xml:space="preserve"><value>{0} — Leitor</value></data>
+  <data name="Reader_Loading" xml:space="preserve"><value>Abrindo…</value></data>
+  <data name="Reader_CannotOpen" xml:space="preserve"><value>Não foi possível abrir o arquivo: {0}</value></data>
+  <data name="Reader_PageFailed" xml:space="preserve"><value>A página {0} não pôde ser mostrada: {1}</value></data>
+  <data name="Reader_PageOf" xml:space="preserve"><value>{0} / {1}</value></data>
+  <data name="Reader_PagesOf" xml:space="preserve"><value>{0}–{1} / {2}</value></data>
+  <data name="Reader_ChapterN" xml:space="preserve"><value>Capítulo {0}</value></data>
+  <data name="Reader_ChapterOf" xml:space="preserve"><value>Capítulo {0} de {1}</value></data>
+  <data name="Reader_First" xml:space="preserve"><value>Primeira página (Home)</value></data>
+  <data name="Reader_Last" xml:space="preserve"><value>Última página (End)</value></data>
+  <data name="Reader_Previous" xml:space="preserve"><value>Anterior</value></data>
+  <data name="Reader_Next" xml:space="preserve"><value>Próxima</value></data>
+  <data name="Reader_FitHeight" xml:space="preserve"><value>Ajustar à altura (H)</value></data>
+  <data name="Reader_FitWidth" xml:space="preserve"><value>Ajustar à largura (W)</value></data>
+  <data name="Reader_FitOriginal" xml:space="preserve"><value>Tamanho real (O)</value></data>
+  <data name="Reader_TwoPages" xml:space="preserve"><value>Página dupla (D)</value></data>
+  <data name="Reader_RightToLeft" xml:space="preserve"><value>Ler da direita para a esquerda, como mangá (R)</value></data>
+  <data name="Reader_Thumbnails" xml:space="preserve"><value>Miniaturas (T)</value></data>
+  <data name="Reader_FullScreen" xml:space="preserve"><value>Tela cheia (F11; Esc sai)</value></data>
+  <data name="Reader_Help" xml:space="preserve"><value>Setas ou clique nas laterais para virar · Ctrl+roda para zoom · arraste para mover · duplo clique volta ao tamanho</value></data>
+  <data name="Reader_PreviousChapter" xml:space="preserve"><value>Capítulo anterior</value></data>
+  <data name="Reader_NextChapter" xml:space="preserve"><value>Próximo capítulo</value></data>
+  <data name="Reader_TextSmaller" xml:space="preserve"><value>Diminuir o texto</value></data>
+  <data name="Reader_TextBigger" xml:space="preserve"><value>Aumentar o texto</value></data>
+  <data name="Reader_Contents" xml:space="preserve"><value>Sumário</value></data>
+  <data name="Reader_WebViewMissing" xml:space="preserve"><value>Para ler EPUB de texto, o sistema precisa do WebView2 (Windows) ou do WebKitGTK (Linux). {0}</value></data>
+  <data name="Reader_Open" xml:space="preserve"><value>Abrir</value></data>
+  <data name="Reader_OpenTip" xml:space="preserve"><value>Abrir no leitor para ver as páginas</value></data>
+  <data name="Reader_OpenFile" xml:space="preserve"><value>Abrir este arquivo no leitor</value></data>
+  <data name="Review_OpenBook" xml:space="preserve"><value>Abrir livro</value></data>
 </root>

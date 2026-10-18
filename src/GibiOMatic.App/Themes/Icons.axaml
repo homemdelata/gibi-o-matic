@@ -29,6 +29,20 @@
   <StreamGeometry x:Key="Icon.Close">M6,6 L18,18 M18,6 L6,18</StreamGeometry>
   <StreamGeometry x:Key="Icon.Check">M20,6 L9,17 L4,12</StreamGeometry>
 
+  <!-- Reader (Lucide, ISC license) -->
+  <StreamGeometry x:Key="Icon.ChevronRight">M9,18 L15,12 L9,6</StreamGeometry>
+  <StreamGeometry x:Key="Icon.ChevronsLeft">M11,17 L6,12 L11,7 M18,17 L13,12 L18,7</StreamGeometry>
+  <StreamGeometry x:Key="Icon.ChevronsRight">M13,17 L18,12 L13,7 M6,17 L11,12 L6,7</StreamGeometry>
+  <StreamGeometry x:Key="Icon.BookOpen">M2,3 H8 A4,4 0 0 1 12,7 V21 A3,3 0 0 0 9,18 H2 Z M22,3 H16 A4,4 0 0 0 12,7 V21 A3,3 0 0 1 15,18 H22 Z</StreamGeometry>
+  <StreamGeometry x:Key="Icon.FitHeight">M12,3 V21 M8,7 L12,3 L16,7 M8,17 L12,21 L16,17</StreamGeometry>
+  <StreamGeometry x:Key="Icon.FitWidth">M3,12 H21 M7,8 L3,12 L7,16 M17,8 L21,12 L17,16</StreamGeometry>
+  <StreamGeometry x:Key="Icon.ActualSize">M5,3 H19 A2,2 0 0 1 21,5 V19 A2,2 0 0 1 19,21 H5 A2,2 0 0 1 3,19 V5 A2,2 0 0 1 5,3 Z M8,9 L10,8 V16 M14,9 L16,8 V16</StreamGeometry>
+  <StreamGeometry x:Key="Icon.TwoPages">M3,5 A2,2 0 0 1 5,3 H11 V21 H5 A2,2 0 0 1 3,19 Z M13,3 H19 A2,2 0 0 1 21,5 V19 A2,2 0 0 1 19,21 H13 Z</StreamGeometry>
+  <StreamGeometry x:Key="Icon.RightToLeft">M21,7 H3 M7,3 L3,7 L7,11 M3,17 H21 M17,13 L21,17 L17,21</StreamGeometry>
+  <StreamGeometry x:Key="Icon.Thumbnails">M4,15 H8 A1,1 0 0 1 9,16 V20 A1,1 0 0 1 8,21 H4 A1,1 0 0 1 3,20 V16 A1,1 0 0 1 4,15 Z M10,15 H14 A1,1 0 0 1 15,16 V20 A1,1 0 0 1 14,21 H10 A1,1 0 0 1 9,20 Z M16,15 H20 A1,1 0 0 1 21,16 V20 A1,1 0 0 1 20,21 H16 A1,1 0 0 1 15,20 Z M5,3 H19 A2,2 0 0 1 21,5 V10 A2,2 0 0 1 19,12 H5 A2,2 0 0 1 3,10 V5 A2,2 0 0 1 5,3 Z</StreamGeometry>
+  <StreamGeometry x:Key="Icon.Maximize">M8,3 H5 A2,2 0 0 0 3,5 V8 M21,8 V5 A2,2 0 0 0 19,3 H16 M3,16 V19 A2,2 0 0 0 5,21 H8 M16,21 H19 A2,2 0 0 0 21,19 V16</StreamGeometry>
+  <StreamGeometry x:Key="Icon.Contents">M8,6 H21 M8,12 H21 M8,18 H21 M3,6 H3.01 M3,12 H3.01 M3,18 H3.01</StreamGeometry>
+
   <!-- Halftone texture of the placeholder covers ("gibi impresso"). -->
   <DrawingBrush x:Key="HalftoneBrush" TileMode="Tile" Stretch="None" SourceRect="0,0,7,7" DestinationRect="0,0,7,7">
     <DrawingBrush.Drawing>
