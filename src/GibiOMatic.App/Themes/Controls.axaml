@@ -274,6 +274,13 @@
     <Setter Property="HorizontalAlignment" Value="Right" />
     <Setter Property="VerticalAlignment" Value="Top" />
   </Style>
+  <!-- Series cards: how many books, in the accent color so it stands out from the quality badge -->
+  <Style Selector="Border.badge.count">
+    <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Padding" Value="9,5" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Bottom" />
+  </Style>
   <Style Selector="Border.format-chip">
     <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
     <Setter Property="CornerRadius" Value="5" />
