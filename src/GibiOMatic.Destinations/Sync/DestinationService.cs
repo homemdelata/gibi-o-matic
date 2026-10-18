@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Threading.Channels;
 using GibiOMatic.Core.Domain;
 using GibiOMatic.Core.Libraries;
@@ -28,12 +29,16 @@ public sealed record DestinationSummary(
     DateTimeOffset? LastWrite);
 
 /// <summary>Progress of the sync being run.</summary>
-public sealed record SyncProgress(string DestinationId, int Done, int Total, string Title);
+/// <param name="FileFraction">How far the current copy got (0–1).</param>
+/// <param name="Queued">Books changed during this run; the next run takes them.</param>
+public sealed record SyncProgress(string DestinationId, int Done, int Total, string Title, double FileFraction = 0, int Queued = 0);
 
 /// <summary>
 /// The destinations of one library. Batch syncs run only after the user saw the plan and
 /// confirmed it; once a destination had its first confirmed sync, automatic destinations follow
 /// each saved book on their own (decision of 2026-10-17). One job at a time, in the background.
+/// Changed books are taken together: one run for all that are waiting, and one server scan when
+/// nothing else waits.
 /// </summary>
 public sealed class DestinationService : IAsyncDisposable
 {
@@ -47,8 +52,13 @@ public sealed class DestinationService : IAsyncDisposable
     private readonly Channel<Func<CancellationToken, Task>> _jobs = Channel.CreateUnbounded<Func<CancellationToken, Task>>();
     private readonly CancellationTokenSource _stop = new();
     private readonly Dictionary<string, SyncResult> _lastResults = [];
+    /// <summary>Books changed since the current automatic run took its list.</summary>
+    private readonly ConcurrentDictionary<string, byte> _arrived = new();
+    /// <summary>Destinations that got copies and still have to ask their server to scan.</summary>
+    private readonly HashSet<string> _scanOwed = [];
     private Task _worker = Task.CompletedTask;
     private int _pending;
+    private int _automaticRunQueued;
 
     public DestinationService(LibraryInfo library, LibraryIndex index, IEnumerable<IDestinationType> types, ISettingsService settings,
         ILogger<DestinationService> logger)
@@ -82,15 +92,12 @@ public sealed class DestinationService : IAsyncDisposable
     /// <summary>Starts the worker; books changed in an earlier session and not updated yet go first.</summary>
     public void Start()
     {
-        Enqueue(async ct =>
-        {
-            foreach (var bookId in await _pendingBooks.GetAsync(ct))
-            {
-                await UpdateBookAsync(bookId, ct);
-            }
-        });
+        RequestAutomaticRun();
         _worker = Task.Run(() => RunAsync(_stop.Token), CancellationToken.None);
     }
+
+    /// <summary>Changes that come close together (a batch edit) wait this long to go in the same run.</summary>
+    public TimeSpan GatherDelay { get; init; } = TimeSpan.FromSeconds(1.5);
 
     public async Task<SyncPlan> PlanAsync(string destinationId, CancellationToken ct = default) =>
         await _sync.PlanAsync(Find(destinationId) ?? throw new InvalidOperationException($"Unknown destination {destinationId}."), ct);
@@ -106,37 +113,81 @@ public sealed class DestinationService : IAsyncDisposable
         var result = await _sync.ExecuteAsync(destination, plan, Progress(destination), ct);
         _lastResults[destination.Config.Id] = result;
         await _index.SetStateAsync(ConfirmedKey(destination.Config.Id), "true", ct);
+        if (result.Written + result.Deleted == 0 && _scanOwed.Contains(destination.Config.Id))
+        {
+            await _sync.NotifyServerAsync(destination, ct);
+        }
+
+        _scanOwed.Remove(destination.Config.Id);
     });
 
     /// <summary>A book was imported, approved or edited: automatic destinations update its copy.</summary>
     public void OnBookChanged(string bookId)
     {
-        // Recorded right away: the job may wait in line behind long ones, and the app may close first.
-        var recorded = _pendingBooks.AddAsync(bookId, CancellationToken.None);
-        Enqueue(async ct =>
+        _arrived[bookId] = 0;
+        if (Current is { } current)
         {
-            try
-            {
-                await recorded;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Could not record book {BookId} as pending", bookId);
-            }
+            // "3 de 10 · mais 2 na fila" while a run is going.
+            Current = current with { Queued = _arrived.Count };
+            ProgressChanged?.Invoke(this, Current);
+        }
 
-            await UpdateBookAsync(bookId, ct);
-        });
+        // Busy from now on, not only once the run is in line.
+        Interlocked.Increment(ref _pending);
+        _ = RecordAsync(bookId);
+    }
+
+    /// <summary>Recorded in the index first: the run may wait behind long ones, and the app may close before it.</summary>
+    private async Task RecordAsync(string bookId)
+    {
+        try
+        {
+            await _pendingBooks.AddAsync(bookId, CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            // The book is still in memory (_arrived): only a crash before its run would lose it.
+            _logger.LogError(ex, "Could not record book {BookId} as pending", bookId);
+        }
+
+        RequestAutomaticRun();
+        Interlocked.Decrement(ref _pending);
+    }
+
+    /// <summary>One automatic run in line at most: it takes every book waiting when it starts.</summary>
+    private void RequestAutomaticRun()
+    {
+        if (Interlocked.Exchange(ref _automaticRunQueued, 1) == 0)
+        {
+            Enqueue(RunAutomaticAsync);
+        }
     }
 
     /// <summary>
-    /// Updates one book's copy in the automatic destinations. It stays pending while a destination
-    /// that should get it is unavailable (a disconnected drive), so the next start tries again.
+    /// Updates the copies of every waiting book in the automatic destinations. A book stays pending
+    /// while a destination that should get it is unavailable (a disconnected drive), so the next
+    /// start tries again. The server is asked to scan once nothing else waits.
     /// </summary>
-    private async Task UpdateBookAsync(string bookId, CancellationToken ct)
+    private async Task RunAutomaticAsync(CancellationToken ct)
     {
-        var waiting = false;
+        await Task.Delay(GatherDelay, ct);
+        Volatile.Write(ref _automaticRunQueued, 0);
         var startedAt = DateTimeOffset.UtcNow;
-        foreach (var destination in Destinations.Where(d => d.Config.When == DestinationTiming.Automatic))
+        var arrived = _arrived.Keys.ToList();
+        foreach (var id in arrived)
+        {
+            _arrived.TryRemove(id, out _);
+        }
+
+        var bookIds = (await _pendingBooks.GetAsync(ct)).Concat(arrived).ToHashSet();
+        if (bookIds.Count == 0)
+        {
+            return;
+        }
+
+        var waiting = false;
+        var automatic = Destinations.Where(d => d.Config.When == DestinationTiming.Automatic).ToList();
+        foreach (var destination in automatic)
         {
             if (!await IsConfirmedAsync(destination.Config.Id, ct))
             {
@@ -149,16 +200,32 @@ public sealed class DestinationService : IAsyncDisposable
                 continue;
             }
 
-            var plan = await _sync.PlanAsync(destination, ct, bookId);
+            var plan = await _sync.PlanAsync(destination, ct, bookIds);
             if (!plan.IsEmpty)
             {
-                _lastResults[destination.Config.Id] = await _sync.ExecuteAsync(destination, plan, Progress(destination), ct);
+                var result = await _sync.ExecuteAsync(destination, plan, Progress(destination), ct, notifyServer: false);
+                _lastResults[destination.Config.Id] = result;
+                if (result.Written + result.Deleted > 0)
+                {
+                    _scanOwed.Add(destination.Config.Id);
+                }
             }
         }
 
         if (!waiting)
         {
-            await _pendingBooks.RemoveAsync(bookId, startedAt, ct);
+            foreach (var bookId in bookIds)
+            {
+                await _pendingBooks.RemoveAsync(bookId, startedAt, ct);
+            }
+        }
+
+        if (Volatile.Read(ref _automaticRunQueued) == 0)
+        {
+            foreach (var destination in automatic.Where(d => _scanOwed.Remove(d.Config.Id)))
+            {
+                await _sync.NotifyServerAsync(destination, ct);
+            }
         }
     }
 
@@ -221,10 +288,10 @@ public sealed class DestinationService : IAsyncDisposable
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
-    private IProgress<(int Done, int Total, string Title)> Progress(IDestination destination) =>
+    private IProgress<SyncStep> Progress(IDestination destination) =>
         new SyncProgressReporter(p =>
         {
-            Current = new SyncProgress(destination.Config.Id, p.Done, p.Total, p.Title);
+            Current = new SyncProgress(destination.Config.Id, p.Done, p.Total, p.Title, p.FileFraction, _arrived.Count);
             ProgressChanged?.Invoke(this, Current);
         });
 
@@ -275,9 +342,9 @@ public sealed class DestinationService : IAsyncDisposable
         _stop.Dispose();
     }
 
-    private sealed class SyncProgressReporter(Action<(int Done, int Total, string Title)> report) : IProgress<(int Done, int Total, string Title)>
+    private sealed class SyncProgressReporter(Action<SyncStep> report) : IProgress<SyncStep>
     {
-        public void Report((int Done, int Total, string Title) value) => report(value);
+        public void Report(SyncStep value) => report(value);
     }
 }
 
@@ -285,5 +352,9 @@ public sealed class DestinationService : IAsyncDisposable
 public sealed class DestinationServiceFactory(LibraryService libraries, IEnumerable<IDestinationType> types, ISettingsService settings,
     ILogger<DestinationService> logger)
 {
-    public DestinationService Create(LibraryInfo library) => new(library, libraries.GetIndex(library), types, settings, logger);
+    /// <summary>See <see cref="DestinationService.GatherDelay"/> (tests shorten it).</summary>
+    public TimeSpan GatherDelay { get; set; } = TimeSpan.FromSeconds(1.5);
+
+    public DestinationService Create(LibraryInfo library) =>
+        new(library, libraries.GetIndex(library), types, settings, logger) { GatherDelay = GatherDelay };
 }

@@ -205,7 +205,10 @@ public sealed class SyncTests : IAsyncLifetime
     {
         _library = await _libraries.CreateAsync(_temp.Combine("Arquivo"), Ct);
         await ConfigureAsync(c => c);
-        _service = new DestinationServiceFactory(_libraries, [_komga], _settings, NullLogger<DestinationService>.Instance).Create(_library);
+        _service = new DestinationServiceFactory(_libraries, [_komga], _settings, NullLogger<DestinationService>.Instance)
+        {
+            GatherDelay = TimeSpan.FromMilliseconds(20),
+        }.Create(_library);
         _service.Start();
     }
 
@@ -279,6 +282,41 @@ public sealed class SyncTests : IAsyncLifetime
         Assert.True(await _service.IsConfirmedAsync(DestinationId, Ct));
         Assert.True((await _service.PlanAsync(DestinationId, Ct)).IsEmpty);
         Assert.Empty(Directory.GetFiles(KomgaFolder, "*.tmp", SearchOption.AllDirectories));
+    }
+
+    [Fact]
+    public async Task Books_changed_together_go_in_one_run_with_progress_per_copy()
+    {
+        var first = await ImportAsync("saga1.cbz");
+        var second = await ImportAsync("saga2.cbz", p => SyntheticBooks.Cbz(p, pages: 3,
+            comicInfoXml: SyntheticBooks.ComicInfo(series: "Saga", number: "2", year: 2013, publisher: "Image Comics")));
+        await RunAsync();
+        var steps = new List<SyncProgress>();
+        _service.ProgressChanged += (_, p) =>
+        {
+            if (p is not null)
+            {
+                lock (steps)
+                {
+                    steps.Add(p);
+                }
+            }
+        };
+
+        foreach (var book in new[] { first, second })
+        {
+            await _editor.UpdateAsync(_library, book.Metadata.Id, m => m with { Publisher = "Image" }, Ct);
+        }
+
+        _service.OnBookChanged(first.Metadata.Id);
+        _service.OnBookChanged(second.Metadata.Id);
+        await _service.WaitUntilIdleAsync(Ct);
+
+        Assert.All(steps, s => Assert.Equal(2, s.Total));
+        Assert.Contains(steps, s => s.FileFraction is > 0 and < 1);
+        var history = await _service.HistoryAsync(DestinationId, ct: Ct);
+        Assert.Equal(2, history.Count(e => e.Kind == DestinationLogKind.Finished));
+        Assert.Equal(2, history.Count(e => e.Kind == DestinationLogKind.Updated));
     }
 
     [Fact]

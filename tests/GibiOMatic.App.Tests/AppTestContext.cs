@@ -37,8 +37,9 @@ public sealed class AppTestContext : IDisposable
     public T Get<T>() where T : notnull => _services.GetRequiredService<T>();
 
     /// <summary>A second "run" of the app on the same machine (same settings and index folders).</summary>
-    public ServiceProvider CreateServices() =>
-        new ServiceCollection()
+    public ServiceProvider CreateServices()
+    {
+        var services = new ServiceCollection()
             .AddGibiOMatic(Paths, new ConfigurationBuilder().Build())
             .AddSingleton<IFolderPicker>(Picker)
             .AddSingleton<IFilePicker>(FilePicker)
@@ -46,6 +47,10 @@ public sealed class AppTestContext : IDisposable
             .AddSingleton<IBookIdentifier>(Identifier)
             .AddSingleton<IUrlOpener>(Urls)
             .BuildServiceProvider();
+        // Automatic runs gather changes for 1.5 s in the app; tests do not wait that long.
+        services.GetRequiredService<GibiOMatic.Destinations.Sync.DestinationServiceFactory>().GatherDelay = TimeSpan.FromMilliseconds(20);
+        return services;
+    }
 
     public void Dispose()
     {

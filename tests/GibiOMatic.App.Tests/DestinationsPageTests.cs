@@ -115,6 +115,40 @@ public sealed class DestinationsPageTests : IDisposable
     }
 
     [Fact]
+    public async Task Coming_back_to_destinations_shows_the_list_and_the_sidebar_opens_a_destination()
+    {
+        await ImportSagaAsync();
+        var main = _app.Get<MainWindowViewModel>();
+        await main.InitializeAsync(Ct);
+        var shell = Assert.IsType<ShellViewModel>(main.Content);
+        await shell.CurrentNavigation;
+        var page = (DestinationsPageViewModel)shell.NavItems.Single(i => i.Page == NavPage.Destinations).Content;
+        shell.NavigateTo(NavPage.Destinations);
+        await shell.CurrentNavigation;
+        Directory.CreateDirectory(KomgaFolder);
+        await page.AddDestinationCommand.ExecuteAsync(null);
+        page.Wizard!.NextCommand.Execute(null);
+        _app.Picker.WillReturn(KomgaFolder);
+        await page.Wizard.Form.ChooseFolderCommand.ExecuteAsync(null);
+        page.Wizard.NextCommand.Execute(null);
+        await page.Wizard.CreateCommand.ExecuteAsync(null);
+        Assert.True(page.IsDetail);
+
+        shell.NavigateTo(NavPage.Library);
+        await shell.CurrentNavigation;
+        shell.NavigateTo(NavPage.Destinations);
+        await shell.CurrentNavigation;
+        Assert.True(page.IsList);
+
+        shell.NavigateTo(NavPage.Library);
+        await shell.CurrentNavigation;
+        await shell.DestinationsStatus.RefreshAsync();
+        shell.DestinationsStatus.Items.Single().OpenCommand.Execute(null);
+        await WaitForAsync(() => page.IsDetail);
+        Assert.Same(page, shell.CurrentPage);
+    }
+
+    [Fact]
     public async Task A_copy_that_fails_shows_up_in_the_history_and_on_the_card()
     {
         await ImportSagaAsync();

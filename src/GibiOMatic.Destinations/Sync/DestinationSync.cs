@@ -35,6 +35,9 @@ public sealed record SyncPlan(string DestinationId, IReadOnlyList<SyncAction> Ac
 
 public sealed record SyncResult(int Written, int Deleted, IReadOnlyList<(string Title, string Error)> Failures);
 
+/// <summary>Where a run is: copy <paramref name="Done"/> + 1 of <paramref name="Total"/>, and how far that copy got (0–1).</summary>
+public sealed record SyncStep(int Done, int Total, string Title, double FileFraction);
+
 /// <summary>Copies generated per destination, in the library index (per machine, like destinations).</summary>
 internal sealed class OutputStore(LibraryIndex index)
 {
@@ -81,8 +84,8 @@ public sealed class DestinationSync(LibraryInfo library, LibraryIndex index, ILo
     private readonly OutputStore _outputs = new(index);
     private readonly DestinationLogStore _log = new(index);
 
-    /// <param name="onlyBookId">Plan a single book (automatic mode after an edit).</param>
-    public async Task<SyncPlan> PlanAsync(IDestination destination, CancellationToken ct, string? onlyBookId = null)
+    /// <param name="onlyBookIds">Plan only these books (automatic mode, after edits).</param>
+    public async Task<SyncPlan> PlanAsync(IDestination destination, CancellationToken ct, IReadOnlySet<string>? onlyBookIds = null)
     {
         var books = (await index.GetBooksAsync(ct)).ToDictionary(b => b.Metadata.Id);
         var recorded = await _outputs.GetAsync(destination.Config.Id, ct);
@@ -91,7 +94,7 @@ public sealed class DestinationSync(LibraryInfo library, LibraryIndex index, ILo
 
         foreach (var book in books.Values)
         {
-            if (onlyBookId is not null && book.Metadata.Id != onlyBookId)
+            if (onlyBookIds is not null && !onlyBookIds.Contains(book.Metadata.Id))
             {
                 continue;
             }
@@ -125,9 +128,9 @@ public sealed class DestinationSync(LibraryInfo library, LibraryIndex index, ILo
         }
 
         // Copies of books that are no longer in the library.
-        if (onlyBookId is null || !books.ContainsKey(onlyBookId))
+        if (onlyBookIds is null || onlyBookIds.Any(id => !books.ContainsKey(id)))
         {
-            foreach (var orphan in recorded.Values.Where(r => !books.ContainsKey(r.BookId) && (onlyBookId is null || r.BookId == onlyBookId)))
+            foreach (var orphan in recorded.Values.Where(r => !books.ContainsKey(r.BookId) && (onlyBookIds is null || onlyBookIds.Contains(r.BookId))))
             {
                 actions.Add(new SyncAction(SyncActionKind.Delete, orphan.BookId, Path.GetFileNameWithoutExtension(orphan.Path), orphan.Path, null, null));
             }
@@ -140,7 +143,9 @@ public sealed class DestinationSync(LibraryInfo library, LibraryIndex index, ILo
     public async Task<Dictionary<string, OutputRecord>> RecordedAsync(string destinationId, CancellationToken ct) =>
         await _outputs.GetAsync(destinationId, ct);
 
-    public async Task<SyncResult> ExecuteAsync(IDestination destination, SyncPlan plan, IProgress<(int Done, int Total, string Title)>? progress, CancellationToken ct)
+    /// <param name="notifyServer">Ask the server to scan when something changed (Komga); off while more changes wait in line.</param>
+    public async Task<SyncResult> ExecuteAsync(IDestination destination, SyncPlan plan, IProgress<SyncStep>? progress, CancellationToken ct,
+        bool notifyServer = true)
     {
         var folder = destination.Config.Folder ?? throw new InvalidOperationException("The destination has no folder.");
         var books = (await index.GetBooksAsync(ct)).ToDictionary(b => b.Metadata.Id);
@@ -150,7 +155,7 @@ public sealed class DestinationSync(LibraryInfo library, LibraryIndex index, ILo
         foreach (var action in plan.Actions)
         {
             ct.ThrowIfCancellationRequested();
-            progress?.Report((done, plan.Actions.Count, action.Title));
+            progress?.Report(new SyncStep(done, plan.Actions.Count, action.Title, 0));
             try
             {
                 if (action.Kind == SyncActionKind.Delete)
@@ -167,7 +172,9 @@ public sealed class DestinationSync(LibraryInfo library, LibraryIndex index, ILo
                     var temp = target + ".gibiomatic.tmp";
                     try
                     {
-                        await destination.GenerateAsync(library, book, temp, null, ct);
+                        var step = done;
+                        await destination.GenerateAsync(library, book, temp,
+                            progress is null ? null : new FileProgress(f => progress.Report(new SyncStep(step, plan.Actions.Count, action.Title, f))), ct);
                         File.Move(temp, target, overwrite: true);
                     }
                     finally
@@ -199,19 +206,33 @@ public sealed class DestinationSync(LibraryInfo library, LibraryIndex index, ILo
             done++;
         }
 
-        progress?.Report((done, plan.Actions.Count, string.Empty));
+        progress?.Report(new SyncStep(done, plan.Actions.Count, string.Empty, 0));
         logger.LogInformation("Destination {Destination}: {Written} written, {Deleted} removed, {Failed} failed",
             destination.Config.Name, written, deleted, failures.Count);
         await _log.AddAsync(destination.Config.Id, DestinationLogKind.Finished, null, null,
             FormattableString.Invariant($"{written}/{deleted}/{failures.Count}"), CancellationToken.None);
-        if (written + deleted > 0 && await destination.AfterSyncAsync(ct) is { } after)
+        if (notifyServer && written + deleted > 0)
         {
-            await _log.AddAsync(destination.Config.Id, after.Success ? DestinationLogKind.ScanRequested : DestinationLogKind.ScanFailed,
-                null, null, after.Message, CancellationToken.None);
+            await NotifyServerAsync(destination, ct);
         }
 
         await _log.TrimAsync(destination.Config.Id, CancellationToken.None);
         return new SyncResult(written, deleted, failures);
+    }
+
+    /// <summary>Asks the server to look at the new copies (Komga's library scan) and notes the answer in the history.</summary>
+    public async Task NotifyServerAsync(IDestination destination, CancellationToken ct)
+    {
+        if (await destination.AfterSyncAsync(ct) is { } after)
+        {
+            await _log.AddAsync(destination.Config.Id, after.Success ? DestinationLogKind.ScanRequested : DestinationLogKind.ScanFailed,
+                null, null, after.Message, CancellationToken.None);
+        }
+    }
+
+    private sealed class FileProgress(Action<double> report) : IProgress<double>
+    {
+        public void Report(double value) => report(value);
     }
 
     /// <summary>Forgets every copy of a destination (when it is removed; its files stay where they are).</summary>

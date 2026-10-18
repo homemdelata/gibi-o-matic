@@ -147,6 +147,11 @@
                       <TextBlock Classes="help" Text="{Binding ProgressText}" TextTrimming="CharacterEllipsis" />
                       <ProgressBar Minimum="0" Maximum="1" Value="{Binding ProgressValue}" Height="4" MinWidth="320"
                                    Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+                      <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding FileProgressText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <ProgressBar Minimum="0" Maximum="1" Value="{Binding FileProgressValue}" Height="2" MinHeight="2" MinWidth="240"
+                                     VerticalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}" Background="{DynamicResource HoverBrush}" />
+                        <TextBlock Grid.Column="1" Classes="help mono" FontSize="11" Margin="10,0,0,0" Text="{Binding FileProgressText}" />
+                      </Grid>
                     </StackPanel>
                   </StackPanel>
                   <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
@@ -279,6 +284,11 @@
                       <TextBlock Classes="help" Text="{Binding ProgressText}" TextTrimming="CharacterEllipsis" />
                       <ProgressBar Minimum="0" Maximum="1" Value="{Binding ProgressValue}" Height="4" MinWidth="320"
                                    Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+                      <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding FileProgressText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                        <ProgressBar Minimum="0" Maximum="1" Value="{Binding FileProgressValue}" Height="2" MinHeight="2" MinWidth="240"
+                                     VerticalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}" Background="{DynamicResource HoverBrush}" />
+                        <TextBlock Grid.Column="1" Classes="help mono" FontSize="11" Margin="10,0,0,0" Text="{Binding FileProgressText}" />
+                      </Grid>
                     </StackPanel>
         </StackPanel>
 

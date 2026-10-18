@@ -112,10 +112,12 @@ public sealed partial class DestinationsStatusViewModel : ViewModelBase, IDispos
     {
         item.IsRunning = true;
         item.Kind = StatusKind.Busy;
-        item.ProgressValue = progress.Total == 0 ? 0 : (double)progress.Done / progress.Total;
+        item.ProgressValue = progress.Total == 0 ? 0 : Math.Min(1, (progress.Done + progress.FileFraction) / progress.Total);
         item.StatusText = progress.Done >= progress.Total
             ? Strings.Sidebar_Finishing
-            : string.Format(CultureInfo.CurrentCulture, Strings.Sidebar_Progress, progress.Done + 1, progress.Total);
+            : progress.Queued > 0
+                ? string.Format(CultureInfo.CurrentCulture, Strings.Sidebar_ProgressQueued, progress.Done + 1, progress.Total, progress.Queued)
+                : string.Format(CultureInfo.CurrentCulture, Strings.Sidebar_Progress, progress.Done + 1, progress.Total);
     }
 
     private void OnChanged(object? sender, EventArgs e) => _refresh.Trigger();

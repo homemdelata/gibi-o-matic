@@ -451,4 +451,7 @@
   <data name="Sidebar_UpToDate" xml:space="preserve"><value>up to date</value></data>
   <data name="Sidebar_Finishing" xml:space="preserve"><value>finishing…</value></data>
   <data name="Sidebar_Progress" xml:space="preserve"><value>{0} of {1}</value></data>
+  <data name="Sync_Queued" xml:space="preserve"><value> · {0} more waiting</value></data>
+  <data name="Sync_FileProgress" xml:space="preserve"><value>{0:P0} of this book</value></data>
+  <data name="Sidebar_ProgressQueued" xml:space="preserve"><value>{0} of {1} · +{2}</value></data>
 </root>

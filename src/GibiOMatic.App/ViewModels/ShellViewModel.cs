@@ -141,9 +141,10 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
         }
     }
 
-    partial void OnSelectedNavItemChanged(NavItemViewModel? value)
+    partial void OnSelectedNavItemChanged(NavItemViewModel? oldValue, NavItemViewModel? newValue)
     {
-        if (value is not null)
+        oldValue?.Content.OnNavigatedFrom();
+        if (newValue is { } value)
         {
             CurrentPage = value.Content;
             CurrentNavigation = value.Content.OnNavigatedToAsync();

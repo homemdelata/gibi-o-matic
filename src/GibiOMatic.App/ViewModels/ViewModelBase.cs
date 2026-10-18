@@ -21,6 +21,11 @@ public abstract partial class PageViewModel : ViewModelBase, IDisposable
     /// <summary>Called every time the page is shown.</summary>
     public virtual Task OnNavigatedToAsync(CancellationToken ct = default) => Task.CompletedTask;
 
+    /// <summary>Called when another page is shown instead of this one.</summary>
+    public virtual void OnNavigatedFrom()
+    {
+    }
+
     /// <summary>Books chosen elsewhere for this page (before <see cref="OnNavigatedToAsync"/>).</summary>
     public virtual void SetBooks(IReadOnlyList<string> bookIds)
     {

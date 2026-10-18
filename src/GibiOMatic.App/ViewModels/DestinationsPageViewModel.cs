@@ -53,6 +53,12 @@ public sealed partial class DestinationCardViewModel(DestinationSummary summary,
     [ObservableProperty]
     public partial double ProgressValue { get; set; }
 
+    [ObservableProperty]
+    public partial double FileProgressValue { get; set; }
+
+    [ObservableProperty]
+    public partial string? FileProgressText { get; set; }
+
     [RelayCommand]
     private void Configure() => open(this, false);
 
@@ -66,8 +72,14 @@ public sealed partial class DestinationCardViewModel(DestinationSummary summary,
 public interface ISyncActivity
 {
     bool IsRunning { get; set; }
+
+    /// <summary>"Gerando Saga v01 (3 de 10)…" and the bar of copies done.</summary>
     string? ProgressText { get; set; }
     double ProgressValue { get; set; }
+
+    /// <summary>How far the copy being generated got (pages converted).</summary>
+    double FileProgressValue { get; set; }
+    string? FileProgressText { get; set; }
 }
 
 /// <summary>A line of a destination's history.</summary>
@@ -103,9 +115,13 @@ public static class DestinationText
     {
         activity.IsRunning = true;
         activity.ProgressValue = progress.Total == 0 ? 0 : (double)progress.Done / progress.Total;
-        activity.ProgressText = progress.Done >= progress.Total || string.IsNullOrEmpty(progress.Title)
+        var finishing = progress.Done >= progress.Total || string.IsNullOrEmpty(progress.Title);
+        activity.ProgressText = (finishing
             ? Strings.Sync_Finishing
-            : string.Format(CultureInfo.CurrentCulture, Strings.Sync_Progress, progress.Title, progress.Done + 1, progress.Total);
+            : string.Format(CultureInfo.CurrentCulture, Strings.Sync_Progress, progress.Title, progress.Done + 1, progress.Total))
+            + (progress.Queued > 0 ? string.Format(CultureInfo.CurrentCulture, Strings.Sync_Queued, progress.Queued) : string.Empty);
+        activity.FileProgressValue = finishing ? 0 : progress.FileFraction;
+        activity.FileProgressText = finishing ? null : string.Format(CultureInfo.CurrentCulture, Strings.Sync_FileProgress, progress.FileFraction);
     }
 
     public static HistoryRow History(DestinationLogEntry e)
@@ -485,6 +501,12 @@ public sealed partial class DestinationDetailViewModel : ViewModelBase, ISyncAct
     public partial double ProgressValue { get; set; }
 
     [ObservableProperty]
+    public partial double FileProgressValue { get; set; }
+
+    [ObservableProperty]
+    public partial string? FileProgressText { get; set; }
+
+    [ObservableProperty]
     public partial string? ResultText { get; set; }
 
     [ObservableProperty]
@@ -645,6 +667,15 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
 
     [ObservableProperty]
     public partial DestinationDetailViewModel? Detail { get; private set; }
+
+    /// <summary>Coming back to Destinos shows the list, not the destination (or wizard) left open.</summary>
+    public override void OnNavigatedFrom()
+    {
+        if (!IsList)
+        {
+            ShowList();
+        }
+    }
 
     public override async Task OnNavigatedToAsync(CancellationToken ct = default)
     {
