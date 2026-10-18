@@ -77,6 +77,15 @@
                       <TextBlock Classes="mono" FontSize="10.5" FontWeight="Medium" LetterSpacing="0.4" Text="{Binding Badge}"
                                  Foreground="{Binding Band, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
                     </Border>
+                    <!-- How many books the series has -->
+                    <Border Classes="badge" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                            ToolTip.Tip="{Binding BookCountText}" AutomationProperties.Name="{Binding BookCountText}">
+                      <StackPanel Orientation="Horizontal" Spacing="5">
+                        <c:StrokeIcon Data="{StaticResource Icon.Stack}" Width="11" Height="11" StrokeThickness="2"
+                                      Foreground="{DynamicResource TextMutedBrush}" VerticalAlignment="Center" />
+                        <TextBlock Classes="mono" FontSize="10.5" FontWeight="Medium" Text="{Binding BookCount}" VerticalAlignment="Center" />
+                      </StackPanel>
+                    </Border>
                   </Panel>
                 </Border>
               </Border>

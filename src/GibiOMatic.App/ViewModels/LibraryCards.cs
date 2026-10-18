@@ -214,6 +214,13 @@ public sealed partial class SeriesCardViewModel : ViewModelBase
     public QualityBand Band { get; }
 
     public string Badge => QualityText.BadgeOf(Band);
+
+    /// <summary>Shown in the cover's bottom-right corner.</summary>
+    public string BookCount => Books.Count.ToString(CultureInfo.CurrentCulture);
+
+    /// <summary>"12 livros", for screen readers and the tooltip of the counter.</summary>
+    public string BookCountText => Books.Count == 1 ? Strings.Library_SeriesBooksOne : string.Format(CultureInfo.CurrentCulture, Strings.Library_SeriesBooksMany, Books.Count);
+
     public string MetaLine { get; }
 
     [RelayCommand]
