@@ -234,6 +234,20 @@ public sealed class IdentifierTests
     }
 
     [Theory]
+    [InlineData("somethingiskillingthechildren vol2", "somethingiskillingthechildren vol 2")]
+    [InlineData("Deadly Class, Vol. 11: A Fond Farewell", "Deadly Class vol 11: A Fond Farewell")]
+    [InlineData("Lumberjanes #18", "Lumberjanes #18")]
+    [InlineData("Shrugged", "Shrugged")]
+    public void The_search_box_keeps_the_number_and_searching_it_again_gives_the_same_query(string title, string expected)
+    {
+        var query = BookQuery.From(Book(title));
+        Assert.Equal(expected, query.EditableText);
+
+        var again = BookQuery.From(Book(title), query.EditableText);
+        Assert.Equal((query.SearchText, query.Number, query.Kind, query.Subtitle), (again.SearchText, again.Number, again.Kind, again.Subtitle));
+    }
+
+    [Theory]
     [InlineData("https://comicvine.gamespot.com/deadly-class-a-fond-farewell-part-one-1-volume-11/4000-937068/", true, 937068)]
     [InlineData("comicvine.gamespot.com/deadly-class/4050-71032/", false, 71032)]
     public void ComicVine_links_are_recognised(string link, bool isIssue, int id) =>

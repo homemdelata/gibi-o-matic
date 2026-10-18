@@ -20,6 +20,25 @@ public sealed partial record BookQuery
     public string? Isbn { get; init; }
     public string? Language { get; init; }
 
+    /// <summary>
+    /// The text shown in the Review's search box: the series with its number ("Saga vol 2",
+    /// "Lumberjanes #18") and subtitle, so that searching again keeps them. Only the series goes
+    /// to ComicVine; the number picks among the results.
+    /// </summary>
+    public string EditableText
+    {
+        get
+        {
+            if (Series is null || Number is null)
+            {
+                return SearchText;
+            }
+
+            var text = Kind == BookKind.Issue ? $"{Series} #{Number}" : $"{Series} vol {Number}";
+            return Subtitle is null ? text : $"{text}: {Subtitle}";
+        }
+    }
+
     /// <param name="overrideText">Text typed by the user in the Review ("Buscar de novo").</param>
     public static BookQuery From(BookMetadata book, string? overrideText = null)
     {

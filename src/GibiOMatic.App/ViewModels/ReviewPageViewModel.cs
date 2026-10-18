@@ -415,7 +415,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel
         LinkError = null;
         _ = ShowFileInfoAsync(item, library);
         var result = item.Identification.Result;
-        SearchText = result?.Query.SearchText ?? BookQuery.From(_book.Metadata).SearchText;
+        SearchText = (result?.Query ?? BookQuery.From(_book.Metadata)).EditableText;
         NoCandidateText = string.Format(CultureInfo.CurrentCulture, Strings.Review_NothingFor, SearchText);
         NotesText = IdentificationText.Notes(item.Identification.Message);
         foreach (var candidate in result?.Candidates ?? [])
