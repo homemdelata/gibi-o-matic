@@ -11,6 +11,7 @@ using GibiOMatic.Core.Quality;
 using GibiOMatic.Core.Text;
 using GibiOMatic.Library;
 using GibiOMatic.Library.Index;
+using GibiOMatic.Library.Reading;
 
 namespace GibiOMatic.App.ViewModels;
 
@@ -107,13 +108,15 @@ public sealed partial class BookCardViewModel : ViewModelBase
     private readonly ThumbnailCache _thumbnails;
     private readonly ICoverLoader _covers;
     private readonly Action<BookCardViewModel> _select;
+    private readonly Action<BookCardViewModel>? _open;
     private bool _thumbnailRequested;
     private Bitmap? _thumbnail;
 
     public BookCardViewModel(CatalogBook book, QualityReport report, LibraryInfo library, ThumbnailCache thumbnails,
-        ICoverLoader covers, Action<BookCardViewModel> select)
+        ICoverLoader covers, Action<BookCardViewModel> select, Action<BookCardViewModel>? open = null)
     {
         Book = book;
+        _open = open;
         Report = report;
         _library = library;
         _thumbnails = thumbnails;
@@ -168,8 +171,24 @@ public sealed partial class BookCardViewModel : ViewModelBase
 
     public bool HasThumbnail => _thumbnail is not null;
 
+    /// <summary>How far the book was read; null if it was never opened or marked.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsReading), nameof(IsRead), nameof(Progress))]
+    public partial BookReading? Reading { get; set; }
+
+    public bool IsReading => Reading?.IsReading == true;
+
+    public bool IsRead => Reading?.IsRead == true;
+
+    /// <summary>From 0 to 1, for the bar at the bottom of the cover.</summary>
+    public double Progress => Reading?.Fraction ?? 0;
+
     [RelayCommand]
     private void Select() => _select(this);
+
+    /// <summary>Double click: opens the book in the reader.</summary>
+    [RelayCommand]
+    private void Open() => _open?.Invoke(this);
 
     private async Task LoadThumbnailAsync()
     {
@@ -253,11 +272,22 @@ public sealed record FileRow(string Format, string Label, string Size, string Na
 public sealed partial class BookDetailsViewModel : ViewModelBase
 {
     private readonly Action<BookFile>? _open;
+    private readonly IReadingActions? _reading;
 
-    public BookDetailsViewModel(BookCardViewModel card, LibraryInfo library, ICoverLoader covers, Action<BookFile>? open = null)
+    public BookDetailsViewModel(BookCardViewModel card, LibraryInfo library, ICoverLoader covers, Action<BookFile>? open = null,
+        IReadingActions? reading = null)
     {
         Card = card;
         _open = open;
+        _reading = reading;
+        card.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(BookCardViewModel.Reading))
+            {
+                UpdateReading();
+            }
+        };
+        UpdateReading();
         var m = card.Book.Metadata;
         var report = card.Report;
 
@@ -303,6 +333,27 @@ public sealed partial class BookDetailsViewModel : ViewModelBase
         }
     }
     public string CreditsLine { get; }
+
+    /// <summary>"Lendo · 34%", "Lido em 18/10/2026" or "Não lido".</summary>
+    [ObservableProperty]
+    public partial string ReadingText { get; private set; } = string.Empty;
+
+    [RelayCommand]
+    private Task MarkReadAsync() => _reading?.SetReadAsync(Card, true) ?? Task.CompletedTask;
+
+    [RelayCommand]
+    private Task MarkUnreadAsync() => _reading?.SetReadAsync(Card, false) ?? Task.CompletedTask;
+
+    [RelayCommand]
+    private Task ClearProgressAsync() => _reading?.ClearProgressAsync(Card) ?? Task.CompletedTask;
+
+    private void UpdateReading() => ReadingText = Card.Reading switch
+    {
+        { ReadAt: { } at } => string.Format(CultureInfo.CurrentCulture, Strings.Reading_ReadOn, at.ToLocalTime().ToString("d", CultureInfo.CurrentCulture)),
+        { IsReading: true } r => string.Format(CultureInfo.CurrentCulture, Strings.Reading_InProgress, r.Fraction.ToString("0%", CultureInfo.CurrentCulture)),
+        _ => Strings.Reading_NotRead,
+    };
+
     public IReadOnlyList<CheckRow> Checks { get; }
     public IReadOnlyList<FileRow> Files { get; }
     public string ScoreLine { get; }
@@ -331,6 +382,26 @@ public sealed partial class BookDetailsViewModel : ViewModelBase
             Cover = await covers.LoadAsync(path, 300);
         }
     }
+}
+
+/// <summary>What the detail panel can do to a book's reading status.</summary>
+public interface IReadingActions
+{
+    Task SetReadAsync(BookCardViewModel card, bool read);
+
+    Task ClearProgressAsync(BookCardViewModel card);
+}
+
+/// <summary>A book in "Continuar lendo": opens the reader where it was left.</summary>
+public sealed partial class ContinueReadingViewModel(BookCardViewModel card, Action<BookCardViewModel> open) : ViewModelBase
+{
+    public BookCardViewModel Card { get; } = card;
+
+    public string PercentText { get; } = string.Format(CultureInfo.CurrentCulture, Strings.Reading_Percent,
+        card.Progress.ToString("0%", CultureInfo.CurrentCulture));
+
+    [RelayCommand]
+    private void Open() => open(Card);
 }
 
 /// <summary>A book's copy in one destination: "Komga de casa · Em dia".</summary>

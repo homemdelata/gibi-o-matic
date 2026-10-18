@@ -483,4 +483,20 @@
   <data name="Reader_OpenTip" xml:space="preserve"><value>Open in the reader to see the pages</value></data>
   <data name="Reader_OpenFile" xml:space="preserve"><value>Open this file in the reader</value></data>
   <data name="Review_OpenBook" xml:space="preserve"><value>Open book</value></data>
+  <data name="Filter_Reading" xml:space="preserve"><value>Reading</value></data>
+  <data name="Filter_Read" xml:space="preserve"><value>Read</value></data>
+  <data name="Filter_Unread" xml:space="preserve"><value>Unread</value></data>
+  <data name="Library_ContinueReading" xml:space="preserve"><value>CONTINUE READING</value></data>
+  <data name="Library_ContinueTip" xml:space="preserve"><value>Continue where you left off</value></data>
+  <data name="Reading_Percent" xml:space="preserve"><value>{0} read</value></data>
+  <data name="Reading_Section" xml:space="preserve"><value>READING</value></data>
+  <data name="Reading_NotRead" xml:space="preserve"><value>Not read</value></data>
+  <data name="Reading_InProgress" xml:space="preserve"><value>Reading · {0}</value></data>
+  <data name="Reading_ReadOn" xml:space="preserve"><value>Read on {0}</value></data>
+  <data name="Reading_MarkRead" xml:space="preserve"><value>Mark as read</value></data>
+  <data name="Reading_MarkUnread" xml:space="preserve"><value>Mark as unread</value></data>
+  <data name="Reading_MarkUnreadTip" xml:space="preserve"><value>Also forgets the page where you stopped</value></data>
+  <data name="Reading_Clear" xml:space="preserve"><value>Clear progress</value></data>
+  <data name="Reading_ClearTip" xml:space="preserve"><value>Removes the book from "Continue reading"; it opens at the first page again</value></data>
+  <data name="Reading_ReadBadge" xml:space="preserve"><value>Read</value></data>
 </root>

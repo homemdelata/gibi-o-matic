@@ -11,7 +11,7 @@
     <!-- Book card -->
     <DataTemplate DataType="vm:BookCardViewModel">
       <Button Classes="cover-card" Command="{Binding SelectCommand}" Margin="3,0" Padding="6"
-              AutomationProperties.Name="{Binding Title}">
+              c:DoubleTap.Command="{Binding OpenCommand}" AutomationProperties.Name="{Binding Title}">
         <StackPanel Spacing="9">
           <Panel>
             <Border Margin="-6" CornerRadius="15" BorderThickness="3" BorderBrush="{DynamicResource AccentBrush}"
@@ -36,6 +36,12 @@
                     </Border>
                     <Border Classes="check" IsVisible="{Binding IsChecked}">
                       <c:StrokeIcon Data="{StaticResource Icon.Check}" Width="16" Height="16" StrokeThickness="2.6" Foreground="{DynamicResource OnAccentBrush}" />
+                    </Border>
+                    <!-- Reading status: a progress bar while being read, a mark once read -->
+                    <ProgressBar Classes="reading" Maximum="1" Value="{Binding Progress}" IsVisible="{Binding IsReading}" />
+                    <Border Classes="read-mark" IsVisible="{Binding IsRead}"
+                            ToolTip.Tip="{x:Static r:Strings.Reading_ReadBadge}" AutomationProperties.Name="{x:Static r:Strings.Reading_ReadBadge}">
+                      <c:StrokeIcon Data="{StaticResource Icon.Check}" Width="14" Height="14" StrokeThickness="2.8" Foreground="{DynamicResource OnAccentBrush}" />
                     </Border>
                   </Panel>
                 </Border>
@@ -274,6 +280,43 @@
         </Grid>
       </Border>
 
+      <!-- Continue reading: the last books being read -->
+      <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,18" IsVisible="{Binding ShowContinueReading}">
+        <TextBlock Classes="section-label" Text="{x:Static r:Strings.Library_ContinueReading}" />
+        <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+          <ItemsControl ItemsSource="{Binding ContinueReading}" AutomationProperties.Name="{x:Static r:Strings.Library_ContinueReading}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" Spacing="10" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:ContinueReadingViewModel">
+                <Button Classes="cover-card" Width="230" Command="{Binding OpenCommand}"
+                        ToolTip.Tip="{x:Static r:Strings.Library_ContinueTip}" AutomationProperties.Name="{Binding Card.Title}">
+                  <Border Classes="continue-card">
+                  <Grid ColumnDefinitions="48,*">
+                    <Border Width="48" Height="72" CornerRadius="6" ClipToBounds="True">
+                      <Border.Background>
+                        <SolidColorBrush Color="{Binding Card.PlaceholderColor}" />
+                      </Border.Background>
+                      <Image Source="{Binding Card.Thumbnail}" Stretch="UniformToFill" />
+                    </Border>
+                    <StackPanel Grid.Column="1" Margin="12,2,4,0" Spacing="6" VerticalAlignment="Center">
+                      <TextBlock Text="{Binding Card.Title}" FontWeight="SemiBold" FontSize="13" TextWrapping="Wrap" MaxLines="2"
+                                 TextTrimming="CharacterEllipsis" />
+                      <ProgressBar Classes="reading inline" Maximum="1" Value="{Binding Card.Progress}" />
+                      <TextBlock Classes="muted mono" FontSize="11" Text="{Binding PercentText}" />
+                    </StackPanel>
+                  </Grid>
+                  </Border>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </StackPanel>
+
       <!-- Filters -->
       <Grid DockPanel.Dock="Top" Margin="0,0,0,22" IsVisible="{Binding HasBooks}">
         <ItemsControl ItemsSource="{Binding Filters}" AutomationProperties.Name="{x:Static r:Strings.Library_Filters}">
@@ -394,6 +437,22 @@
               <SelectableTextBlock Text="{Binding Title}" TextWrapping="Wrap"
                                    FontFamily="{StaticResource FontDisplay}" FontSize="22" FontWeight="Bold" />
               <TextBlock Classes="muted" TextWrapping="Wrap" LineHeight="21" Text="{Binding CreditsLine}" />
+            </StackPanel>
+
+            <!-- Reading status -->
+            <StackPanel Spacing="8">
+              <TextBlock Classes="section-label" Text="{x:Static r:Strings.Reading_Section}" />
+              <TextBlock Text="{Binding ReadingText}" />
+              <WrapPanel ItemSpacing="8" LineSpacing="8">
+                <Button Classes="secondary" MinHeight="32" Padding="12,0" FontSize="13" Content="{x:Static r:Strings.Reading_MarkRead}"
+                        Command="{Binding MarkReadCommand}" IsVisible="{Binding !Card.IsRead}" />
+                <Button Classes="secondary" MinHeight="32" Padding="12,0" FontSize="13" Content="{x:Static r:Strings.Reading_MarkUnread}"
+                        Command="{Binding MarkUnreadCommand}" IsVisible="{Binding Card.IsRead}"
+                        ToolTip.Tip="{x:Static r:Strings.Reading_MarkUnreadTip}" />
+                <Button Classes="secondary" MinHeight="32" Padding="12,0" FontSize="13" Content="{x:Static r:Strings.Reading_Clear}"
+                        Command="{Binding ClearProgressCommand}" IsVisible="{Binding Card.IsReading}"
+                        ToolTip.Tip="{x:Static r:Strings.Reading_ClearTip}" />
+              </WrapPanel>
             </StackPanel>
 
             <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1" Padding="0,6">

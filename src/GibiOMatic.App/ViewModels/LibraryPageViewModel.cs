@@ -10,6 +10,7 @@ using GibiOMatic.Core.Quality;
 using GibiOMatic.Core.Settings;
 using GibiOMatic.Destinations.Sync;
 using GibiOMatic.Library;
+using GibiOMatic.Library.Reading;
 using Microsoft.Extensions.Logging;
 
 namespace GibiOMatic.App.ViewModels;
@@ -23,6 +24,9 @@ public enum LibraryFilter
     UnknownAuthor,
     Complete,
     AutoApproved,
+    Reading,
+    Read,
+    Unread,
 }
 
 public enum LibraryViewMode
@@ -50,8 +54,11 @@ public sealed partial class FilterChipViewModel(LibraryFilter filter, string lab
 /// The library (SPEC §12): cover grid by series or by book, quality badges, filters, search,
 /// summary cards and the detail panel of the selected book.
 /// </summary>
-public sealed partial class LibraryPageViewModel : PageViewModel
+public sealed partial class LibraryPageViewModel : PageViewModel, IReadingActions
 {
+    /// <summary>Books shown in "Continuar lendo", the most recent first.</summary>
+    public const int ContinueReadingCount = 8;
+
     /// <summary>Smallest card width; the grid fits as many columns as possible.</summary>
     public const double MinCardWidth = 150;
     public const double CardGap = 18;
@@ -61,6 +68,8 @@ public sealed partial class LibraryPageViewModel : PageViewModel
     private readonly ICoverLoader _covers;
     private readonly IFilePicker _filePicker;
     private readonly IReaderLauncher _reader;
+    private readonly ReadingTracker _reading;
+    private readonly Debouncer _reloadReading;
     private readonly ISettingsService _settings;
     private readonly ILogger<LibraryPageViewModel> _logger;
     private readonly Debouncer _reload;
@@ -68,9 +77,12 @@ public sealed partial class LibraryPageViewModel : PageViewModel
     private double _viewportWidth;
 
     public LibraryPageViewModel(LibrarySession session, ThumbnailCache thumbnails, ICoverLoader covers, IFilePicker filePicker,
-        ISettingsService settings, IUiThread ui, IReaderLauncher reader, ILogger<LibraryPageViewModel> logger)
+        ISettingsService settings, IUiThread ui, IReaderLauncher reader, ReadingTracker reading, ILogger<LibraryPageViewModel> logger)
     {
         _reader = reader;
+        _reading = reading;
+        _reloadReading = new Debouncer(ui, TimeSpan.FromMilliseconds(300), () => RefreshReadingAsync());
+        reading.Changed += OnReadingChanged;
         _session = session;
         _thumbnails = thumbnails;
         _covers = covers;
@@ -98,6 +110,9 @@ public sealed partial class LibraryPageViewModel : PageViewModel
             new(LibraryFilter.UnknownAuthor, Strings.Filter_UnknownAuthor, PickFilter),
             new(LibraryFilter.Complete, Strings.Filter_Complete, PickFilter),
             new(LibraryFilter.AutoApproved, Strings.Filter_AutoApproved, PickFilter),
+            new(LibraryFilter.Reading, Strings.Filter_Reading, PickFilter),
+            new(LibraryFilter.Read, Strings.Filter_Read, PickFilter),
+            new(LibraryFilter.Unread, Strings.Filter_Unread, PickFilter),
         ];
         Filters[0].IsSelected = true;
     }
@@ -167,6 +182,13 @@ public sealed partial class LibraryPageViewModel : PageViewModel
 
     public ObservableCollection<CardRow> Rows { get; } = [];
 
+    /// <summary>The last books being read (started, not finished).</summary>
+    public ObservableCollection<ContinueReadingViewModel> ContinueReading { get; } = [];
+
+    /// <summary>The strip shows over the whole library only, not over a search, a filter or a series.</summary>
+    [ObservableProperty]
+    public partial bool ShowContinueReading { get; private set; }
+
     [ObservableProperty]
     public partial int Columns { get; private set; } = 5;
 
@@ -216,13 +238,14 @@ public sealed partial class LibraryPageViewModel : PageViewModel
             var selectedId = Selected?.Card.Id;
             var checkedIds = _books.Where(b => b.IsChecked).Select(b => b.Id).ToHashSet();
             _books = books
-                .Select(b => new BookCardViewModel(b, QualityAnalyzer.Analyze(b.Metadata, context), library, _thumbnails, _covers, OnCardClicked))
+                .Select(b => new BookCardViewModel(b, QualityAnalyzer.Analyze(b.Metadata, context), library, _thumbnails, _covers, OnCardClicked, OpenCard))
                 .OrderBy(b => b.Book.Metadata.Series?.Name ?? b.Title, NaturalStringComparer.Instance)
                 .ThenBy(b => b.Book.Metadata.Series?.Number ?? string.Empty, NaturalStringComparer.Instance)
                 .ThenBy(b => b.Title, NaturalStringComparer.Instance)
                 .ToList();
 
             BookCount = _books.Count;
+            await ApplyReadingAsync(ct);
             if (IsSelecting)
             {
                 foreach (var book in _books.Where(b => checkedIds.Contains(b.Id)))
@@ -276,6 +299,9 @@ public sealed partial class LibraryPageViewModel : PageViewModel
         LibraryFilter.UnknownAuthor => QualityAnalyzer.HasUnknownAuthor(book.Book.Metadata),
         LibraryFilter.Complete => book.Band == QualityBand.Ok,
         LibraryFilter.AutoApproved => book.Book.Metadata.Review.MatchedBy == MatchedBy.Auto,
+        LibraryFilter.Reading => book.IsReading,
+        LibraryFilter.Read => book.IsRead,
+        LibraryFilter.Unread => !book.IsReading && !book.IsRead,
         _ => true,
     };
 
@@ -349,6 +375,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel
         }
 
         HasResults = VisibleCards.Count > 0;
+        UpdateContinueReading();
         RebuildRows();
     }
 
@@ -534,7 +561,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel
         }
 
         card.IsSelected = true;
-        Selected = new BookDetailsViewModel(card, library, _covers, file => _reader.Open(ReaderRequest.For(library, card.Book, file)));
+        Selected = new BookDetailsViewModel(card, library, _covers, file => _reader.Open(ReaderRequest.For(library, card.Book, file)), this);
         _ = LoadCopiesAsync(Selected);
     }
 
@@ -588,6 +615,106 @@ public sealed partial class LibraryPageViewModel : PageViewModel
 
     private void OnBookImported(object? sender, string bookId) => _reload.Trigger();
 
+    // ---- Reading status ----
+
+    private void OnReadingChanged(object? sender, string bookId) => _reloadReading.Trigger();
+
+    /// <summary>Double click on a card, or a book in "Continuar lendo": the file where it was left, else the main one.</summary>
+    private void OpenCard(BookCardViewModel card)
+    {
+        if (IsSelecting || _session.Current is not { } library)
+        {
+            return;
+        }
+
+        var files = card.Book.Metadata.Files;
+        var file = files.FirstOrDefault(f => card.Reading is { File: var name } && f.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                   ?? card.Book.MainFile;
+        if (file is not null)
+        {
+            _reader.Open(ReaderRequest.For(library, card.Book, file));
+        }
+    }
+
+    /// <summary>Reads the statuses again after a book was read or marked (counts, strip, filter).</summary>
+    public async Task RefreshReadingAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            await ApplyReadingAsync(ct);
+            UpdateSummary();
+            if (Filter is LibraryFilter.Reading or LibraryFilter.Read or LibraryFilter.Unread)
+            {
+                ApplyView();
+            }
+            else
+            {
+                // The grid stays as it is (no jump while a book is read next to it).
+                UpdateContinueReading();
+            }
+        }
+        catch (Exception ex) when (LibrarySession.IsExpectedFailure(ex))
+        {
+            _logger.LogWarning(ex, "Could not read the reading statuses");
+        }
+    }
+
+    private void UpdateContinueReading() =>
+        ShowContinueReading = ContinueReading.Count > 0 && Filter == LibraryFilter.All && string.IsNullOrWhiteSpace(SearchText) && OpenSeries is null;
+
+    private async Task ApplyReadingAsync(CancellationToken ct)
+    {
+        var readings = _reading.Store is { } store ? await store.GetAllAsync(ct) : new Dictionary<string, BookReading>();
+        foreach (var book in _books)
+        {
+            book.Reading = readings.GetValueOrDefault(book.Id);
+        }
+
+        ContinueReading.Clear();
+        foreach (var book in _books.Where(b => b.IsReading).OrderByDescending(b => b.Reading!.UpdatedAt).Take(ContinueReadingCount))
+        {
+            ContinueReading.Add(new ContinueReadingViewModel(book, OpenCard));
+        }
+    }
+
+    public async Task SetReadAsync(BookCardViewModel card, bool read)
+    {
+        if (_reading.Store is not { } store)
+        {
+            return;
+        }
+
+        try
+        {
+            await store.SetReadAsync(card.Id, read);
+        }
+        catch (Exception ex) when (LibrarySession.IsExpectedFailure(ex))
+        {
+            _logger.LogWarning(ex, "Could not mark {Book}", card.Id);
+        }
+
+        await RefreshReadingAsync();
+    }
+
+    public async Task ClearProgressAsync(BookCardViewModel card)
+    {
+        if (_reading.Store is not { } store)
+        {
+            return;
+        }
+
+        try
+        {
+            await store.ClearProgressAsync(card.Id);
+        }
+        catch (Exception ex) when (LibrarySession.IsExpectedFailure(ex))
+        {
+            _logger.LogWarning(ex, "Could not clear the progress of {Book}", card.Id);
+        }
+
+        await RefreshReadingAsync();
+    }
+
     public override void Dispose()
     {
         if (_session.Queue is { } queue)
@@ -600,7 +727,9 @@ public sealed partial class LibraryPageViewModel : PageViewModel
             identification.BookUpdated -= OnBookImported;
         }
 
+        _reading.Changed -= OnReadingChanged;
         _reload.Dispose();
+        _reloadReading.Dispose();
         Status.Dispose();
     }
 }

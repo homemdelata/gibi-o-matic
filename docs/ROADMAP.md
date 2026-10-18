@@ -149,6 +149,12 @@ Objetivo: abrir um livro dentro do app para conferir qual edição é (capa gran
   - leitura da direita para a esquerda;
   - lembrar a última página de cada livro (no índice, nunca no original).
 - [x] "Abrir" no painel da Biblioteca (capa, botão e cada arquivo) e na Revisão (capa e "Abrir livro"). O leitor abre numa janela própria, que pode ficar ao lado da Revisão enquanto os candidatos são comparados.
+- [x] Status de leitura (pedido do usuário depois do primeiro teste):
+  - duplo clique num card da Biblioteca abre o leitor;
+  - "lendo" depois de mais de 5 páginas vistas numa sessão (abrir só para ver a capa não conta); "lido" ao chegar à última página de um livro já iniciado, ou marcado à mão;
+  - filtros Lendo, Lidos e Não lidos;
+  - no painel: Marcar como lido / não lido e Limpar progresso;
+  - faixa "Continuar lendo" no topo da Biblioteca (até 8 livros, o mais recente primeiro) e barra de progresso nos cards em leitura.
 
 **Pronto quando**: os quatro formatos abrem no leitor a partir da Biblioteca e da Revisão, e um livro reaberto volta à página em que estava.
 

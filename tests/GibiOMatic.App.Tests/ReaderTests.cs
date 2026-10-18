@@ -25,7 +25,7 @@ public sealed class ReaderTests : IDisposable
 
     private ReaderViewModel Reader(string path, BookFormat format, string bookId = "book-1") =>
         new(new ReaderRequest(bookId, "Saga, Vol. 1", path, format), _app.Get<ISettingsService>(), _app.Get<IUiThread>(),
-            _app.Get<IReaderImages>(), new ReadingStateStore(Session.Index!), NullLogger.Instance);
+            _app.Get<IReaderImages>(), _app.Get<ReadingTracker>(), NullLogger.Instance);
 
     private static async Task WaitForAsync(Func<bool> condition)
     {
@@ -241,5 +241,144 @@ public sealed class ReaderTests : IDisposable
         reader.EscapeCommand.Execute(null);
         Assert.True(closed);
         await reader.DisposeAsync();
+    }
+
+    private async Task<IReadOnlyDictionary<string, BookReading>> ReadingsAsync() =>
+        await new ReadingStateStore(Session.Index!).GetAllAsync(Ct);
+
+    private async Task TurnAsync(ReaderViewModel reader, int times)
+    {
+        for (var i = 0; i < times; i++)
+        {
+            reader.NextCommand.Execute(null);
+            await Task.Yield();
+        }
+    }
+
+    [Fact]
+    public async Task A_book_counts_as_started_after_five_pages_and_read_at_its_last_page()
+    {
+        await Session.CreateAsync(_app.Folder("Arquivo"), Ct);
+        var path = SyntheticBooks.Cbz(Downloads("saga.cbz"), pages: 12);
+
+        // Opened to look at the cover and the last page: neither started nor read.
+        var peek = Reader(path, BookFormat.Cbz);
+        await peek.LoadAsync(Ct);
+        peek.LastCommand.Execute(null);
+        await peek.DisposeAsync();
+        var reading = (await ReadingsAsync())["book-1"];
+        Assert.False(reading.Started);
+        Assert.False(reading.IsRead);
+
+        // Six pages shown: being read.
+        var reader = Reader(path, BookFormat.Cbz);
+        await reader.LoadAsync(Ct);
+        reader.FirstCommand.Execute(null);
+        await TurnAsync(reader, 5);
+        await reader.DisposeAsync();
+        reading = (await ReadingsAsync())["book-1"];
+        Assert.True(reading.IsReading);
+        Assert.Equal(12, reading.Total);
+        Assert.Equal(6 / 12.0, reading.Fraction, 3);
+
+        // Started before: jumping to the end now finishes it.
+        var again = Reader(path, BookFormat.Cbz);
+        await again.LoadAsync(Ct);
+        again.LastCommand.Execute(null);
+        await again.DisposeAsync();
+        reading = (await ReadingsAsync())["book-1"];
+        Assert.True(reading.IsRead);
+        Assert.False(reading.IsReading);
+    }
+
+    [Fact]
+    public async Task The_library_shows_continue_reading_filters_by_status_and_marks_books()
+    {
+        await ImportAsync(
+            SyntheticBooks.Cbz(Downloads("saga1.cbz"), pages: 12, comicInfoXml: SyntheticBooks.ComicInfo(series: "Saga", number: "1")),
+            SyntheticBooks.Cbz(Downloads("saga2.cbz"), pages: 12, comicInfoXml: SyntheticBooks.ComicInfo(series: "Saga", number: "2")),
+            SyntheticBooks.Cbz(Downloads("paper.cbz"), pages: 12, comicInfoXml: SyntheticBooks.ComicInfo(series: "Paper Girls", number: "1")));
+        var library = _app.Get<LibraryPageViewModel>();
+        await library.LoadAsync(Ct);
+        library.SetViewModeCommand.Execute(LibraryViewMode.Books);
+        var cards = library.VisibleCards.Cast<BookCardViewModel>().ToList();
+        Assert.Equal(3, cards.Count);
+        Assert.False(library.ShowContinueReading);
+        Assert.Equal(3, library.Filters.Single(f => f.Filter == LibraryFilter.Unread).Count);
+
+        // Double click opens the book; reading it (in the reader) puts it in "Continuar lendo".
+        var saga2 = cards.Single(c => c.Book.Metadata.Series?.Number == "2");
+        saga2.OpenCommand.Execute(null);
+        var request = Assert.Single(_app.Reader.Opened);
+        var reader = new ReaderViewModel(request, _app.Get<ISettingsService>(), _app.Get<IUiThread>(), _app.Get<IReaderImages>(),
+            _app.Get<ReadingTracker>(), NullLogger.Instance);
+        await reader.LoadAsync(Ct);
+        await TurnAsync(reader, 6);
+        await reader.DisposeAsync();
+        await WaitForAsync(() => library.ShowContinueReading);
+
+        var item = Assert.Single(library.ContinueReading);
+        Assert.Same(saga2, item.Card);
+        Assert.True(saga2.IsReading);
+        Assert.Equal(1, library.Filters.Single(f => f.Filter == LibraryFilter.Reading).Count);
+        Assert.Equal(2, library.Filters.Single(f => f.Filter == LibraryFilter.Unread).Count);
+
+        // A filter or a search hides the strip.
+        library.Filters.Single(f => f.Filter == LibraryFilter.Reading).PickCommand.Execute(null);
+        Assert.False(library.ShowContinueReading);
+        Assert.Equal([saga2], library.VisibleCards);
+        library.Filters[0].PickCommand.Execute(null);
+        Assert.True(library.ShowContinueReading);
+
+        // The strip opens the file where the book was left.
+        item.OpenCommand.Execute(null);
+        Assert.Equal(request.FilePath, _app.Reader.Opened[^1].FilePath);
+
+        // Marked read by hand: leaves the strip.
+        saga2.SelectCommand.Execute(null);
+        var details = library.Selected!;
+        await details.MarkReadCommand.ExecuteAsync(null);
+        Assert.True(saga2.IsRead);
+        Assert.Empty(library.ContinueReading);
+        Assert.False(library.ShowContinueReading);
+        Assert.Equal(1, library.Filters.Single(f => f.Filter == LibraryFilter.Read).Count);
+        Assert.StartsWith(Strings.Reading_ReadOn.Split('{')[0], details.ReadingText);
+
+        // Not read again: back to the start, nothing kept.
+        await details.MarkUnreadCommand.ExecuteAsync(null);
+        Assert.False(saga2.IsRead);
+        Assert.False(saga2.IsReading);
+        Assert.Equal(Strings.Reading_NotRead, details.ReadingText);
+
+        // A book never opened can be marked read too.
+        var paper = cards.Single(c => c.Book.Metadata.Series?.Name == "Paper Girls");
+        paper.SelectCommand.Execute(null);
+        await library.Selected!.MarkReadCommand.ExecuteAsync(null);
+        Assert.True(paper.IsRead);
+    }
+
+    [Fact]
+    public async Task Clearing_the_progress_takes_the_book_out_of_continue_reading()
+    {
+        await ImportAsync(SyntheticBooks.Cbz(Downloads("saga.cbz"), pages: 12, comicInfoXml: SyntheticBooks.ComicInfo(series: "Saga", number: "1")));
+        var library = _app.Get<LibraryPageViewModel>();
+        await library.LoadAsync(Ct);
+        var details = library.Selected!;
+        var reader = Reader(ReaderRequest.For(Session.Current!, details.Card.Book, details.Card.Book.MainFile!).FilePath, BookFormat.Cbz,
+            details.Card.Id);
+        await reader.LoadAsync(Ct);
+        await TurnAsync(reader, 7);
+        await reader.DisposeAsync();
+        await WaitForAsync(() => library.ContinueReading.Count == 1);
+
+        await details.ClearProgressCommand.ExecuteAsync(null);
+
+        Assert.Empty(library.ContinueReading);
+        Assert.False(details.Card.IsReading);
+        var again = Reader(ReaderRequest.For(Session.Current!, details.Card.Book, details.Card.Book.MainFile!).FilePath, BookFormat.Cbz,
+            details.Card.Id);
+        await again.LoadAsync(Ct);
+        Assert.Equal(Pages(1, 12), again.PageText);
+        await again.DisposeAsync();
     }
 }
