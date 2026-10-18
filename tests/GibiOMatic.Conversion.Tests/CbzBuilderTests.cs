@@ -159,6 +159,11 @@ public sealed class CbzBuilderTests : IDisposable
         Assert.Equal(("Brian K. Vaughan", "Fiona Staples", "Image Comics"), (V("Writer"), V("Penciller"), V("Publisher")));
         Assert.Equal(("TPB", "9781607066019", "144"), (V("Format"), V("GTIN"), V("PageCount")));
         Assert.Equal("https://comicvine.gamespot.com/issue/4000-1/", V("Web"));
+        Assert.Null(V("SeriesGroup"));
+
+        // Universes go in SeriesGroup, which Komga turns into collections.
+        var grouped = XDocument.Parse(ComicInfoWriter.Write(Saga with { Universes = ["Massive-Verse", "Supermassive"] }, 144)).Root!;
+        Assert.Equal("Massive-Verse, Supermassive", grouped.Element("SeriesGroup")?.Value);
 
         var plutona = XDocument.Parse(ComicInfoWriter.Write(Saga with { Title = "Plutona", Series = null, OneShot = true }, 10)).Root!;
         Assert.Equal(("Plutona", "1", "1"), (plutona.Element("Series")?.Value, plutona.Element("Number")?.Value, plutona.Element("Count")?.Value));

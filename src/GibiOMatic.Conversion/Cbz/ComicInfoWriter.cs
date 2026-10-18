@@ -43,6 +43,7 @@ public static class ComicInfoWriter
             Element("Series", oneShot ? book.Title : book.Series!.Name);
             Element("Number", oneShot ? "1" : book.Series!.Number);
             Element("Volume", book.Series?.Volume);
+            Element("SeriesGroup", book.Universes.Count == 0 ? null : string.Join(", ", book.Universes));
             if (oneShot)
             {
                 Element("Count", "1");

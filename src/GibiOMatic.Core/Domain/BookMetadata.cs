@@ -25,6 +25,13 @@ public sealed record BookMetadata
     public IReadOnlyList<string> Tags { get; init; } = [];
 
     /// <summary>
+    /// Universes or publishing lines the book belongs to, across series (e.g. "Massive-Verse" for
+    /// Radiant Black, Radiant Red and Radiant Pink). Komga gets them as collections (ComicInfo
+    /// <c>SeriesGroup</c>).
+    /// </summary>
+    public IReadOnlyList<string> Universes { get; init; } = [];
+
+    /// <summary>
     /// A stand-alone book (graphic novel, a series of one book): destinations such as Komga put it
     /// in their one-shots folder (SPEC §9.2). <c>null</c> = not decided.
     /// </summary>

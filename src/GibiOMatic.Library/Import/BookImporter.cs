@@ -75,6 +75,7 @@ public sealed class BookImporter(IBookFileReader reader, ILogger<BookImporter> l
             Language = m.Language,
             Identifiers = new BookIdentifiers { Isbn = m.Isbn },
             Tags = m.Tags,
+            Universes = m.Universes,
             CreatedAt = now,
             UpdatedAt = now,
         };
@@ -186,6 +187,7 @@ public sealed class BookImporter(IBookFileReader reader, ILogger<BookImporter> l
         Language = book.Language ?? m.Language,
         Identifiers = book.Identifiers.Isbn is null ? book.Identifiers with { Isbn = m.Isbn } : book.Identifiers,
         Tags = book.Tags.Count > 0 ? book.Tags : m.Tags,
+        Universes = book.Universes.Count > 0 ? book.Universes : m.Universes,
     };
 
     private static BookFile NewFile(ImportAnalysis analysis, string name, FileRole role) => new()

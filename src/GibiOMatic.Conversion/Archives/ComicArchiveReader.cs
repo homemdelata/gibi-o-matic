@@ -88,6 +88,7 @@ internal static class ComicArchiveReader
             Language = Text("LanguageISO"),
             Isbn = Isbn.Find(Text("GTIN")),
             Tags = tags,
+            Universes = Universe.Split(Text("SeriesGroup")),
             PageCount = MetadataText.ParseInt(Text("PageCount")) is > 0 and var pages ? pages : null,
             Kind = MetadataText.KindFromFormat(Text("Format")),
         };

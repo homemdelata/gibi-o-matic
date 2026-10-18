@@ -52,7 +52,8 @@ public static class SyntheticBooks
 
     public static string ComicInfo(
         string? title = null, string? series = null, string? number = null, int? year = null, int? month = null,
-        string? writer = null, string? penciller = null, string? publisher = null, string? gtin = null, string? format = null)
+        string? writer = null, string? penciller = null, string? publisher = null, string? gtin = null, string? format = null,
+        string? seriesGroup = null)
     {
         var sb = new StringBuilder("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<ComicInfo xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n");
         void Add(string name, object? value)
@@ -73,6 +74,7 @@ public static class SyntheticBooks
         Add("Publisher", publisher);
         Add("GTIN", gtin);
         Add("Format", format);
+        Add("SeriesGroup", seriesGroup);
         sb.Append("</ComicInfo>\n");
         return sb.ToString();
     }

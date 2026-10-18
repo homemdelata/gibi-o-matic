@@ -22,6 +22,9 @@ public sealed record EmbeddedMetadata
     public string? Language { get; init; }
     public string? Isbn { get; init; }
     public IReadOnlyList<string> Tags { get; init; } = [];
+
+    /// <summary>ComicInfo <c>SeriesGroup</c>: universes or publishing lines.</summary>
+    public IReadOnlyList<string> Universes { get; init; } = [];
     public int? PageCount { get; init; }
 
     /// <summary>Kind stated by the file itself (e.g. ComicInfo <c>Format</c>), if any.</summary>

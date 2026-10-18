@@ -25,13 +25,15 @@ public sealed class BookFileReaderTests : IDisposable
     {
         var path = SyntheticBooks.Cbz(_temp.Combine("saga.cbz"), pages: 12, shuffledNames: true,
             comicInfoXml: SyntheticBooks.ComicInfo(series: "Saga", number: "1", year: 2012, month: 10, writer: "Brian K. Vaughan",
-                penciller: "Fiona Staples", publisher: "Image Comics", gtin: "978-1-60706-601-9", format: "TPB"));
+                penciller: "Fiona Staples", publisher: "Image Comics", gtin: "978-1-60706-601-9", format: "TPB",
+                seriesGroup: "Massive-Verse,  Supermassive , massive-verse"));
 
         var content = await _reader.ReadAsync(path, BookFormat.Cbz, Ct);
 
         var m = content.Metadata;
         Assert.Equal("Saga", m.Series);
         Assert.Equal("1", m.Number);
+        Assert.Equal(["Massive-Verse", "Supermassive"], m.Universes);
         Assert.Equal(new PartialDate(2012, 10), m.Date);
         Assert.Equal("Image Comics", m.Publisher);
         Assert.Equal("9781607066019", m.Isbn);
