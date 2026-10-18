@@ -141,10 +141,8 @@ public sealed class ReaderTests : IDisposable
         Assert.Equal(Pages(12, 12), reader.PageText);
         Assert.True(reader.Thumbnails[11].IsCurrent);
 
-        // Pages shown give their thumbnails; the others are rendered when the strip shows them.
+        // Pages shown (or rendered ahead) give their thumbnails.
         Assert.True(reader.Thumbnails[0].HasImage);
-        Assert.Null(reader.Thumbnails[7].Image);
-        await WaitForAsync(() => reader.Thumbnails[7].Image is not null);
 
         await reader.DisposeAsync();
 
@@ -162,6 +160,29 @@ public sealed class ReaderTests : IDisposable
         await other.LoadAsync(Ct);
         Assert.Equal(Pages(1, 12), other.PageText);
         await other.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task The_pages_around_the_screen_are_rendered_ahead_and_the_strip_renders_the_rest()
+    {
+        await Session.CreateAsync(_app.Folder("Arquivo"), Ct);
+        var reader = Reader(SyntheticBooks.Cbz(Downloads("saga.cbz"), pages: 20), BookFormat.Cbz);
+        await reader.LoadAsync(Ct);
+        reader.NextCommand.Execute(null);
+        for (var i = 0; i < 8; i++)
+        {
+            reader.NextCommand.Execute(null);
+        }
+
+        // On page 10: pages 11–14 ahead and 8–9 behind are rendered without being asked for.
+        Assert.Equal(Pages(10, 20), reader.PageText);
+        await WaitForAsync(() => new[] { 7, 8, 10, 11, 12, 13 }.All(p => reader.Thumbnails[p].HasImage));
+        Assert.False(reader.Thumbnails[16].HasImage);
+
+        // Thumbnails of pages far away are rendered when the strip shows them.
+        Assert.Null(reader.Thumbnails[18].Image);
+        await WaitForAsync(() => reader.Thumbnails[18].Image is not null);
+        await reader.DisposeAsync();
     }
 
     [Fact]

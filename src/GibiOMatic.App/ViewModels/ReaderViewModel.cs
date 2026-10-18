@@ -111,11 +111,13 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
 {
     private const int DefaultRenderHeight = 1600;
     private const int ThumbnailHeight = 150;
-    private const int CacheSize = 10;
+    /// <summary>Pages kept rendered around the ones on screen, in reading order.</summary>
+    private const int KeepAhead = 4;
+    private const int KeepBehind = 3;
 
     /// <summary>
     /// Pages slower than this (huge scans in a PDF take seconds each, whatever the size asked for)
-    /// get no extra renders for thumbnails, and only the next pages are rendered ahead.
+    /// get no extra renders for thumbnails.
     /// </summary>
     private const double SlowRenderMs = 700;
     private const int MinTextScale = 60;
@@ -133,7 +135,6 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
     private readonly SemaphoreSlim _renderGate = new(1, 1);
     private readonly CancellationTokenSource _closing = new();
     private readonly Dictionary<int, (IImage Image, int Height)> _cache = [];
-    private readonly LinkedList<int> _recent = new();
     private readonly Stack<ThumbnailViewModel> _thumbnailQueue = new();
 
     private OpenedBook? _book;
@@ -148,8 +149,13 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
     /// <summary>Work for the page on screen (cancelled when another page is asked for).</summary>
     private CancellationTokenSource _showCts = new();
 
-    /// <summary>Page renders waiting or running: thumbnails wait for them.</summary>
+    /// <summary>Page renders waiting or running (on screen or ahead): thumbnails wait for them.</summary>
     private int _pageRenders;
+
+    /// <summary>Renders of the pages on screen waiting or running: rendering ahead waits for them.</summary>
+    private int _screenRenders;
+
+    private bool _prefetching;
 
     /// <summary>Average time to render a page (0 until the first one).</summary>
     private double _renderMs;
@@ -536,12 +542,21 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
         var turned = LeftImage is null || CurrentPageChanged(screen);
         _shownPages = screen;
         IsPageLoading = !screen.All(IsCached);
+        Evict();
         try
         {
             var images = new IImage[screen.Length];
-            for (var i = 0; i < screen.Length; i++)
+            Interlocked.Increment(ref _screenRenders);
+            try
             {
-                images[i] = await GetPageAsync(pages, screen[i], ct);
+                for (var i = 0; i < screen.Length; i++)
+                {
+                    images[i] = await GetPageAsync(pages, screen[i], ct);
+                }
+            }
+            finally
+            {
+                Interlocked.Decrement(ref _screenRenders);
             }
 
             if (version != _showVersion)
@@ -550,26 +565,26 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
             }
 
             IsPageLoading = false;
-
+            var previous = new[] { LeftImage, RightImage };
             LeftSize = _sizes[screen[0]];
             RightSize = screen.Length > 1 ? _sizes[screen[1]] : default;
             LeftImage = images[0];
             RightImage = images.Length > 1 ? images[1] : null;
+            foreach (var image in previous)
+            {
+                // Pages that left the cache while on screen are freed once they are replaced.
+                if (image is not null && !IsShown(image) && !_cache.Values.Any(c => ReferenceEquals(c.Image, image)))
+                {
+                    (image as IDisposable)?.Dispose();
+                }
+            }
+
             if (turned)
             {
                 PageTurn++;
             }
 
-            // The next pages (and the previous ones) are ready before they are asked for.
-            foreach (var page in Neighbours())
-            {
-                if (version != _showVersion)
-                {
-                    return;
-                }
-
-                await GetPageAsync(pages, page, ct);
-            }
+            _ = PrefetchAsync();
         }
         catch (OperationCanceledException)
         {
@@ -590,23 +605,73 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
 
     private bool CurrentPageChanged(int[] screen) => !screen.SequenceEqual(_shownPages);
 
-    /// <summary>The next pages first; a slow book renders two spreads ahead and none behind.</summary>
-    private IEnumerable<int> Neighbours()
+    /// <summary>
+    /// Pages to have ready while the ones on screen are read: two ahead, one behind, two more ahead,
+    /// one more behind. Reading order is page order, also for manga (only the screen is mirrored).
+    /// </summary>
+    private IEnumerable<int> PrefetchOrder()
     {
-        for (var ahead = 1; ahead <= (SlowBook ? 2 : 1) && _spreadIndex + ahead < _spreads.Count; ahead++)
+        if (CurrentSpread is not [var first, ..] spread)
         {
-            foreach (var page in _spreads[_spreadIndex + ahead])
+            yield break;
+        }
+
+        var last = spread[^1];
+        foreach (var page in (int[])[last + 1, last + 2, first - 1, last + 3, last + 4, first - 2])
+        {
+            if (page >= 0 && page < PageCount)
             {
                 yield return page;
             }
         }
+    }
 
-        if (_spreadIndex > 0 && !SlowBook)
+    /// <summary>Kept in memory: <see cref="KeepAhead"/> pages after the screen and <see cref="KeepBehind"/> before it.</summary>
+    private bool InWindow(int page) =>
+        CurrentSpread is [var first, ..] spread && page >= first - KeepBehind && page <= spread[^1] + KeepAhead;
+
+    /// <summary>
+    /// Renders the pages around the screen, one at a time, in <see cref="PrefetchOrder"/>. The next
+    /// page to render is chosen again after each one, so turning pages re-plans the queue; the screen
+    /// always goes first.
+    /// </summary>
+    private async Task PrefetchAsync()
+    {
+        if (_prefetching)
         {
-            foreach (var page in _spreads[_spreadIndex - 1])
+            return;
+        }
+
+        _prefetching = true;
+        try
+        {
+            while (true)
             {
-                yield return page;
+                while (Volatile.Read(ref _screenRenders) > 0)
+                {
+                    await Task.Delay(20, _closing.Token);
+                }
+
+                if (_closing.IsCancellationRequested || _book?.Pages is not { } pages
+                    || PrefetchOrder().Where(p => !IsCached(p)).Select(p => (int?)p).FirstOrDefault() is not { } page)
+                {
+                    return;
+                }
+
+                await GetPageAsync(pages, page, _closing.Token);
             }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception ex) when (ex is not ObjectDisposedException)
+        {
+            // The page is shown (with its error) if it is asked for.
+            _logger.LogDebug(ex, "Rendering ahead failed in {Path}", _request.FilePath);
+        }
+        finally
+        {
+            _prefetching = false;
         }
     }
 
@@ -617,7 +682,6 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
         var height = TargetHeight(page);
         if (_cache.TryGetValue(page, out var cached) && cached.Height >= height * 0.9)
         {
-            Touch(page);
             return cached.Image;
         }
 
@@ -635,7 +699,6 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
                 // Rendered ahead while this waited (the next page, usually).
                 if (_cache.TryGetValue(page, out cached) && cached.Height >= height * 0.9)
                 {
-                    Touch(page);
                     return cached.Image;
                 }
 
@@ -671,7 +734,6 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
         }
 
         _cache[page] = (image, height);
-        Touch(page);
         Evict();
         return image;
     }
@@ -685,18 +747,11 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
 
     private bool IsShown(IImage image) => ReferenceEquals(image, LeftImage) || ReferenceEquals(image, RightImage);
 
-    private void Touch(int page)
-    {
-        _recent.Remove(page);
-        _recent.AddFirst(page);
-    }
-
+    /// <summary>Frees the pages outside the window around the screen (never one still shown).</summary>
     private void Evict()
     {
-        while (_recent.Count > CacheSize)
+        foreach (var page in _cache.Keys.Where(p => !InWindow(p)).ToList())
         {
-            var page = _recent.Last!.Value;
-            _recent.RemoveLast();
             if (_cache.Remove(page, out var entry) && !IsShown(entry.Image))
             {
                 (entry.Image as IDisposable)?.Dispose();
