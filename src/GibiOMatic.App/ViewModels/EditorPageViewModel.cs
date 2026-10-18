@@ -472,8 +472,9 @@ public sealed partial class EditorPageViewModel : PageViewModel
         }
     }
 
+    /// <summary>Leaves without saving; the next visit loads the books again.</summary>
     [RelayCommand]
-    private Task DiscardAsync(CancellationToken ct) => LoadAsync(ct);
+    private void Discard() => RequestNavigation(NavPage.Library);
 
     [RelayCommand]
     private void SearchOnline()

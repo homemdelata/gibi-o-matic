@@ -222,8 +222,10 @@ public sealed class ReviewAndEditorTests : IDisposable
         Assert.NotNull(editor.Credits[0].Role);
         Assert.NotNull(editor.SelectedKind);
 
-        await editor.DiscardCommand.ExecuteAsync(null);
-        Assert.Empty(editor.Credits);
+        NavigationRequest? request = null;
+        editor.NavigationRequested += (_, r) => request = r;
+        editor.DiscardCommand.Execute(null);
+        Assert.Equal(NavPage.Library, request?.Page);
 
         editor.SetBooks([books[1].Metadata.Id]);
         await editor.OnNavigatedToAsync(Ct);
