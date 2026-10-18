@@ -225,11 +225,16 @@ public sealed class DestinationSync(LibraryInfo library, LibraryIndex index, ILo
     public Task<IReadOnlyList<DestinationLogEntry>> HistoryAsync(string destinationId, int limit, CancellationToken ct) =>
         _log.GetAsync(destinationId, limit, ct);
 
-    private static string Absolute(IDestination destination, string relative)
+    private static string Absolute(IDestination destination, string relative) => InsideFolder(destination.Config.Folder!, relative);
+
+    /// <summary>The file's full path, refusing anything that leaves the folder (the folder may be a drive root, <c>Z:\</c>).</summary>
+    internal static string InsideFolder(string folder, string relative)
     {
-        var root = Path.GetFullPath(destination.Config.Folder!);
+        var root = Path.GetFullPath(folder);
+        // TrimEndingDirectorySeparator keeps the separator of a root ("Z:\"), so add one only when missing.
+        var prefix = Path.EndsInDirectorySeparator(root) ? root : root + Path.DirectorySeparatorChar;
         var full = Path.GetFullPath(Path.Combine(root, relative));
-        if (!full.StartsWith(Path.TrimEndingDirectorySeparator(root) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+        if (!full.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) || full.Length == prefix.Length)
         {
             throw new InvalidOperationException($"'{relative}' is outside the destination folder.");
         }

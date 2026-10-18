@@ -58,6 +58,27 @@ public sealed class OutputNamesTests
     }
 }
 
+public sealed class DestinationFolderTests
+{
+    [Theory]
+    [InlineData(@"Z:\", @"Saga/Saga v01.cbz", @"Z:\Saga\Saga v01.cbz")]
+    [InlineData(@"Z:\Quadrinhos\", @"_oneshots/Shrugged.cbz", @"Z:\Quadrinhos\_oneshots\Shrugged.cbz")]
+    [InlineData(@"Z:\Quadrinhos", @"Saga.cbz", @"Z:\Quadrinhos\Saga.cbz")]
+    public void Copies_go_inside_the_folder_even_at_a_drive_root(string folder, string relative, string expected)
+    {
+        Assert.Equal(expected, DestinationSync.InsideFolder(folder, relative));
+    }
+
+    [Theory]
+    [InlineData(@"Z:\Quadrinhos", @"../outra/Saga.cbz")]
+    [InlineData(@"Z:\Quadrinhos", @"..\Quadrinhos2\Saga.cbz")]
+    [InlineData(@"Z:\", @"")]
+    public void Paths_leaving_the_folder_are_refused(string folder, string relative)
+    {
+        Assert.Throws<InvalidOperationException>(() => DestinationSync.InsideFolder(folder, relative));
+    }
+}
+
 public sealed class KomgaClientTests
 {
     private sealed class FakeHttp(Func<HttpRequestMessage, HttpResponseMessage> respond) : HttpMessageHandler

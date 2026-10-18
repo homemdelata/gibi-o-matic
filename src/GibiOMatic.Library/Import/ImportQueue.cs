@@ -78,7 +78,9 @@ public sealed class ImportQueue : IAsyncDisposable
     public async Task<int> AddAsync(IEnumerable<string> paths, CancellationToken ct = default)
     {
         var open = await _store.GetOpenSourcePathsAsync(ct);
-        var libraryRoot = Path.TrimEndingDirectorySeparator(_library.RootPath) + Path.DirectorySeparatorChar;
+        // A drive root ("G:\\") keeps its separator after trimming.
+        var libraryRoot = Path.TrimEndingDirectorySeparator(_library.RootPath);
+        libraryRoot = Path.EndsInDirectorySeparator(libraryRoot) ? libraryRoot : libraryRoot + Path.DirectorySeparatorChar;
         var toAdd = new List<string>();
         foreach (var file in paths.SelectMany(Expand))
         {
