@@ -731,6 +731,7 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
             await _secrets.SetAsync(config.SecretName, apiKey.Trim(), ct);
         }
 
+        _session.Destinations?.NotifyDestinationsChanged();
         await RefreshAsync(ct);
         return config;
     }
@@ -746,6 +747,7 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
         if (_session.Destinations is { } service)
         {
             await service.ForgetAsync(config.Id, ct);
+            service.NotifyDestinationsChanged();
         }
 
         ShowList();

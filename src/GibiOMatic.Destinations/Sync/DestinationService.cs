@@ -74,6 +74,9 @@ public sealed class DestinationService : IAsyncDisposable
     public IReadOnlyList<IDestination> Destinations =>
         _settings.Current.Destinations.Where(d => _types.ContainsKey(d.Type)).Select(d => _types[d.Type].Create(d)).ToList();
 
+    /// <summary>A destination was added, changed or removed in the settings (the counts follow).</summary>
+    public void NotifyDestinationsChanged() => Changed?.Invoke(this, EventArgs.Empty);
+
     public IDestination? Find(string destinationId) => Destinations.FirstOrDefault(d => d.Config.Id == destinationId);
 
     /// <summary>Starts the worker; books changed in an earlier session and not updated yet go first.</summary>

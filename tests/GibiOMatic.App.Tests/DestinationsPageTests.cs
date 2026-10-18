@@ -187,7 +187,9 @@ public sealed class DestinationsPageTests : IDisposable
     public async Task Removing_a_destination_keeps_its_files()
     {
         await ImportSagaAsync();
+        var shell = _app.Get<ShellViewModel>();
         var page = await CreateKomgaAsync();
+        await WaitForAsync(() => shell.NavItems.Single(i => i.Page == NavPage.Destinations).Count == "1");
         page.Detail!.SyncCommand.Execute(null);
         await Session.Destinations!.WaitUntilIdleAsync(Ct);
 
@@ -199,6 +201,7 @@ public sealed class DestinationsPageTests : IDisposable
         Assert.Empty(page.Cards);
         Assert.Empty(_app.Get<ISettingsService>().Current.Destinations);
         Assert.Equal(2, Directory.GetFiles(KomgaFolder, "*.cbz", SearchOption.AllDirectories).Length);
+        await WaitForAsync(() => shell.NavItems.Single(i => i.Page == NavPage.Destinations).Count is null);
     }
 
     private static async Task WaitForAsync(Func<bool> condition)
