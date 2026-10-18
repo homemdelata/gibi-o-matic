@@ -182,9 +182,15 @@ Objetivo: agrupar séries do mesmo universo ou linha editorial (ex.: Radiant Bla
   - formato AZW3/MOBI;
   - progresso e timeout.
   - Avaliar distribuir o KCC junto com o app (licença ISC: manter o aviso).
-- [ ] Entrega via MTP no Windows (detectar o Kindle conectado, copiar para `documents/`). Linux: **a fazer**. O botão "Abrir pasta" funciona sempre.
+- [ ] **Preparar sem o Kindle conectado** (pedido do usuário):
+  - os livros escolhidos ("Livros que eu escolher") são convertidos em segundo plano, um por vez, numa pasta de preparo local (padrão `%LOCALAPPDATA%\GibiOMatic\kindle`, configurável; nunca no Drive);
+  - status por livro: Na fila, Preparando, Pronto para enviar, No Kindle, Desatualizado (metadados mudaram depois de preparar → refaz sozinho).
+- [ ] **Enviar quando conectar**: entrega via MTP no Windows (detectar o Kindle, copiar para `documents/`). Ao conectar, uma faixa oferece "Kindle conectado: N livros prontos. Enviar?", com a lista e confirmação. O app lembra o que já enviou e não manda de novo. Depois de enviada, a cópia preparada é apagada (reenviar converte de novo). Linux: **a fazer**. O botão "Abrir pasta" funciona sempre.
+- [ ] **O app nunca apaga nada do Kindle sozinho.** Tirar um livro da lista não apaga do aparelho.
+- [ ] **Mini gerenciador do Kindle**: listar os livros da pasta `documents/` (marcando os que o app enviou) e apagar os escolhidos, só por ação manual e com confirmação.
 - [ ] **Tela do destino Kindle** (`DestinoKindle.dc.html`):
-  - aba Enviar (escolher livros, gerar o que falta, enviar);
+  - aba Enviar (escolher livros, ver o status do preparo, enviar);
+  - aba No Kindle (o mini gerenciador);
   - aba Configurações com "Avançado" recolhido.
 
 **Pronto quando**: um livro escolhido chega ao Colorsoft do usuário e abre com a visualização de painéis.
