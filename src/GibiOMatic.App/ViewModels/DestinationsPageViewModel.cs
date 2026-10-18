@@ -148,11 +148,13 @@ public sealed partial class DestinationFormViewModel : ViewModelBase
 {
     private readonly KomgaClient _komga;
     private readonly IFolderPicker _folders;
+    private readonly ILogger _logger;
     private readonly BookMetadata _sample;
 
-    public DestinationFormViewModel(DestinationConfig config, BookMetadata sample, KomgaClient komga, IFolderPicker folders)
+    public DestinationFormViewModel(DestinationConfig config, BookMetadata sample, KomgaClient komga, IFolderPicker folders, ILogger logger)
     {
         _komga = komga;
+        _logger = logger;
         _folders = folders;
         _sample = sample;
         Name = config.Name;
@@ -314,7 +316,16 @@ public sealed partial class DestinationFormViewModel : ViewModelBase
             ServerStatusIsError = true;
             ServerStatus = ex.Status is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden
                 ? Strings.Destination_ServerKeyRejected
-                : string.Format(CultureInfo.CurrentCulture, Strings.Destination_ServerError, ex.Message);
+                : ex.NotApi
+                    ? Strings.Destination_ServerNotApi
+                    : string.Format(CultureInfo.CurrentCulture, Strings.Destination_ServerError, ex.Message);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Whatever the server does, the test only reports it.
+            _logger.LogError(ex, "Testing the Komga server failed");
+            ServerStatusIsError = true;
+            ServerStatus = string.Format(CultureInfo.CurrentCulture, Strings.Destination_ServerError, ex.Message);
         }
     }
 
@@ -709,7 +720,7 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
             .Select(b => b.Metadata)
             .FirstOrDefault(m => m.Series is not null && m.Review.Status == ReviewStatus.Approved)
             ?? new BookMetadata { Id = Ulid.NewUlid(), Title = "Saga, Vol. 1", Series = new SeriesInfo("Saga", "1"), Date = new PartialDate(2012), Publisher = "Image" };
-        return new DestinationFormViewModel(config, sample, _komga, _folders)
+        return new DestinationFormViewModel(config, sample, _komga, _folders, _logger)
         {
             StoredKeyAsync = token => _secrets.IsSupported ? _secrets.GetAsync(config.SecretName, token) : Task.FromResult<string?>(null),
         };

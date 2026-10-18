@@ -104,6 +104,37 @@ public sealed class KomgaClientTests
         Assert.Equal(HttpStatusCode.Unauthorized, ex.Status);
         await Assert.ThrowsAsync<KomgaException>(() => client.GetLibrariesAsync("not a url", "k", Ct));
     }
+
+    private static HttpResponseMessage WebPage() => new(HttpStatusCode.OK)
+    {
+        Content = new StringContent("<!DOCTYPE html><html></html>", System.Text.Encoding.UTF8, "text/html"),
+    };
+
+    [Fact]
+    public async Task An_address_copied_from_the_browser_falls_back_to_the_server_root()
+    {
+        var http = new FakeHttp(r => r.RequestUri!.AbsolutePath == "/api/v1/libraries"
+            ? new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("[]", System.Text.Encoding.UTF8, "application/json") }
+            : WebPage());
+        var client = new KomgaClient(new HttpClient(http), NullLogger<KomgaClient>.Instance);
+
+        Assert.Empty(await client.GetLibrariesAsync("http://komga:25600/libraries/0A1/series#top", "k", Ct));
+        Assert.Equal("http://komga:25600/libraries/0A1/series/api/v1/libraries", http.Requests[0].RequestUri!.ToString());
+        Assert.Equal("http://komga:25600/api/v1/libraries", http.Requests[1].RequestUri!.ToString());
+    }
+
+    [Fact]
+    public async Task A_web_page_instead_of_the_api_is_reported_not_thrown_as_json_error()
+    {
+        var client = new KomgaClient(new HttpClient(new FakeHttp(_ => WebPage())), NullLogger<KomgaClient>.Instance);
+
+        var ex = await Assert.ThrowsAsync<KomgaException>(() => client.GetLibrariesAsync("http://komga:25600", "k", Ct));
+        Assert.True(ex.NotApi);
+
+        var plain = new KomgaClient(new HttpClient(new FakeHttp(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("<html>") })),
+            NullLogger<KomgaClient>.Instance);
+        Assert.True((await Assert.ThrowsAsync<KomgaException>(() => plain.GetLibrariesAsync("http://komga:25600", "k", Ct))).NotApi);
+    }
 }
 
 public sealed class SyncTests : IAsyncLifetime
