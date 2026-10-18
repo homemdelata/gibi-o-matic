@@ -68,6 +68,8 @@ public sealed class ImportQueue : IAsyncDisposable
     public async Task StartAsync(CancellationToken ct = default)
     {
         await _store.ResetInterruptedAsync(ct);
+        // Imported files are in the library now; the inbox keeps them only for the session's summary.
+        _thumbnails.DeleteInboxThumbnails(_library, await _store.DeleteImportedAsync(ct));
         IsPaused = await _index.GetStateAsync(PausedKey, ct) == "true";
         _worker = Task.Run(() => RunAsync(_stop.Token), CancellationToken.None);
     }

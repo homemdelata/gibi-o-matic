@@ -106,13 +106,17 @@ internal sealed class InboxStore(LibraryIndex index)
             """, cancellationToken: ct));
     }
 
-    public async Task<IReadOnlyList<long>> DeleteFinishedAsync(CancellationToken ct)
+    public Task<IReadOnlyList<long>> DeleteFinishedAsync(CancellationToken ct) => DeleteInStatesAsync("'imported', 'skipped', 'failed'", ct);
+
+    public Task<IReadOnlyList<long>> DeleteImportedAsync(CancellationToken ct) => DeleteInStatesAsync("'imported'", ct);
+
+    private async Task<IReadOnlyList<long>> DeleteInStatesAsync(string states, CancellationToken ct)
     {
         await using var connection = await index.OpenAsync(ct);
         var ids = (await connection.QueryAsync<long>(new CommandDefinition(
-            "SELECT id FROM inbox_items WHERE state IN ('imported', 'skipped', 'failed');", cancellationToken: ct))).AsList();
+            $"SELECT id FROM inbox_items WHERE state IN ({states});", cancellationToken: ct))).AsList();
         await connection.ExecuteAsync(new CommandDefinition(
-            "DELETE FROM inbox_items WHERE state IN ('imported', 'skipped', 'failed');", cancellationToken: ct));
+            $"DELETE FROM inbox_items WHERE state IN ({states});", cancellationToken: ct));
         return ids;
     }
 

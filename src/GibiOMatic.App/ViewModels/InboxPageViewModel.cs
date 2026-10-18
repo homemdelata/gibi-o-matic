@@ -277,7 +277,8 @@ public sealed partial class InboxPageViewModel : PageViewModel
     [NotifyPropertyChangedFor(nameof(HasItems), nameof(IsEmpty))]
     public partial ImportSummary Summary { get; private set; } = new(0, 0, 0, 0, 0, 0);
 
-    public bool HasItems => Summary.Total > 0;
+    /// <summary>Imported files leave the list; they count only in the summary.</summary>
+    public bool HasItems => Summary.Total - Summary.Imported > 0;
 
     public bool IsEmpty => !HasItems;
 
@@ -328,7 +329,7 @@ public sealed partial class InboxPageViewModel : PageViewModel
         await _refreshGate.WaitAsync(ct);
         try
         {
-            var entries = await queue.GetEntriesAsync(ct);
+            var entries = (await queue.GetEntriesAsync(ct)).Where(e => e.Item.State != InboxItemState.Imported).ToList();
             var byId = Items.ToDictionary(i => i.Id);
             var ids = entries.Select(e => e.Item.Id).ToHashSet();
             for (var i = Items.Count - 1; i >= 0; i--)
@@ -368,7 +369,7 @@ public sealed partial class InboxPageViewModel : PageViewModel
     private void UpdateTexts(IReadOnlyList<InboxEntry> entries)
     {
         var s = Summary;
-        ListHeader = s.Total == 0 ? null : string.Format(CultureInfo.CurrentCulture, Strings.Inbox_ListHeader, s.Total, s.Waiting, s.Ready);
+        ListHeader = !HasItems ? null : string.Format(CultureInfo.CurrentCulture, Strings.Inbox_ListHeader, s.Total - s.Imported, s.Waiting, s.Ready);
 
         var ready = entries.Where(e => e.Item.State == InboxItemState.Ready).ToList();
         CanImport = ready.Count > 0;

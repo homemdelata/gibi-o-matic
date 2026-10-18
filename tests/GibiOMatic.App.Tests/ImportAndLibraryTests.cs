@@ -62,8 +62,10 @@ public sealed class ImportAndLibraryTests : IDisposable
         await Session.Queue.WaitUntilIdleAsync(Ct);
         await inbox.RefreshAsync(Ct);
 
-        Assert.All(inbox.Items, i => Assert.Equal(StatusKind.Ok, i.StatusKind));
-        Assert.NotNull(inbox.DoneSummary);
+        // Imported files leave the list; the summary still tells how it went.
+        Assert.Empty(inbox.Items);
+        Assert.True(inbox.IsEmpty);
+        Assert.Contains("2", inbox.DoneSummary);
         Assert.False(inbox.CanImport);
 
         var library = _app.Get<LibraryPageViewModel>();
