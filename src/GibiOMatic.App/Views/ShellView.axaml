@@ -20,18 +20,45 @@
           <TextBlock Classes="brand" Text="Gibi-o-matic" VerticalAlignment="Center" />
         </StackPanel>
 
-        <!-- Status of the archive (destinations join in F3/F4) -->
+        <!-- Status of the archive and of each destination -->
         <Border DockPanel.Dock="Bottom" Padding="14" CornerRadius="12"
                 Background="{DynamicResource InputBrush}"
                 BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-          <Grid ColumnDefinitions="Auto,Auto,*">
-            <Ellipse Width="8" Height="8" Fill="{DynamicResource OkBrush}" VerticalAlignment="Center" />
-            <TextBlock Grid.Column="1" Margin="8,0,10,0" FontSize="12" FontWeight="Medium"
-                       Text="{x:Static r:Strings.Status_Archive}" />
-            <TextBlock Grid.Column="2" Classes="mono muted" FontSize="12" HorizontalAlignment="Right"
-                       TextTrimming="PrefixCharacterEllipsis"
-                       Text="{Binding LibraryPath}" ToolTip.Tip="{Binding LibraryPath}" />
-          </Grid>
+          <StackPanel Spacing="10">
+            <Grid ColumnDefinitions="Auto,Auto,*">
+              <Ellipse Width="8" Height="8" Fill="{DynamicResource OkBrush}" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Margin="8,0,10,0" FontSize="12" FontWeight="Medium"
+                         Text="{x:Static r:Strings.Status_Archive}" />
+              <TextBlock Grid.Column="2" Classes="mono muted" FontSize="12" HorizontalAlignment="Right"
+                         TextTrimming="PrefixCharacterEllipsis"
+                         Text="{Binding LibraryPath}" ToolTip.Tip="{Binding LibraryPath}" />
+            </Grid>
+            <ItemsControl ItemsSource="{Binding DestinationsStatus.Items}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Spacing="10" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:SidebarDestinationViewModel">
+                  <Button Classes="status-line" Command="{Binding OpenCommand}"
+                          ToolTip.Tip="{Binding StatusText}" AutomationProperties.Name="{Binding Name}">
+                    <StackPanel Spacing="6">
+                      <Grid ColumnDefinitions="Auto,*,Auto">
+                        <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                                 Fill="{Binding Kind, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Fill}" />
+                        <TextBlock Grid.Column="1" Margin="8,0,10,0" FontSize="12" FontWeight="Medium"
+                                   TextTrimming="CharacterEllipsis" Text="{Binding Name}" />
+                        <TextBlock Grid.Column="2" Classes="muted" FontSize="12" Text="{Binding StatusText}" />
+                      </Grid>
+                      <ProgressBar Height="3" MinHeight="3" Minimum="0" Maximum="1" Value="{Binding ProgressValue}"
+                                   IsVisible="{Binding IsRunning}" />
+                    </StackPanel>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
         </Border>
 
         <ListBox Classes="nav" ItemsSource="{Binding NavItems}" SelectedItem="{Binding SelectedNavItem}"

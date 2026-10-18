@@ -48,6 +48,7 @@ public sealed class StatusBrushConverter : IValueConverter
                 "Ok" => Resource("OkBrush"),
                 "Warn" => Resource("WarnBrush"),
                 "Bad" => Resource("BadBrush"),
+                "Busy" => Resource("AccentBrush"),
                 _ => Resource("OffBrush"),
             },
             _ => tone switch

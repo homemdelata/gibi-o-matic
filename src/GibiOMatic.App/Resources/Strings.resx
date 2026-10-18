@@ -443,4 +443,12 @@
   <data name="History_OpenLogs" xml:space="preserve"><value>Abrir pasta de logs</value></data>
   <data name="History_LogsHelp" xml:space="preserve"><value>Os logs do app têm os detalhes técnicos dos erros (um arquivo por dia).</value></data>
   <data name="Destination_ServerNotApi" xml:space="preserve"><value>Esse endereço respondeu com uma página, não com a API do Komga. Use o endereço do servidor sem caminho (ex.: http://192.168.0.10:25600). Se o Komga está atrás de um proxy com login, a chave de API precisa passar direto por ele.</value></data>
+  <data name="Sidebar_NoFolder" xml:space="preserve"><value>sem pasta</value></data>
+  <data name="Sidebar_Unavailable" xml:space="preserve"><value>desconectado</value></data>
+  <data name="Sidebar_Errors" xml:space="preserve"><value>{0} erros</value></data>
+  <data name="Sidebar_FirstSync" xml:space="preserve"><value>confirmar 1ª vez</value></data>
+  <data name="Sidebar_Pending" xml:space="preserve"><value>{0} para atualizar</value></data>
+  <data name="Sidebar_UpToDate" xml:space="preserve"><value>em dia</value></data>
+  <data name="Sidebar_Finishing" xml:space="preserve"><value>finalizando…</value></data>
+  <data name="Sidebar_Progress" xml:space="preserve"><value>{0} de {1}</value></data>
 </root>

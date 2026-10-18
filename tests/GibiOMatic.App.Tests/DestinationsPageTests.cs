@@ -97,6 +97,24 @@ public sealed class DestinationsPageTests : IDisposable
     }
 
     [Fact]
+    public async Task The_sidebar_shows_each_destination_status()
+    {
+        await ImportSagaAsync();
+        var shell = _app.Get<ShellViewModel>();
+        var page = await CreateKomgaAsync();
+        await shell.DestinationsStatus.RefreshAsync();
+        var line = Assert.Single(shell.DestinationsStatus.Items);
+        Assert.Equal(("Komga de casa", StatusKind.Warn), (line.Name, line.Kind));
+
+        page.Detail!.SyncCommand.Execute(null);
+        await Session.Destinations!.WaitUntilIdleAsync(Ct);
+        await shell.DestinationsStatus.RefreshAsync();
+
+        line = Assert.Single(shell.DestinationsStatus.Items);
+        Assert.Equal((Resources.Strings.Sidebar_UpToDate, StatusKind.Ok, false), (line.StatusText, line.Kind, line.IsRunning));
+    }
+
+    [Fact]
     public async Task A_copy_that_fails_shows_up_in_the_history_and_on_the_card()
     {
         await ImportSagaAsync();

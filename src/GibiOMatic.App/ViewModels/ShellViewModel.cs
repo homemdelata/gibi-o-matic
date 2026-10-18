@@ -75,6 +75,11 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
         }
 
         _counts = new Debouncer(ui, TimeSpan.FromMilliseconds(300), UpdateCountsAsync);
+        DestinationsStatus = new DestinationsStatusViewModel(session, ui, id =>
+        {
+            _ = destinationsPage.OpenAsync(id, showPlan: false);
+            NavigateTo(NavPage.Destinations);
+        });
         if (session.Queue is { } queue)
         {
             queue.Changed += OnQueueChanged;
@@ -93,6 +98,9 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
 
     public IReadOnlyList<NavItemViewModel> NavItems { get; }
 
+    /// <summary>The destinations' lines in the sidebar status card.</summary>
+    public DestinationsStatusViewModel DestinationsStatus { get; }
+
     public string LibraryPath { get; }
 
     [ObservableProperty]
@@ -108,6 +116,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
     {
         NavigateTo(NavPage.Library);
         await UpdateCountsAsync();
+        await DestinationsStatus.RefreshAsync();
         await CurrentNavigation;
     }
 
@@ -184,6 +193,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
         }
 
         _counts.Dispose();
+        DestinationsStatus.Dispose();
         foreach (var item in NavItems)
         {
             item.Content.Dispose();
