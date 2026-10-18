@@ -12,6 +12,22 @@
     <DataTemplate DataType="vm:BookCardViewModel">
       <Button Classes="cover-card" Command="{Binding SelectCommand}" Margin="3,0" Padding="6"
               c:DoubleTap.Command="{Binding OpenCommand}" AutomationProperties.Name="{Binding Title}">
+        <Button.ContextMenu>
+          <ContextMenu IsVisible="{Binding HasMenu}">
+            <MenuItem Header="{x:Static r:Strings.Menu_Open}" Command="{Binding OpenCommand}">
+              <MenuItem.Icon>
+                <c:StrokeIcon Data="{StaticResource Icon.BookOpen}" Width="16" Height="16" />
+              </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="{Binding KindleMenuText}" Command="{Binding ToggleKindleCommand}" />
+            <Separator />
+            <MenuItem Header="{Binding ReadMenuText}" Command="{Binding ToggleReadCommand}" />
+            <MenuItem Header="{x:Static r:Strings.Reading_Clear}" Command="{Binding ClearProgressCommand}" IsVisible="{Binding IsReading}" />
+            <Separator />
+            <MenuItem Header="{x:Static r:Strings.Menu_Edit}" Command="{Binding EditCommand}" />
+            <MenuItem Header="{x:Static r:Strings.Menu_Review}" Command="{Binding ReviewCommand}" />
+          </ContextMenu>
+        </Button.ContextMenu>
         <StackPanel Spacing="9">
           <Panel>
             <Border Margin="-6" CornerRadius="15" BorderThickness="3" BorderBrush="{DynamicResource AccentBrush}"
@@ -616,9 +632,10 @@
                         Command="{Binding $parent[UserControl].((vm:LibraryPageViewModel)DataContext).EditSelectedCommand}" />
               </Grid>
               <Button Classes="secondary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                      Content="{Binding $parent[UserControl].((vm:LibraryPageViewModel)DataContext).KindleButtonText}"
                       Command="{Binding $parent[UserControl].((vm:LibraryPageViewModel)DataContext).ToggleKindleCommand}"
-                      ToolTip.Tip="{x:Static r:Strings.Details_SendKindleTip}" />
+                      ToolTip.Tip="{x:Static r:Strings.Details_SendKindleTip}">
+                <TextBlock Text="{Binding $parent[UserControl].((vm:LibraryPageViewModel)DataContext).KindleButtonText}" />
+              </Button>
             </StackPanel>
           </StackPanel>
         </ScrollViewer>

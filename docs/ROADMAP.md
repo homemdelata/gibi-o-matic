@@ -189,11 +189,11 @@ Objetivo: agrupar séries do mesmo universo ou linha editorial (ex.: Radiant Bla
 - [x] **O app nunca apaga nada do Kindle sozinho.** Tirar um livro da lista não apaga do aparelho.
 - [x] **Mini gerenciador do Kindle**: listar os livros da pasta `documents/` (marcando os que o app enviou) e apagar os escolhidos, só por ação manual e com confirmação.
 - [x] **Tela do destino Kindle** (`DestinoKindle.dc.html`):
-  - aba Enviar (escolher livros, ver o status do preparo, enviar);
+  - aba Enviar (a lista com o status do preparo, enviar);
   - aba No Kindle (o mini gerenciador);
   - aba Configurações com "Avançado" recolhido;
   - aba Histórico.
-- [x] "Enviar ao Kindle" no painel da Biblioteca (põe ou tira o livro da lista) e o estado da cópia no painel.
+- [x] Os livros entram na lista pela Biblioteca (pedido do usuário): menu do botão direito num livro ("Pôr na lista do Kindle", e também abrir, marcar como lido/não lido, limpar progresso, editar e revisar metadados) ou o botão no painel; a tela do Kindle mostra só a lista. O painel mostra o estado da cópia.
 
 **Pronto quando**: um livro escolhido chega ao Colorsoft do usuário e abre com a visualização de painéis.
 

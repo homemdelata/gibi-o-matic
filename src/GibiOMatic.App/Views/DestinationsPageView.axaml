@@ -423,8 +423,6 @@
                   <TextBlock Classes="mono" FontSize="12" Opacity="0.75" Text="{Binding SentCount}" VerticalAlignment="Center" />
                 </StackPanel>
               </Button>
-              <Button Classes="chip" Classes.selected="{Binding IsLibraryFilter}" Command="{Binding SetFilterCommand}" CommandParameter="{x:Static vm:KindleListFilter.Library}"
-                      Content="{x:Static r:Strings.Kindle_FilterLibrary}" />
             </StackPanel>
           </Grid>
 

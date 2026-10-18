@@ -58,6 +58,21 @@ public sealed class KindlePageTests : IDisposable
         return page;
     }
 
+    /// <summary>Right-click on a book in the Library → "Pôr na lista do Kindle".</summary>
+    private async Task<LibraryPageViewModel> AddFromLibraryAsync(int index)
+    {
+        var library = _app.Get<LibraryPageViewModel>();
+        await library.LoadAsync(Ct);
+        library.SetViewModeCommand.Execute(LibraryViewMode.Books);
+        var card = library.VisibleCards.Cast<BookCardViewModel>().ElementAt(index);
+        Assert.True(card.HasMenu);
+        Assert.Equal(Strings.Menu_AddKindle, card.KindleMenuText);
+        await card.ToggleKindleCommand.ExecuteAsync(null);
+        Assert.True(card.IsInKindleList);
+        Assert.Equal(Strings.Menu_RemoveKindle, card.KindleMenuText);
+        return library;
+    }
+
     [Fact]
     public async Task A_kindle_is_created_in_the_wizard_and_prepares_the_books_chosen_in_its_list()
     {
@@ -70,10 +85,8 @@ public sealed class KindlePageTests : IDisposable
         var detail = page.KindleDetail!;
         Assert.Equal(Strings.Kindle_EmptyList, detail.EmptyText);
 
-        // "Toda a biblioteca": ticking a book puts it in the list and it is prepared.
-        detail.SetFilterCommand.Execute(KindleListFilter.Library);
-        Assert.Equal(2, detail.Rows.Count);
-        detail.Rows[0].IsChosen = true;
+        // A book chosen in the Library is prepared.
+        await AddFromLibraryAsync(0);
         await WaitForAsync(async () =>
         {
             await Service.WaitUntilIdleAsync(Ct);
@@ -88,6 +101,16 @@ public sealed class KindlePageTests : IDisposable
         // A black-and-white model gets grey pages.
         detail.Form.SelectedModel = KindleModels.Find("KPW6");
         Assert.False(detail.Form.Color);
+
+        // Unticking it here takes it out of the list.
+        await detail.RefreshAsync(Ct);
+        Assert.Single(detail.Rows).IsChosen = false;
+        await WaitForAsync(async () =>
+        {
+            await detail.RefreshAsync(Ct);
+            return detail.ChosenCount == 0;
+        });
+        Assert.Empty(_app.Get<ISettingsService>().Current.Destinations.Single().ChosenBookIds);
     }
 
     [Fact]
@@ -103,9 +126,10 @@ public sealed class KindlePageTests : IDisposable
         var library = (LibraryPageViewModel)shell.NavItems[0].Content;
         var book = library.Selected!;
 
-        Assert.Equal(Strings.Details_SendKindle, library.KindleButtonText);
+        Assert.Equal(Strings.Menu_AddKindle, library.KindleButtonText);
         await library.ToggleKindleCommand.ExecuteAsync(null);
-        Assert.Equal(Strings.Details_KindleInList, library.KindleButtonText);
+        Assert.Equal(Strings.Menu_RemoveKindle, library.KindleButtonText);
+        Assert.True(book.Card.IsInKindleList);
         await Service.WaitUntilIdleAsync(Ct);
         Assert.False(shell.ShowKindleBanner);
 
@@ -147,8 +171,7 @@ public sealed class KindlePageTests : IDisposable
         await ImportSagaAsync();
         var page = await CreateKindleAsync();
         var detail = page.KindleDetail!;
-        detail.SetFilterCommand.Execute(KindleListFilter.Library);
-        detail.Rows[0].IsChosen = true;
+        await AddFromLibraryAsync(0);
         await WaitForAsync(async () =>
         {
             await Service.WaitUntilIdleAsync(Ct);
@@ -180,6 +203,30 @@ public sealed class KindlePageTests : IDisposable
         Assert.Empty(_app.Get<ISettingsService>().Current.Destinations.Single().ChosenBookIds);
         await detail.LoadHistoryAsync();
         Assert.Contains(detail.History, h => h.Text == Strings.History_RemovedFromDevice);
+    }
+
+    [Fact]
+    public async Task The_right_click_menu_marks_read_clears_progress_and_opens_the_editor()
+    {
+        await ImportSagaAsync();
+        var library = _app.Get<LibraryPageViewModel>();
+        await library.LoadAsync(Ct);
+        library.SetViewModeCommand.Execute(LibraryViewMode.Books);
+        var card = library.VisibleCards.Cast<BookCardViewModel>().First();
+        NavigationRequest? request = null;
+        library.NavigationRequested += (_, r) => request = r;
+
+        Assert.Equal(Strings.Reading_MarkRead, card.ReadMenuText);
+        await card.ToggleReadCommand.ExecuteAsync(null);
+        Assert.True(card.IsRead);
+        Assert.Equal(Strings.Reading_MarkUnread, card.ReadMenuText);
+        await card.ToggleReadCommand.ExecuteAsync(null);
+        Assert.False(card.IsRead);
+
+        card.EditCommand.Execute(null);
+        Assert.Equal((NavPage.Editor, card.Id), (request?.Page, request?.BookIds?.Single()));
+        card.ReviewCommand.Execute(null);
+        Assert.Equal(NavPage.Review, request?.Page);
     }
 
     [Fact]

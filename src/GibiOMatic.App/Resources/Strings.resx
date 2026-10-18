@@ -129,7 +129,6 @@
   <data name="Details_Score" xml:space="preserve"><value>Nota {0} · {1}</value></data>
   <data name="Details_Review" xml:space="preserve"><value>Revisar metadados</value></data>
   <data name="Details_Edit" xml:space="preserve"><value>Editar</value></data>
-  <data name="Details_SendKindle" xml:space="preserve"><value>Enviar ao Kindle</value></data>
   <data name="Details_NoSelection" xml:space="preserve"><value>Escolha um livro para ver os detalhes.</value></data>
   <data name="Details_Panel" xml:space="preserve"><value>Detalhes do livro</value></data>
   <data name="Inbox_AddFiles" xml:space="preserve"><value>Adicionar arquivos…</value></data>
@@ -526,10 +525,9 @@
   <data name="Kindle_TabHistory" xml:space="preserve"><value>Histórico</value></data>
   <data name="Kindle_FilterChosen" xml:space="preserve"><value>Na lista</value></data>
   <data name="Kindle_FilterSent" xml:space="preserve"><value>Já no Kindle</value></data>
-  <data name="Kindle_FilterLibrary" xml:space="preserve"><value>Toda a biblioteca</value></data>
-  <data name="Kindle_Search" xml:space="preserve"><value>Buscar na biblioteca</value></data>
-  <data name="Kindle_ListHelp" xml:space="preserve"><value>Marque os livros que você quer no Kindle. Eles são convertidos sozinhos, um por vez, mesmo com o Kindle desconectado; quando você conectar, é só enviar.</value></data>
-  <data name="Kindle_EmptyList" xml:space="preserve"><value>A lista está vazia. Em "Toda a biblioteca", marque os livros que quer no Kindle.</value></data>
+  <data name="Kindle_Search" xml:space="preserve"><value>Buscar na lista</value></data>
+  <data name="Kindle_ListHelp" xml:space="preserve"><value>Os livros entram nesta lista pela Biblioteca: clique com o botão direito num livro e escolha "Pôr na lista do Kindle", ou use o botão no painel do livro. Eles são convertidos sozinhos, um por vez, mesmo com o Kindle desconectado; quando você conectar, é só enviar. Desmarcar um livro aqui tira ele da lista (nada muda no Kindle).</value></data>
+  <data name="Kindle_EmptyList" xml:space="preserve"><value>A lista está vazia. Na Biblioteca, clique com o botão direito num livro e escolha "Pôr na lista do Kindle".</value></data>
   <data name="Kindle_EmptySent" xml:space="preserve"><value>Nenhum livro da lista foi enviado ainda.</value></data>
   <data name="Kindle_StateWaiting" xml:space="preserve"><value>Na fila para preparar</value></data>
   <data name="Kindle_StatePreparing" xml:space="preserve"><value>Preparando…</value></data>
@@ -600,11 +598,10 @@
   <data name="Kindle_StatusNoKcc" xml:space="preserve"><value>Falta o KCC (Kindle Comic Converter)</value></data>
   <data name="Kindle_StatusPreparing" xml:space="preserve"><value>{0} para preparar · {1} prontos ou no Kindle</value></data>
   <data name="Kindle_StatusReady" xml:space="preserve"><value>{0} prontos ou no Kindle</value></data>
-  <data name="Kindle_StatusEmpty" xml:space="preserve"><value>Lista vazia: escolha os livros na Biblioteca ou aqui</value></data>
+  <data name="Kindle_StatusEmpty" xml:space="preserve"><value>Lista vazia: escolha os livros na Biblioteca (botão direito)</value></data>
   <data name="Shell_KindleReady" xml:space="preserve"><value>Kindle conectado: {0} livros prontos para enviar.</value></data>
   <data name="Shell_KindleSend" xml:space="preserve"><value>Ver e enviar</value></data>
   <data name="Shell_KindleLater" xml:space="preserve"><value>Agora não</value></data>
-  <data name="Details_KindleInList" xml:space="preserve"><value>Na lista do Kindle (tirar)</value></data>
   <data name="Details_SendKindleTip" xml:space="preserve"><value>Põe o livro na lista do Kindle: ele é preparado sozinho e enviado quando você conectar o aparelho</value></data>
   <data name="Copy_KindleWaiting" xml:space="preserve"><value>Na fila para preparar</value></data>
   <data name="Copy_KindleReady" xml:space="preserve"><value>Pronto para enviar</value></data>
@@ -618,4 +615,9 @@
   <data name="Kindle_DeletedOne" xml:space="preserve"><value>{0} livro apagado do Kindle.</value></data>
   <data name="Kindle_DeleteConfirmOne" xml:space="preserve"><value>Apagar {0} livro do Kindle ({1})? As anotações e a posição de leitura dele também serão apagadas. Se foi o app que o enviou, ele sai também da lista do Kindle.</value></data>
   <data name="Shell_KindleReadyOne" xml:space="preserve"><value>Kindle conectado: {0} livro pronto para enviar.</value></data>
+  <data name="Menu_Open" xml:space="preserve"><value>Abrir no leitor</value></data>
+  <data name="Menu_AddKindle" xml:space="preserve"><value>Pôr na lista do Kindle</value></data>
+  <data name="Menu_RemoveKindle" xml:space="preserve"><value>Tirar da lista do Kindle</value></data>
+  <data name="Menu_Edit" xml:space="preserve"><value>Editar metadados</value></data>
+  <data name="Menu_Review" xml:space="preserve"><value>Revisar metadados</value></data>
 </root>

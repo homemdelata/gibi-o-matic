@@ -60,9 +60,6 @@ public enum KindleListFilter
 
     /// <summary>Already on the device.</summary>
     Sent,
-
-    /// <summary>Every comic of the library, to add to the list.</summary>
-    Library,
 }
 
 /// <summary>The fields of a Kindle destination, shared by the wizard and the detail's settings.</summary>
@@ -415,12 +412,11 @@ public sealed partial class KindleDetailViewModel : ViewModelBase, ISyncActivity
     // ---- Send tab: the list ----
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsChosenFilter), nameof(IsSentFilter), nameof(IsLibraryFilter))]
+    [NotifyPropertyChangedFor(nameof(IsChosenFilter), nameof(IsSentFilter))]
     public partial KindleListFilter Filter { get; set; }
 
     public bool IsChosenFilter => Filter == KindleListFilter.Chosen;
     public bool IsSentFilter => Filter == KindleListFilter.Sent;
-    public bool IsLibraryFilter => Filter == KindleListFilter.Library;
 
     [RelayCommand]
     private void SetFilter(KindleListFilter filter) => Filter = filter;
@@ -468,8 +464,9 @@ public sealed partial class KindleDetailViewModel : ViewModelBase, ISyncActivity
             var index = (await _service.Kindle.StatusAsync(destination, ct));
             var books = await IndexBooksAsync(ct);
             var preparing = _service.Current is { } current && current.DestinationId == Config.Id ? current.Title : null;
+            // Books enter the list from the Library (right-click or the panel); unticking one here takes it out.
             _rows = books
-                .Where(b => b.Kind != BookKind.Book && b.Files.Any(f => f.Role == FileRole.Original))
+                .Where(b => config.ChosenBookIds.Contains(b.Id) && b.Kind != BookKind.Book && b.Files.Any(f => f.Role == FileRole.Original))
                 .Select(b => new KindleBookRowViewModel(b, config.ChosenBookIds.Contains(b.Id), index.GetValueOrDefault(b.Id),
                     preparing is not null && b.Title == preparing, ChooseBook))
                 .OrderBy(r => r.Title, Conversion.NaturalStringComparer.Instance)
@@ -498,8 +495,7 @@ public sealed partial class KindleDetailViewModel : ViewModelBase, ISyncActivity
         Rows.Clear();
         foreach (var row in _rows.Where(r => Filter switch
                  {
-                     KindleListFilter.Chosen => r.IsChosen,
-                     KindleListFilter.Sent => r.IsChosen && r.IsSent,
+                     KindleListFilter.Sent => r.IsSent,
                      _ => true,
                  } && (search is null || r.SearchText.Contains(search, StringComparison.Ordinal))))
         {

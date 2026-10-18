@@ -129,7 +129,6 @@
   <data name="Details_Score" xml:space="preserve"><value>Score {0} · {1}</value></data>
   <data name="Details_Review" xml:space="preserve"><value>Review metadata</value></data>
   <data name="Details_Edit" xml:space="preserve"><value>Edit</value></data>
-  <data name="Details_SendKindle" xml:space="preserve"><value>Send to Kindle</value></data>
   <data name="Details_NoSelection" xml:space="preserve"><value>Pick a book to see its details.</value></data>
   <data name="Details_Panel" xml:space="preserve"><value>Book details</value></data>
   <data name="Inbox_AddFiles" xml:space="preserve"><value>Add files…</value></data>
@@ -526,10 +525,9 @@
   <data name="Kindle_TabHistory" xml:space="preserve"><value>History</value></data>
   <data name="Kindle_FilterChosen" xml:space="preserve"><value>In the list</value></data>
   <data name="Kindle_FilterSent" xml:space="preserve"><value>On the Kindle</value></data>
-  <data name="Kindle_FilterLibrary" xml:space="preserve"><value>Whole library</value></data>
-  <data name="Kindle_Search" xml:space="preserve"><value>Search the library</value></data>
-  <data name="Kindle_ListHelp" xml:space="preserve"><value>Tick the books you want on the Kindle. They are converted on their own, one at a time, even with the Kindle unplugged; when you connect it, just send.</value></data>
-  <data name="Kindle_EmptyList" xml:space="preserve"><value>The list is empty. In "Whole library", tick the books you want on the Kindle.</value></data>
+  <data name="Kindle_Search" xml:space="preserve"><value>Search the list</value></data>
+  <data name="Kindle_ListHelp" xml:space="preserve"><value>Books enter this list from the Library: right-click a book and choose "Add to the Kindle list", or use the button in the book's panel. They are converted on their own, one at a time, even with the Kindle unplugged; when you connect it, just send. Unticking a book here takes it out of the list (nothing changes on the Kindle).</value></data>
+  <data name="Kindle_EmptyList" xml:space="preserve"><value>The list is empty. In the Library, right-click a book and choose "Add to the Kindle list".</value></data>
   <data name="Kindle_EmptySent" xml:space="preserve"><value>No book of the list was sent yet.</value></data>
   <data name="Kindle_StateWaiting" xml:space="preserve"><value>Waiting to be prepared</value></data>
   <data name="Kindle_StatePreparing" xml:space="preserve"><value>Preparing…</value></data>
@@ -600,11 +598,10 @@
   <data name="Kindle_StatusNoKcc" xml:space="preserve"><value>The KCC (Kindle Comic Converter) is missing</value></data>
   <data name="Kindle_StatusPreparing" xml:space="preserve"><value>{0} to prepare · {1} ready or on the Kindle</value></data>
   <data name="Kindle_StatusReady" xml:space="preserve"><value>{0} ready or on the Kindle</value></data>
-  <data name="Kindle_StatusEmpty" xml:space="preserve"><value>Empty list: choose the books in the Library or here</value></data>
+  <data name="Kindle_StatusEmpty" xml:space="preserve"><value>Empty list: choose the books in the Library (right-click)</value></data>
   <data name="Shell_KindleReady" xml:space="preserve"><value>Kindle connected: {0} books ready to send.</value></data>
   <data name="Shell_KindleSend" xml:space="preserve"><value>Review and send</value></data>
   <data name="Shell_KindleLater" xml:space="preserve"><value>Not now</value></data>
-  <data name="Details_KindleInList" xml:space="preserve"><value>In the Kindle list (remove)</value></data>
   <data name="Details_SendKindleTip" xml:space="preserve"><value>Puts the book in the Kindle list: it is prepared on its own and sent when you connect the device</value></data>
   <data name="Copy_KindleWaiting" xml:space="preserve"><value>Waiting to be prepared</value></data>
   <data name="Copy_KindleReady" xml:space="preserve"><value>Ready to send</value></data>
@@ -618,4 +615,9 @@
   <data name="Kindle_DeletedOne" xml:space="preserve"><value>{0} book deleted from the Kindle.</value></data>
   <data name="Kindle_DeleteConfirmOne" xml:space="preserve"><value>Delete {0} book from the Kindle ({1})? Its notes and reading position are deleted too. If the app sent it, it also leaves the Kindle's list.</value></data>
   <data name="Shell_KindleReadyOne" xml:space="preserve"><value>Kindle connected: {0} book ready to send.</value></data>
+  <data name="Menu_Open" xml:space="preserve"><value>Open in the reader</value></data>
+  <data name="Menu_AddKindle" xml:space="preserve"><value>Add to the Kindle list</value></data>
+  <data name="Menu_RemoveKindle" xml:space="preserve"><value>Remove from the Kindle list</value></data>
+  <data name="Menu_Edit" xml:space="preserve"><value>Edit metadata</value></data>
+  <data name="Menu_Review" xml:space="preserve"><value>Review metadata</value></data>
 </root>

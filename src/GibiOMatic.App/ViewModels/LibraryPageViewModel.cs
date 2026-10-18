@@ -56,7 +56,7 @@ public sealed partial class FilterChipViewModel(LibraryFilter filter, string lab
 /// The library (SPEC §12): cover grid by series or by book, quality badges, filters, search,
 /// summary cards and the detail panel of the selected book.
 /// </summary>
-public sealed partial class LibraryPageViewModel : PageViewModel, IReadingActions
+public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
 {
     /// <summary>Books shown in "Continuar lendo", the most recent first.</summary>
     public const int ContinueReadingCount = 8;
@@ -260,13 +260,14 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IReadingAction
             var selectedId = Selected?.Card.Id;
             var checkedIds = _books.Where(b => b.IsChecked).Select(b => b.Id).ToHashSet();
             _books = books
-                .Select(b => new BookCardViewModel(b, QualityAnalyzer.Analyze(b.Metadata, context), library, _thumbnails, _covers, OnCardClicked, OpenCard))
+                .Select(b => new BookCardViewModel(b, QualityAnalyzer.Analyze(b.Metadata, context), library, _thumbnails, _covers, OnCardClicked, OpenCard, this))
                 .OrderBy(b => b.Book.Metadata.Series?.Name ?? b.Title, NaturalStringComparer.Instance)
                 .ThenBy(b => b.Book.Metadata.Series?.Number ?? string.Empty, NaturalStringComparer.Instance)
                 .ThenBy(b => b.Title, NaturalStringComparer.Instance)
                 .ToList();
 
             BookCount = _books.Count;
+            UpdateKindleFlags();
             await ApplyReadingAsync(ct);
             if (IsSelecting)
             {
@@ -564,46 +565,64 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IReadingAction
         }
     }
 
-    /// <summary>"Enviar ao Kindle": puts the book in the Kindle's list (it is prepared at once), or takes it out.</summary>
+    /// <summary>The panel's button: puts the selected book in the Kindle's list, or takes it out.</summary>
     [RelayCommand]
-    private async Task ToggleKindleAsync()
-    {
-        if (Selected?.Card is not { } card)
-        {
-            return;
-        }
+    private Task ToggleKindleAsync() =>
+        Selected?.Card is { } card ? SetKindleAsync([card], !card.IsInKindleList) : Task.CompletedTask;
 
+    /// <summary>
+    /// Puts books in the list of the (first) Kindle destination, where they are prepared at once, or
+    /// takes them out. Nothing on the device changes. Without a Kindle destination, Destinos opens.
+    /// </summary>
+    public async Task SetKindleAsync(IReadOnlyList<BookCardViewModel> cards, bool inList)
+    {
         if (_settings.Current.Destinations.FirstOrDefault(d => d.Type == KindleDestinationType.TypeId) is not { } kindle)
         {
-            // No Kindle yet: the Destinos page is where one is added.
             RequestNavigation(NavPage.Destinations);
             return;
         }
 
-        var inList = kindle.ChosenBookIds.Contains(card.Id);
-        var ids = inList ? kindle.ChosenBookIds.Where(id => id != card.Id).ToList() : kindle.ChosenBookIds.Append(card.Id).ToList();
+        var changed = cards.Select(c => c.Id).ToList();
+        var ids = inList ? kindle.ChosenBookIds.Union(changed).ToList() : kindle.ChosenBookIds.Except(changed).ToList();
         await _settings.SaveAsync(_settings.Current with
         {
             Destinations = _settings.Current.Destinations.Select(d => d.Id == kindle.Id ? d with { ChosenBookIds = ids } : d).ToList(),
         });
-        _session.Destinations?.OnBookChanged(card.Id);
-        UpdateKindleButton();
-        if (Selected is { } details)
+        foreach (var id in changed)
+        {
+            _session.Destinations?.OnBookChanged(id);
+        }
+
+        UpdateKindleFlags();
+        if (Selected is { } details && changed.Contains(details.Card.Id))
         {
             details.Copies.Clear();
             await LoadCopiesAsync(details);
         }
     }
 
-    /// <summary>"Enviar ao Kindle", or "Na lista do Kindle" when the book is in it.</summary>
+    public void Edit(BookCardViewModel card) => RequestNavigation(NavPage.Editor, [card.Id]);
+
+    public void Review(BookCardViewModel card) => RequestNavigation(NavPage.Review, [card.Id]);
+
+    /// <summary>"Pôr na lista do Kindle", or "Tirar da lista do Kindle" when the selected book is in it.</summary>
     [ObservableProperty]
-    public partial string KindleButtonText { get; private set; } = Strings.Details_SendKindle;
+    public partial string KindleButtonText { get; private set; } = Strings.Menu_AddKindle;
+
+    private void UpdateKindleFlags()
+    {
+        var inLists = _settings.Current.Destinations.Where(d => d.Type == KindleDestinationType.TypeId)
+            .SelectMany(d => d.ChosenBookIds).ToHashSet();
+        foreach (var book in _books)
+        {
+            book.IsInKindleList = inLists.Contains(book.Id);
+        }
+
+        UpdateKindleButton();
+    }
 
     private void UpdateKindleButton() =>
-        KindleButtonText = Selected?.Card is { } card
-                           && _settings.Current.Destinations.Any(d => d.Type == KindleDestinationType.TypeId && d.ChosenBookIds.Contains(card.Id))
-            ? Strings.Details_KindleInList
-            : Strings.Details_SendKindle;
+        KindleButtonText = Selected?.Card.IsInKindleList == true ? Strings.Menu_RemoveKindle : Strings.Menu_AddKindle;
 
     [RelayCommand]
     private void EditSelected()

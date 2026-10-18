@@ -109,14 +109,16 @@ public sealed partial class BookCardViewModel : ViewModelBase
     private readonly ICoverLoader _covers;
     private readonly Action<BookCardViewModel> _select;
     private readonly Action<BookCardViewModel>? _open;
+    private readonly IBookActions? _actions;
     private bool _thumbnailRequested;
     private Bitmap? _thumbnail;
 
     public BookCardViewModel(CatalogBook book, QualityReport report, LibraryInfo library, ThumbnailCache thumbnails,
-        ICoverLoader covers, Action<BookCardViewModel> select, Action<BookCardViewModel>? open = null)
+        ICoverLoader covers, Action<BookCardViewModel> select, Action<BookCardViewModel>? open = null, IBookActions? actions = null)
     {
         Book = book;
         _open = open;
+        _actions = actions;
         Report = report;
         _library = library;
         _thumbnails = thumbnails;
@@ -173,8 +175,35 @@ public sealed partial class BookCardViewModel : ViewModelBase
 
     /// <summary>How far the book was read; null if it was never opened or marked.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsReading), nameof(IsRead), nameof(Progress))]
+    [NotifyPropertyChangedFor(nameof(IsReading), nameof(IsRead), nameof(Progress), nameof(ReadMenuText))]
     public partial BookReading? Reading { get; set; }
+
+    /// <summary>In the list of a Kindle destination (it is prepared and offered when the Kindle is connected).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(KindleMenuText))]
+    public partial bool IsInKindleList { get; set; }
+
+    /// <summary>The right-click menu is offered (the Library's cards, not the Review's).</summary>
+    public bool HasMenu => _actions is not null;
+
+    public string KindleMenuText => IsInKindleList ? Strings.Menu_RemoveKindle : Strings.Menu_AddKindle;
+
+    public string ReadMenuText => IsRead ? Strings.Reading_MarkUnread : Strings.Reading_MarkRead;
+
+    [RelayCommand]
+    private Task ToggleKindleAsync() => _actions?.SetKindleAsync([this], !IsInKindleList) ?? Task.CompletedTask;
+
+    [RelayCommand]
+    private Task ToggleReadAsync() => _actions?.SetReadAsync(this, !IsRead) ?? Task.CompletedTask;
+
+    [RelayCommand]
+    private Task ClearProgressAsync() => _actions?.ClearProgressAsync(this) ?? Task.CompletedTask;
+
+    [RelayCommand]
+    private void Edit() => _actions?.Edit(this);
+
+    [RelayCommand]
+    private void Review() => _actions?.Review(this);
 
     public bool IsReading => Reading?.IsReading == true;
 
@@ -432,6 +461,17 @@ public interface IReadingActions
     Task SetReadAsync(BookCardViewModel card, bool read);
 
     Task ClearProgressAsync(BookCardViewModel card);
+}
+
+/// <summary>What the right-click menu of a book in the Library does.</summary>
+public interface IBookActions : IReadingActions
+{
+    /// <summary>Puts books in the Kindle's list (they are prepared at once) or takes them out.</summary>
+    Task SetKindleAsync(IReadOnlyList<BookCardViewModel> cards, bool inList);
+
+    void Edit(BookCardViewModel card);
+
+    void Review(BookCardViewModel card);
 }
 
 /// <summary>A book in "Continuar lendo": opens the reader where it was left.</summary>
