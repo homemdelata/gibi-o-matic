@@ -208,6 +208,29 @@ public sealed class ReviewAndEditorTests : IDisposable
     }
 
     [Fact]
+    public async Task Leaving_the_editor_does_not_lose_roles_or_block_the_next_book()
+    {
+        var books = await ImportAsync("first.pdf", "second.pdf");
+        var editor = _app.Get<EditorPageViewModel>();
+        editor.SetBooks([books[0].Metadata.Id]);
+        await editor.OnNavigatedToAsync(Ct);
+        editor.AddCreditCommand.Execute(null);
+
+        // What the role ComboBoxes write back when the page leaves the screen.
+        editor.Credits[0].Role = null!;
+        editor.SelectedKind = null!;
+        Assert.NotNull(editor.Credits[0].Role);
+        Assert.NotNull(editor.SelectedKind);
+
+        await editor.DiscardCommand.ExecuteAsync(null);
+        Assert.Empty(editor.Credits);
+
+        editor.SetBooks([books[1].Metadata.Id]);
+        await editor.OnNavigatedToAsync(Ct);
+        Assert.Equal(books[1].Metadata.Title, editor.BookTitle);
+    }
+
+    [Fact]
     public async Task The_batch_editor_changes_only_filled_fields_and_numbers_in_sequence()
     {
         var books = await ImportAsync("deadly_a.pdf", "deadly_b.pdf", "deadly_c.pdf");

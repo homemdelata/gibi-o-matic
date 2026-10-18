@@ -25,8 +25,21 @@ public sealed record KindOption(BookKind? Kind, string Label);
 
 public sealed partial class CreditRowViewModel(RoleOption role, string name, Action<CreditRowViewModel> remove) : ViewModelBase
 {
-    [ObservableProperty]
-    public partial RoleOption Role { get; set; } = role;
+    /// <summary>
+    /// Ignores <c>null</c>: a ComboBox whose items go away (the page leaving the screen) writes it
+    /// back, and a credit always has a role.
+    /// </summary>
+    public RoleOption Role
+    {
+        get;
+        set
+        {
+            if (value is not null)
+            {
+                SetProperty(ref field, value);
+            }
+        }
+    } = role;
 
     [ObservableProperty]
     public partial string Name { get; set; } = name;
@@ -58,6 +71,7 @@ public sealed partial class EditorPageViewModel : PageViewModel
     private readonly IFilePicker _filePicker;
     private readonly ILogger<EditorPageViewModel> _logger;
     private IReadOnlyList<string> _bookIds = [];
+    private bool _loading;
     private List<CatalogBook> _books = [];
 
     public EditorPageViewModel(LibrarySession session, BookEditor editor, ICoverLoader covers, IFilePicker filePicker, ILogger<EditorPageViewModel> logger)
@@ -139,8 +153,18 @@ public sealed partial class EditorPageViewModel : PageViewModel
     [ObservableProperty]
     public partial string? Summary { get; set; }
 
-    [ObservableProperty]
-    public partial KindOption SelectedKind { get; set; }
+    /// <summary>Ignores <c>null</c>, which the ComboBox writes back when the page leaves the screen.</summary>
+    public KindOption SelectedKind
+    {
+        get;
+        set
+        {
+            if (value is not null && SetProperty(ref field, value))
+            {
+                UpdatePreview();
+            }
+        }
+    } = null!;
 
     /// <summary>Three states in a batch: <c>null</c> keeps each book as it is.</summary>
     [ObservableProperty]
@@ -197,13 +221,21 @@ public sealed partial class EditorPageViewModel : PageViewModel
             return;
         }
 
-        if (IsBatch)
+        _loading = true;
+        try
         {
-            LoadBatch();
+            if (IsBatch)
+            {
+                LoadBatch();
+            }
+            else
+            {
+                await LoadSingleAsync(_books[0], ct);
+            }
         }
-        else
+        finally
         {
-            await LoadSingleAsync(_books[0], ct);
+            _loading = false;
         }
 
         UpdatePreview();
@@ -293,11 +325,15 @@ public sealed partial class EditorPageViewModel : PageViewModel
 
     partial void OnOneShotChanged(bool? value) => UpdatePreview();
 
-    partial void OnSelectedKindChanged(KindOption value) => UpdatePreview();
 
     /// <summary>Names the destinations will give the copy (SPEC §7, "prévia dos nomes").</summary>
     private void UpdatePreview()
     {
+        if (_loading)
+        {
+            return;
+        }
+
         if (!HasBooks)
         {
             KomgaPreview = KindlePreview = null;
