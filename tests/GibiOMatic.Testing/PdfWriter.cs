@@ -33,6 +33,14 @@ internal static class PdfWriter
         var pagesNode = Reserve();
         var info = Reserve();
         var metadata = options.Xmp is null ? 0 : Reserve();
+        var icc = options.IccBased ? Reserve() : 0;
+        if (icc != 0)
+        {
+            // Not a real profile: readers fall back to the alternate space, like with a damaged one.
+            SetStream(icc, "/N 3 /Alternate /DeviceRGB", new byte[128]);
+        }
+
+        var colorSpace = icc != 0 ? $"[/ICCBased {icc} 0 R]" : "/DeviceRGB";
         var kids = new List<int>();
 
         for (var i = 0; i < options.Pages; i++)
@@ -43,10 +51,11 @@ internal static class PdfWriter
             kids.Add(page);
 
             var jpeg = SyntheticImages.Jpeg(200, 300, i == 0 ? SyntheticBooks.CoverColor : SyntheticBooks.PageColor);
-            SetStream(image, "/Type /XObject /Subtype /Image /Width 200 /Height 300 /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode", jpeg);
-            var text = options.TextOverPages ? " BT /F1 36 Tf 40 60 Td (POW!) Tj ET" : string.Empty;
+            SetStream(image, $"/Type /XObject /Subtype /Image /Width 200 /Height 300 /ColorSpace {colorSpace} /BitsPerComponent 8 /Filter /DCTDecode", jpeg);
+            var lettered = options.TextOverPages || (options.TextOverEvenPages && i % 2 == 1);
+            var text = lettered ? " BT /F1 36 Tf 40 60 Td (POW!) Tj ET" : string.Empty;
             SetStream(content, string.Empty, Encoding.ASCII.GetBytes($"q {PageWidthPt} 0 0 {PageHeightPt} 0 0 cm /Im0 Do Q{text}"));
-            var font = options.TextOverPages ? " /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >>" : string.Empty;
+            var font = lettered ? " /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> >>" : string.Empty;
             Set(page, $"<< /Type /Page /Parent {pagesNode} 0 R /MediaBox [0 0 {PageWidthPt} {PageHeightPt}] /Resources << /XObject << /Im0 {image} 0 R >>{font} >> /Contents {content} 0 R >>");
         }
 

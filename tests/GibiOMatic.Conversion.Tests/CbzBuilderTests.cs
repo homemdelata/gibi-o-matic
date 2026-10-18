@@ -61,6 +61,44 @@ public sealed class CbzBuilderTests : IDisposable
     }
 
     [Fact]
+    public async Task Pdf_jpegs_tagged_with_an_icc_profile_are_copied_too()
+    {
+        var pdf = SyntheticBooks.Pdf(_temp.Combine("humble.pdf"), new SyntheticBooks.PdfOptions { Pages = 2, IccBased = true });
+
+        var result = await CbzBuilder.BuildAsync(pdf, BookFormat.Pdf, Saga, Target, null, Ct);
+
+        Assert.Equal(new CbzResult(2, 2), result);
+    }
+
+    [Fact]
+    public async Task Pdf_pages_copied_and_rendered_keep_their_order()
+    {
+        var pdf = SyntheticBooks.Pdf(_temp.Combine("mixed.pdf"), new SyntheticBooks.PdfOptions { Pages = 9, TextOverEvenPages = true });
+        var reported = new List<double>();
+
+        var result = await CbzBuilder.BuildAsync(pdf, BookFormat.Pdf, Saga, Target, new SyncProgress<double>(reported.Add), Ct);
+
+        Assert.Equal(new CbzResult(9, 5), result);
+        Assert.Equal(1.0, reported[^1]);
+        Assert.Equal(reported.Order(), reported);
+        var (pages, _, zip) = Open(Target);
+        using (zip)
+        {
+            Assert.Equal(Enumerable.Range(1, 9).Select(n => $"{n:0000}.jpg"), pages);
+            for (var n = 1; n <= 9; n++)
+            {
+                var height = SyntheticImages.Inspect(Bytes(zip, $"{n:0000}.jpg")).Height;
+                Assert.Equal(n % 2 == 1 ? 300 : 1200, height);
+            }
+        }
+    }
+
+    private sealed class SyncProgress<T>(Action<T> report) : IProgress<T>
+    {
+        public void Report(T value) => report(value);
+    }
+
+    [Fact]
     public async Task Pdf_pages_with_lettering_on_top_are_rendered()
     {
         var pdf = SyntheticBooks.Pdf(_temp.Combine("radiant.pdf"), new SyntheticBooks.PdfOptions { Pages = 2, TextOverPages = true });

@@ -139,11 +139,32 @@ internal sealed unsafe class PdfDocument : IDisposable
 
     /// <summary>
     /// The page as an image (SPEC §9.2, validated in reference/python/pdf2epub.py): when the page is
-    /// a single upright RGB/gray JPEG covering it, with no text or vectors on top, its original bytes
+    /// a single upright gray/RGB JPEG covering it, with no text or vectors on top, its original bytes
     /// are returned untouched; otherwise the page is rendered at the resolution of its largest
     /// image and saved as JPEG quality 92.
     /// </summary>
     public PdfPageImage GetPageImage(int index)
+    {
+        var content = GetPageContent(index);
+        return content.Original ?? Encode(content.Rendered!);
+    }
+
+    /// <summary>A rendered page as JPEG quality 92 (no PDFium call, so any thread). Disposes the bitmap.</summary>
+    public static PdfPageImage Encode(SKBitmap bitmap)
+    {
+        using (bitmap)
+        {
+            using var image = SKImage.FromBitmap(bitmap);
+            using var data = image.Encode(SKEncodedImageFormat.Jpeg, JpegQuality);
+            return new PdfPageImage(data.ToArray(), bitmap.Width, bitmap.Height, IsOriginal: false);
+        }
+    }
+
+    /// <summary>
+    /// The page's original JPEG when it can go as it is, or the page rendered (to encode with
+    /// <see cref="Encode"/>, possibly on another thread).
+    /// </summary>
+    public PdfPageContent GetPageContent(int index)
     {
         int targetHeight;
         lock (PdfiumNative.Sync)
@@ -182,7 +203,7 @@ internal sealed unsafe class PdfDocument : IDisposable
                     if (covers && PdfiumNative.FPDFPageObj_GetMatrix(images[0].Object, out var m) != 0
                         && Math.Abs(m.B) < 1e-6 && Math.Abs(m.C) < 1e-6 && m.A > 0 && m.D > 0)
                     {
-                        return new PdfPageImage(jpeg, (int)md.Width, (int)md.Height, IsOriginal: true);
+                        return new PdfPageContent(new PdfPageImage(jpeg, (int)md.Width, (int)md.Height, IsOriginal: true), null);
                     }
                 }
 
@@ -205,16 +226,18 @@ internal sealed unsafe class PdfDocument : IDisposable
             }
         }
 
-        using var bitmap = RenderPage(index, targetHeight);
-        using var image = SKImage.FromBitmap(bitmap);
-        using var data = image.Encode(SKEncodedImageFormat.Jpeg, JpegQuality);
-        return new PdfPageImage(data.ToArray(), bitmap.Width, bitmap.Height, IsOriginal: false);
+        return new PdfPageContent(null, RenderPage(index, targetHeight));
     }
 
-    /// <summary>The raw JPEG of an image object when it is a plain DCT-encoded RGB or gray image.</summary>
+    /// <summary>
+    /// The raw JPEG of an image object when it is a plain DCT-encoded gray or RGB image. Like the
+    /// reference script, an ICC-based color space counts when the JPEG has 1 or 3 components
+    /// (Humble's PDFs tag their pages this way); CMYK and the like are rendered.
+    /// </summary>
     private static byte[]? OriginalJpeg(nint imageObject, PdfiumNative.ImageMetadata metadata)
     {
-        if (metadata.ColorSpace is not (PdfiumNative.ColorSpaceRgb or PdfiumNative.ColorSpaceGray)
+        if (metadata.ColorSpace is not (PdfiumNative.ColorSpaceRgb or PdfiumNative.ColorSpaceGray or PdfiumNative.ColorSpaceCalRgb
+                or PdfiumNative.ColorSpaceCalGray or PdfiumNative.ColorSpaceIccBased)
             || PdfiumNative.FPDFImageObj_GetImageFilterCount(imageObject) != 1)
         {
             return null;
@@ -244,7 +267,42 @@ internal sealed unsafe class PdfDocument : IDisposable
             PdfiumNative.FPDFImageObj_GetImageDataRaw(imageObject, b, new CULong((nuint)length));
         }
 
-        return bytes[0] == 0xFF && bytes[1] == 0xD8 ? bytes : null;
+        return bytes[0] == 0xFF && bytes[1] == 0xD8 && JpegComponents(bytes) is 1 or 3 ? bytes : null;
+    }
+
+    /// <summary>Number of color components in the JPEG's frame header (SOFn), or 0 when not found.</summary>
+    internal static int JpegComponents(ReadOnlySpan<byte> jpeg)
+    {
+        var i = 2;
+        while (i + 9 < jpeg.Length)
+        {
+            if (jpeg[i] != 0xFF)
+            {
+                return 0;
+            }
+
+            var marker = jpeg[i + 1];
+            if (marker == 0xFF)
+            {
+                i++;
+                continue;
+            }
+
+            // SOF0 to SOF15, except DHT (C4), JPG (C8) and DAC (CC).
+            if (marker is >= 0xC0 and <= 0xCF and not 0xC4 and not 0xC8 and not 0xCC)
+            {
+                return jpeg[i + 9];
+            }
+
+            if (marker is 0xD9 or 0xDA)
+            {
+                return 0;
+            }
+
+            i += 2 + ((jpeg[i + 2] << 8) | jpeg[i + 3]);
+        }
+
+        return 0;
     }
 
     public void Dispose()
@@ -270,3 +328,6 @@ internal sealed unsafe class PdfDocument : IDisposable
 
 /// <param name="IsOriginal">The JPEG bytes stored in the PDF, untouched (no recompression).</param>
 internal sealed record PdfPageImage(byte[] Jpeg, int Width, int Height, bool IsOriginal);
+
+/// <summary>Either the page's original JPEG or the rendered page, still to encode.</summary>
+internal sealed record PdfPageContent(PdfPageImage? Original, SKBitmap? Rendered);

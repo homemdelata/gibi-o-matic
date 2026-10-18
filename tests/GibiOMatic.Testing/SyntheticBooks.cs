@@ -215,6 +215,12 @@ public static class SyntheticBooks
 
         /// <summary>Puts a line of text over every page (like lettering over the art), so pages must be rendered.</summary>
         public bool TextOverPages { get; init; }
+
+        /// <summary>Text only over the even pages (2, 4…): a PDF that mixes pages to copy and pages to render.</summary>
+        public bool TextOverEvenPages { get; init; }
+
+        /// <summary>Images tagged with an ICC-based RGB color space, as in Humble's PDFs, instead of DeviceRGB.</summary>
+        public bool IccBased { get; init; }
     }
 
     /// <summary>A PDF whose pages are full-page JPEG images (page 1 red, the others blue).</summary>

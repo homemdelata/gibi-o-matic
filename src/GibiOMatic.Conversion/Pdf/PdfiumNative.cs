@@ -90,6 +90,9 @@ internal static unsafe partial class PdfiumNative
 
     public const int ColorSpaceGray = 1;
     public const int ColorSpaceRgb = 2;
+    public const int ColorSpaceCalGray = 4;
+    public const int ColorSpaceCalRgb = 5;
+    public const int ColorSpaceIccBased = 7;
 
     [StructLayout(LayoutKind.Sequential)]
     public struct Matrix

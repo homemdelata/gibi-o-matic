@@ -156,23 +156,60 @@ public static partial class CbzBuilder
         return result;
     }
 
+    /// <summary>
+    /// PDFium renders one page at a time (it is not thread-safe), but encoding rendered pages as
+    /// JPEG is not tied to it: a few pages are encoded in parallel while the next ones render.
+    /// </summary>
     private static CbzResult FromPdf(string source, ZipArchive zip, IProgress<double>? progress, CancellationToken ct)
     {
         using var pdf = PdfDocument.Open(source);
         var count = pdf.PageCount;
         var original = 0;
-        for (var i = 0; i < count; i++)
+        var written = 0;
+        // A rendered page is ~25 MB of pixels until encoded: keep only a few in flight.
+        var inFlight = Math.Clamp(Environment.ProcessorCount - 1, 1, 4);
+        var pending = new Queue<Task<PdfPageImage>>();
+
+        void WriteOldest()
         {
-            ct.ThrowIfCancellationRequested();
-            var page = pdf.GetPageImage(i);
+            var page = pending.Dequeue().GetAwaiter().GetResult();
             if (page.IsOriginal)
             {
                 original++;
             }
 
             using var data = new MemoryStream(page.Jpeg);
-            AddPage(zip, i + 1, ".jpg", data);
-            progress?.Report((i + 1.0) / count);
+            AddPage(zip, ++written, ".jpg", data);
+            progress?.Report((double)written / count);
+        }
+
+        try
+        {
+            for (var i = 0; i < count; i++)
+            {
+                ct.ThrowIfCancellationRequested();
+                var content = pdf.GetPageContent(i);
+                pending.Enqueue(content.Original is { } jpeg
+                    ? Task.FromResult(jpeg)
+                    : Task.Run(() => PdfDocument.Encode(content.Rendered!), CancellationToken.None));
+                while (pending.Count > inFlight || (pending.Count > 0 && pending.Peek().IsCompleted))
+                {
+                    WriteOldest();
+                }
+            }
+
+            while (pending.Count > 0)
+            {
+                WriteOldest();
+            }
+        }
+        finally
+        {
+            // On cancellation or an error, wait for the encodes so their bitmaps are released.
+            foreach (var task in pending)
+            {
+                ((IAsyncResult)task).AsyncWaitHandle.WaitOne();
+            }
         }
 
         return new CbzResult(count, original);
