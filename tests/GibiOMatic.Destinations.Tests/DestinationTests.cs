@@ -60,12 +60,22 @@ public sealed class OutputNamesTests
 
 public sealed class DestinationFolderTests
 {
+    [Fact]
+    public void The_root_of_this_machine_works_as_a_folder()
+    {
+        var root = Path.GetPathRoot(Path.GetTempPath())!;
+
+        Assert.Equal(Path.Combine(root, "Saga", "Saga v01.cbz"), DestinationSync.InsideFolder(root, "Saga/Saga v01.cbz"));
+        Assert.Throws<InvalidOperationException>(() => DestinationSync.InsideFolder(Path.Combine(root, "a"), "../b/Saga.cbz"));
+    }
+
     [Theory]
     [InlineData(@"Z:\", @"Saga/Saga v01.cbz", @"Z:\Saga\Saga v01.cbz")]
     [InlineData(@"Z:\Quadrinhos\", @"_oneshots/Shrugged.cbz", @"Z:\Quadrinhos\_oneshots\Shrugged.cbz")]
     [InlineData(@"Z:\Quadrinhos", @"Saga.cbz", @"Z:\Quadrinhos\Saga.cbz")]
     public void Copies_go_inside_the_folder_even_at_a_drive_root(string folder, string relative, string expected)
     {
+        Assert.SkipUnless(OperatingSystem.IsWindows(), "Windows paths");
         Assert.Equal(expected, DestinationSync.InsideFolder(folder, relative));
     }
 
@@ -75,6 +85,7 @@ public sealed class DestinationFolderTests
     [InlineData(@"Z:\", @"")]
     public void Paths_leaving_the_folder_are_refused(string folder, string relative)
     {
+        Assert.SkipUnless(OperatingSystem.IsWindows(), "Windows paths");
         Assert.Throws<InvalidOperationException>(() => DestinationSync.InsideFolder(folder, relative));
     }
 }

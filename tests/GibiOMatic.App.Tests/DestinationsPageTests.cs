@@ -104,7 +104,7 @@ public sealed class DestinationsPageTests : IDisposable
         var page = await CreateKomgaAsync();
         await shell.DestinationsStatus.RefreshAsync();
         var line = Assert.Single(shell.DestinationsStatus.Items);
-        Assert.Equal(("Komga de casa", StatusKind.Warn), (line.Name, line.Kind));
+        Assert.Equal((Resources.Strings.Wizard_DefaultKomgaName, StatusKind.Warn), (line.Name, line.Kind));
 
         page.Detail!.SyncCommand.Execute(null);
         await Session.Destinations!.WaitUntilIdleAsync(Ct);

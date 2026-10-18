@@ -682,8 +682,10 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
                 detail.StatusText = DestinationText.Status(current);
                 detail.StatusKind = Cards.First(c => c.Id == current.Config.Id).StatusKind;
                 ShowActivity(service, detail, current.Config.Id);
+                // Read before clearing: two refreshes at once would otherwise both add their rows.
+                var history = await service.HistoryAsync(current.Config.Id, 200, ct);
                 detail.History.Clear();
-                foreach (var entry in await service.HistoryAsync(current.Config.Id, 200, ct))
+                foreach (var entry in history)
                 {
                     detail.History.Add(DestinationText.History(entry));
                 }
