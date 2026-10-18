@@ -5,7 +5,6 @@ using Avalonia.Platform;
 using GibiOMatic.App.ViewModels;
 using GibiOMatic.App.Views;
 using GibiOMatic.Core.Settings;
-using GibiOMatic.Library.Reading;
 using Microsoft.Extensions.Logging;
 using SkiaSharp;
 
@@ -25,7 +24,7 @@ public sealed class ReaderWindowLauncher(
     ISettingsService settings,
     IUiThread ui,
     IReaderImages images,
-    LibrarySession session,
+    ReadingTracker reading,
     ILoggerFactory loggers) : IReaderLauncher
 {
     private readonly List<ReaderWindow> _windows = [];
@@ -39,8 +38,7 @@ public sealed class ReaderWindowLauncher(
             return;
         }
 
-        var states = session.Index is { } index ? new ReadingStateStore(index) : null;
-        var viewModel = new ReaderViewModel(request, settings, ui, images, states, loggers.CreateLogger<ReaderViewModel>());
+        var viewModel = new ReaderViewModel(request, settings, ui, images, reading, loggers.CreateLogger<ReaderViewModel>());
         var window = new ReaderWindow { DataContext = viewModel };
         _windows.Add(window);
         window.Closed += async (_, _) =>

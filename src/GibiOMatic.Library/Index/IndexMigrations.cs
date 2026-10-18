@@ -118,6 +118,13 @@ internal static class IndexMigrations
             updated_at     TEXT NOT NULL
         );
         """,
+
+        // 8: reading status: progress shown in the library, "started" and "read" marks
+        """
+        ALTER TABLE reading_state ADD COLUMN total INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE reading_state ADD COLUMN started INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE reading_state ADD COLUMN read_at TEXT;
+        """,
     ];
 
     public static int LatestVersion => All.Count;

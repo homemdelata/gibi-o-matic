@@ -66,6 +66,7 @@ public static class ServiceRegistration
         services.AddSingleton<IUrlOpener, AvaloniaUrlOpener>();
         services.AddSingleton<IReaderImages, AvaloniaReaderImages>();
         services.AddSingleton<IReaderLauncher, ReaderWindowLauncher>();
+        services.AddSingleton<ReadingTracker>();
         services.AddSingleton<LibrarySession>();
 
         // View models (a new shell and pages for each opened library)

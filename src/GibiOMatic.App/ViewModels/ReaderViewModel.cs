@@ -114,7 +114,9 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
     private readonly ISettingsService _settings;
     private readonly IUiThread _ui;
     private readonly IReaderImages _images;
-    private readonly ReadingStateStore? _states;
+    private readonly ReadingTracker _reading;
+    private readonly HashSet<int> _seen = [];
+    private bool _reachedEnd;
     private readonly ILogger _logger;
     private readonly Debouncer _savePosition;
     private readonly SemaphoreSlim _renderGate = new(1, 1);
@@ -133,13 +135,13 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
     private bool _thumbnailWorkerRunning;
 
     public ReaderViewModel(ReaderRequest request, ISettingsService settings, IUiThread ui, IReaderImages images,
-        ReadingStateStore? states, ILogger logger)
+        ReadingTracker reading, ILogger logger)
     {
         _request = request;
         _settings = settings;
         _ui = ui;
         _images = images;
-        _states = states;
+        _reading = reading;
         _logger = logger;
         _savePosition = new Debouncer(ui, TimeSpan.FromSeconds(1), SavePositionAsync);
         var reader = settings.Current.Reader;
@@ -266,7 +268,7 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
     {
         try
         {
-            var state = _states is null ? null : await _states.GetAsync(_request.BookId, ct);
+            var state = _reading.Store is { } store ? await store.GetAsync(_request.BookId, ct) : null;
             var saved = state is not null && state.File.Equals(FileName, StringComparison.OrdinalIgnoreCase) ? state : null;
             _book = await Task.Run(() => BookReader.Open(_request.FilePath, _request.Format), ct);
             if (_book.Pages is { } pages)
@@ -489,6 +491,7 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
         var version = ++_showVersion;
         var spread = CurrentSpread;
         CurrentPage = spread[0];
+        MarkSeen(spread);
         PageText = spread.Length == 2
             ? string.Format(CultureInfo.CurrentCulture, Strings.Reader_PagesOf, spread[0] + 1, spread[1] + 1, PageCount)
             : string.Format(CultureInfo.CurrentCulture, Strings.Reader_PageOf, spread[0] + 1, PageCount);
@@ -791,6 +794,7 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
 
         var changed = chapter != Chapter || ChapterText is null;
         Chapter = chapter;
+        MarkSeen([chapter]);
         ChapterText = string.Format(CultureInfo.CurrentCulture, Strings.Reader_ChapterOf, chapter + 1, text.Chapters.Count);
         foreach (var item in Toc)
         {
@@ -850,16 +854,37 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
         _ = saving.ContinueWith(t => _logger.LogWarning(t.Exception, "Reader settings could not be saved"), TaskContinuationOptions.OnlyOnFaulted);
     }
 
+    /// <summary>
+    /// Pages (or chapters) shown in this session decide whether the book was really read. Reopening a
+    /// book where it was left, on its last page, does not count as reaching the end again.
+    /// </summary>
+    private void MarkSeen(IEnumerable<int> units)
+    {
+        var last = IsText ? (_book?.Text?.Chapters.Count ?? 0) - 1 : PageCount - 1;
+        var reopened = _seen.Count == 0;
+        foreach (var unit in units)
+        {
+            _seen.Add(unit);
+            _reachedEnd |= unit == last && !reopened;
+        }
+    }
+
     private async Task SavePositionAsync()
     {
-        if (_states is null || (!IsPaged && !IsText))
+        if (_reading.Store is not { } store || (!IsPaged && !IsText))
         {
             return;
         }
 
         try
         {
-            await _states.SaveAsync(_request.BookId, new ReadingState(FileName, IsText ? Chapter : CurrentPage, RightToLeft));
+            var total = IsText ? _book?.Text?.Chapters.Count ?? 0 : PageCount;
+            // Short books count once every page was shown.
+            var started = _seen.Count > (IsText ? ReadingStateStore.StartedAfterChapters : ReadingStateStore.StartedAfterPages)
+                          || (total > 1 && _seen.Count >= total);
+            await store.SaveAsync(_request.BookId, new ReadingState(FileName, IsText ? Chapter : CurrentPage, RightToLeft),
+                new ReadingProgress(total, started, _reachedEnd));
+            _reading.NotifyChanged(_request.BookId);
         }
         catch (Exception ex) when (ex is IOException or System.Data.Common.DbException or ObjectDisposedException)
         {
