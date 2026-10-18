@@ -33,6 +33,7 @@ public enum LibraryViewMode
 {
     Series,
     Books,
+    Universes,
 }
 
 public sealed partial class FilterChipViewModel(LibraryFilter filter, string label, Action<LibraryFilter> pick) : ViewModelBase
@@ -160,22 +161,42 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IReadingAction
     public partial string? SearchText { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsSeriesView), nameof(IsBooksView))]
+    [NotifyPropertyChangedFor(nameof(IsSeriesView), nameof(IsBooksView), nameof(IsUniversesView))]
     public partial LibraryViewMode ViewMode { get; set; } = LibraryViewMode.Series;
 
     public bool IsSeriesView => ViewMode == LibraryViewMode.Series;
 
     public bool IsBooksView => ViewMode == LibraryViewMode.Books;
 
+    public bool IsUniversesView => ViewMode == LibraryViewMode.Universes;
+
     [RelayCommand]
     private void SetViewMode(LibraryViewMode mode) => ViewMode = mode;
 
-    /// <summary>The series opened from the Séries view, whose books are listed.</summary>
+    /// <summary>The series opened from the Séries (or a universe's) view, whose books are listed.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsInSeries))]
+    [NotifyPropertyChangedFor(nameof(IsInSeries), nameof(IsDrilledIn), nameof(DrillTitle), nameof(BackText))]
     public partial SeriesCardViewModel? OpenSeries { get; private set; }
 
     public bool IsInSeries => OpenSeries is not null;
+
+    /// <summary>The universe opened from the Universos view, whose series are listed.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsDrilledIn), nameof(DrillTitle), nameof(BackText))]
+    public partial UniverseCardViewModel? OpenUniverse { get; private set; }
+
+    /// <summary>Inside a series or a universe: the back button and the heading show.</summary>
+    public bool IsDrilledIn => OpenSeries is not null || OpenUniverse is not null;
+
+    public string? DrillTitle => OpenSeries?.Name ?? OpenUniverse?.Name;
+
+    public string BackText => OpenSeries is null && OpenUniverse is not null ? Strings.Library_BackToUniverses
+        : OpenUniverse is not null ? OpenUniverse.Name
+        : Strings.Library_BackToSeries;
+
+    /// <summary>The Universos view with no universe at all yet: how to make one.</summary>
+    [ObservableProperty]
+    public partial bool ShowNoUniverses { get; private set; }
 
     /// <summary>Everything shown in the grid, after filter, search and grouping.</summary>
     public IReadOnlyList<ViewModelBase> VisibleCards { get; private set; } = [];
@@ -263,6 +284,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IReadingAction
             {
                 BookCardViewModel b => b,
                 SeriesCardViewModel s => s.Cover,
+                UniverseCardViewModel u => u.Cover,
                 _ => null,
             }));
         }
@@ -322,14 +344,31 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IReadingAction
     partial void OnViewModeChanged(LibraryViewMode value)
     {
         OpenSeries = null;
+        OpenUniverse = null;
         ApplyView();
     }
 
+    /// <summary>Out of the series (back to its universe, if opened from one), or out of the universe.</summary>
     [RelayCommand]
     private void BackToSeries()
     {
-        OpenSeries = null;
+        if (OpenSeries is not null)
+        {
+            OpenSeries = null;
+        }
+        else
+        {
+            OpenUniverse = null;
+        }
+
         ApplyView();
+    }
+
+    private void OpenUniverseCard(UniverseCardViewModel universe)
+    {
+        OpenUniverse = universe;
+        ApplyView();
+        SelectBook(universe.Books[0]);
     }
 
     private void OpenSeriesCard(SeriesCardViewModel series)
@@ -344,39 +383,60 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IReadingAction
         var search = string.IsNullOrWhiteSpace(SearchText) ? null : BookCardViewModel.Normalize(SearchText.Trim());
         var books = _books.Where(b => Matches(b, Filter) && (search is null || b.SearchText.Contains(search, StringComparison.Ordinal))).ToList();
 
+        if (OpenUniverse is { } universe)
+        {
+            books = books.Where(b => Universe.Contains(b.Book.Metadata, universe.Name)).ToList();
+        }
+
+        var noUniverses = false;
         if (OpenSeries is { } open)
         {
             VisibleCards = books.Where(b => string.Equals(b.Book.Metadata.Series?.Name, open.Name, StringComparison.OrdinalIgnoreCase)).ToList();
         }
-        else if (ViewMode == LibraryViewMode.Series)
+        else if (ViewMode == LibraryViewMode.Universes && OpenUniverse is null)
         {
-            // A series becomes one card; books without a series stay on their own, in title order.
-            var cards = new List<ViewModelBase>();
-            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var book in books)
-            {
-                if (book.Book.Metadata.Series?.Name is not { } name)
-                {
-                    cards.Add(book);
-                }
-                else if (seen.Add(name))
-                {
-                    // A series with a single book is just that book (no stack, no "1 livro").
-                    var inSeries = books.Where(b => string.Equals(b.Book.Metadata.Series?.Name, name, StringComparison.OrdinalIgnoreCase)).ToList();
-                    cards.Add(inSeries.Count == 1 ? inSeries[0] : new SeriesCardViewModel(name, inSeries, OpenSeriesCard));
-                }
-            }
-
-            VisibleCards = cards;
+            // One card per universe; a book in two universes is in both.
+            VisibleCards = Universe.Distinct(books.SelectMany(b => b.Book.Metadata.Universes))
+                .Order(StringComparer.CurrentCultureIgnoreCase)
+                .Select(name => new UniverseCardViewModel(name, books.Where(b => Universe.Contains(b.Book.Metadata, name)).ToList(), OpenUniverseCard))
+                .ToList<ViewModelBase>();
+            noUniverses = VisibleCards.Count == 0 && !_books.Any(b => b.Book.Metadata.Universes.Count > 0);
+        }
+        else if (ViewMode is LibraryViewMode.Series or LibraryViewMode.Universes)
+        {
+            VisibleCards = GroupBySeries(books);
         }
         else
         {
             VisibleCards = books;
         }
 
+        ShowNoUniverses = noUniverses;
         HasResults = VisibleCards.Count > 0;
         UpdateContinueReading();
         RebuildRows();
+    }
+
+    /// <summary>A series becomes one card; books without a series stay on their own, in title order.</summary>
+    private List<ViewModelBase> GroupBySeries(List<BookCardViewModel> books)
+    {
+        var cards = new List<ViewModelBase>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var book in books)
+        {
+            if (book.Book.Metadata.Series?.Name is not { } name)
+            {
+                cards.Add(book);
+            }
+            else if (seen.Add(name))
+            {
+                // A series with a single book is just that book (no stack, no "1 livro").
+                var inSeries = books.Where(b => string.Equals(b.Book.Metadata.Series?.Name, name, StringComparison.OrdinalIgnoreCase)).ToList();
+                cards.Add(inSeries.Count == 1 ? inSeries[0] : new SeriesCardViewModel(name, inSeries, OpenSeriesCard));
+            }
+        }
+
+        return cards;
     }
 
     /// <summary>Called by the view when the grid width changes: fits as many columns as possible.</summary>
@@ -446,7 +506,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IReadingAction
     {
         foreach (var card in VisibleCards)
         {
-            foreach (var book in card switch { BookCardViewModel b => [b], SeriesCardViewModel s => s.Books, _ => [] })
+            foreach (var book in card switch { BookCardViewModel b => [b], SeriesCardViewModel s => s.Books, UniverseCardViewModel u => u.Books, _ => [] })
             {
                 book.IsChecked = true;
             }
@@ -660,7 +720,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IReadingAction
     }
 
     private void UpdateContinueReading() =>
-        ShowContinueReading = ContinueReading.Count > 0 && Filter == LibraryFilter.All && string.IsNullOrWhiteSpace(SearchText) && OpenSeries is null;
+        ShowContinueReading = ContinueReading.Count > 0 && Filter == LibraryFilter.All && string.IsNullOrWhiteSpace(SearchText) && !IsDrilledIn;
 
     private async Task ApplyReadingAsync(CancellationToken ct)
     {

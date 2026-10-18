@@ -500,4 +500,16 @@
   <data name="Reading_ClearTip" xml:space="preserve"><value>Tira o livro de "Continuar lendo"; ele volta a abrir na primeira página</value></data>
   <data name="Reading_ReadBadge" xml:space="preserve"><value>Lido</value></data>
   <data name="Reader_PageLoading" xml:space="preserve"><value>Carregando página…</value></data>
+  <data name="Editor_Universes" xml:space="preserve"><value>Universo</value></data>
+  <data name="Editor_UniversesHelp" xml:space="preserve"><value>Séries do mesmo universo ou linha editorial (ex.: Massive-Verse). No Komga, viram coleções.</value></data>
+  <data name="Editor_UniversePlaceholder" xml:space="preserve"><value>Digite um universo e tecle Enter</value></data>
+  <data name="Editor_AddUniverse" xml:space="preserve"><value>Adicionar</value></data>
+  <data name="Editor_RemoveUniverse" xml:space="preserve"><value>Tirar deste universo</value></data>
+  <data name="Library_ViewUniverses" xml:space="preserve"><value>Universos</value></data>
+  <data name="Library_BackToUniverses" xml:space="preserve"><value>Todos os universos</value></data>
+  <data name="Library_UniverseSummary" xml:space="preserve"><value>{0} · {1}</value></data>
+  <data name="Library_UniverseSeriesOne" xml:space="preserve"><value>1 série</value></data>
+  <data name="Library_UniverseSeriesMany" xml:space="preserve"><value>{0} séries</value></data>
+  <data name="Library_NoUniverses" xml:space="preserve"><value>Nenhum universo ainda. Para criar um, selecione os livros (ex.: Radiant Black, Red e Pink), clique em Editar e preencha "Universo".</value></data>
+  <data name="Details_Universes" xml:space="preserve"><value>Universo</value></data>
 </root>

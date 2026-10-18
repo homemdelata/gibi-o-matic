@@ -107,6 +107,7 @@ ENTRADA ──importar──► ARQUIVO (original + metadata.json) ──gerar�
   "language": "en",
   "identifiers": { "isbn": "9781607066019", "comicvine": "4000-123456" },
   "tags": [],
+  "universes": ["Massive-Verse"],
   "files": [
     {
       "role": "original",
@@ -239,7 +240,7 @@ public interface IDestination {
   - original CBR: extrai e reempacota como CBZ;
   - original PDF: por página, se ela for uma única imagem JPEG cobrindo a página toda, extrai os bytes originais sem recompressão; senão (texto ou vetores por cima, como os balões do Radiant Black), renderiza na resolução da maior imagem e salva em JPEG de qualidade 92. Validado no protótipo em Python com CLOSET, Dead Lucky e Radiant Black;
   - original EPUB: extrai as imagens na ordem do *spine*.
-- **ComicInfo.xml**: `Title, Series, Number, Volume, Count, Summary, Year, Month, Day, Writer, Penciller, Inker, Colorist, Letterer, CoverArtist, Editor, Publisher, Imprint, Genre, Tags, Web, PageCount, LanguageISO, Format (TPB/Issue), GTIN`.
+- **ComicInfo.xml**: `Title, Series, Number, Volume, Count, Summary, Year, Month, Day, Writer, Penciller, Inker, Colorist, Letterer, CoverArtist, Editor, Publisher, Imprint, Genre, Tags, SeriesGroup (universos, separados por vírgula; o Komga cria coleções), Web, PageCount, LanguageISO, Format (TPB/Issue), GTIN`.
 - **Atualização do servidor (opcional)**: com URL e chave de API do Komga, chama o scan da biblioteca ao terminar. Os endpoints ainda vão ser confirmados na documentação do Komga.
 - **Padrão**: toda a biblioteca, automático.
 

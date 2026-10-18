@@ -48,6 +48,15 @@ public sealed partial class CreditRowViewModel(RoleOption role, string name, Act
     private void Remove() => remove(this);
 }
 
+/// <summary>A universe of the book(s) being edited, removable.</summary>
+public sealed partial class UniverseChipViewModel(string name, Action<UniverseChipViewModel> remove) : ViewModelBase
+{
+    public string Name { get; } = name;
+
+    [RelayCommand]
+    private void Remove() => remove(this);
+}
+
 public sealed partial class HistoryRowViewModel(HistoryEntry entry, Func<HistoryEntry, Task> restore) : ViewModelBase
 {
     public HistoryEntry Entry { get; } = entry;
@@ -170,6 +179,50 @@ public sealed partial class EditorPageViewModel : PageViewModel
     [ObservableProperty]
     public partial bool? OneShot { get; set; }
 
+    /// <summary>Universes of the book; in a batch, the ones every book shares (adding or removing one changes all).</summary>
+    public System.Collections.ObjectModel.ObservableCollection<UniverseChipViewModel> Universes { get; } = [];
+
+    /// <summary>The universes the form started with: what was removed or added is applied to each book.</summary>
+    private IReadOnlyList<string> _initialUniverses = [];
+
+    /// <summary>Typed in the universe box (with suggestions), added by Enter or "Adicionar".</summary>
+    [ObservableProperty]
+    public partial string? NewUniverse { get; set; }
+
+    /// <summary>Every universe in the library, for suggestions.</summary>
+    [ObservableProperty]
+    public partial IReadOnlyList<string> KnownUniverses { get; private set; } = [];
+
+    [RelayCommand]
+    private void AddUniverse()
+    {
+        // "A, B" adds both; the spelling already used in the library wins ("massive-verse" → "Massive-Verse").
+        foreach (var typed in Universe.Split(NewUniverse))
+        {
+            var name = KnownUniverses.FirstOrDefault(u => u.Equals(typed, StringComparison.OrdinalIgnoreCase)) ?? typed;
+            if (!Universes.Any(u => u.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+            {
+                Universes.Add(new UniverseChipViewModel(name, RemoveUniverse));
+            }
+        }
+
+        NewUniverse = null;
+    }
+
+    private void RemoveUniverse(UniverseChipViewModel chip) => Universes.Remove(chip);
+
+    private void LoadUniverses(IEnumerable<string> names)
+    {
+        _initialUniverses = Universe.Distinct(names);
+        Universes.Clear();
+        foreach (var name in _initialUniverses)
+        {
+            Universes.Add(new UniverseChipViewModel(name, RemoveUniverse));
+        }
+
+        NewUniverse = null;
+    }
+
     [ObservableProperty]
     public partial bool MarkReviewed { get; set; } = true;
 
@@ -209,6 +262,7 @@ public sealed partial class EditorPageViewModel : PageViewModel
         }
 
         var all = (await index.GetBooksAsync(ct)).ToDictionary(b => b.Metadata.Id);
+        KnownUniverses = Universe.Distinct(all.Values.SelectMany(b => b.Metadata.Universes)).Order(StringComparer.CurrentCultureIgnoreCase).ToList();
         _books = _bookIds.Where(all.ContainsKey).Select(id => all[id])
             .OrderBy(b => b.Metadata.Series?.Name ?? b.Metadata.Title, NaturalStringComparer.Instance)
             .ThenBy(b => b.Metadata.Series?.Number ?? string.Empty, NaturalStringComparer.Instance)
@@ -258,6 +312,7 @@ public sealed partial class EditorPageViewModel : PageViewModel
         Summary = m.Summary;
         SelectedKind = Kinds.First(k => k.Kind == m.Kind);
         OneShot = m.OneShot ?? false;
+        LoadUniverses(m.Universes);
         MarkReviewed = true;
         Credits.Clear();
         foreach (var credit in m.Credits)
@@ -293,6 +348,7 @@ public sealed partial class EditorPageViewModel : PageViewModel
         Summary = null;
         SelectedKind = Kinds[0];
         OneShot = _books.Select(b => b.Metadata.OneShot ?? false).Distinct().Count() == 1 ? first.OneShot ?? false : null;
+        LoadUniverses(first.Universes.Where(u => _books.All(b => Universe.Contains(b.Metadata, u))));
         MarkReviewed = false;
         Credits.Clear();
         History.Clear();
@@ -386,6 +442,7 @@ public sealed partial class EditorPageViewModel : PageViewModel
             Identifiers = book.Identifiers with { Isbn = Text(Isbn is null ? null : Core.Text.Isbn.Normalize(Isbn), book.Identifiers.Isbn) },
             Kind = SelectedKind.Kind ?? book.Kind,
             OneShot = OneShot ?? book.OneShot,
+            Universes = ApplyUniverses(book.Universes),
         };
 
         if (!IsBatch)
@@ -398,6 +455,14 @@ public sealed partial class EditorPageViewModel : PageViewModel
         }
 
         return result;
+    }
+
+    /// <summary>The book's universes, minus the ones removed from the form, plus the ones added to it.</summary>
+    private IReadOnlyList<string> ApplyUniverses(IReadOnlyList<string> current)
+    {
+        var form = Universes.Select(u => u.Name).Concat(Universe.Split(NewUniverse)).ToList();
+        var removed = _initialUniverses.Where(u => !form.Contains(u, StringComparer.OrdinalIgnoreCase)).ToList();
+        return Universe.Distinct(current.Where(u => !removed.Contains(u, StringComparer.OrdinalIgnoreCase)).Concat(form));
     }
 
     private static string? Clean(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();

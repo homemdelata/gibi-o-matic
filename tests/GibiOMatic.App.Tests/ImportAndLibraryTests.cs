@@ -1,3 +1,4 @@
+using GibiOMatic.App.Resources;
 using GibiOMatic.App.Services;
 using GibiOMatic.App.ViewModels;
 using GibiOMatic.Core.Domain;
@@ -123,6 +124,66 @@ public sealed class ImportAndLibraryTests : IDisposable
         page.SetViewModeCommand.Execute(LibraryViewMode.Series);
         Assert.Contains(page.VisibleCards, c => c is BookCardViewModel { Title: "Plutona" });
         Assert.Single(page.VisibleCards.OfType<SeriesCardViewModel>());
+    }
+
+    [Fact]
+    public async Task The_universes_view_groups_series_of_the_same_universe()
+    {
+        await OpenLibraryAsync();
+        static string Grouped(string series, string number, string? group) =>
+            SyntheticBooks.ComicInfo(series: series, number: number, writer: "Kyle Higgins", publisher: "Image Comics", seriesGroup: group);
+        await ImportThroughInboxAsync(
+            SyntheticBooks.Cbz(Downloads("rb1.cbz"), pages: 3, comicInfoXml: Grouped("Radiant Black", "1", "Massive-Verse")),
+            SyntheticBooks.Cbz(Downloads("rb2.cbz"), pages: 4, comicInfoXml: Grouped("Radiant Black", "2", "Massive-Verse")),
+            SyntheticBooks.Cbz(Downloads("rr1.cbz"), pages: 5, comicInfoXml: Grouped("Radiant Red", "1", "Massive-Verse, Supermassive")),
+            SyntheticBooks.Cbz(Downloads("saga1.cbz"), pages: 6, comicInfoXml: Grouped("Saga", "1", null)));
+        var page = _app.Get<LibraryPageViewModel>();
+        await page.LoadAsync(Ct);
+
+        page.SetViewModeCommand.Execute(LibraryViewMode.Universes);
+        Assert.False(page.ShowNoUniverses);
+        var universes = page.VisibleCards.Cast<UniverseCardViewModel>().ToList();
+        Assert.Equal(["Massive-Verse", "Supermassive"], universes.Select(u => u.Name));
+        Assert.Equal(3, universes[0].Books.Count);
+        Assert.Contains("2", universes[0].MetaLine);
+
+        // Inside a universe: its series, then a series' books, and back the same way.
+        universes[0].OpenCommand.Execute(null);
+        Assert.True(page.IsDrilledIn);
+        Assert.Equal("Massive-Verse", page.DrillTitle);
+        Assert.Equal(Strings.Library_BackToUniverses, page.BackText);
+        var radiantBlack = page.VisibleCards.OfType<SeriesCardViewModel>().Single();
+        Assert.Equal("Radiant Red", page.VisibleCards.OfType<BookCardViewModel>().Single().Book.Metadata.Series!.Name);
+        radiantBlack.OpenCommand.Execute(null);
+        Assert.Equal("Radiant Black", page.DrillTitle);
+        Assert.Equal("Massive-Verse", page.BackText);
+        Assert.Equal(2, page.VisibleCards.Count);
+        page.BackToSeriesCommand.Execute(null);
+        Assert.Equal("Massive-Verse", page.DrillTitle);
+        page.BackToSeriesCommand.Execute(null);
+        Assert.False(page.IsDrilledIn);
+        Assert.Equal(2, page.VisibleCards.Count);
+
+        // Searching finds books by universe; the panel shows them.
+        page.SetViewModeCommand.Execute(LibraryViewMode.Books);
+        page.SearchText = "supermassive";
+        var red = Assert.Single(page.VisibleCards.OfType<BookCardViewModel>());
+        red.SelectCommand.Execute(null);
+        Assert.Equal(["Massive-Verse", "Supermassive"], page.Selected!.Universes);
+    }
+
+    [Fact]
+    public async Task The_universes_view_explains_how_to_make_one_when_there_is_none()
+    {
+        await OpenLibraryAsync();
+        await ImportThroughInboxAsync(SyntheticBooks.Cbz(Downloads("saga1.cbz"), comicInfoXml: Info("Saga", "1")));
+        var page = _app.Get<LibraryPageViewModel>();
+        await page.LoadAsync(Ct);
+
+        page.SetViewModeCommand.Execute(LibraryViewMode.Universes);
+
+        Assert.Empty(page.VisibleCards);
+        Assert.True(page.ShowNoUniverses);
     }
 
     [Fact]

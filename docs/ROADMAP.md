@@ -9,6 +9,7 @@ Status: ⬜ não iniciada · 🟨 em andamento · ✅ concluída. Seções `§` 
 | F2 | Metadados | ✅ |
 | F3 | Destino Komga | ✅ |
 | F3.5 | Leitor | ✅ (falta o teste do usuário) |
+| F3.6 | Universos | ✅ (falta o teste do usuário) |
 | F4 | Destino Kindle | ⬜ |
 | F5 | Entrada automática | ⬜ |
 | F6 | Polimento e distribuição | ⬜ |
@@ -157,6 +158,19 @@ Objetivo: abrir um livro dentro do app para conferir qual edição é (capa gran
   - faixa "Continuar lendo" no topo da Biblioteca (até 8 livros, o mais recente primeiro) e barra de progresso nos cards em leitura.
 
 **Pronto quando**: os quatro formatos abrem no leitor a partir da Biblioteca e da Revisão, e um livro reaberto volta à página em que estava.
+
+---
+
+## F3.6 · Universos (pedido do usuário)
+
+Objetivo: agrupar séries do mesmo universo ou linha editorial (ex.: Radiant Black, Radiant Red e Radiant Pink no Massive-Verse). O ComicVine não tem esse campo, então o preenchimento é manual.
+
+- [x] Campo `universes` (lista) no `metadata.json`; lido do `SeriesGroup` do ComicInfo na importação.
+- [x] Editor: universos como etiquetas removíveis, com sugestões dos que já existem; no lote, adicionar ou tirar um universo vale para todos os livros, sem mexer nos outros universos de cada um.
+- [x] Biblioteca: modo "Universos" (universo → séries → livros), busca por universo e universos no painel do livro.
+- [x] Komga: universos no `SeriesGroup` do ComicInfo, que o Komga transforma em coleções.
+
+**Pronto quando**: o usuário marca as séries de um universo em lote, vê o universo na Biblioteca e a coleção aparece no Komga depois de sincronizar.
 
 ---
 

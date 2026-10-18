@@ -106,6 +106,55 @@
         </StackPanel>
       </Button>
     </DataTemplate>
+    <!-- Universe card: the same stack, for every book of the universe -->
+    <DataTemplate DataType="vm:UniverseCardViewModel">
+      <Button Classes="cover-card" Command="{Binding OpenCommand}" Margin="3,0" Padding="6"
+              AutomationProperties.Name="{Binding Name}">
+        <StackPanel Spacing="9">
+          <Panel Margin="0,6,6,0">
+            <Border Margin="6,-6,-6,6" CornerRadius="{StaticResource RadiusCover}" Background="{DynamicResource HoverBrush}"
+                    BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1" />
+            <c:AspectBox>
+              <Border CornerRadius="{StaticResource RadiusCover}" BoxShadow="0 8 22 0 #66000000">
+                <Border Classes="cover-frame" CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True"
+                        BorderThickness="1" BorderBrush="#10FFFFFF">
+                  <Border.Background>
+                    <SolidColorBrush Color="{Binding Cover.PlaceholderColor}" />
+                  </Border.Background>
+                  <Panel>
+                    <Border Background="{StaticResource HalftoneBrush}" />
+                    <TextBlock Text="{Binding Name}" Margin="12" VerticalAlignment="Bottom" TextWrapping="Wrap"
+                               FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="18"
+                               LineHeight="19" Foreground="White" MaxLines="4" TextTrimming="CharacterEllipsis"
+                               IsVisible="{Binding !Cover.HasThumbnail}" />
+                    <Image Source="{Binding Cover.Thumbnail}" Stretch="UniformToFill" />
+                    <Border Classes="badge">
+                      <TextBlock Classes="mono" FontSize="10.5" FontWeight="Medium" LetterSpacing="0.4" Text="{Binding Badge}"
+                                 Foreground="{Binding Band, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
+                    </Border>
+                    <!-- How many books the universe has -->
+                    <Border Classes="badge count"
+                            ToolTip.Tip="{Binding BookCountText}" AutomationProperties.Name="{Binding BookCountText}">
+                      <StackPanel Orientation="Horizontal" Spacing="6">
+                        <c:StrokeIcon Data="{StaticResource Icon.Stack}" Width="15" Height="15" StrokeThickness="2.2"
+                                      Foreground="{DynamicResource OnAccentBrush}" VerticalAlignment="Center" />
+                        <TextBlock Classes="mono" FontSize="14" FontWeight="Bold" Text="{Binding BookCount}" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource OnAccentBrush}" />
+                      </StackPanel>
+                    </Border>
+                  </Panel>
+                </Border>
+              </Border>
+            </c:AspectBox>
+          </Panel>
+          <StackPanel Spacing="2">
+            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13.5" TextWrapping="Wrap" MaxLines="2"
+                       TextTrimming="CharacterEllipsis" />
+            <TextBlock Classes="muted" FontSize="12" Text="{Binding MetaLine}" TextTrimming="CharacterEllipsis" />
+          </StackPanel>
+        </StackPanel>
+      </Button>
+    </DataTemplate>
   </UserControl.DataTemplates>
 
   <UserControl.Styles>
@@ -245,6 +294,8 @@
                     Command="{Binding SetViewModeCommand}" CommandParameter="{x:Static vm:LibraryViewMode.Series}" />
             <Button Classes="segment" Classes.selected="{Binding IsBooksView}" Content="{x:Static r:Strings.Library_ViewBooks}"
                     Command="{Binding SetViewModeCommand}" CommandParameter="{x:Static vm:LibraryViewMode.Books}" />
+            <Button Classes="segment" Classes.selected="{Binding IsUniversesView}" Content="{x:Static r:Strings.Library_ViewUniverses}"
+                    Command="{Binding SetViewModeCommand}" CommandParameter="{x:Static vm:LibraryViewMode.Universes}" />
           </StackPanel>
         </Border>
         </StackPanel>
@@ -339,14 +390,14 @@
       </Grid>
 
       <!-- Inside a series -->
-      <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="12" Margin="0,0,0,18" IsVisible="{Binding IsInSeries}">
+      <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="12" Margin="0,0,0,18" IsVisible="{Binding IsDrilledIn}">
         <Button Classes="secondary" MinHeight="36" Padding="10,0" Command="{Binding BackToSeriesCommand}">
           <StackPanel Orientation="Horizontal" Spacing="6">
             <c:StrokeIcon Data="{StaticResource Icon.ChevronLeft}" Width="16" Height="16" />
-            <TextBlock Text="{x:Static r:Strings.Library_BackToSeries}" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding BackText}" VerticalAlignment="Center" />
           </StackPanel>
         </Button>
-        <TextBlock Classes="h3" Text="{Binding OpenSeries.Name, FallbackValue={x:Null}}" VerticalAlignment="Center" />
+        <TextBlock Classes="h3" Text="{Binding DrillTitle}" VerticalAlignment="Center" />
       </StackPanel>
 
       <Panel>
@@ -372,8 +423,17 @@
           </Button>
         </StackPanel>
 
-        <TextBlock Classes="muted" IsVisible="{Binding HasNoResults}" Text="{x:Static r:Strings.Library_NoResults}"
-                   HorizontalAlignment="Center" Margin="0,60,0,0" />
+        <TextBlock Classes="muted" Text="{x:Static r:Strings.Library_NoResults}"
+                   HorizontalAlignment="Center" Margin="0,60,0,0">
+          <TextBlock.IsVisible>
+            <MultiBinding Converter="{x:Static BoolConverters.And}">
+              <Binding Path="HasNoResults" />
+              <Binding Path="!ShowNoUniverses" />
+            </MultiBinding>
+          </TextBlock.IsVisible>
+        </TextBlock>
+        <TextBlock Classes="muted" IsVisible="{Binding ShowNoUniverses}" Text="{x:Static r:Strings.Library_NoUniverses}"
+                   HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="460" Margin="0,60,0,0" />
 
         <!-- Cover grid: rows of cards, virtualized -->
         <!-- Each card keeps 9 px around its cover (margin 3 + padding 6) for the selection outline, so
@@ -437,6 +497,22 @@
               <SelectableTextBlock Text="{Binding Title}" TextWrapping="Wrap"
                                    FontFamily="{StaticResource FontDisplay}" FontSize="22" FontWeight="Bold" />
               <TextBlock Classes="muted" TextWrapping="Wrap" LineHeight="21" Text="{Binding CreditsLine}" />
+              <ItemsControl ItemsSource="{Binding Universes}" IsVisible="{Binding Universes.Count}" Margin="0,4,0,0"
+                            AutomationProperties.Name="{x:Static r:Strings.Details_Universes}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <WrapPanel ItemSpacing="6" LineSpacing="6" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="x:String">
+                    <Border Classes="pill" Padding="10,3" Background="{DynamicResource HoverBrush}"
+                            BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1" ToolTip.Tip="{x:Static r:Strings.Details_Universes}">
+                      <TextBlock FontSize="12" FontWeight="Medium" Text="{Binding}" />
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
             </StackPanel>
 
             <!-- Reading status -->

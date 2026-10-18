@@ -120,6 +120,45 @@
 
               <CheckBox Content="{x:Static r:Strings.Editor_OneShot}" IsChecked="{Binding OneShot}" IsThreeState="{Binding IsBatch}" />
 
+              <!-- Universes: across series, e.g. Massive-Verse; a collection in Komga -->
+              <StackPanel Spacing="8">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <TextBlock FontSize="15" FontWeight="SemiBold" Text="{x:Static r:Strings.Editor_Universes}" VerticalAlignment="Center" />
+                  <TextBlock Classes="help" Text="{x:Static r:Strings.Editor_UniversesHelp}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                </StackPanel>
+                <ItemsControl ItemsSource="{Binding Universes}" IsVisible="{Binding Universes.Count}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <WrapPanel ItemSpacing="8" LineSpacing="8" />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:UniverseChipViewModel">
+                      <Border Classes="pill" Background="{DynamicResource HoverBrush}" BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1" Padding="12,4,4,4">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                          <TextBlock Text="{Binding Name}" VerticalAlignment="Center" FontWeight="Medium" />
+                          <Button Classes="tool" MinWidth="26" MinHeight="26" Padding="4" Command="{Binding RemoveCommand}"
+                                  ToolTip.Tip="{x:Static r:Strings.Editor_RemoveUniverse}" AutomationProperties.Name="{x:Static r:Strings.Editor_RemoveUniverse}">
+                            <c:StrokeIcon Data="{StaticResource Icon.Close}" Width="12" Height="12" />
+                          </Button>
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Grid ColumnDefinitions="*,Auto" Width="460" HorizontalAlignment="Left">
+                  <AutoCompleteBox Text="{Binding NewUniverse}" ItemsSource="{Binding KnownUniverses}" FilterMode="ContainsOrdinal"
+                                   MinimumPrefixLength="0" PlaceholderText="{x:Static r:Strings.Editor_UniversePlaceholder}"
+                                   AutomationProperties.Name="{x:Static r:Strings.Editor_Universes}">
+                    <AutoCompleteBox.KeyBindings>
+                      <KeyBinding Gesture="Enter" Command="{Binding AddUniverseCommand}" />
+                    </AutoCompleteBox.KeyBindings>
+                  </AutoCompleteBox>
+                  <Button Grid.Column="1" Classes="secondary" Margin="8,0,0,0" Content="{x:Static r:Strings.Editor_AddUniverse}"
+                          Command="{Binding AddUniverseCommand}" />
+                </Grid>
+              </StackPanel>
+
               <!-- Credits -->
               <StackPanel Spacing="10" IsVisible="{Binding IsSingle}">
                 <StackPanel Orientation="Horizontal" Spacing="10">

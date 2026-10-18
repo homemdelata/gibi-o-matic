@@ -132,7 +132,7 @@ public sealed partial class BookCardViewModel : ViewModelBase
         };
         MetaLine = string.Join(" · ", parts);
         PlaceholderColor = Placeholders.ColorFor(m.Id);
-        SearchText = Normalize(string.Join(' ', [m.Title, m.Series?.Name, m.Publisher, .. m.Credits.Select(c => c.Name)]));
+        SearchText = Normalize(string.Join(' ', [m.Title, m.Series?.Name, m.Publisher, .. m.Credits.Select(c => c.Name), .. m.Universes]));
     }
 
     public CatalogBook Book { get; }
@@ -246,6 +246,44 @@ public sealed partial class SeriesCardViewModel : ViewModelBase
     private void Open() => _open(this);
 }
 
+/// <summary>A universe in the grid (Universos view): opens to show its series.</summary>
+public sealed partial class UniverseCardViewModel : ViewModelBase
+{
+    private readonly Action<UniverseCardViewModel> _open;
+
+    public UniverseCardViewModel(string name, IReadOnlyList<BookCardViewModel> books, Action<UniverseCardViewModel> open)
+    {
+        Name = name;
+        Books = books;
+        _open = open;
+        Cover = books[0];
+        Band = books.Min(b => b.Band);
+        var series = books.Select(b => b.Book.Metadata.Series?.Name ?? b.Title).Distinct(StringComparer.OrdinalIgnoreCase).Count();
+        var seriesText = series == 1 ? Strings.Library_UniverseSeriesOne : string.Format(CultureInfo.CurrentCulture, Strings.Library_UniverseSeriesMany, series);
+        MetaLine = string.Format(CultureInfo.CurrentCulture, Strings.Library_UniverseSummary, seriesText, BookCountText);
+    }
+
+    public string Name { get; }
+    public IReadOnlyList<BookCardViewModel> Books { get; }
+
+    /// <summary>The first book, whose cover stands for the universe.</summary>
+    public BookCardViewModel Cover { get; }
+
+    public QualityBand Band { get; }
+
+    public string Badge => QualityText.BadgeOf(Band);
+
+    public string BookCount => Books.Count.ToString(CultureInfo.CurrentCulture);
+
+    public string BookCountText => Books.Count == 1 ? Strings.Library_SeriesBooksOne : string.Format(CultureInfo.CurrentCulture, Strings.Library_SeriesBooksMany, Books.Count);
+
+    /// <summary>"3 séries · 9 livros".</summary>
+    public string MetaLine { get; }
+
+    [RelayCommand]
+    private void Open() => _open(this);
+}
+
 /// <summary>One row of the virtualized grid; the last row may have fewer cards than columns.</summary>
 public sealed record CardRow(IReadOnlyList<ViewModelBase> Cards, int Columns);
 
@@ -316,6 +354,7 @@ public sealed partial class BookDetailsViewModel : ViewModelBase
             new RelayCommand(() => _open?.Invoke(f)))).ToList();
 
         ScoreLine = string.Format(CultureInfo.CurrentCulture, Strings.Details_Score, report.Score, QualityText.BadgeOf(report.Band));
+        Universes = m.Universes;
         FolderPath = Path.Combine(library.RootPath, card.Book.Folder);
         _ = LoadCoverAsync(Path.Combine(FolderPath, LibraryLayout.CoverFileName), covers);
     }
@@ -333,6 +372,9 @@ public sealed partial class BookDetailsViewModel : ViewModelBase
         }
     }
     public string CreditsLine { get; }
+
+    /// <summary>Universes the book belongs to (shown as pills under the credits).</summary>
+    public IReadOnlyList<string> Universes { get; }
 
     /// <summary>"Lendo · 34%", "Lido em 18/10/2026" or "Não lido".</summary>
     [ObservableProperty]

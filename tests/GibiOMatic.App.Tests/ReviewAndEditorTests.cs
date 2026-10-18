@@ -255,6 +255,48 @@ public sealed class ReviewAndEditorTests : IDisposable
     }
 
     [Fact]
+    public async Task Universes_are_added_to_a_batch_removed_from_one_book_and_suggested()
+    {
+        var books = await ImportAsync("radiant_black.pdf", "radiant_red.pdf", "radiant_pink.pdf");
+        var ids = books.Select(b => b.Metadata.Id).ToList();
+        var editor = _app.Get<EditorPageViewModel>();
+        editor.SetBooks(ids);
+        await editor.OnNavigatedToAsync(Ct);
+        Assert.Empty(editor.Universes);
+        Assert.Empty(editor.KnownUniverses);
+
+        // Enter adds; a repeat in other case is ignored; text left in the box is added on save.
+        editor.NewUniverse = " Massive-Verse ";
+        editor.AddUniverseCommand.Execute(null);
+        editor.NewUniverse = "massive-verse";
+        editor.AddUniverseCommand.Execute(null);
+        Assert.Equal(["Massive-Verse"], editor.Universes.Select(u => u.Name));
+        editor.NewUniverse = "Supermassive, Massive-Verse";
+        await editor.SaveCommand.ExecuteAsync(null);
+        foreach (var id in ids)
+        {
+            Assert.Equal(["Massive-Verse", "Supermassive"], (await BookAsync(id)).Universes);
+        }
+
+        // One book leaves a universe; the others keep it.
+        editor.SetBooks([ids[2]]);
+        await editor.OnNavigatedToAsync(Ct);
+        Assert.Equal(["Massive-Verse", "Supermassive"], editor.KnownUniverses);
+        editor.Universes.Single(u => u.Name == "Supermassive").RemoveCommand.Execute(null);
+        await editor.SaveCommand.ExecuteAsync(null);
+        Assert.Equal(["Massive-Verse"], (await BookAsync(ids[2])).Universes);
+
+        // A batch shows only what every book shares, and removing it changes only that.
+        editor.SetBooks(ids);
+        await editor.OnNavigatedToAsync(Ct);
+        Assert.Equal(["Massive-Verse"], editor.Universes.Select(u => u.Name));
+        editor.Universes[0].RemoveCommand.Execute(null);
+        await editor.SaveCommand.ExecuteAsync(null);
+        Assert.Equal(["Supermassive"], (await BookAsync(ids[0])).Universes);
+        Assert.Empty((await BookAsync(ids[2])).Universes);
+    }
+
+    [Fact]
     public async Task Library_selection_opens_the_batch_editor_through_the_shell()
     {
         await ImportAsync("a.pdf", "b.pdf");
