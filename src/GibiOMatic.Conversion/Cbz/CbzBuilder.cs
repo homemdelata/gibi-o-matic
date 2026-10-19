@@ -160,6 +160,12 @@ public static partial class CbzBuilder
     /// PDFium renders one page at a time (it is not thread-safe), but encoding rendered pages as
     /// JPEG is not tied to it: a few pages are encoded in parallel while the next ones render.
     /// </summary>
+    /// <summary>
+    /// Rendered pages being encoded in the whole app (~25 MB of pixels each): two conversions at
+    /// once (Komga and Kindle) share them, so the peak stays the same with a KCC running beside.
+    /// </summary>
+    private static readonly SemaphoreSlim EncodeSlots = new(4, 4);
+
     private static CbzResult FromPdf(string source, ZipArchive zip, IProgress<double>? progress, CancellationToken ct)
     {
         using var pdf = PdfDocument.Open(source);
@@ -189,9 +195,35 @@ public static partial class CbzBuilder
             {
                 ct.ThrowIfCancellationRequested();
                 var content = pdf.GetPageContent(i);
-                pending.Enqueue(content.Original is { } jpeg
-                    ? Task.FromResult(jpeg)
-                    : Task.Run(() => PdfDocument.Encode(content.Rendered!), CancellationToken.None));
+                if (content.Original is { } jpeg)
+                {
+                    pending.Enqueue(Task.FromResult(jpeg));
+                }
+                else
+                {
+                    try
+                    {
+                        EncodeSlots.Wait(ct);
+                    }
+                    catch
+                    {
+                        content.Rendered!.Dispose();
+                        throw;
+                    }
+
+                    pending.Enqueue(Task.Run(() =>
+                    {
+                        try
+                        {
+                            return PdfDocument.Encode(content.Rendered!);
+                        }
+                        finally
+                        {
+                            EncodeSlots.Release();
+                        }
+                    }, CancellationToken.None));
+                }
+
                 while (pending.Count > inFlight || (pending.Count > 0 && pending.Peek().IsCompleted))
                 {
                     WriteOldest();

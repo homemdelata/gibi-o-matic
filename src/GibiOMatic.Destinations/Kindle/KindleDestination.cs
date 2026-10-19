@@ -109,6 +109,7 @@ public sealed class KindleDestination(DestinationConfig config, IKccRunner kcc, 
         var main = book.MainFile ?? throw new InvalidOperationException($"Book {book.Metadata.Id} has no original.");
         var tool = KccPath ?? throw new KccException("The KCC (Kindle Comic Converter) was not found.");
         var source = Path.Combine(library.RootPath, book.Folder, main.Name);
+        CleanWorkFolders();
         var work = Path.Combine(Config.Folder!, ".work", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(work);
         try
@@ -133,6 +134,31 @@ public sealed class KindleDestination(DestinationConfig config, IKccRunner kcc, 
     }
 
     public Task<AfterSyncResult?> AfterSyncAsync(CancellationToken ct) => Task.FromResult<AfterSyncResult?>(null);
+
+    /// <summary>
+    /// Work folders left by a conversion that never ended (the app closed or crashed). A destination
+    /// converts one book at a time, so before a new one every work folder is a leftover.
+    /// </summary>
+    private void CleanWorkFolders()
+    {
+        var root = Path.Combine(Config.Folder!, ".work");
+        if (!Directory.Exists(root))
+        {
+            return;
+        }
+
+        foreach (var folder in Directory.EnumerateDirectories(root))
+        {
+            try
+            {
+                Directory.Delete(folder, recursive: true);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                logger.LogDebug(ex, "Could not remove the leftover work folder {Folder}", folder);
+            }
+        }
+    }
 
     /// <summary>The writers (or else the artists), as the Kindle shows under the title.</summary>
     internal static string? AuthorOf(BookMetadata book)

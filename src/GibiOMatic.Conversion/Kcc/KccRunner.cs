@@ -84,6 +84,16 @@ public sealed class KccRunner(ILogger<KccRunner> logger) : IKccRunner
             throw new KccException($"KCC could not be started ({job.ExecutablePath}): {ex.Message}");
         }
 
+        try
+        {
+            // Converting can take every core for minutes: the rest of the machine comes first.
+            process.PriorityClass = ProcessPriorityClass.BelowNormal;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception or PlatformNotSupportedException)
+        {
+            logger.LogDebug(ex, "Could not lower the KCC's priority");
+        }
+
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);

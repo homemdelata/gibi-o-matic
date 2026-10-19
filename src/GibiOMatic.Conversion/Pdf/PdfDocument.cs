@@ -132,7 +132,20 @@ internal sealed unsafe class PdfDocument : IDisposable
                 var height = Math.Max(1, targetHeight);
                 var width = Math.Max(1, (int)Math.Round(widthPt * height / heightPt));
                 var bitmap = new SKBitmap(new SKImageInfo(width, height, SKColorType.Bgra8888, SKAlphaType.Opaque));
+                if (bitmap.GetPixels() == 0)
+                {
+                    // Out of memory: with no buffer PDFium would draw into one of its own, and the bitmap would stay empty.
+                    bitmap.Dispose();
+                    throw new PdfException($"Page {index + 1} needs more memory than is available ({width}×{height}).");
+                }
+
                 var pdfBitmap = PdfiumNative.FPDFBitmap_CreateEx(width, height, PdfiumNative.BitmapFormatBgra, bitmap.GetPixels(), bitmap.RowBytes);
+                if (pdfBitmap == 0)
+                {
+                    bitmap.Dispose();
+                    throw new PdfException($"Page {index + 1} could not be rendered.");
+                }
+
                 try
                 {
                     PdfiumNative.FPDFBitmap_FillRect(pdfBitmap, 0, 0, width, height, 0xFFFFFFFF);
