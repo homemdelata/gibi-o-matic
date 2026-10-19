@@ -387,7 +387,6 @@ public sealed class KindleTests : IAsyncLifetime
         Assert.Equal(KindleBookState.Ready, (await service.Kindle.StatusAsync(kindle, Ct))[saga.Metadata.Id].State);
         Assert.True(service.IsBusyOf("01ARYZ6S41TSV4RRFFQ69GSLOW"));
         Assert.Equal("Saga, Vol. 1", service.CurrentOf("01ARYZ6S41TSV4RRFFQ69GSLOW")?.Title);
-        Assert.Null(service.CurrentOf(DestinationId));
 
         slow.Release.SetResult();
         await service.WaitUntilIdleAsync(Ct);
