@@ -29,17 +29,20 @@ public sealed record DestinationSummary(
     int Pending,
     DateTimeOffset? LastWrite);
 
-/// <summary>Progress of the sync being run.</summary>
+/// <summary>Progress of the sync being run in one destination.</summary>
 /// <param name="FileFraction">How far the current copy got (0–1).</param>
 /// <param name="Queued">Books changed during this run; the next run takes them.</param>
-public sealed record SyncProgress(string DestinationId, int Done, int Total, string Title, double FileFraction = 0, int Queued = 0);
+/// <param name="IsFinished">The destination's job ended (nothing of it is running now).</param>
+public sealed record SyncProgress(string DestinationId, int Done, int Total, string Title, double FileFraction = 0, int Queued = 0,
+    bool IsFinished = false);
 
 /// <summary>
 /// The destinations of one library. Batch syncs run only after the user saw the plan and
 /// confirmed it; once a destination had its first confirmed sync, automatic destinations follow
-/// each saved book on their own (decision of 2026-10-17). One job at a time, in the background.
-/// Changed books are taken together: one run for all that are waiting, and one server scan when
-/// nothing else waits.
+/// each saved book on their own (decision of 2026-10-17). Each destination has its own queue and
+/// works one job at a time, in the background, so a long Komga run does not hold the Kindle
+/// (decision of 2026-10-18). Changed books are taken together: one run for all that are waiting,
+/// and one server scan when nothing else waits.
 /// </summary>
 public sealed class DestinationService : IAsyncDisposable
 {
@@ -50,16 +53,14 @@ public sealed class DestinationService : IAsyncDisposable
     private readonly ILogger<DestinationService> _logger;
     private readonly DestinationSync _sync;
     private readonly PendingBookStore _pendingBooks;
-    private readonly Channel<Func<CancellationToken, Task>> _jobs = Channel.CreateUnbounded<Func<CancellationToken, Task>>();
     private readonly CancellationTokenSource _stop = new();
-    private readonly Dictionary<string, SyncResult> _lastResults = [];
-    /// <summary>Books changed since the current automatic run took its list.</summary>
-    private readonly ConcurrentDictionary<string, byte> _arrived = new();
-    /// <summary>Destinations that got copies and still have to ask their server to scan.</summary>
-    private readonly HashSet<string> _scanOwed = [];
-    private Task _worker = Task.CompletedTask;
-    private int _pending;
-    private int _automaticRunQueued;
+    private readonly ConcurrentDictionary<string, SyncResult> _lastResults = new();
+    private readonly ConcurrentDictionary<string, Lazy<Worker>> _workers = new();
+    private readonly Lock _gate = new();
+    private bool _started;
+
+    /// <summary>Book changes being recorded (busy before their run is in line).</summary>
+    private int _recording;
 
     public DestinationService(LibraryInfo library, LibraryIndex index, IEnumerable<IDestinationType> types, ISettingsService settings,
         ILogger<DestinationService> logger)
@@ -79,12 +80,18 @@ public sealed class DestinationService : IAsyncDisposable
 
     public event EventHandler? Changed;
 
-    public event EventHandler<SyncProgress?>? ProgressChanged;
+    /// <summary>Progress of one destination's job; <see cref="SyncProgress.IsFinished"/> when it ends.</summary>
+    public event EventHandler<SyncProgress>? ProgressChanged;
 
-    public SyncProgress? Current { get; private set; }
+    /// <summary>What the destination is doing now, if anything.</summary>
+    public SyncProgress? CurrentOf(string destinationId) =>
+        _workers.TryGetValue(destinationId, out var worker) ? worker.Value.Current : null;
 
-    /// <summary>Jobs waiting or running.</summary>
-    public bool IsBusy => Volatile.Read(ref _pending) > 0;
+    /// <summary>Jobs waiting or running in any destination.</summary>
+    public bool IsBusy => Volatile.Read(ref _recording) > 0 || _workers.Values.Any(w => w.Value.IsBusy);
+
+    /// <summary>Jobs waiting or running in this destination.</summary>
+    public bool IsBusyOf(string destinationId) => _workers.TryGetValue(destinationId, out var worker) && worker.Value.IsBusy;
 
     public IReadOnlyList<IDestination> Destinations =>
         _settings.Current.Destinations.Where(d => _types.ContainsKey(d.Type)).Select(d => _types[d.Type].Create(d)).ToList();
@@ -94,11 +101,40 @@ public sealed class DestinationService : IAsyncDisposable
 
     public IDestination? Find(string destinationId) => Destinations.FirstOrDefault(d => d.Config.Id == destinationId);
 
-    /// <summary>Starts the worker; books changed in an earlier session and not updated yet go first.</summary>
+    /// <summary>Starts working; books changed in an earlier session and not updated yet go first.</summary>
     public void Start()
     {
-        RequestAutomaticRun();
-        _worker = Task.Run(() => RunAsync(_stop.Token), CancellationToken.None);
+        lock (_gate)
+        {
+            _started = true;
+        }
+
+        Interlocked.Increment(ref _recording);
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                // Pending books of the single queue of earlier versions go to every automatic destination.
+                var shared = await _pendingBooks.TakeSharedAsync(_stop.Token);
+                foreach (var destination in Destinations.Where(d => d.Config.When == DestinationTiming.Automatic))
+                {
+                    foreach (var bookId in shared)
+                    {
+                        await _pendingBooks.AddAsync(destination.Config.Id, bookId, _stop.Token);
+                    }
+
+                    RequestAutomaticRun(destination.Config.Id);
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _logger.LogError(ex, "Could not read the pending books");
+            }
+            finally
+            {
+                Interlocked.Decrement(ref _recording);
+            }
+        });
     }
 
     /// <summary>Changes that come close together (a batch edit) wait this long to go in the same run.</summary>
@@ -108,129 +144,156 @@ public sealed class DestinationService : IAsyncDisposable
         await _sync.PlanAsync(Find(destinationId) ?? throw new InvalidOperationException($"Unknown destination {destinationId}."), ct);
 
     /// <summary>Runs a plan the user confirmed; afterwards the destination follows edits on its own.</summary>
-    public void Run(SyncPlan plan) => Enqueue(async ct =>
+    public void Run(SyncPlan plan) => WorkerOf(plan.DestinationId).Enqueue(async ct =>
     {
         if (Find(plan.DestinationId) is not { } destination || destination.GetStatus().Health != DestinationHealth.Ready)
         {
             return;
         }
 
+        var worker = WorkerOf(destination.Config.Id);
         var result = await _sync.ExecuteAsync(destination, plan, Progress(destination), ct);
         _lastResults[destination.Config.Id] = result;
         await _index.SetStateAsync(ConfirmedKey(destination.Config.Id), "true", ct);
-        if (result.Written + result.Deleted == 0 && _scanOwed.Contains(destination.Config.Id))
+        if (result.Written + result.Deleted == 0 && worker.ScanOwed)
         {
             await _sync.NotifyServerAsync(destination, ct);
         }
 
-        _scanOwed.Remove(destination.Config.Id);
+        worker.ScanOwed = false;
     });
 
-    /// <summary>A book was imported, approved or edited: automatic destinations update its copy.</summary>
-    public void OnBookChanged(string bookId)
+    /// <summary>
+    /// A book was imported, approved or edited: automatic destinations update its copy. With
+    /// <paramref name="onlyDestinationId"/>, only that one (the book entered or left its list).
+    /// </summary>
+    public void OnBookChanged(string bookId, string? onlyDestinationId = null)
     {
-        _arrived[bookId] = 0;
-        if (Current is { } current)
+        var automatic = Destinations.Where(d => d.Config.When == DestinationTiming.Automatic && (onlyDestinationId is null || d.Config.Id == onlyDestinationId))
+            .Select(d => d.Config.Id).ToList();
+        foreach (var id in automatic)
         {
-            // "3 de 10 · mais 2 na fila" while a run is going.
-            Current = current with { Queued = _arrived.Count };
-            ProgressChanged?.Invoke(this, Current);
+            var worker = WorkerOf(id);
+            worker.Arrived[bookId] = 0;
+            if (worker.Current is { IsFinished: false } current)
+            {
+                // "3 de 10 · mais 2 na fila" while a run is going.
+                worker.Current = current with { Queued = worker.Arrived.Count };
+                ProgressChanged?.Invoke(this, worker.Current);
+            }
         }
 
         // Busy from now on, not only once the run is in line.
-        Interlocked.Increment(ref _pending);
-        _ = RecordAsync(bookId);
+        Interlocked.Increment(ref _recording);
+        _ = RecordAsync(bookId, automatic);
     }
 
     /// <summary>Recorded in the index first: the run may wait behind long ones, and the app may close before it.</summary>
-    private async Task RecordAsync(string bookId)
+    private async Task RecordAsync(string bookId, IReadOnlyList<string> destinationIds)
     {
         try
         {
-            await _pendingBooks.AddAsync(bookId, CancellationToken.None);
-        }
-        catch (Exception ex)
-        {
-            // The book is still in memory (_arrived): only a crash before its run would lose it.
-            _logger.LogError(ex, "Could not record book {BookId} as pending", bookId);
-        }
+            foreach (var id in destinationIds)
+            {
+                try
+                {
+                    await _pendingBooks.AddAsync(id, bookId, CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    // The book is still in memory (Arrived): only a crash before its run would lose it.
+                    _logger.LogError(ex, "Could not record book {BookId} as pending for {Destination}", bookId, id);
+                }
 
-        RequestAutomaticRun();
-        Interlocked.Decrement(ref _pending);
+                RequestAutomaticRun(id);
+            }
+        }
+        finally
+        {
+            Interlocked.Decrement(ref _recording);
+            // The counts ("4 para preparar") follow every book, not only the first of a run.
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
     }
 
-    /// <summary>One automatic run in line at most: it takes every book waiting when it starts.</summary>
-    private void RequestAutomaticRun()
+    /// <summary>One automatic run in line at most per destination: it takes every book waiting when it starts.</summary>
+    private void RequestAutomaticRun(string destinationId)
     {
-        if (Interlocked.Exchange(ref _automaticRunQueued, 1) == 0)
+        lock (_gate)
         {
-            Enqueue(RunAutomaticAsync);
+            if (!_started)
+            {
+                return;
+            }
+        }
+
+        var worker = WorkerOf(destinationId);
+        if (Interlocked.Exchange(ref worker.AutomaticRunQueued, 1) == 0)
+        {
+            worker.Enqueue(ct => RunAutomaticAsync(destinationId, ct));
         }
     }
 
     /// <summary>
-    /// Updates the copies of every waiting book in the automatic destinations. A book stays pending
-    /// while a destination that should get it is unavailable (a disconnected drive), so the next
-    /// start tries again. The server is asked to scan once nothing else waits.
+    /// Updates the copies of every book waiting for this destination. The books stay pending while
+    /// the destination is unavailable (a disconnected drive, no KCC), so a later start tries again.
+    /// The server is asked to scan once nothing else waits.
     /// </summary>
-    private async Task RunAutomaticAsync(CancellationToken ct)
+    private async Task RunAutomaticAsync(string destinationId, CancellationToken ct)
     {
         await Task.Delay(GatherDelay, ct);
-        Volatile.Write(ref _automaticRunQueued, 0);
+        var worker = WorkerOf(destinationId);
+        Volatile.Write(ref worker.AutomaticRunQueued, 0);
         var startedAt = DateTimeOffset.UtcNow;
-        var arrived = _arrived.Keys.ToList();
+        var arrived = worker.Arrived.Keys.ToList();
         foreach (var id in arrived)
         {
-            _arrived.TryRemove(id, out _);
+            worker.Arrived.TryRemove(id, out _);
         }
 
-        var bookIds = (await _pendingBooks.GetAsync(ct)).Concat(arrived).ToHashSet();
-        if (bookIds.Count == 0)
+        var bookIds = (await _pendingBooks.GetAsync(destinationId, ct)).Concat(arrived).ToHashSet();
+        if (bookIds.Count == 0 || Find(destinationId) is not { } destination || destination.Config.When != DestinationTiming.Automatic)
+        {
+            await ForgetPendingAsync(destinationId, bookIds, startedAt, ct);
+            return;
+        }
+
+        // Before the first confirmed sync there is nothing to follow: that sync plans every book.
+        if (!await IsConfirmedAsync(destinationId, ct))
+        {
+            await ForgetPendingAsync(destinationId, bookIds, startedAt, ct);
+            return;
+        }
+
+        if (destination.GetStatus().Health != DestinationHealth.Ready)
         {
             return;
         }
 
-        var waiting = false;
-        var automatic = Destinations.Where(d => d.Config.When == DestinationTiming.Automatic).ToList();
-        foreach (var destination in automatic)
+        var plan = await _sync.PlanAsync(destination, ct, bookIds);
+        if (!plan.IsEmpty)
         {
-            if (!await IsConfirmedAsync(destination.Config.Id, ct))
+            var result = await _sync.ExecuteAsync(destination, plan, Progress(destination), ct, notifyServer: false);
+            _lastResults[destinationId] = result;
+            if (result.Written + result.Deleted > 0)
             {
-                continue;
-            }
-
-            if (destination.GetStatus().Health != DestinationHealth.Ready)
-            {
-                waiting = true;
-                continue;
-            }
-
-            var plan = await _sync.PlanAsync(destination, ct, bookIds);
-            if (!plan.IsEmpty)
-            {
-                var result = await _sync.ExecuteAsync(destination, plan, Progress(destination), ct, notifyServer: false);
-                _lastResults[destination.Config.Id] = result;
-                if (result.Written + result.Deleted > 0)
-                {
-                    _scanOwed.Add(destination.Config.Id);
-                }
+                worker.ScanOwed = true;
             }
         }
 
-        if (!waiting)
+        await ForgetPendingAsync(destinationId, bookIds, startedAt, ct);
+        if (Volatile.Read(ref worker.AutomaticRunQueued) == 0 && worker.ScanOwed)
         {
-            foreach (var bookId in bookIds)
-            {
-                await _pendingBooks.RemoveAsync(bookId, startedAt, ct);
-            }
+            worker.ScanOwed = false;
+            await _sync.NotifyServerAsync(destination, ct);
         }
+    }
 
-        if (Volatile.Read(ref _automaticRunQueued) == 0)
+    private async Task ForgetPendingAsync(string destinationId, IEnumerable<string> bookIds, DateTimeOffset handledAt, CancellationToken ct)
+    {
+        foreach (var bookId in bookIds)
         {
-            foreach (var destination in automatic.Where(d => _scanOwed.Remove(d.Config.Id)))
-            {
-                await _sync.NotifyServerAsync(destination, ct);
-            }
+            await _pendingBooks.RemoveAsync(destinationId, bookId, handledAt, ct);
         }
     }
 
@@ -246,7 +309,7 @@ public sealed class DestinationService : IAsyncDisposable
     {
         foreach (var bookId in Find(destinationId)?.Config.ChosenBookIds ?? [])
         {
-            OnBookChanged(bookId);
+            OnBookChanged(bookId, destinationId);
         }
     }
 
@@ -302,62 +365,22 @@ public sealed class DestinationService : IAsyncDisposable
 
     private static string ConfirmedKey(string destinationId) => $"destination.{destinationId}.confirmed";
 
-    private void Enqueue(Func<CancellationToken, Task> job)
-    {
-        Interlocked.Increment(ref _pending);
-        _jobs.Writer.TryWrite(job);
-        Changed?.Invoke(this, EventArgs.Empty);
-    }
+    private Worker WorkerOf(string destinationId) => _workers.GetOrAdd(destinationId, id => new Lazy<Worker>(() => new Worker(this, id))).Value;
 
     private IProgress<SyncStep> Progress(IDestination destination) =>
         new SyncProgressReporter(p =>
         {
-            Current = new SyncProgress(destination.Config.Id, p.Done, p.Total, p.Title, p.FileFraction, _arrived.Count);
-            ProgressChanged?.Invoke(this, Current);
+            var worker = WorkerOf(destination.Config.Id);
+            worker.Current = new SyncProgress(destination.Config.Id, p.Done, p.Total, p.Title, p.FileFraction, worker.Arrived.Count);
+            ProgressChanged?.Invoke(this, worker.Current);
         });
-
-    private async Task RunAsync(CancellationToken stop)
-    {
-        try
-        {
-            await foreach (var job in _jobs.Reader.ReadAllAsync(stop))
-            {
-                try
-                {
-                    await job(stop);
-                }
-                catch (OperationCanceledException) when (stop.IsCancellationRequested)
-                {
-                    return;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Destination job failed");
-                }
-                finally
-                {
-                    Interlocked.Decrement(ref _pending);
-                    Current = null;
-                    ProgressChanged?.Invoke(this, null);
-                    Changed?.Invoke(this, EventArgs.Empty);
-                }
-            }
-        }
-        catch (OperationCanceledException)
-        {
-        }
-    }
 
     public async ValueTask DisposeAsync()
     {
-        _jobs.Writer.TryComplete();
         await _stop.CancelAsync().ConfigureAwait(false);
-        try
+        foreach (var worker in _workers.Values)
         {
-            await _worker.ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
+            await worker.Value.StopAsync().ConfigureAwait(false);
         }
 
         _stop.Dispose();
@@ -366,6 +389,86 @@ public sealed class DestinationService : IAsyncDisposable
     private sealed class SyncProgressReporter(Action<SyncStep> report) : IProgress<SyncStep>
     {
         public void Report(SyncStep value) => report(value);
+    }
+
+    /// <summary>One destination's queue: its jobs run one after the other, beside the other destinations'.</summary>
+    private sealed class Worker
+    {
+        private readonly DestinationService _service;
+        private readonly string _destinationId;
+        private readonly Channel<Func<CancellationToken, Task>> _jobs = Channel.CreateUnbounded<Func<CancellationToken, Task>>();
+        private readonly Task _loop;
+        private int _pending;
+
+        public Worker(DestinationService service, string destinationId)
+        {
+            _service = service;
+            _destinationId = destinationId;
+            _loop = Task.Run(() => RunAsync(service._stop.Token), CancellationToken.None);
+        }
+
+        /// <summary>Books changed since the current automatic run took its list.</summary>
+        public ConcurrentDictionary<string, byte> Arrived { get; } = new();
+
+        public int AutomaticRunQueued;
+
+        /// <summary>Copies were written: the server has to be asked to scan.</summary>
+        public bool ScanOwed { get; set; }
+
+        public SyncProgress? Current { get; set; }
+
+        public bool IsBusy => Volatile.Read(ref _pending) > 0;
+
+        public void Enqueue(Func<CancellationToken, Task> job)
+        {
+            Interlocked.Increment(ref _pending);
+            _jobs.Writer.TryWrite(job);
+            _service.Changed?.Invoke(_service, EventArgs.Empty);
+        }
+
+        private async Task RunAsync(CancellationToken stop)
+        {
+            try
+            {
+                await foreach (var job in _jobs.Reader.ReadAllAsync(stop))
+                {
+                    try
+                    {
+                        await job(stop);
+                    }
+                    catch (OperationCanceledException) when (stop.IsCancellationRequested)
+                    {
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        _service._logger.LogError(ex, "Job of destination {Destination} failed", _destinationId);
+                    }
+                    finally
+                    {
+                        Interlocked.Decrement(ref _pending);
+                        Current = null;
+                        _service.ProgressChanged?.Invoke(_service, new SyncProgress(_destinationId, 0, 0, string.Empty, IsFinished: true));
+                        _service.Changed?.Invoke(_service, EventArgs.Empty);
+                    }
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
+
+        public async Task StopAsync()
+        {
+            _jobs.Writer.TryComplete();
+            try
+            {
+                await _loop.ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }
     }
 }
 

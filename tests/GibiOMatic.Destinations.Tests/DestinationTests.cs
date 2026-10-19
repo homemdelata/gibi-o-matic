@@ -294,7 +294,7 @@ public sealed class SyncTests : IAsyncLifetime
         var steps = new List<SyncProgress>();
         _service.ProgressChanged += (_, p) =>
         {
-            if (p is not null)
+            if (!p.IsFinished)
             {
                 lock (steps)
                 {

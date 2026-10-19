@@ -85,7 +85,7 @@ public sealed partial class DestinationsStatusViewModel : ViewModelBase, IDispos
                 ? existing
                 : new SidebarDestinationViewModel(destination.Config.Id, destination.Config.Name, _open);
             Show(item, summary, service.LastResult(destination.Config.Id));
-            if (service.Current is { } progress && progress.DestinationId == item.Id)
+            if (service.CurrentOf(item.Id) is { } progress)
             {
                 Show(item, progress);
             }
@@ -134,9 +134,9 @@ public sealed partial class DestinationsStatusViewModel : ViewModelBase, IDispos
 
     private void OnChanged(object? sender, EventArgs e) => _refresh.Trigger();
 
-    private void OnProgress(object? sender, SyncProgress? progress) => _ui.Post(() =>
+    private void OnProgress(object? sender, SyncProgress progress) => _ui.Post(() =>
     {
-        if (progress is null)
+        if (progress.IsFinished)
         {
             _refresh.Trigger();
         }

@@ -317,6 +317,83 @@ public sealed class KindleTests : IAsyncLifetime
         Assert.True(!Directory.Exists(work) || !Directory.EnumerateFileSystemEntries(work).Any());
     }
 
+    /// <summary>A destination whose copies take as long as the test wants (a Komga converting big PDFs).</summary>
+    private sealed class SlowType : IDestinationType
+    {
+        public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public string Id => "slow";
+
+        public IReadOnlySet<BookKind> AcceptedKinds { get; } = new HashSet<BookKind> { BookKind.Tpb, BookKind.Issue };
+
+        public DestinationConfig CreateDefault(string id, string name) => new() { Id = id, Type = Id, Name = name, Folder = Path.GetTempPath() };
+
+        public IDestination Create(DestinationConfig config) => new Slow(config, this);
+
+        private sealed class Slow(DestinationConfig config, SlowType type) : IDestination
+        {
+            public DestinationConfig Config { get; } = config;
+            public DestinationStatus GetStatus() => new(DestinationHealth.Ready);
+            public bool Includes(BookMetadata book) => true;
+            public string OutputPath(CatalogBook book) => $"slow-{book.Metadata.Id}.bin";
+            public string ContentSignature(CatalogBook book) => "1";
+
+            public async Task GenerateAsync(LibraryInfo library, CatalogBook book, string target, IProgress<double>? progress, CancellationToken ct)
+            {
+                type.Started.TrySetResult();
+                await type.Release.Task.WaitAsync(ct);
+                await File.WriteAllTextAsync(target, "x", ct);
+            }
+
+            public Task<AfterSyncResult?> AfterSyncAsync(CancellationToken ct) => Task.FromResult<AfterSyncResult?>(null);
+        }
+    }
+
+    [Fact]
+    public async Task The_kindle_prepares_while_another_destination_is_busy_with_a_long_run()
+    {
+        var slow = new SlowType();
+        await using var service = new DestinationServiceFactory(_libraries, [_type, slow], _settings, NullLogger<DestinationService>.Instance)
+        {
+            GatherDelay = TimeSpan.FromMilliseconds(20),
+        }.Create(_library);
+        service.Start();
+        var saga = await ImportAsync("saga.cbz", "Saga", "1");
+        var folder = _temp.Combine("slow");
+        Directory.CreateDirectory(folder);
+        await _settings.SaveAsync(_settings.Current with
+        {
+            Destinations =
+            [
+                slow.CreateDefault("01ARYZ6S41TSV4RRFFQ69GSLOW", "Komga lento") with { Folder = folder },
+                _type.CreateDefault(DestinationId, "Meu Kindle") with { KccPath = KccTool, ChosenBookIds = [saga.Metadata.Id] },
+            ],
+        }, Ct);
+        await service.MarkConfirmedAsync("01ARYZ6S41TSV4RRFFQ69GSLOW", Ct);
+        await service.MarkConfirmedAsync(DestinationId, Ct);
+
+        service.OnBookChanged(saga.Metadata.Id);
+        await slow.Started.Task.WaitAsync(TimeSpan.FromSeconds(10), Ct);
+
+        // The slow destination is still busy, and the Kindle's copy is ready anyway.
+        var kindle = (KindleDestination)service.Find(DestinationId)!;
+        for (var i = 0; i < 200 && (await service.Kindle.StatusAsync(kindle, Ct))[saga.Metadata.Id].State != KindleBookState.Ready; i++)
+        {
+            await Task.Delay(25, Ct);
+        }
+
+        Assert.Equal(KindleBookState.Ready, (await service.Kindle.StatusAsync(kindle, Ct))[saga.Metadata.Id].State);
+        Assert.True(service.IsBusyOf("01ARYZ6S41TSV4RRFFQ69GSLOW"));
+        Assert.Equal("Saga, Vol. 1", service.CurrentOf("01ARYZ6S41TSV4RRFFQ69GSLOW")?.Title);
+        Assert.Null(service.CurrentOf(DestinationId));
+
+        slow.Release.SetResult();
+        await service.WaitUntilIdleAsync(Ct);
+        Assert.True(File.Exists(Path.Combine(folder, $"slow-{saga.Metadata.Id}.bin")));
+    }
+
     [Fact]
     public void Text_books_never_go_to_the_kindle()
     {

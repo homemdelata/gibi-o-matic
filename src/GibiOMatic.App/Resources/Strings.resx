@@ -388,7 +388,7 @@
   <data name="Wizard_Cancel" xml:space="preserve"><value>Cancelar</value></data>
   <data name="Destinations_Add" xml:space="preserve"><value>Adicionar destino</value></data>
   <data name="Destinations_AddHelp" xml:space="preserve"><value>Um servidor Komga, outro Kindle…</value></data>
-  <data name="Destinations_Soon" xml:space="preserve"><value>Em breve: Kindle, Kavita, Kobo, pasta simples, servidor OPDS</value></data>
+  <data name="Destinations_Soon" xml:space="preserve"><value>Em breve: Kavita, Kobo, pasta simples, servidor OPDS</value></data>
   <data name="Destinations_Configure" xml:space="preserve"><value>Configurar</value></data>
   <data name="Destinations_SyncNow" xml:space="preserve"><value>Atualizar agora</value></data>
   <data name="Destinations_Empty" xml:space="preserve"><value>Nenhum destino ainda. Adicione um Komga para gerar as cópias de leitura.</value></data>

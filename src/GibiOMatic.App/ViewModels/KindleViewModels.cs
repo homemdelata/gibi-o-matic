@@ -463,7 +463,7 @@ public sealed partial class KindleDetailViewModel : ViewModelBase, ISyncActivity
         {
             var index = (await _service.Kindle.StatusAsync(destination, ct));
             var books = await IndexBooksAsync(ct);
-            var preparing = _service.Current is { } current && current.DestinationId == Config.Id ? current.Title : null;
+            var preparing = _service.CurrentOf(Config.Id)?.Title;
             // Books enter the list from the Library (right-click or the panel); unticking one here takes it out.
             _rows = books
                 .Where(b => config.ChosenBookIds.Contains(b.Id) && b.Kind != BookKind.Book && b.Files.Any(f => f.Role == FileRole.Original))
@@ -517,7 +517,7 @@ public sealed partial class KindleDetailViewModel : ViewModelBase, ISyncActivity
     {
         var ids = chosen ? Config.ChosenBookIds.Append(bookId).Distinct().ToList() : Config.ChosenBookIds.Where(id => id != bookId).ToList();
         Config = await _save(Config with { ChosenBookIds = ids });
-        _service.OnBookChanged(bookId);
+        _service.OnBookChanged(bookId, Config.Id);
         await RefreshAsync();
     }
 

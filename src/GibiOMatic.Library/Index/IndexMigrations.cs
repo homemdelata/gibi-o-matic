@@ -125,6 +125,16 @@ internal static class IndexMigrations
         ALTER TABLE reading_state ADD COLUMN started INTEGER NOT NULL DEFAULT 0;
         ALTER TABLE reading_state ADD COLUMN read_at TEXT;
         """,
+
+        // 9: pending books per destination (each destination has its own queue; v6 rows are moved on start)
+        """
+        CREATE TABLE destination_pending_books (
+            destination_id  TEXT NOT NULL,
+            book_id         TEXT NOT NULL,
+            since           TEXT NOT NULL,
+            PRIMARY KEY (destination_id, book_id)
+        );
+        """,
     ];
 
     public static int LatestVersion => All.Count;

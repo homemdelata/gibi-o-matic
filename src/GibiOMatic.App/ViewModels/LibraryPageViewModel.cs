@@ -547,8 +547,10 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
 
         foreach (var id in ids)
         {
-            _session.Destinations?.OnBookChanged(id);
+            _session.Destinations?.OnBookChanged(id, destinationId);
         }
+
+        UpdateKindleFlags();
 
         CheckedText = string.Format(CultureInfo.CurrentCulture, include ? Strings.Library_IncludedIn : Strings.Library_RemovedFrom, ids.Count, destination.Name);
     }
@@ -590,7 +592,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
         });
         foreach (var id in changed)
         {
-            _session.Destinations?.OnBookChanged(id);
+            _session.Destinations?.OnBookChanged(id, kindle.Id);
         }
 
         UpdateKindleFlags();

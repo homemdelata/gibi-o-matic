@@ -989,17 +989,17 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
     /// <summary>Running while its job works (or while a job it started waits in line).</summary>
     private static void ShowActivity(DestinationService service, ISyncActivity activity, string destinationId)
     {
-        if (service.Current is { } progress && progress.DestinationId == destinationId)
+        if (service.CurrentOf(destinationId) is { } progress)
         {
             DestinationText.Report(activity, progress);
         }
-        else if (!(activity.IsRunning && service.IsBusy && service.Current is null))
+        else if (!service.IsBusyOf(destinationId))
         {
             activity.IsRunning = false;
         }
     }
 
-    private void OnProgress(object? sender, SyncProgress? progress) => _ui.Post(() =>
+    private void OnProgress(object? sender, SyncProgress progress) => _ui.Post(() =>
     {
         var activities = Cards.Cast<ISyncActivity>().Select(a => (Activity: a, Id: ((DestinationCardViewModel)a).Id)).ToList();
         if (Detail is { } detail)
@@ -1012,19 +1012,20 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
             activities.Add((kindle, kindle.Config.Id));
         }
 
-        foreach (var (activity, id) in activities)
+        // Each destination works on its own: only its card and detail follow its progress.
+        foreach (var (activity, id) in activities.Where(a => a.Id == progress.DestinationId))
         {
-            if (progress is not null && progress.DestinationId == id)
-            {
-                DestinationText.Report(activity, progress);
-            }
-            else if (progress is null)
+            if (progress.IsFinished)
             {
                 activity.IsRunning = false;
             }
+            else
+            {
+                DestinationText.Report(activity, progress);
+            }
         }
 
-        if (progress is null)
+        if (progress.IsFinished)
         {
             _refresh.Trigger();
         }
