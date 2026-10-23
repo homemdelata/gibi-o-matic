@@ -135,6 +135,29 @@ public sealed class InboxWatcherTests : IAsyncLifetime
         Assert.True(File.Exists(Imported("Humble", "Saga_Vol1.cbz")));
         var item = Assert.Single(await _queue.GetEntriesAsync(Ct)).Item;
         Assert.Equal((InboxItemState.Imported, true, Imported("Humble", "Saga_Vol1.cbz")), (item.State, item.Auto, item.SourcePath));
+        // The download folder was left empty: it goes away, the inbox stays.
+        Assert.False(Directory.Exists(Inbox("Humble")));
+        Assert.True(Directory.Exists(Inbox()));
+    }
+
+    [Fact]
+    public async Task Folders_that_still_hold_something_are_kept()
+    {
+        var saga = SyntheticBooks.Cbz(Inbox("Humble", "Saga", "saga.cbz"), comicInfoXml: SagaInfo);
+        await File.WriteAllTextAsync(Inbox("Humble", "readme.txt"), "x", Ct);
+
+        await AddAutoAndWaitAsync(saga);
+
+        Assert.False(Directory.Exists(Inbox("Humble", "Saga")));
+        Assert.True(File.Exists(Inbox("Humble", "readme.txt")));
+
+        // Outside the inbox nothing is touched, even when empty.
+        var outside = _temp.Combine("Downloads", "empty");
+        Directory.CreateDirectory(outside);
+        InboxFolder.RemoveEmptyFolders(Inbox(), outside);
+        Assert.True(Directory.Exists(outside));
+        InboxFolder.RemoveEmptyFolders(Inbox(), Inbox());
+        Assert.True(Directory.Exists(Inbox()));
     }
 
     [Fact]

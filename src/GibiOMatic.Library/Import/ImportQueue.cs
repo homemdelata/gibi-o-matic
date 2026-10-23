@@ -492,6 +492,8 @@ public sealed class ImportQueue : IAsyncDisposable
             File.Move(item.SourcePath, target);
             await _store.SetSourcePathAsync(item.Id, target, ct);
             _logger.LogInformation("Inbox: moved {Source} to {Target}", item.SourcePath, target);
+            // A download folder left empty goes away (request of 2026-10-23); the inbox itself stays.
+            InboxFolder.RemoveEmptyFolders(inbox, Path.GetDirectoryName(item.SourcePath)!);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

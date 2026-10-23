@@ -59,6 +59,31 @@ public static class InboxFolder
         }
     }
 
+    /// <summary>
+    /// After a file left <paramref name="folder"/>: removes it, and then its parents, while they are
+    /// completely empty, up to the inbox itself (never removed, nor anything outside it). A folder
+    /// that still holds anything, even a download in progress, stays.
+    /// </summary>
+    public static void RemoveEmptyFolders(string inbox, string folder)
+    {
+        var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(inbox));
+        var current = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder));
+        while (IsInside(root, current) && Directory.Exists(current) && !Directory.EnumerateFileSystemEntries(current).Any())
+        {
+            try
+            {
+                // Not recursive: if something arrived meanwhile, it fails and the folder stays.
+                Directory.Delete(current, recursive: false);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                return;
+            }
+
+            current = Path.GetDirectoryName(current)!;
+        }
+    }
+
     /// <summary>Whether <paramref name="file"/> is somewhere inside <paramref name="folder"/>.</summary>
     public static bool IsInside(string folder, string file) => RelativePath(folder, file) is not null;
 
