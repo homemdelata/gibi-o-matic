@@ -10,8 +10,8 @@ Status: ⬜ não iniciada · 🟨 em andamento · ✅ concluída. Seções `§` 
 | F3 | Destino Komga | ✅ |
 | F3.5 | Leitor | ✅ |
 | F3.6 | Universos | ✅ |
-| F4 | Destino Kindle | ✅ (falta o teste do usuário com o Kindle) |
-| F5 | Entrada automática | ⬜ |
+| F4 | Destino Kindle | ✅ (falta o teste do usuário com o Kindle: em 23/10 o Windows não reconheceu o aparelho; **testar de novo**) |
+| F5 | Entrada automática | ✅ (falta o teste do usuário) |
 | F6 | Polimento e distribuição | 🟨 (versão e script de publicação) |
 
 Ao terminar cada fase: build e testes verdes → atualizar este arquivo → commit e push → **parar e explicar ao usuário como testar**.
@@ -201,16 +201,17 @@ Objetivo: agrupar séries do mesmo universo ou linha editorial (ex.: Radiant Bla
 
 ## F5 · Entrada automática (§6)
 
-- [ ] Pasta observada (FileSystemWatcher) e espera do fim da escrita.
-- [ ] Identificação na chegada; aprovados vão direto para a biblioteca e para os destinos automáticos.
-- [ ] Substituição de original por versão melhor.
-- [ ] Mover os processados para `_importados/`.
-- [ ] Rodar em segundo plano (pedido do usuário), para a pasta continuar sendo observada com a janela fechada:
-  - ícone na bandeja do sistema (Windows; Linux onde houver suporte), com menu (abrir, pausar a observação, sair) e o estado atual;
-  - fechar a janela deixa o app na bandeja (padrão); na primeira vez, um aviso explica e deixa escolher entre continuar na bandeja e fechar o app; a escolha fica nas Configurações;
+- [x] Pasta observada (FileSystemWatcher, subpastas incluídas) com varredura ao abrir e a cada 5 minutos; um arquivo só entra quando para de mudar e ninguém está escrevendo nele.
+- [x] Identificação na chegada; aprovados vão direto para a biblioteca e para os destinos automáticos. Os arquivos da pasta entram sem confirmação; os adicionados à mão continuam pedindo "Importar".
+- [x] Substituição de original por versão melhor: a sugestão da Entrada é aplicada sozinha (decisão do usuário).
+- [x] Mover os processados para `_importados/` (com as subpastas); idênticos ao que já está na biblioteca também (decisão do usuário); os com erro ficam.
+- [x] Rodar em segundo plano (pedido do usuário), para a pasta continuar sendo observada com a janela fechada:
+  - ícone na bandeja do sistema (Windows; Linux onde houver suporte), com menu (abrir, pausar a Entrada, sair) e o estado atual na dica;
+  - fechar a janela deixa o app na bandeja (padrão); na primeira vez, um aviso explica e deixa escolher entre continuar na bandeja e fechar o app; a escolha fica nas Configurações → Geral;
   - opção de iniciar com o sistema (Windows: chave `Run` do usuário; Linux: `~/.config/autostart`), desligada por padrão; ao ligar, escolhe entre abrir só a bandeja (padrão) ou a janela;
-  - aviso do sistema em resumo, por lote processado ("5 livros novos: 3 na biblioteca, 2 aguardando aprovação"); clicar abre a Entrada;
+  - aviso do sistema em resumo, por lote processado ("2 arquivos processados na Entrada · 1 livro aprovado · 1 para revisar"); clicar abre a Revisão (se há o que revisar), a Entrada (se houve erro) ou a Biblioteca;
   - uma instância só: abrir o app de novo traz a janela que já está rodando.
+- [x] Tela Entrada: cartão com a pasta observada (ou o aviso de que está desligada ou não foi encontrada) e a marca "automático" nos arquivos que vieram dela.
 
 **Pronto quando**: um download novo do Humble vai do download ao Komga sem passos manuais, ou só com a aprovação.
 
