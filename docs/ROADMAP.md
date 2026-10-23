@@ -205,6 +205,12 @@ Objetivo: agrupar séries do mesmo universo ou linha editorial (ex.: Radiant Bla
 - [ ] Identificação na chegada; aprovados vão direto para a biblioteca e para os destinos automáticos.
 - [ ] Substituição de original por versão melhor.
 - [ ] Mover os processados para `_importados/`.
+- [ ] Rodar em segundo plano (pedido do usuário), para a pasta continuar sendo observada com a janela fechada:
+  - ícone na bandeja do sistema (Windows; Linux onde houver suporte), com menu (abrir, pausar a observação, sair) e o estado atual;
+  - fechar a janela deixa o app na bandeja, se o usuário quiser;
+  - opção de iniciar com o sistema (Windows: chave `Run` do usuário; Linux: `~/.config/autostart`), já na bandeja;
+  - aviso do sistema quando chegam livros novos ou quando algum precisa de aprovação;
+  - uma instância só: abrir o app de novo traz a janela que já está rodando.
 
 **Pronto quando**: um download novo do Humble vai do download ao Komga sem passos manuais, ou só com a aprovação.
 

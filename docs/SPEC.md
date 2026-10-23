@@ -157,6 +157,7 @@ Faixas: **Ruim** (< 60), **Revisar** (60–84), **OK** (≥ 85). A regra já exi
 4. Lê metadados embutidos: `ComicInfo.xml` (CBZ/CBR), OPF (EPUB), Info/XMP (PDF), ISBN na página de créditos (opcional, fase posterior).
 5. Roda a identificação (seção 8) e mostra o resultado na tela Entrada.
 6. Ao confirmar: copia o original para o Arquivo, extrai a capa e grava o `metadata.json`. O arquivo na Entrada é movido para `Entrada/_importados/`, não apagado.
+7. **Segundo plano**: para observar a pasta sem a janela aberta, o app pode ficar na bandeja do sistema e iniciar com o sistema (opções nas Configurações). Só roda uma instância; abrir de novo traz a janela existente. Avisa por notificação do sistema quando chegam livros ou quando algum precisa de aprovação.
 
 ## 7. Revisão e Editor
 
@@ -357,6 +358,7 @@ Detecção real de quadros (Panel View com regiões por quadro), outros destinos
 
 1. Comportamento do KCC sem KindleGen no Linux.
 2. Pastas de editora no Komga (`Editora/Série/`): o modelo de nome permite `{publisher}/{series}/…`; falta testar no Komga do usuário.
+3. Segundo plano (F5): fechar a janela manda o app para a bandeja ou fecha? Ao iniciar com o sistema, abre a janela ou só a bandeja? Quais avisos aparecem (cada livro novo, só os que precisam de aprovação, um resumo)?
 
 **Decididas (2026-10-17)**:
 - Nome: **Gibi-o-matic** (repositório `gibi-o-matic`, namespace `GibiOMatic`).
