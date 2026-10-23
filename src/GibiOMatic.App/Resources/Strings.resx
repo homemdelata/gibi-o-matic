@@ -662,4 +662,10 @@
   <data name="Inbox_WatchMissing" xml:space="preserve"><value>{0} não existe agora (unidade desconectada?). A observação recomeça quando ela aparecer.</value></data>
   <data name="Inbox_WatchConfigure" xml:space="preserve"><value>Configurar</value></data>
   <data name="Inbox_AutoChip" xml:space="preserve"><value>automático</value></data>
+  <data name="Status_Metadata" xml:space="preserve"><value>Metadados</value></data>
+  <data name="Status_InboxQueued" xml:space="preserve"><value>{0} na fila</value></data>
+  <data name="Status_InboxWatching" xml:space="preserve"><value>observando</value></data>
+  <data name="Status_InboxMissing" xml:space="preserve"><value>pasta não encontrada</value></data>
+  <data name="Status_MetadataSearching" xml:space="preserve"><value>buscando · {0}</value></data>
+  <data name="Status_Paused" xml:space="preserve"><value>em pausa · {0}</value></data>
 </root>

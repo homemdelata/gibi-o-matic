@@ -33,6 +33,33 @@
                          TextTrimming="PrefixCharacterEllipsis"
                          Text="{Binding LibraryPath}" ToolTip.Tip="{Binding LibraryPath}" />
             </Grid>
+            <!-- Background work: inbox and metadata search -->
+            <Button Classes="status-line" Command="{Binding Activity.OpenInboxCommand}" IsVisible="{Binding Activity.ShowInbox}"
+                    ToolTip.Tip="{Binding Activity.InboxDetail}" AutomationProperties.Name="{x:Static r:Strings.Nav_Inbox}">
+              <StackPanel Spacing="6">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                  <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                           Fill="{Binding Activity.InboxKind, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Fill}" />
+                  <TextBlock Grid.Column="1" Margin="8,0,10,0" FontSize="12" FontWeight="Medium" Text="{x:Static r:Strings.Nav_Inbox}" />
+                  <TextBlock Grid.Column="2" Classes="muted" FontSize="12" Text="{Binding Activity.InboxText}" />
+                </Grid>
+                <ProgressBar Height="3" MinHeight="3" Minimum="0" Maximum="1" Value="{Binding Activity.InboxProgress}"
+                             IsVisible="{Binding Activity.InboxRunning}" />
+              </StackPanel>
+            </Button>
+            <Button Classes="status-line" Command="{Binding Activity.OpenReviewCommand}" IsVisible="{Binding Activity.ShowMetadata}"
+                    ToolTip.Tip="{Binding Activity.MetadataDetail}" AutomationProperties.Name="{x:Static r:Strings.Status_Metadata}">
+              <StackPanel Spacing="6">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                  <Ellipse Width="8" Height="8" VerticalAlignment="Center"
+                           Fill="{Binding Activity.MetadataKind, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Fill}" />
+                  <TextBlock Grid.Column="1" Margin="8,0,10,0" FontSize="12" FontWeight="Medium" Text="{x:Static r:Strings.Status_Metadata}" />
+                  <TextBlock Grid.Column="2" Classes="muted" FontSize="12" Text="{Binding Activity.MetadataText}" />
+                </Grid>
+                <ProgressBar Height="3" MinHeight="3" IsIndeterminate="True" IsVisible="{Binding Activity.MetadataRunning}" />
+              </StackPanel>
+            </Button>
+
             <ItemsControl ItemsSource="{Binding DestinationsStatus.Items}">
               <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>

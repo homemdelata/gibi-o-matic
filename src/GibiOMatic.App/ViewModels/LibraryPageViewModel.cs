@@ -92,7 +92,6 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
         _settings = settings;
         _logger = logger;
         _reload = new Debouncer(ui, TimeSpan.FromMilliseconds(400), () => LoadAsync());
-        Status = new IdentificationStatusViewModel(session, ui);
         if (session.Queue is { } queue)
         {
             queue.BookImported += OnBookImported;
@@ -122,8 +121,6 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
     public override string Title => Strings.Nav_Library;
 
     public string LibraryPath => _session.Current?.RootPath ?? string.Empty;
-
-    public IdentificationStatusViewModel Status { get; }
 
     /// <summary>Selection mode: clicking a card checks it instead of showing it.</summary>
     [ObservableProperty]
@@ -241,7 +238,6 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
 
     public override async Task OnNavigatedToAsync(CancellationToken ct = default)
     {
-        await Status.RefreshAsync();
         await LoadAsync(ct);
     }
 
@@ -657,7 +653,6 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
         if (_fetchIds.Count > 0 && _session.Identification is { } queue)
         {
             await queue.EnqueueAsync(_fetchIds, force: true, ct);
-            await Status.RefreshAsync();
         }
 
         _fetchIds = [];
@@ -875,7 +870,6 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
         _reading.Changed -= OnReadingChanged;
         _reload.Dispose();
         _reloadReading.Dispose();
-        Status.Dispose();
     }
 }
 

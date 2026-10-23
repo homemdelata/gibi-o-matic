@@ -86,6 +86,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
         }
 
         _counts = new Debouncer(ui, TimeSpan.FromMilliseconds(300), UpdateCountsAsync);
+        Activity = new ActivityStatusViewModel(session, ui, NavigateTo);
         DestinationsStatus = new DestinationsStatusViewModel(session, ui, id =>
         {
             _ = destinationsPage.OpenAsync(id, showPlan: false);
@@ -109,6 +110,9 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
 
     public IReadOnlyList<NavItemViewModel> NavItems { get; }
 
+    /// <summary>Inbox and metadata search in the sidebar status card.</summary>
+    public ActivityStatusViewModel Activity { get; }
+
     /// <summary>The destinations' lines in the sidebar status card.</summary>
     public DestinationsStatusViewModel DestinationsStatus { get; }
 
@@ -127,6 +131,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
     {
         NavigateTo(NavPage.Library);
         await UpdateCountsAsync();
+        await Activity.RefreshAsync();
         await DestinationsStatus.RefreshAsync();
         _kindle.Start();
         await UpdateKindleBannerAsync();
@@ -280,6 +285,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
         _kindle.Changed -= OnKindleChanged;
         _destinationsPage.KindleSent -= OnKindleChanged;
         _counts.Dispose();
+        Activity.Dispose();
         DestinationsStatus.Dispose();
         foreach (var item in NavItems)
         {

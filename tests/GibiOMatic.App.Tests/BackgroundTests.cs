@@ -91,6 +91,35 @@ public sealed class BackgroundTests : IDisposable
     }
 
     [Fact]
+    public async Task The_sidebar_shows_the_inbox_and_the_metadata_search_from_every_page()
+    {
+        var gate = new TaskCompletionSource();
+        _app.Identifier.Gate = gate;
+        await OpenLibraryAsync(Inbox());
+        var main = _app.Get<MainWindowViewModel>();
+        await main.InitializeAsync(Ct);
+        var shell = Assert.IsType<ShellViewModel>(main.Content);
+        var activity = shell.Activity;
+        await activity.RefreshAsync();
+        Assert.True(activity.ShowInbox);
+        Assert.Equal(Strings.Status_InboxWatching, activity.InboxText);
+        Assert.False(activity.ShowMetadata);
+
+        SyntheticBooks.Cbz(Inbox("saga.cbz"), comicInfoXml: SagaInfo);
+        await WaitForAsync(() => activity.ShowMetadata);
+        Assert.Equal(Format(Strings.Status_MetadataSearching, 1), activity.MetadataText);
+        Assert.True(activity.MetadataRunning);
+
+        activity.OpenReviewCommand.Execute(null);
+        Assert.Equal(NavPage.Review, shell.SelectedNavItem?.Page);
+        activity.OpenInboxCommand.Execute(null);
+        Assert.Equal(NavPage.Inbox, shell.SelectedNavItem?.Page);
+
+        gate.SetResult();
+        await WaitForAsync(() => !activity.ShowMetadata);
+    }
+
+    [Fact]
     public async Task The_tray_menu_opens_pauses_the_inbox_and_exits()
     {
         await OpenLibraryAsync(Inbox());

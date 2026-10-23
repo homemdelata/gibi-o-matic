@@ -662,4 +662,10 @@
   <data name="Inbox_WatchMissing" xml:space="preserve"><value>{0} does not exist now (a drive not connected?). Watching starts again when it appears.</value></data>
   <data name="Inbox_WatchConfigure" xml:space="preserve"><value>Set up</value></data>
   <data name="Inbox_AutoChip" xml:space="preserve"><value>automatic</value></data>
+  <data name="Status_Metadata" xml:space="preserve"><value>Metadata</value></data>
+  <data name="Status_InboxQueued" xml:space="preserve"><value>{0} queued</value></data>
+  <data name="Status_InboxWatching" xml:space="preserve"><value>watching</value></data>
+  <data name="Status_InboxMissing" xml:space="preserve"><value>folder not found</value></data>
+  <data name="Status_MetadataSearching" xml:space="preserve"><value>searching · {0}</value></data>
+  <data name="Status_Paused" xml:space="preserve"><value>paused · {0}</value></data>
 </root>
