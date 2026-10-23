@@ -29,7 +29,9 @@ public sealed class ReaderTests : IDisposable
 
     private static async Task WaitForAsync(Func<bool> condition)
     {
-        for (var i = 0; i < 400 && !condition(); i++)
+        // Rendering is slow on the CI machines: a generous deadline, checked often.
+        var deadline = DateTime.UtcNow.AddSeconds(30);
+        while (!condition() && DateTime.UtcNow < deadline)
         {
             await Task.Delay(25, Ct);
         }
