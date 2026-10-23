@@ -70,14 +70,17 @@ public sealed class LinuxStartupRegistration(ILogger<LinuxStartupRegistration> l
             : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".config"),
         "autostart");
 
-    public bool IsSupported => (executable ?? Environment.ProcessPath) is not null;
+    // An AppImage runs from a temporary mount: the start entry must point at the .AppImage file itself.
+    private string? Executable => executable ?? Environment.GetEnvironmentVariable("APPIMAGE") ?? Environment.ProcessPath;
+
+    public bool IsSupported => Executable is not null;
 
     public bool Apply(StartupMode mode)
     {
         var file = Path.Combine(Folder, FileName);
         try
         {
-            if (mode == StartupMode.Off || (executable ?? Environment.ProcessPath) is not { } exe)
+            if (mode == StartupMode.Off || Executable is not { } exe)
             {
                 File.Delete(file);
             }

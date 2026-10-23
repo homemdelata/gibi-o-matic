@@ -7,6 +7,7 @@ using GibiOMatic.Core;
 using GibiOMatic.Core.Settings;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
+using Velopack;
 
 namespace GibiOMatic.App;
 
@@ -15,6 +16,15 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        // Installer hooks first (they run the app with special arguments and exit right away).
+        var velopack = VelopackApp.Build();
+        if (OperatingSystem.IsWindows())
+        {
+            velopack = velopack.OnBeforeUninstallFastCallback(_ => RemoveStartWithSystem());
+        }
+
+        velopack.Run();
+
         // One Gibi-o-matic per user: a second start brings the running one to the front and ends.
         using var instance = SingleInstance.Acquire();
         if (!instance.IsFirst)
@@ -71,6 +81,16 @@ internal static class Program
             .UsePlatformDetect()
             .With(new FontManagerOptions { DefaultFamilyName = "avares://GibiOMatic/Assets/Fonts#IBM Plex Sans" })
             .LogToTrace();
+
+    /// <summary>Uninstalling (Windows): the start-with-Windows entry would point at a deleted program.</summary>
+    private static void RemoveStartWithSystem()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            new WindowsStartupRegistration(Microsoft.Extensions.Logging.Abstractions.NullLogger<WindowsStartupRegistration>.Instance)
+                .Apply(StartupMode.Off);
+        }
+    }
 
     private static void ApplyLanguage(string language)
     {

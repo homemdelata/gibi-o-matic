@@ -668,4 +668,16 @@
   <data name="Status_InboxMissing" xml:space="preserve"><value>folder not found</value></data>
   <data name="Status_MetadataSearching" xml:space="preserve"><value>searching · {0}</value></data>
   <data name="Status_Paused" xml:space="preserve"><value>paused · {0}</value></data>
+  <data name="Update_Label" xml:space="preserve"><value>Version and updates</value></data>
+  <data name="Update_Help" xml:space="preserve"><value>The app looks for new versions on GitHub when it starts and once a day. Nothing is installed unless you ask.</value></data>
+  <data name="Update_Version" xml:space="preserve"><value>Gibi-o-matic {0}</value></data>
+  <data name="Update_Check" xml:space="preserve"><value>Check for updates</value></data>
+  <data name="Update_Install" xml:space="preserve"><value>Update and restart</value></data>
+  <data name="Update_Later" xml:space="preserve"><value>Not now</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>Checking…</value></data>
+  <data name="Update_UpToDate" xml:space="preserve"><value>You have the latest version.</value></data>
+  <data name="Update_Available" xml:space="preserve"><value>Version {0} is available.</value></data>
+  <data name="Update_Downloading" xml:space="preserve"><value>Downloading version {0}… {1}%</value></data>
+  <data name="Update_Failed" xml:space="preserve"><value>Could not look for updates (offline, or the repository is still private).</value></data>
+  <data name="Update_Unsupported" xml:space="preserve"><value>Automatic updates only in the version installed with the setup.</value></data>
 </root>

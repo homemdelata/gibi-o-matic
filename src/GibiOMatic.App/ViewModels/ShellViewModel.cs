@@ -53,8 +53,9 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
 
     public ShellViewModel(LibrarySession session, LibraryPageViewModel libraryPage, InboxPageViewModel inboxPage,
         ReviewPageViewModel reviewPage, EditorPageViewModel editorPage, DestinationsPageViewModel destinationsPage, SettingsPageViewModel settingsPage, IUiThread ui,
-        KindleWatcher kindle)
+        KindleWatcher kindle, UpdateChecker updates)
     {
+        Update = new UpdateStatusViewModel(updates);
         _session = session;
         _kindle = kindle;
         _destinationsPage = destinationsPage;
@@ -109,6 +110,9 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
     }
 
     public IReadOnlyList<NavItemViewModel> NavItems { get; }
+
+    /// <summary>"Versão 0.7.0 disponível" at the top (F6).</summary>
+    public UpdateStatusViewModel Update { get; }
 
     /// <summary>Inbox and metadata search in the sidebar status card.</summary>
     public ActivityStatusViewModel Activity { get; }
@@ -286,6 +290,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
         _destinationsPage.KindleSent -= OnKindleChanged;
         _counts.Dispose();
         Activity.Dispose();
+        Update.Dispose();
         DestinationsStatus.Dispose();
         foreach (var item in NavItems)
         {

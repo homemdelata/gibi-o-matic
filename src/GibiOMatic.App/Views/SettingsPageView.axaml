@@ -201,6 +201,28 @@
             </Grid>
           </Border>
 
+          <!-- Version and updates (F6) -->
+          <Border Classes="card">
+            <Grid ColumnDefinitions="260,*">
+              <StackPanel Spacing="2" Margin="0,0,16,0" VerticalAlignment="Top">
+                <TextBlock Classes="strong" Text="{x:Static r:Strings.Update_Label}" />
+                <TextBlock Classes="help" Text="{x:Static r:Strings.Update_Help}" />
+              </StackPanel>
+              <StackPanel Grid.Column="1" Spacing="10">
+                <TextBlock Classes="mono" Text="{Binding Update.VersionText}" />
+                <TextBlock Classes="help" Text="{Binding Update.StatusText}" IsVisible="{Binding !Update.StatusIsError}"
+                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                <TextBlock Classes="error" Text="{Binding Update.StatusText}" IsVisible="{Binding Update.StatusIsError}" />
+                <ProgressBar Height="4" Minimum="0" Maximum="1" Value="{Binding Update.Progress}" IsVisible="{Binding Update.IsDownloading}" />
+                <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding Update.IsSupported}">
+                  <Button Classes="secondary" Content="{x:Static r:Strings.Update_Check}" Command="{Binding Update.CheckCommand}" />
+                  <Button Classes="primary" Content="{x:Static r:Strings.Update_Install}" Command="{Binding Update.InstallCommand}"
+                          IsVisible="{Binding Update.CanInstall}" />
+                </StackPanel>
+              </StackPanel>
+            </Grid>
+          </Border>
+
           <!-- Background (F5) -->
           <Border Classes="card" IsVisible="{Binding TraySupported}">
             <Grid ColumnDefinitions="260,*">

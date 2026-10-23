@@ -47,6 +47,9 @@ public sealed class AppTestContext : IDisposable
     /// <summary>Records the start with the system instead of writing the registry or ~/.config.</summary>
     public FakeStartupRegistration Startup { get; } = new();
 
+    /// <summary>An update source in memory.</summary>
+    public FakeAppUpdater Updater { get; } = new();
+
     /// <summary>Puts a stand-in KCC where the app looks for the one it downloads.</summary>
     public void InstallFakeKcc()
     {
@@ -75,6 +78,7 @@ public sealed class AppTestContext : IDisposable
             .AddSingleton<GibiOMatic.Conversion.Kcc.IKccRunner>(Kcc)
             .AddSingleton<GibiOMatic.App.Services.Tray.ITrayIcon>(Tray)
             .AddSingleton<IStartupRegistration>(Startup)
+            .AddSingleton<IAppUpdater>(Updater)
             // The app waits for downloads to settle for seconds; tests do not.
             .AddSingleton(new GibiOMatic.Library.Import.InboxWatchOptions
             {
@@ -194,6 +198,32 @@ public sealed class FakeTrayIcon : GibiOMatic.App.Services.Tray.ITrayIcon
     public void Dispose()
     {
     }
+}
+
+public sealed class FakeAppUpdater : IAppUpdater
+{
+    public bool IsSupported { get; set; } = true;
+
+    public string CurrentVersion => "0.6.0";
+
+    /// <summary>The version the source offers; null = up to date.</summary>
+    public string? Offered { get; set; }
+
+    public bool Unreachable { get; set; }
+
+    public AppUpdate? Applied { get; private set; }
+
+    public Task<AppUpdate?> CheckAsync(CancellationToken ct) => Unreachable
+        ? throw new HttpRequestException("404")
+        : Task.FromResult(Offered is null ? null : new AppUpdate(Offered, Offered));
+
+    public Task DownloadAsync(AppUpdate update, IProgress<int>? progress, CancellationToken ct)
+    {
+        progress?.Report(100);
+        return Task.CompletedTask;
+    }
+
+    public void ApplyOnExit(AppUpdate update) => Applied = update;
 }
 
 public sealed class FakeStartupRegistration : IStartupRegistration

@@ -120,6 +120,63 @@ public sealed class BackgroundTests : IDisposable
     }
 
     [Fact]
+    public async Task A_new_version_shows_a_banner_and_installs_only_when_asked()
+    {
+        await OpenLibraryAsync();
+        var main = _app.Get<MainWindowViewModel>();
+        await main.InitializeAsync(Ct);
+        var shell = Assert.IsType<ShellViewModel>(main.Content);
+        var checker = _app.Get<UpdateChecker>();
+        var restarts = 0;
+        checker.RestartRequested += (_, _) => restarts++;
+
+        await checker.CheckAsync(Ct);
+        Assert.False(shell.Update.ShowBanner);
+        Assert.Equal(Strings.Update_UpToDate, shell.Update.StatusText);
+
+        _app.Updater.Offered = "0.7.0";
+        await checker.CheckAsync(Ct);
+        Assert.True(shell.Update.ShowBanner);
+        Assert.Equal(string.Format(CultureInfo.CurrentCulture, Strings.Update_Available, "0.7.0"), shell.Update.BannerText);
+        Assert.Null(_app.Updater.Applied);
+
+        // "Agora não" hides it until the next check finds it again.
+        shell.Update.DismissCommand.Execute(null);
+        Assert.False(shell.Update.ShowBanner);
+        await checker.CheckAsync(Ct);
+        Assert.True(shell.Update.ShowBanner);
+
+        await shell.Update.InstallCommand.ExecuteAsync(null);
+        Assert.Equal("0.7.0", _app.Updater.Applied?.Version);
+        Assert.Equal(1, restarts);
+    }
+
+    [Fact]
+    public async Task The_settings_show_the_version_and_an_unreachable_source_is_an_error_not_a_crash()
+    {
+        await OpenLibraryAsync();
+        var settings = _app.Get<SettingsPageViewModel>();
+        Assert.Equal(string.Format(CultureInfo.CurrentCulture, Strings.Update_Version, "0.6.0"), settings.Update.VersionText);
+
+        _app.Updater.Unreachable = true;
+        await settings.Update.CheckCommand.ExecuteAsync(null);
+
+        Assert.True(settings.Update.StatusIsError);
+        Assert.Equal(Strings.Update_Failed, settings.Update.StatusText);
+        Assert.True(settings.Update.CheckCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void Without_the_installer_there_is_nothing_to_check()
+    {
+        _app.Updater.IsSupported = false;
+        var update = new UpdateStatusViewModel(_app.Get<UpdateChecker>());
+        Assert.False(update.IsSupported);
+        Assert.Equal(Strings.Update_Unsupported, update.StatusText);
+        Assert.False(update.CheckCommand.CanExecute(null));
+    }
+
+    [Fact]
     public async Task The_tray_menu_opens_pauses_the_inbox_and_exits()
     {
         await OpenLibraryAsync(Inbox());

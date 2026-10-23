@@ -75,6 +75,11 @@ public partial class App : Application, IAppHost
             Dispatcher.UIThread.Post(async () => await _viewModel.InitializeAsync());
             ApplyStartupRegistration();
 
+            // A new version is installed when the user asks: the app exits and starts again updated.
+            var updates = _services.GetRequiredService<UpdateChecker>();
+            updates.RestartRequested += (_, _) => Exit();
+            updates.Start();
+
             if (launch.Instance is { } instance)
             {
                 instance.Activated += (_, _) => Dispatcher.UIThread.Post(() => ShowMainWindow());

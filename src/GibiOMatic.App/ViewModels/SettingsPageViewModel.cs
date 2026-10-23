@@ -66,9 +66,11 @@ public sealed partial class SettingsPageViewModel : PageViewModel
         ComicVineClient comicVine,
         IStartupRegistration startup,
         TrayController tray,
+        UpdateChecker updates,
         ILogger<SettingsPageViewModel> logger)
     {
         _startup = startup;
+        Update = new UpdateStatusViewModel(updates);
         TraySupported = tray.IsSupported;
         _secrets = secrets;
         _keys = keys;
@@ -134,6 +136,9 @@ public sealed partial class SettingsPageViewModel : PageViewModel
     public partial ThemeOption SelectedTheme { get; set; }
 
     public bool RestartRequired => SelectedLanguage.Code != _runningLanguage;
+
+    /// <summary>Version and updates (F6).</summary>
+    public UpdateStatusViewModel Update { get; }
 
     // ---- Background (F5) ----
 
@@ -436,6 +441,8 @@ public sealed partial class SettingsPageViewModel : PageViewModel
         var relative = Path.GetRelativePath(Path.GetFullPath(folder), Path.GetFullPath(path));
         return relative == "." || (!Path.IsPathRooted(relative) && !relative.StartsWith("..", StringComparison.Ordinal));
     }
+
+    public override void Dispose() => Update.Dispose();
 
     private void SetStatus(string message, bool isError)
     {

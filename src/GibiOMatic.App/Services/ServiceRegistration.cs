@@ -91,6 +91,8 @@ public static class ServiceRegistration
         }
 
         services.AddSingleton<TrayController>();
+        services.AddSingleton<IAppUpdater, VelopackUpdater>();
+        services.AddSingleton<UpdateChecker>();
 
         // View models (a new shell and pages for each opened library)
         services.AddSingleton<MainWindowViewModel>();

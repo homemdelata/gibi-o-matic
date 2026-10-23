@@ -668,4 +668,16 @@
   <data name="Status_InboxMissing" xml:space="preserve"><value>pasta não encontrada</value></data>
   <data name="Status_MetadataSearching" xml:space="preserve"><value>buscando · {0}</value></data>
   <data name="Status_Paused" xml:space="preserve"><value>em pausa · {0}</value></data>
+  <data name="Update_Label" xml:space="preserve"><value>Versão e atualizações</value></data>
+  <data name="Update_Help" xml:space="preserve"><value>O app procura versões novas no GitHub ao abrir e uma vez por dia. Nada é instalado sem você pedir.</value></data>
+  <data name="Update_Version" xml:space="preserve"><value>Gibi-o-matic {0}</value></data>
+  <data name="Update_Check" xml:space="preserve"><value>Procurar atualização</value></data>
+  <data name="Update_Install" xml:space="preserve"><value>Atualizar e reiniciar</value></data>
+  <data name="Update_Later" xml:space="preserve"><value>Agora não</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>Procurando…</value></data>
+  <data name="Update_UpToDate" xml:space="preserve"><value>Você está na versão mais recente.</value></data>
+  <data name="Update_Available" xml:space="preserve"><value>Versão {0} disponível.</value></data>
+  <data name="Update_Downloading" xml:space="preserve"><value>Baixando a versão {0}… {1}%</value></data>
+  <data name="Update_Failed" xml:space="preserve"><value>Não foi possível procurar atualizações (sem internet, ou o repositório ainda é privado).</value></data>
+  <data name="Update_Unsupported" xml:space="preserve"><value>Atualizações automáticas só na versão instalada pelo instalador.</value></data>
 </root>
