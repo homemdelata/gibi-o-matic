@@ -15,9 +15,6 @@ public sealed class ImportQueue : IAsyncDisposable
 {
     private const string PausedKey = "inbox.paused";
 
-    private static readonly HashSet<string> BookExtensions =
-        new([".pdf", ".cbz", ".cbr", ".epub", ".zip", ".rar"], StringComparer.OrdinalIgnoreCase);
-
     private readonly LibraryInfo _library;
     private readonly LibraryIndex _index;
     private readonly InboxStore _store;
@@ -51,6 +48,9 @@ public sealed class ImportQueue : IAsyncDisposable
     /// <summary>A book was created or received a new file.</summary>
     public event EventHandler<string>? BookImported;
 
+    /// <summary>An item was imported, skipped or failed.</summary>
+    public event EventHandler<InboxItemFinished>? ItemFinished;
+
     /// <summary>Progress of the item being processed (raised often; throttle in the UI).</summary>
     public event EventHandler<ImportProgress?>? ProgressChanged;
 
@@ -78,15 +78,12 @@ public sealed class ImportQueue : IAsyncDisposable
     public async Task<int> AddAsync(IEnumerable<string> paths, CancellationToken ct = default)
     {
         var open = await _store.GetOpenSourcePathsAsync(ct);
-        // A drive root ("G:\") keeps its separator after trimming.
-        var libraryRoot = Path.TrimEndingDirectorySeparator(_library.RootPath);
-        libraryRoot = Path.EndsInDirectorySeparator(libraryRoot) ? libraryRoot : libraryRoot + Path.DirectorySeparatorChar;
         var toAdd = new List<string>();
         foreach (var file in paths.SelectMany(Expand))
         {
             var full = Path.GetFullPath(file);
             // Files already in the library are never imported again from inside it.
-            if (full.StartsWith(libraryRoot, StringComparison.OrdinalIgnoreCase) || !open.Add(full))
+            if (IsInsideLibrary(full) || !open.Add(full))
             {
                 continue;
             }
@@ -103,6 +100,67 @@ public sealed class ImportQueue : IAsyncDisposable
         }
 
         return toAdd.Count;
+    }
+
+    /// <summary>
+    /// Files the inbox watcher found complete (F5). They are imported without asking, with the
+    /// suggested decision. A file the inbox already knows is left alone, except a failed one when
+    /// <paramref name="retryFailed"/> (it was written again). Returns how many were added.
+    /// </summary>
+    public async Task<int> AddAutoAsync(IEnumerable<string> files, bool retryFailed, CancellationToken ct = default)
+    {
+        var known = await _store.GetKnownSourcePathsAsync(ct);
+        var toAdd = new List<string>();
+        var retried = new List<long>();
+        foreach (var file in files)
+        {
+            var full = Path.GetFullPath(file);
+            if (IsInsideLibrary(full) || toAdd.Contains(full, StringComparer.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            if (known.TryGetValue(full, out var row))
+            {
+                if (!retryFailed || row.State != InboxItemState.Failed)
+                {
+                    continue;
+                }
+
+                retried.Add(row.Id);
+            }
+
+            toAdd.Add(full);
+        }
+
+        if (toAdd.Count == 0)
+        {
+            return 0;
+        }
+
+        if (retried.Count > 0)
+        {
+            await _store.DeleteAsync(retried, ct);
+            _thumbnails.DeleteInboxThumbnails(_library, retried);
+        }
+
+        await _store.AddAsync(toAdd, ct, auto: true);
+        _logger.LogInformation("Inbox: {Count} files arrived in the watched folder", toAdd.Count);
+        OnChanged();
+        _wake.Release();
+        return toAdd.Count;
+    }
+
+    /// <summary>Files from the watched folder that are not finished yet (waiting, analysed or importing).</summary>
+    public async Task<int> CountOpenAutoAsync(CancellationToken ct = default) =>
+        (await _store.GetAllAsync(ct)).Count(i => i.Auto && i.State is not (InboxItemState.Imported or InboxItemState.Skipped or InboxItemState.Failed));
+
+    private bool IsInsideLibrary(string fullPath)
+    {
+        // A drive root ("G:\") keeps its separator after trimming.
+        var libraryRoot = Path.TrimEndingDirectorySeparator(_library.RootPath);
+        libraryRoot = Path.EndsInDirectorySeparator(libraryRoot) ? libraryRoot : libraryRoot + Path.DirectorySeparatorChar;
+        return fullPath.StartsWith(libraryRoot, StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task<IReadOnlyList<InboxEntry>> GetEntriesAsync(CancellationToken ct = default)
@@ -191,25 +249,8 @@ public sealed class ImportQueue : IAsyncDisposable
         var queued = 0;
         foreach (var entry in await GetEntriesAsync(ct))
         {
-            if (entry.Item.State != InboxItemState.Ready)
+            if (entry.Item.State == InboxItemState.Ready && await ConfirmEntryAsync(entry, ct))
             {
-                continue;
-            }
-
-            await _store.SetDecisionAsync(entry.Item.Id, entry.Decision, ct);
-            if (entry.Decision == ImportDecision.Skip)
-            {
-                var reason = entry.Duplicate switch
-                {
-                    DuplicateKind.SameFileInLibrary => InboxMessage.AlreadyInLibrary,
-                    DuplicateKind.SameFileInList => InboxMessage.DuplicateInList,
-                    _ => InboxMessage.SkippedByUser,
-                };
-                await _store.SetStateAsync(entry.Item.Id, InboxItemState.Skipped, ct, message: reason);
-            }
-            else
-            {
-                await _store.SetStateAsync(entry.Item.Id, InboxItemState.Queued, ct);
                 queued++;
             }
         }
@@ -218,6 +259,26 @@ public sealed class ImportQueue : IAsyncDisposable
         OnChanged();
         _wake.Release();
         return queued;
+    }
+
+    /// <summary>Puts one analysed item in the import line, or skips it. Returns whether it will be imported.</summary>
+    private async Task<bool> ConfirmEntryAsync(InboxEntry entry, CancellationToken ct)
+    {
+        await _store.SetDecisionAsync(entry.Item.Id, entry.Decision, ct);
+        if (entry.Decision != ImportDecision.Skip)
+        {
+            await _store.SetStateAsync(entry.Item.Id, InboxItemState.Queued, ct);
+            return true;
+        }
+
+        var reason = entry.Duplicate switch
+        {
+            DuplicateKind.SameFileInLibrary => InboxMessage.AlreadyInLibrary,
+            DuplicateKind.SameFileInList => InboxMessage.DuplicateInList,
+            _ => InboxMessage.SkippedByUser,
+        };
+        await FinishAsync(entry.Item, InboxItemState.Skipped, ct, message: reason);
+        return false;
     }
 
     /// <summary>"Ignorar todos": analysed items that were not confirmed are skipped.</summary>
@@ -340,19 +401,27 @@ public sealed class ImportQueue : IAsyncDisposable
         {
             var outcome = await _analyzer.AnalyzeAsync(_library, _index, item.Id, item.SourcePath,
                 Progress(item.Id, InboxItemState.Analyzing, name), ct);
-            if (outcome.Analysis is { } analysis)
+            if (outcome.Analysis is { } analysis && item.Auto)
             {
-                await _store.SetStateAsync(item.Id, InboxItemState.Ready, ct, analysis);
+                // Nobody confirms files from the watched folder: the suggestion is applied (decision of 2026-10-23).
+                // The item never shows as "ready", so nothing waits for a confirmation that will not come.
+                await _store.SetStateAsync(item.Id, InboxItemState.Analyzing, ct, analysis);
+                var entry = (await GetEntriesAsync(ct)).First(e => e.Item.Id == item.Id);
+                await ConfirmEntryAsync(entry, ct);
+            }
+            else if (outcome.Analysis is { } ready)
+            {
+                await _store.SetStateAsync(item.Id, InboxItemState.Ready, ct, ready);
             }
             else
             {
-                await _store.SetStateAsync(item.Id, InboxItemState.Failed, ct, message: outcome.Failure, detail: outcome.Detail);
+                await FinishAsync(item, InboxItemState.Failed, ct, message: outcome.Failure, detail: outcome.Detail);
             }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _logger.LogWarning(ex, "Could not analyse {Path}", item.SourcePath);
-            await _store.SetStateAsync(item.Id, InboxItemState.Failed, ct, message: InboxMessage.IoError, detail: ex.Message);
+            await FinishAsync(item, InboxItemState.Failed, ct, message: InboxMessage.IoError, detail: ex.Message);
         }
     }
 
@@ -371,21 +440,63 @@ public sealed class ImportQueue : IAsyncDisposable
             var outcome = await _importer.ImportAsync(_library, _index, item.SourcePath, analysis,
                 item.Decision ?? ImportDecision.Import, _settings.Current.FormatPreference,
                 Progress(item.Id, InboxItemState.Importing, analysis.FileName), ct);
-            await _store.SetStateAsync(item.Id, outcome.State, ct, bookId: outcome.BookId, message: outcome.Message, detail: outcome.Detail);
             if (outcome.State == InboxItemState.Imported && outcome.BookId is { } bookId)
             {
                 BookImported?.Invoke(this, bookId);
             }
+
+            await FinishAsync(item, outcome.State, ct, outcome.BookId, outcome.Message, outcome.Detail);
         }
         catch (ImportException ex)
         {
             _logger.LogWarning("Import of {Path} failed: {Reason} {Detail}", item.SourcePath, ex.Reason, ex.Detail);
-            await _store.SetStateAsync(item.Id, InboxItemState.Failed, ct, message: ex.Reason, detail: ex.Detail);
+            await FinishAsync(item, InboxItemState.Failed, ct, message: ex.Reason, detail: ex.Detail);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _logger.LogWarning(ex, "Import of {Path} failed", item.SourcePath);
-            await _store.SetStateAsync(item.Id, InboxItemState.Failed, ct, message: InboxMessage.IoError, detail: ex.Message);
+            await FinishAsync(item, InboxItemState.Failed, ct, message: InboxMessage.IoError, detail: ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Records how an item ended. A file from the watched folder that is now in the library (or was
+    /// already there) moves to <c>_importados</c>; a failed one stays where it is, to be retried.
+    /// </summary>
+    private async Task FinishAsync(InboxItem item, InboxItemState state, CancellationToken ct,
+        string? bookId = null, InboxMessage message = InboxMessage.None, string? detail = null)
+    {
+        // Moved before the state changes: whoever sees the item finished finds the file in its final place.
+        if (item.Auto && state is InboxItemState.Imported or InboxItemState.Skipped)
+        {
+            await MoveToImportedAsync(item, ct);
+        }
+
+        await _store.SetStateAsync(item.Id, state, ct, bookId: bookId, message: message, detail: detail);
+        ItemFinished?.Invoke(this, new InboxItemFinished(item.Id, item.Auto, state, bookId ?? item.BookId, message));
+    }
+
+    private async Task MoveToImportedAsync(InboxItem item, CancellationToken ct)
+    {
+        if (_settings.Current.InboxPath is not { } inbox
+            || InboxFolder.ImportedPathFor(inbox, item.SourcePath) is not { } target
+            || !File.Exists(item.SourcePath))
+        {
+            return;
+        }
+
+        try
+        {
+            target = InboxFolder.Unique(target);
+            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+            File.Move(item.SourcePath, target);
+            await _store.SetSourcePathAsync(item.Id, target, ct);
+            _logger.LogInformation("Inbox: moved {Source} to {Target}", item.SourcePath, target);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // It is in the library anyway; the next scan finds it again, sees it is there and retries the move.
+            _logger.LogWarning(ex, "Could not move {Source} to {Target}", item.SourcePath, target);
         }
     }
 
@@ -432,7 +543,7 @@ public sealed class ImportQueue : IAsyncDisposable
         // Inside folders only likely books are picked (covers, .nfo, .txt… are left out); the
         // format is still confirmed by content. A file dropped on its own is always analysed.
         return Directory.EnumerateFiles(path, "*", options)
-            .Where(f => !Path.GetFileName(f).StartsWith('.') && BookExtensions.Contains(Path.GetExtension(f)))
+            .Where(f => !Path.GetFileName(f).StartsWith('.') && InboxFolder.BookExtensions.Contains(Path.GetExtension(f)))
             .Order(StringComparer.OrdinalIgnoreCase);
     }
 

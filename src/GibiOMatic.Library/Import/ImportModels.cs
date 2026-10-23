@@ -89,6 +89,10 @@ public sealed record ImportAnalysis
 }
 
 /// <summary>A row of the inbox as stored.</summary>
+/// <param name="Auto">
+/// Picked up from the watched inbox folder (F5): confirmed with the suggested decision as soon as it is
+/// analysed, and moved to <c>_importados</c> once it is in the library.
+/// </param>
 public sealed record InboxItem(
     long Id,
     string SourcePath,
@@ -98,7 +102,8 @@ public sealed record InboxItem(
     string? BookId,
     InboxMessage Message,
     string? MessageDetail,
-    DateTimeOffset AddedAt);
+    DateTimeOffset AddedAt,
+    bool Auto = false);
 
 /// <summary>An inbox row with what the queue concluded about it.</summary>
 /// <param name="Decision">The user's choice if still allowed, otherwise the suggestion.</param>
@@ -114,6 +119,9 @@ public sealed record ImportSummary(int Waiting, int Ready, int Queued, int Impor
     public int Total => Waiting + Ready + Queued + Imported + Skipped + Failed;
     public bool HasWork => Waiting + Queued > 0;
 }
+
+/// <summary>An item reached <see cref="InboxItemState.Imported"/>, <see cref="InboxItemState.Skipped"/> or <see cref="InboxItemState.Failed"/>.</summary>
+public sealed record InboxItemFinished(long ItemId, bool Auto, InboxItemState State, string? BookId, InboxMessage Message);
 
 /// <summary>What the background worker is doing right now.</summary>
 public sealed record ImportProgress(long ItemId, InboxItemState Phase, string FileName, double Fraction);

@@ -9,17 +9,18 @@ namespace GibiOMatic.Library.Import;
 internal sealed class InboxStore(LibraryIndex index)
 {
     private sealed record Row(long Id, string SourcePath, string State, string? AnalysisJson, string? Decision,
-        string? BookId, string? Message, string AddedAt);
+        string? BookId, string? Message, string AddedAt, long Auto);
+
+    private const string Columns = """
+        id AS Id, source_path AS SourcePath, state AS State, analysis_json AS AnalysisJson,
+        decision AS Decision, book_id AS BookId, message AS Message, added_at AS AddedAt, auto AS Auto
+        """;
 
     public async Task<IReadOnlyList<InboxItem>> GetAllAsync(CancellationToken ct)
     {
         await using var connection = await index.OpenAsync(ct);
         var rows = await connection.QueryAsync<Row>(new CommandDefinition(
-            """
-            SELECT id AS Id, source_path AS SourcePath, state AS State, analysis_json AS AnalysisJson,
-                   decision AS Decision, book_id AS BookId, message AS Message, added_at AS AddedAt
-            FROM inbox_items ORDER BY id;
-            """, cancellationToken: ct));
+            $"SELECT {Columns} FROM inbox_items ORDER BY id;", cancellationToken: ct));
         return rows.Select(ToItem).ToList();
     }
 
@@ -35,7 +36,22 @@ internal sealed class InboxStore(LibraryIndex index)
         return new HashSet<string>(paths, StringComparer.OrdinalIgnoreCase);
     }
 
-    public async Task AddAsync(IEnumerable<string> sourcePaths, CancellationToken ct)
+    /// <summary>Every source path in the inbox, finished or not, with its state.</summary>
+    public async Task<Dictionary<string, (long Id, InboxItemState State)>> GetKnownSourcePathsAsync(CancellationToken ct)
+    {
+        await using var connection = await index.OpenAsync(ct);
+        var rows = await connection.QueryAsync<(long Id, string Path, string State)>(new CommandDefinition(
+            "SELECT id, source_path, state FROM inbox_items ORDER BY id;", cancellationToken: ct));
+        var known = new Dictionary<string, (long, InboxItemState)>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (id, path, state) in rows)
+        {
+            known[path] = (id, Enum.Parse<InboxItemState>(state, ignoreCase: true));
+        }
+
+        return known;
+    }
+
+    public async Task AddAsync(IEnumerable<string> sourcePaths, CancellationToken ct, bool auto = false)
     {
         var now = DateTimeOffset.UtcNow.ToString("O");
         await using var connection = await index.OpenAsync(ct);
@@ -43,11 +59,26 @@ internal sealed class InboxStore(LibraryIndex index)
         foreach (var path in sourcePaths)
         {
             await connection.ExecuteAsync(new CommandDefinition(
-                "INSERT INTO inbox_items (source_path, state, added_at, updated_at) VALUES (@path, 'pending', @now, @now);",
-                new { path, now }, transaction: tx, cancellationToken: ct));
+                "INSERT INTO inbox_items (source_path, state, added_at, updated_at, auto) VALUES (@path, 'pending', @now, @now, @auto);",
+                new { path, now, auto = auto ? 1 : 0 }, transaction: tx, cancellationToken: ct));
         }
 
         await tx.CommitAsync(ct);
+    }
+
+    public async Task DeleteAsync(IEnumerable<long> ids, CancellationToken ct)
+    {
+        await using var connection = await index.OpenAsync(ct);
+        await connection.ExecuteAsync(new CommandDefinition(
+            "DELETE FROM inbox_items WHERE id IN @ids;", new { ids = ids.ToArray() }, cancellationToken: ct));
+    }
+
+    /// <summary>The file was moved (to <c>_importados</c>): the list shows where it is now.</summary>
+    public async Task SetSourcePathAsync(long id, string sourcePath, CancellationToken ct)
+    {
+        await using var connection = await index.OpenAsync(ct);
+        await connection.ExecuteAsync(new CommandDefinition(
+            "UPDATE inbox_items SET source_path = @sourcePath WHERE id = @id;", new { id, sourcePath }, cancellationToken: ct));
     }
 
     /// <summary>The oldest item in <paramref name="state"/>, if any.</summary>
@@ -55,11 +86,8 @@ internal sealed class InboxStore(LibraryIndex index)
     {
         await using var connection = await index.OpenAsync(ct);
         var row = await connection.QueryFirstOrDefaultAsync<Row>(new CommandDefinition(
-            """
-            SELECT id AS Id, source_path AS SourcePath, state AS State, analysis_json AS AnalysisJson,
-                   decision AS Decision, book_id AS BookId, message AS Message, added_at AS AddedAt
-            FROM inbox_items WHERE state = @state ORDER BY id LIMIT 1;
-            """, new { state = Name(state) }, cancellationToken: ct));
+            $"SELECT {Columns} FROM inbox_items WHERE state = @state ORDER BY id LIMIT 1;",
+            new { state = Name(state) }, cancellationToken: ct));
         return row is null ? null : ToItem(row);
     }
 
@@ -140,7 +168,8 @@ internal sealed class InboxStore(LibraryIndex index)
             row.BookId,
             message,
             detail,
-            DateTimeOffset.Parse(row.AddedAt, System.Globalization.CultureInfo.InvariantCulture));
+            DateTimeOffset.Parse(row.AddedAt, System.Globalization.CultureInfo.InvariantCulture),
+            row.Auto != 0);
     }
 
     private static string Name<T>(T value) where T : struct, Enum => JsonNamingPolicy.CamelCase.ConvertName(value.ToString());

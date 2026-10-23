@@ -135,6 +135,11 @@ internal static class IndexMigrations
             PRIMARY KEY (destination_id, book_id)
         );
         """,
+
+        // 10: files picked up from the watched inbox folder are confirmed and moved without the user (F5)
+        """
+        ALTER TABLE inbox_items ADD COLUMN auto INTEGER NOT NULL DEFAULT 0;
+        """,
     ];
 
     public static int LatestVersion => All.Count;
