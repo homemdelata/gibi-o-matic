@@ -260,11 +260,11 @@
     <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
   </Style>
   <Style Selector="Button.tool.on">
-    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
   </Style>
   <Style Selector="Button.tool.on /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
-    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
   </Style>
   <Style Selector="Button.thumb">
     <Setter Property="Padding" Value="4" />
@@ -294,7 +294,7 @@
   </Style>
   <Style Selector="Button.toc.current /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
-    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
   </Style>
 
   <!-- Book and series cards in the grid: the whole card is the button -->
@@ -317,7 +317,7 @@
     <Setter Property="Background" Value="Transparent" />
   </Style>
   <Style Selector="Button.cover-card:pointerover Border.cover-frame">
-    <Setter Property="BorderBrush" Value="#40FFFFFF" />
+    <Setter Property="BorderBrush" Value="{DynamicResource CoverHoverBorderBrush}" />
   </Style>
 
   <Style Selector="Border.badge">
@@ -343,7 +343,7 @@
     <Setter Property="MinWidth" Value="0" />
     <Setter Property="CornerRadius" Value="0" />
     <Setter Property="Background" Value="#99000000" />
-    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
   </Style>
   <!-- "Continuar lendo": the bar sits under the title, not over a cover -->
   <Style Selector="ProgressBar.reading.inline">
@@ -385,7 +385,7 @@
 
   <!-- Drop zone: highlighted while files are dragged over it (FileDrop adds the "dragover" class) -->
   <Style Selector="Rectangle.dropzone">
-    <Setter Property="Stroke" Value="#34373F" />
+    <Setter Property="Stroke" Value="{DynamicResource BorderStrongBrush}" />
   </Style>
   <Style Selector=".dragover Rectangle.dropzone">
     <Setter Property="Stroke" Value="{DynamicResource AccentBrush}" />
@@ -441,7 +441,7 @@
     <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
   </Style>
   <Style Selector="Button.candidate.selected /template/ ContentPresenter#PART_ContentPresenter">
-    <Setter Property="Background" Value="#1F2128" />
+    <Setter Property="Background" Value="{DynamicResource InputBrush}" />
     <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
   </Style>
 
@@ -473,18 +473,18 @@
     <Setter Property="MinHeight" Value="0" />
     <Setter Property="FontSize" Value="13" />
     <Setter Property="FontWeight" Value="Normal" />
-    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
   </Style>
   <Style Selector="Button.link:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="Transparent" />
-    <Setter Property="Foreground" Value="{DynamicResource AccentHoverBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource AccentTextHoverBrush}" />
   </Style>
   <Style Selector="Button.dashed">
     <Setter Property="MinHeight" Value="38" />
     <Setter Property="Padding" Value="14,0" />
     <Setter Property="CornerRadius" Value="9" />
     <Setter Property="Background" Value="Transparent" />
-    <Setter Property="BorderBrush" Value="#3A3E48" />
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderStrongBrush}" />
     <Setter Property="BorderThickness" Value="1" />
     <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
     <Setter Property="FontWeight" Value="Normal" />
@@ -568,7 +568,7 @@
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
   <Style Selector="ListBox.nav ListBoxItem:selected c|StrokeIcon">
-    <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
   </Style>
 
   <!-- Section tabs (settings) -->

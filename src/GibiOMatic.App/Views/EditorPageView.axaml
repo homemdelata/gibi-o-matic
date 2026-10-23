@@ -10,7 +10,7 @@
     <StackPanel IsVisible="{Binding IsEmpty}" MaxWidth="520" Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
       <Border Width="72" Height="72" CornerRadius="18" HorizontalAlignment="Center" Background="{DynamicResource CardBrush}"
               BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-        <c:StrokeIcon Data="{StaticResource Icon.Editor}" Width="32" Height="32" Foreground="{DynamicResource AccentBrush}" />
+        <c:StrokeIcon Data="{StaticResource Icon.Editor}" Width="32" Height="32" Foreground="{DynamicResource AccentTextBrush}" />
       </Border>
       <TextBlock Classes="h2" HorizontalAlignment="Center" Text="{Binding Title}" />
       <TextBlock Classes="muted" TextAlignment="Center" TextWrapping="Wrap" Text="{x:Static r:Strings.Editor_Empty}" />
@@ -26,7 +26,7 @@
 
       <Border DockPanel.Dock="Top" Margin="0,0,0,18" Padding="16,12" CornerRadius="12" Background="#1AF5C542" BorderBrush="#59F5C542"
               BorderThickness="1" IsVisible="{Binding IsBatch}">
-        <TextBlock Foreground="#F5D87A" TextWrapping="Wrap" Text="{Binding BatchNotice}" />
+        <TextBlock Foreground="{DynamicResource AccentTextBrush}" TextWrapping="Wrap" Text="{Binding BatchNotice}" />
       </Border>
 
       <!-- Footer -->

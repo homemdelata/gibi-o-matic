@@ -289,7 +289,7 @@
                 <StackPanel Spacing="6">
                   <TextBlock Classes="h3" Text="{Binding Name}" />
                   <TextBlock Classes="help" Text="{Binding Help}" TextWrapping="Wrap" />
-                  <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AccentBrush}" Text="{Binding Tag}" />
+                  <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource AccentTextBrush}" Text="{Binding Tag}" />
                 </StackPanel>
               </Button>
             </DataTemplate>

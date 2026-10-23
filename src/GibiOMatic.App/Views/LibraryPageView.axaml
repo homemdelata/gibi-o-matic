@@ -415,7 +415,7 @@
                   Background="{DynamicResource CardBrush}"
                   BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
             <c:StrokeIcon Data="{StaticResource Icon.Library}" Width="32" Height="32"
-                          Foreground="{DynamicResource AccentBrush}" />
+                          Foreground="{DynamicResource AccentTextBrush}" />
           </Border>
           <TextBlock Classes="h2" HorizontalAlignment="Center" Text="{x:Static r:Strings.Library_EmptyTitle}" />
           <TextBlock Classes="muted" TextAlignment="Center" TextWrapping="Wrap"

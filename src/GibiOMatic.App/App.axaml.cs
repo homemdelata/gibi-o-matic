@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using GibiOMatic.App.Services;
 using GibiOMatic.App.Services.Tray;
@@ -43,6 +44,10 @@ public partial class App : Application, IAppHost
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && _services is not null)
         {
             _desktop = desktop;
+            var settings = _services.GetRequiredService<ISettingsService>();
+            ApplyTheme(settings.Current.Theme);
+            // A new theme applies right away (F6); "Seguir o sistema" follows the system while running.
+            settings.Saved += (_, saved) => Dispatcher.UIThread.Post(() => ApplyTheme(saved.Theme));
             // The app lives on in the tray when the window closes; "Sair" ends it.
             desktop.ShutdownMode = ShutdownMode.OnExplicitShutdown;
             var launch = _services.GetService<AppLaunch>() ?? new AppLaunch(InTray: false, Instance: null);
@@ -142,6 +147,13 @@ public partial class App : Application, IAppHost
                 break;
         }
     }
+
+    private void ApplyTheme(AppTheme theme) => RequestedThemeVariant = theme switch
+    {
+        AppTheme.Light => ThemeVariant.Light,
+        AppTheme.System => ThemeVariant.Default,
+        _ => ThemeVariant.Dark,
+    };
 
     /// <summary>The start entry points at this executable, which may have moved since it was saved.</summary>
     private void ApplyStartupRegistration()

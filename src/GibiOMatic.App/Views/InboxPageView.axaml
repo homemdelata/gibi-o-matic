@@ -32,7 +32,7 @@
     <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,14" Padding="18,14">
       <Grid ColumnDefinitions="Auto,*,Auto">
         <c:StrokeIcon Data="{StaticResource Icon.FolderOpen}" Width="22" Height="22" VerticalAlignment="Center" Margin="0,0,14,0"
-                      Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding IsWatching}" />
+                      Foreground="{DynamicResource AccentTextBrush}" IsVisible="{Binding IsWatching}" />
         <c:StrokeIcon Data="{StaticResource Icon.FolderOpen}" Width="22" Height="22" VerticalAlignment="Center" Margin="0,0,14,0"
                       Foreground="{DynamicResource OffBrush}" IsVisible="{Binding !IsWatching}" />
         <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
@@ -50,7 +50,7 @@
     <Panel DockPanel.Dock="Top" Margin="0,0,0,22">
       <Rectangle Classes="dropzone" StrokeThickness="2" StrokeDashArray="4,3" RadiusX="14" RadiusY="14" />
       <StackPanel Orientation="Horizontal" Spacing="16" Margin="22,18">
-        <c:StrokeIcon Data="{StaticResource Icon.Import}" Width="26" Height="26" Foreground="{DynamicResource AccentBrush}"
+        <c:StrokeIcon Data="{StaticResource Icon.Import}" Width="26" Height="26" Foreground="{DynamicResource AccentTextBrush}"
                       VerticalAlignment="Center" />
         <StackPanel Spacing="2" VerticalAlignment="Center">
           <TextBlock FontWeight="SemiBold" Text="{x:Static r:Strings.Inbox_DropTitle}" />
@@ -121,7 +121,7 @@
                   <StackPanel Orientation="Horizontal" Spacing="8">
                     <TextBlock Classes="muted" FontSize="12" Text="{Binding SizeText}" />
                     <TextBlock Classes="muted" FontSize="12" Text="{x:Static r:Strings.Inbox_AutoChip}" IsVisible="{Binding IsAuto}"
-                               Foreground="{DynamicResource AccentBrush}" />
+                               Foreground="{DynamicResource AccentTextBrush}" />
                   </StackPanel>
                 </StackPanel>
               </Grid>

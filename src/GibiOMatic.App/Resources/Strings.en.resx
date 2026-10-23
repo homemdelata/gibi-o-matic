@@ -58,8 +58,8 @@
   <data name="Settings_Save" xml:space="preserve"><value>Save</value></data>
   <data name="Settings_Saved" xml:space="preserve"><value>Settings saved.</value></data>
   <data name="Theme_Dark" xml:space="preserve"><value>Dark</value></data>
-  <data name="Theme_Light" xml:space="preserve"><value>Light (coming soon)</value></data>
-  <data name="Theme_System" xml:space="preserve"><value>Follow system (coming soon)</value></data>
+  <data name="Theme_Light" xml:space="preserve"><value>Light</value></data>
+  <data name="Theme_System" xml:space="preserve"><value>Follow the system</value></data>
   <data name="Common_Choose" xml:space="preserve"><value>Choose</value></data>
   <data name="Picker_BookFiles" xml:space="preserve"><value>Comics (PDF, CBZ, CBR, EPUB)</value></data>
   <data name="Picker_AllFiles" xml:space="preserve"><value>All files</value></data>

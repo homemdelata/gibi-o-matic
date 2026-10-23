@@ -5,6 +5,7 @@
              x:Class="GibiOMatic.App.App"
              Name="Gibi-o-matic"
              RequestedThemeVariant="Dark">
+  <!-- The theme of the settings is applied at start (App.axaml.cs). -->
 
   <Application.DataTemplates>
     <DataTemplate DataType="vm:WelcomeViewModel"><v:WelcomeView /></DataTemplate>
@@ -32,6 +33,8 @@
       <FluentTheme.Palettes>
         <ColorPaletteResources x:Key="Dark" Accent="#F5C542" RegionColor="#121317" AltHigh="#121317"
                                BaseHigh="#ECEDEF" ErrorText="#F2677A" />
+        <ColorPaletteResources x:Key="Light" Accent="#E0A91F" RegionColor="#F4F4F1" AltHigh="#F4F4F1"
+                               BaseHigh="#17181D" ErrorText="#B8263E" />
       </FluentTheme.Palettes>
     </FluentTheme>
     <StyleInclude Source="/Themes/Controls.axaml" />

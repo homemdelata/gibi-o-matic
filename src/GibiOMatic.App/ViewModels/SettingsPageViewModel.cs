@@ -95,8 +95,8 @@ public sealed partial class SettingsPageViewModel : PageViewModel
     public IReadOnlyList<ThemeOption> Themes { get; } =
     [
         new(AppTheme.Dark, Strings.Theme_Dark, IsAvailable: true),
-        new(AppTheme.Light, Strings.Theme_Light, IsAvailable: false),
-        new(AppTheme.System, Strings.Theme_System, IsAvailable: false),
+        new(AppTheme.Light, Strings.Theme_Light, IsAvailable: true),
+        new(AppTheme.System, Strings.Theme_System, IsAvailable: true),
     ];
 
     public string LibraryPath => _session.Current?.RootPath ?? string.Empty;

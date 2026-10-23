@@ -35,7 +35,7 @@
           <StackPanel Spacing="14">
             <Border Classes="icon-tile" HorizontalAlignment="Left">
               <c:StrokeIcon Data="{StaticResource Icon.FolderOpen}" Width="22" Height="22"
-                            Foreground="{DynamicResource AccentBrush}" />
+                            Foreground="{DynamicResource AccentTextBrush}" />
             </Border>
             <TextBlock Classes="h3" Text="{x:Static r:Strings.Welcome_OpenTitle}" />
             <TextBlock Classes="help" FontSize="13.5" Text="{x:Static r:Strings.Welcome_OpenHelp}" />
