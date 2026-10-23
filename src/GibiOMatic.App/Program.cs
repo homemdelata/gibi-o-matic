@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Reflection;
 using Avalonia;
 using Avalonia.Media;
 using GibiOMatic.App.Services;
@@ -29,7 +30,7 @@ internal static class Program
 
         try
         {
-            Log.Information("Starting Gibi-o-matic {Version}", typeof(Program).Assembly.GetName().Version);
+            Log.Information("Starting Gibi-o-matic {Version}", AppVersion());
             using var services = ServiceRegistration.Build(paths);
 
             // Settings are read before the UI exists: the language must be set first.
@@ -66,4 +67,10 @@ internal static class Program
         CultureInfo.CurrentCulture = culture;
         CultureInfo.CurrentUICulture = culture;
     }
+
+    // The full version from the git tag (MinVer), e.g. "0.5.0" or "0.5.1-alpha.0.3+<commit>";
+    // AssemblyVersion only keeps the major number.
+    private static string AppVersion() =>
+        typeof(Program).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+        ?? "unknown";
 }

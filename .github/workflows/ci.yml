@@ -21,6 +21,9 @@ jobs:
       DOTNET_CLI_TELEMETRY_OPTOUT: true
     steps:
       - uses: actions/checkout@v5
+        with:
+          # MinVer needs the tags and history to compute the version.
+          fetch-depth: 0
 
       - uses: actions/setup-dotnet@v5
         with:

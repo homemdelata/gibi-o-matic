@@ -12,7 +12,7 @@ Status: ⬜ não iniciada · 🟨 em andamento · ✅ concluída. Seções `§` 
 | F3.6 | Universos | ✅ |
 | F4 | Destino Kindle | ✅ (falta o teste do usuário com o Kindle) |
 | F5 | Entrada automática | ⬜ |
-| F6 | Polimento e distribuição | ⬜ |
+| F6 | Polimento e distribuição | 🟨 (versão e script de publicação) |
 
 Ao terminar cada fase: build e testes verdes → atualizar este arquivo → commit e push → **parar e explicar ao usuário como testar**.
 
@@ -213,6 +213,7 @@ Objetivo: agrupar séries do mesmo universo ou linha editorial (ex.: Radiant Bla
 ## F6 · Polimento e distribuição
 
 - [ ] Interface em inglês completa, tema claro e "seguir o sistema".
+- [x] Versão pela tag do git (MinVer) e `tools/publish.ps1` (build *self-contained* em `.zip`/`.tar.gz`).
 - [ ] Instalador para Windows (ex.: Velopack ou MSIX) e build para Linux (AppImage ou tar).
 - [ ] Documentação de usuário (README com capturas) e `CONTRIBUTING.md`.
 - [ ] Revisão de acessibilidade (teclado, contraste).

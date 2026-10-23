@@ -12,6 +12,7 @@ Toda dependência precisa de licença compatível com MIT (sem AGPL/GPL). Atuali
 | Dapper | 2.1.89 | acesso a dados | Apache-2.0 | em uso (F0) |
 | Serilog, Serilog.Extensions.Logging, Serilog.Sinks.File | 4.4 / 10.0 / 7.0 | log em arquivo | Apache-2.0 | em uso (F0) |
 | xUnit v3 | 4.0.2 | testes | Apache-2.0 | em uso (F0) |
+| MinVer | 8.0.0 | versão dos assemblies a partir da tag `v*` do git; só no build, não vai no app | Apache-2.0 | em uso (F6) |
 | Bricolage Grotesque | — | fonte de títulos (embutida, `Assets/Fonts`) | SIL OFL 1.1 | em uso (F0) |
 | IBM Plex Sans, IBM Plex Mono | — | fontes de texto (embutidas, `Assets/Fonts`) | SIL OFL 1.1 (Reserved Font Name "Plex") | em uso (F0) |
 | Lucide (ícones folder-plus, folder-open, rotate-cw) | — | ícones, como geometria em `Themes/Icons.axaml` | ISC | em uso (F0) |

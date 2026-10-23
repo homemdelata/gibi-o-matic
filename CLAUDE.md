@@ -57,6 +57,8 @@ Licença MIT. Repositório privado por enquanto (`github.com/homemdelata/gibi-o-
   - `dotnet build GibiOMatic.sln`
   - `dotnet test --solution GibiOMatic.sln` (Microsoft.Testing.Platform, ver `global.json`)
   - `dotnet run --project src/GibiOMatic.App`
+  - `powershell -ExecutionPolicy Bypass -File tools\publish.ps1 [-Runtime linux-x64]` → `artifacts\GibiOMatic-<versão>-<rid>.zip`
+- **Versão**: vem da última tag `vX.Y.Z` do git (MinVer). Para lançar uma versão: `git tag v0.5.0` e `git push origin v0.5.0`.
 - Ambiente: Windows 11; shells PowerShell 5.1 e Git Bash. Caminhos com espaços (`G:\Meu Drive`) precisam de aspas.
 
 ## Estrutura da solução (alvo — criada na F0)
