@@ -44,28 +44,28 @@
 
         <!-- Comics and PDFs: page turning and counter -->
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2" IsVisible="{Binding IsPaged}">
-          <Button Classes="tool" Command="{Binding FirstCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_First}">
+          <Button Classes="tool" Command="{Binding FirstCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_First}" AutomationProperties.Name="{x:Static r:Strings.Reader_First}">
             <c:StrokeIcon Data="{StaticResource Icon.ChevronsLeft}" Width="18" Height="18" />
           </Button>
-          <Button Classes="tool" Command="{Binding GoLeftCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_Previous}">
+          <Button Classes="tool" Command="{Binding GoLeftCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_Previous}" AutomationProperties.Name="{x:Static r:Strings.Reader_Previous}">
             <c:StrokeIcon Data="{StaticResource Icon.ChevronLeft}" Width="18" Height="18" />
           </Button>
           <TextBlock Classes="mono" FontSize="13" MinWidth="96" TextAlignment="Center" VerticalAlignment="Center" Text="{Binding PageText}" />
-          <Button Classes="tool" Command="{Binding GoRightCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_Next}">
+          <Button Classes="tool" Command="{Binding GoRightCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_Next}" AutomationProperties.Name="{x:Static r:Strings.Reader_Next}">
             <c:StrokeIcon Data="{StaticResource Icon.ChevronRight}" Width="18" Height="18" />
           </Button>
-          <Button Classes="tool" Command="{Binding LastCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_Last}">
+          <Button Classes="tool" Command="{Binding LastCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_Last}" AutomationProperties.Name="{x:Static r:Strings.Reader_Last}">
             <c:StrokeIcon Data="{StaticResource Icon.ChevronsRight}" Width="18" Height="18" />
           </Button>
         </StackPanel>
 
         <!-- Text EPUBs: chapters and text size -->
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="2" IsVisible="{Binding IsText}">
-          <Button Classes="tool" Command="{Binding PreviousChapterCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_PreviousChapter}">
+          <Button Classes="tool" Command="{Binding PreviousChapterCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_PreviousChapter}" AutomationProperties.Name="{x:Static r:Strings.Reader_PreviousChapter}">
             <c:StrokeIcon Data="{StaticResource Icon.ChevronLeft}" Width="18" Height="18" />
           </Button>
           <TextBlock Classes="mono" FontSize="13" MinWidth="140" TextAlignment="Center" VerticalAlignment="Center" Text="{Binding ChapterText}" />
-          <Button Classes="tool" Command="{Binding NextChapterCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_NextChapter}">
+          <Button Classes="tool" Command="{Binding NextChapterCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_NextChapter}" AutomationProperties.Name="{x:Static r:Strings.Reader_NextChapter}">
             <c:StrokeIcon Data="{StaticResource Icon.ChevronRight}" Width="18" Height="18" />
           </Button>
         </StackPanel>
@@ -73,39 +73,39 @@
         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2" HorizontalAlignment="Right">
           <StackPanel Orientation="Horizontal" Spacing="2" IsVisible="{Binding IsPaged}">
             <Button Classes="tool" Classes.on="{Binding IsFitHeight}" Command="{Binding SetFitCommand}" CommandParameter="{x:Static s:ReaderFit.Height}"
-                    ToolTip.Tip="{x:Static r:Strings.Reader_FitHeight}">
+                    ToolTip.Tip="{x:Static r:Strings.Reader_FitHeight}" AutomationProperties.Name="{x:Static r:Strings.Reader_FitHeight}">
               <c:StrokeIcon Data="{StaticResource Icon.FitHeight}" Width="18" Height="18" />
             </Button>
             <Button Classes="tool" Classes.on="{Binding IsFitWidth}" Command="{Binding SetFitCommand}" CommandParameter="{x:Static s:ReaderFit.Width}"
-                    ToolTip.Tip="{x:Static r:Strings.Reader_FitWidth}">
+                    ToolTip.Tip="{x:Static r:Strings.Reader_FitWidth}" AutomationProperties.Name="{x:Static r:Strings.Reader_FitWidth}">
               <c:StrokeIcon Data="{StaticResource Icon.FitWidth}" Width="18" Height="18" />
             </Button>
             <Button Classes="tool" Classes.on="{Binding IsFitOriginal}" Command="{Binding SetFitCommand}" CommandParameter="{x:Static s:ReaderFit.Original}"
-                    ToolTip.Tip="{x:Static r:Strings.Reader_FitOriginal}">
+                    ToolTip.Tip="{x:Static r:Strings.Reader_FitOriginal}" AutomationProperties.Name="{x:Static r:Strings.Reader_FitOriginal}">
               <c:StrokeIcon Data="{StaticResource Icon.ActualSize}" Width="18" Height="18" />
             </Button>
             <Border Width="1" Height="20" Margin="6,0" Background="{DynamicResource BorderStrongBrush}" />
-            <Button Classes="tool" Classes.on="{Binding TwoPages}" Command="{Binding ToggleTwoPagesCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_TwoPages}">
+            <Button Classes="tool" Classes.on="{Binding TwoPages}" Command="{Binding ToggleTwoPagesCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_TwoPages}" AutomationProperties.Name="{x:Static r:Strings.Reader_TwoPages}">
               <c:StrokeIcon Data="{StaticResource Icon.TwoPages}" Width="18" Height="18" />
             </Button>
-            <Button Classes="tool" Classes.on="{Binding RightToLeft}" Command="{Binding ToggleRightToLeftCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_RightToLeft}">
+            <Button Classes="tool" Classes.on="{Binding RightToLeft}" Command="{Binding ToggleRightToLeftCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_RightToLeft}" AutomationProperties.Name="{x:Static r:Strings.Reader_RightToLeft}">
               <c:StrokeIcon Data="{StaticResource Icon.RightToLeft}" Width="18" Height="18" />
             </Button>
-            <Button Classes="tool" Classes.on="{Binding ShowThumbnails}" Command="{Binding ToggleThumbnailsCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_Thumbnails}">
+            <Button Classes="tool" Classes.on="{Binding ShowThumbnails}" Command="{Binding ToggleThumbnailsCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_Thumbnails}" AutomationProperties.Name="{x:Static r:Strings.Reader_Thumbnails}">
               <c:StrokeIcon Data="{StaticResource Icon.Thumbnails}" Width="18" Height="18" />
             </Button>
           </StackPanel>
           <StackPanel Orientation="Horizontal" Spacing="2" IsVisible="{Binding IsText}">
-            <Button Classes="tool" Command="{Binding TextSmallerCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_TextSmaller}">
+            <Button Classes="tool" Command="{Binding TextSmallerCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_TextSmaller}" AutomationProperties.Name="{x:Static r:Strings.Reader_TextSmaller}">
               <TextBlock Text="A−" FontSize="13" FontWeight="SemiBold" />
             </Button>
             <TextBlock Classes="mono muted" FontSize="12" MinWidth="44" TextAlignment="Center" VerticalAlignment="Center" Text="{Binding TextScaleText}" />
-            <Button Classes="tool" Command="{Binding TextBiggerCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_TextBigger}">
+            <Button Classes="tool" Command="{Binding TextBiggerCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_TextBigger}" AutomationProperties.Name="{x:Static r:Strings.Reader_TextBigger}">
               <TextBlock Text="A+" FontSize="15" FontWeight="SemiBold" />
             </Button>
           </StackPanel>
           <Border Width="1" Height="20" Margin="6,0" Background="{DynamicResource BorderStrongBrush}" />
-          <Button Classes="tool" Classes.on="{Binding IsFullScreen}" Command="{Binding ToggleFullScreenCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_FullScreen}">
+          <Button Classes="tool" Classes.on="{Binding IsFullScreen}" Command="{Binding ToggleFullScreenCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_FullScreen}" AutomationProperties.Name="{x:Static r:Strings.Reader_FullScreen}">
             <c:StrokeIcon Data="{StaticResource Icon.Maximize}" Width="18" Height="18" />
           </Button>
         </StackPanel>
