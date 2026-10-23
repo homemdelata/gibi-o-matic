@@ -39,7 +39,11 @@ public sealed class JsonSettingsService(AppPaths paths, ILogger<JsonSettingsServ
         {
             _gate.Release();
         }
+
+        Saved?.Invoke(this, settings);
     }
+
+    public event EventHandler<AppSettings>? Saved;
 
     private async Task<AppSettings> ReadAsync(CancellationToken ct)
     {
@@ -81,6 +85,11 @@ public sealed class JsonSettingsService(AppPaths paths, ILogger<JsonSettingsServ
         if (!preference.SequenceEqual(settings.FormatPreference ?? []))
         {
             settings = settings with { FormatPreference = preference };
+        }
+
+        if (settings.Background is null || !Enum.IsDefined(settings.Background.StartWithSystem))
+        {
+            settings = settings with { Background = (settings.Background ?? new BackgroundSettings()) with { StartWithSystem = StartupMode.Off } };
         }
 
         var metadata = (settings.Metadata ?? new MetadataSettings()).Normalized();

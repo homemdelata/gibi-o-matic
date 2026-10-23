@@ -19,8 +19,11 @@ public sealed record AppSettings
     /// <summary>Root folder of the library (the "Arquivo") last opened on this machine.</summary>
     public string? LibraryPath { get; init; }
 
-    /// <summary>Folder watched for new downloads (used from F5 on).</summary>
+    /// <summary>Folder watched for new downloads (F5).</summary>
     public string? InboxPath { get; init; }
+
+    /// <summary>Tray icon and starting with the system, so the inbox is watched with the window closed (F5).</summary>
+    public BackgroundSettings Background { get; init; } = new();
 
     /// <summary>
     /// Which format becomes the main original when a book exists in several (SPEC §10),
@@ -53,6 +56,29 @@ public sealed record ReaderSettings
 
     /// <summary>Text size of text EPUBs, in percent.</summary>
     public int TextScale { get; init; } = 100;
+}
+
+/// <summary>Running in the background (SPEC §6, item 7).</summary>
+public sealed record BackgroundSettings
+{
+    /// <summary>
+    /// Closing the window keeps the app in the tray. Null: not asked yet; the first close keeps it
+    /// in the tray and asks.
+    /// </summary>
+    public bool? CloseToTray { get; init; }
+
+    public StartupMode StartWithSystem { get; init; } = StartupMode.Off;
+}
+
+public enum StartupMode
+{
+    Off,
+
+    /// <summary>Starts with only the tray icon (default when turned on).</summary>
+    Tray,
+
+    /// <summary>Starts with the window open.</summary>
+    Window,
 }
 
 public enum ReaderFit

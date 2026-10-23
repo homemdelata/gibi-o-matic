@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GibiOMatic.App.Resources;
 using GibiOMatic.App.Services;
+using GibiOMatic.App.Services.Tray;
 using GibiOMatic.Core.Domain;
 using GibiOMatic.Core.Libraries;
 using GibiOMatic.Core.Secrets;
@@ -52,6 +53,7 @@ public sealed partial class SettingsPageViewModel : PageViewModel
     private readonly ISecretStore _secrets;
     private readonly ComicVineKeyProvider _keys;
     private readonly ComicVineClient _comicVine;
+    private readonly IStartupRegistration _startup;
     private readonly string _runningLanguage;
 
     public SettingsPageViewModel(
@@ -62,8 +64,12 @@ public sealed partial class SettingsPageViewModel : PageViewModel
         ISecretStore secrets,
         ComicVineKeyProvider keys,
         ComicVineClient comicVine,
+        IStartupRegistration startup,
+        TrayController tray,
         ILogger<SettingsPageViewModel> logger)
     {
+        _startup = startup;
+        TraySupported = tray.IsSupported;
         _secrets = secrets;
         _keys = keys;
         _comicVine = comicVine;
@@ -128,6 +134,32 @@ public sealed partial class SettingsPageViewModel : PageViewModel
     public partial ThemeOption SelectedTheme { get; set; }
 
     public bool RestartRequired => SelectedLanguage.Code != _runningLanguage;
+
+    // ---- Background (F5) ----
+
+    public bool TraySupported { get; }
+
+    public bool StartupSupported => _startup.IsSupported;
+
+    public string StartWithSystemLabel => OperatingSystem.IsWindows() ? Strings.Settings_StartWithWindows : Strings.Settings_StartWithSystem;
+
+    /// <summary>Closing the window keeps the app in the tray (on until the user says otherwise).</summary>
+    [ObservableProperty]
+    public partial bool CloseToTray { get; set; }
+
+    [ObservableProperty]
+    public partial bool StartWithSystem { get; set; }
+
+    /// <summary>With <see cref="StartWithSystem"/>: only the tray icon (default) or the window.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StartWithWindow))]
+    public partial bool StartInTray { get; set; }
+
+    public bool StartWithWindow
+    {
+        get => !StartInTray;
+        set => StartInTray = !value;
+    }
 
     [ObservableProperty]
     public partial string? StatusMessage { get; private set; }
@@ -338,9 +370,24 @@ public sealed partial class SettingsPageViewModel : PageViewModel
     [RelayCommand]
     private async Task SaveAsync(CancellationToken ct)
     {
+        var inbox = string.IsNullOrWhiteSpace(InboxPath) ? null : InboxPath.Trim();
+        if (inbox is not null && LibraryPath.Length > 0 && (IsInside(inbox, LibraryPath) || IsInside(LibraryPath, inbox)))
+        {
+            SetStatus(Strings.Settings_InboxInsideLibrary, isError: true);
+            return;
+        }
+
+        var background = _settings.Current.Background;
+        var startup = !StartWithSystem ? StartupMode.Off : StartInTray ? StartupMode.Tray : StartupMode.Window;
         var updated = _settings.Current with
         {
-            InboxPath = string.IsNullOrWhiteSpace(InboxPath) ? null : InboxPath.Trim(),
+            InboxPath = inbox,
+            Background = background with
+            {
+                // Not asked yet and left as is: the first close still asks.
+                CloseToTray = background.CloseToTray is null && CloseToTray ? null : CloseToTray,
+                StartWithSystem = startup,
+            },
             Language = SelectedLanguage.Code,
             Theme = SelectedTheme.Theme,
             FormatPreference = Formats.Select(f => f.Format).ToList(),
@@ -354,6 +401,12 @@ public sealed partial class SettingsPageViewModel : PageViewModel
         try
         {
             await _settings.SaveAsync(updated, ct);
+            if (StartupSupported && (startup != background.StartWithSystem || startup != StartupMode.Off) && !_startup.Apply(startup))
+            {
+                SetStatus(Strings.Settings_StartupFailed, isError: true);
+                return;
+            }
+
             SetStatus(Strings.Settings_Saved, isError: false);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -372,6 +425,16 @@ public sealed partial class SettingsPageViewModel : PageViewModel
         SetFormats(settings.FormatPreference);
         SetSources(settings.Metadata);
         AlwaysReview = settings.Metadata.AlwaysReview;
+        CloseToTray = settings.Background.CloseToTray ?? true;
+        StartWithSystem = settings.Background.StartWithSystem != StartupMode.Off;
+        StartInTray = settings.Background.StartWithSystem != StartupMode.Window;
+    }
+
+    /// <summary>Whether <paramref name="path"/> is <paramref name="folder"/> or inside it.</summary>
+    private static bool IsInside(string path, string folder)
+    {
+        var relative = Path.GetRelativePath(Path.GetFullPath(folder), Path.GetFullPath(path));
+        return relative == "." || (!Path.IsPathRooted(relative) && !relative.StartsWith("..", StringComparison.Ordinal));
     }
 
     private void SetStatus(string message, bool isError)

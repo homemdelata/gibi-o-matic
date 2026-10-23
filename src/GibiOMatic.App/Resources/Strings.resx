@@ -50,7 +50,7 @@
   <data name="Settings_RebuildDone" xml:space="preserve"><value>Índice reconstruído: {0} livros.</value></data>
   <data name="Settings_RebuildIssues" xml:space="preserve"><value>Índice reconstruído: {0} livros. {1} arquivos metadata.json com problema foram ignorados (detalhes no log).</value></data>
   <data name="Settings_InboxLabel" xml:space="preserve"><value>Entrada</value></data>
-  <data name="Settings_InboxHelp" xml:space="preserve"><value>Pasta onde chegam os downloads novos. Usada pela importação automática.</value></data>
+  <data name="Settings_InboxHelp" xml:space="preserve"><value>Pasta onde chegam os downloads novos. O que chega nela é importado sozinho e depois movido para _importados, dentro dela.</value></data>
   <data name="Settings_Language" xml:space="preserve"><value>Idioma</value></data>
   <data name="Settings_Theme" xml:space="preserve"><value>Tema</value></data>
   <data name="Settings_RestartNotice" xml:space="preserve"><value>O novo idioma vale depois de reiniciar o app.</value></data>
@@ -620,4 +620,46 @@
   <data name="Menu_RemoveKindle" xml:space="preserve"><value>Tirar da lista do Kindle</value></data>
   <data name="Menu_Edit" xml:space="preserve"><value>Editar metadados</value></data>
   <data name="Menu_Review" xml:space="preserve"><value>Revisar metadados</value></data>
+  <data name="Tray_Open" xml:space="preserve"><value>Abrir o Gibi-o-matic</value></data>
+  <data name="Tray_PauseInbox" xml:space="preserve"><value>Pausar a Entrada</value></data>
+  <data name="Tray_ResumeInbox" xml:space="preserve"><value>Retomar a Entrada</value></data>
+  <data name="Tray_Exit" xml:space="preserve"><value>Sair</value></data>
+  <data name="Tray_InboxWatching" xml:space="preserve"><value>Observando {0}</value></data>
+  <data name="Tray_InboxWorking" xml:space="preserve"><value>Entrada: {0} arquivos em andamento</value></data>
+  <data name="Tray_InboxPaused" xml:space="preserve"><value>Entrada pausada</value></data>
+  <data name="Tray_InboxMissing" xml:space="preserve"><value>Pasta de entrada não encontrada: {0}</value></data>
+  <data name="Tray_InboxOff" xml:space="preserve"><value>Pasta de entrada não configurada</value></data>
+  <data name="Notify_Title" xml:space="preserve"><value>{0} arquivos processados na Entrada</value></data>
+  <data name="Notify_TitleOne" xml:space="preserve"><value>1 arquivo processado na Entrada</value></data>
+  <data name="Notify_Approved" xml:space="preserve"><value>{0} livros aprovados</value></data>
+  <data name="Notify_ApprovedOne" xml:space="preserve"><value>1 livro aprovado</value></data>
+  <data name="Notify_ToReview" xml:space="preserve"><value>{0} para revisar</value></data>
+  <data name="Notify_ToReviewOne" xml:space="preserve"><value>1 para revisar</value></data>
+  <data name="Notify_Already" xml:space="preserve"><value>{0} já estavam na biblioteca</value></data>
+  <data name="Notify_AlreadyOne" xml:space="preserve"><value>1 já estava na biblioteca</value></data>
+  <data name="Notify_Failed" xml:space="preserve"><value>{0} com erro</value></data>
+  <data name="Notify_FailedOne" xml:space="preserve"><value>1 com erro</value></data>
+  <data name="ClosePrompt_Title" xml:space="preserve"><value>O Gibi-o-matic continua rodando</value></data>
+  <data name="ClosePrompt_Text" xml:space="preserve"><value>Fechar a janela deixa o app na bandeja do sistema, para continuar observando a pasta de entrada e atualizando os destinos.</value></data>
+  <data name="ClosePrompt_Help" xml:space="preserve"><value>Dá para mudar isso depois em Configurações → Geral. Para sair de verdade, use Sair no menu do ícone da bandeja.</value></data>
+  <data name="ClosePrompt_KeepInTray" xml:space="preserve"><value>Continuar na bandeja</value></data>
+  <data name="ClosePrompt_Exit" xml:space="preserve"><value>Fechar o app</value></data>
+  <data name="Settings_BackgroundLabel" xml:space="preserve"><value>Segundo plano</value></data>
+  <data name="Settings_BackgroundHelp" xml:space="preserve"><value>Para a pasta de Entrada continuar sendo observada com a janela fechada.</value></data>
+  <data name="Settings_CloseToTray" xml:space="preserve"><value>Fechar a janela deixa o app na bandeja</value></data>
+  <data name="Settings_CloseToTrayHelp" xml:space="preserve"><value>Para sair de verdade, use Sair no menu do ícone da bandeja.</value></data>
+  <data name="Settings_StartWithWindows" xml:space="preserve"><value>Iniciar com o Windows</value></data>
+  <data name="Settings_StartWithSystem" xml:space="preserve"><value>Iniciar com o sistema</value></data>
+  <data name="Settings_StartInTray" xml:space="preserve"><value>Só o ícone na bandeja</value></data>
+  <data name="Settings_StartWithWindow" xml:space="preserve"><value>Com a janela aberta</value></data>
+  <data name="Settings_StartupFailed" xml:space="preserve"><value>Não foi possível mudar o início com o sistema (detalhes no log).</value></data>
+  <data name="Settings_InboxInsideLibrary" xml:space="preserve"><value>A pasta de Entrada e o Arquivo não podem ficar um dentro do outro.</value></data>
+  <data name="Inbox_WatchingTitle" xml:space="preserve"><value>Observando a pasta de entrada</value></data>
+  <data name="Inbox_WatchingHelp" xml:space="preserve"><value>Arquivos novos nesta pasta são importados sozinhos (duplicados seguem a sugestão) e depois vão para {0}.</value></data>
+  <data name="Inbox_WatchOffTitle" xml:space="preserve"><value>Importação automática desligada</value></data>
+  <data name="Inbox_WatchOff" xml:space="preserve"><value>Escolha a pasta de Entrada nas Configurações para os downloads novos entrarem sozinhos.</value></data>
+  <data name="Inbox_WatchMissingTitle" xml:space="preserve"><value>Pasta de entrada não encontrada</value></data>
+  <data name="Inbox_WatchMissing" xml:space="preserve"><value>{0} não existe agora (unidade desconectada?). A observação recomeça quando ela aparecer.</value></data>
+  <data name="Inbox_WatchConfigure" xml:space="preserve"><value>Configurar</value></data>
+  <data name="Inbox_AutoChip" xml:space="preserve"><value>automático</value></data>
 </root>

@@ -28,6 +28,24 @@
       </Button>
     </Grid>
 
+    <!-- Watched folder (F5) -->
+    <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,14" Padding="18,14">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <c:StrokeIcon Data="{StaticResource Icon.FolderOpen}" Width="22" Height="22" VerticalAlignment="Center" Margin="0,0,14,0"
+                      Foreground="{DynamicResource AccentBrush}" IsVisible="{Binding IsWatching}" />
+        <c:StrokeIcon Data="{StaticResource Icon.FolderOpen}" Width="22" Height="22" VerticalAlignment="Center" Margin="0,0,14,0"
+                      Foreground="{DynamicResource OffBrush}" IsVisible="{Binding !IsWatching}" />
+        <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+          <TextBlock FontWeight="SemiBold" Text="{Binding WatchTitle}" />
+          <TextBlock Classes="mono" FontSize="12.5" Text="{Binding WatchFolder}" TextTrimming="CharacterEllipsis"
+                     IsVisible="{Binding IsWatching}" ToolTip.Tip="{Binding WatchFolder}" />
+          <TextBlock Classes="muted" FontSize="13" TextWrapping="Wrap" Text="{Binding WatchText}" />
+        </StackPanel>
+        <Button Grid.Column="2" Classes="secondary" Margin="16,0,0,0" VerticalAlignment="Center"
+                Content="{x:Static r:Strings.Inbox_WatchConfigure}" Command="{Binding ConfigureInboxCommand}" />
+      </Grid>
+    </Border>
+
     <!-- Drop zone -->
     <Panel DockPanel.Dock="Top" Margin="0,0,0,22">
       <Rectangle Classes="dropzone" StrokeThickness="2" StrokeDashArray="4,3" RadiusX="14" RadiusY="14" />
@@ -100,7 +118,11 @@
                 <StackPanel Grid.Column="1" Margin="10,0,0,0">
                   <TextBlock Classes="mono" FontSize="13" Text="{Binding FileName}" TextTrimming="CharacterEllipsis"
                              ToolTip.Tip="{Binding SourcePath}" />
-                  <TextBlock Classes="muted" FontSize="12" Text="{Binding SizeText}" />
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Classes="muted" FontSize="12" Text="{Binding SizeText}" />
+                    <TextBlock Classes="muted" FontSize="12" Text="{x:Static r:Strings.Inbox_AutoChip}" IsVisible="{Binding IsAuto}"
+                               Foreground="{DynamicResource AccentBrush}" />
+                  </StackPanel>
                 </StackPanel>
               </Grid>
 

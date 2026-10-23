@@ -1,11 +1,35 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:GibiOMatic.App.ViewModels"
+        xmlns:r="using:GibiOMatic.App.Resources"
         x:Class="GibiOMatic.App.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="Gibi-o-matic"
         Icon="/Assets/gibiomatic.ico"
         Width="1440" Height="900" MinWidth="1024" MinHeight="640"
         WindowStartupLocation="CenterScreen">
-  <ContentControl Content="{Binding Content}" />
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Escape" Command="{Binding CancelCloseCommand}" />
+  </Window.KeyBindings>
+  <Panel>
+    <ContentControl Content="{Binding Content}" />
+
+    <!-- First close: the app goes on in the tray (decision of 2026-10-23) -->
+    <Panel IsVisible="{Binding ShowClosePrompt}">
+      <Border Background="#B3000000" />
+      <Border Classes="card" MaxWidth="480" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="24,22"
+              BorderBrush="{DynamicResource AccentBrush}">
+        <StackPanel Spacing="12">
+          <TextBlock Classes="h2" Text="{x:Static r:Strings.ClosePrompt_Title}" TextWrapping="Wrap" />
+          <TextBlock TextWrapping="Wrap" Text="{x:Static r:Strings.ClosePrompt_Text}" />
+          <TextBlock Classes="help" TextWrapping="Wrap" Text="{x:Static r:Strings.ClosePrompt_Help}" />
+          <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <Button Classes="secondary" Content="{x:Static r:Strings.ClosePrompt_Exit}" Command="{Binding CloseAppCommand}" />
+            <Button Classes="primary" Content="{x:Static r:Strings.ClosePrompt_KeepInTray}" Command="{Binding KeepInTrayCommand}"
+                    IsDefault="True" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </Panel>
+  </Panel>
 </Window>

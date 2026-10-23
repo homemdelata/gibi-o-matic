@@ -41,6 +41,12 @@ public sealed class AppTestContext : IDisposable
     /// <summary>Writes a small file instead of running the KCC.</summary>
     public FakeKccRunner Kcc { get; } = new();
 
+    /// <summary>Records what the tray shows instead of touching the system tray.</summary>
+    public FakeTrayIcon Tray { get; } = new();
+
+    /// <summary>Records the start with the system instead of writing the registry or ~/.config.</summary>
+    public FakeStartupRegistration Startup { get; } = new();
+
     /// <summary>Puts a stand-in KCC where the app looks for the one it downloads.</summary>
     public void InstallFakeKcc()
     {
@@ -67,6 +73,15 @@ public sealed class AppTestContext : IDisposable
             .AddSingleton<GibiOMatic.App.ViewModels.IReaderImages>(new FakeReaderImages())
             .AddSingleton<GibiOMatic.Destinations.Kindle.IKindleDevices>(Kindle)
             .AddSingleton<GibiOMatic.Conversion.Kcc.IKccRunner>(Kcc)
+            .AddSingleton<GibiOMatic.App.Services.Tray.ITrayIcon>(Tray)
+            .AddSingleton<IStartupRegistration>(Startup)
+            // The app waits for downloads to settle for seconds; tests do not.
+            .AddSingleton(new GibiOMatic.Library.Import.InboxWatchOptions
+            {
+                SettleTime = TimeSpan.FromMilliseconds(100),
+                PollInterval = TimeSpan.FromMilliseconds(40),
+                QuietTime = TimeSpan.FromMilliseconds(100),
+            })
             .BuildServiceProvider();
         // Automatic runs gather changes for 1.5 s in the app; tests do not wait that long.
         services.GetRequiredService<GibiOMatic.Destinations.Sync.DestinationServiceFactory>().GatherDelay = TimeSpan.FromMilliseconds(20);
@@ -151,6 +166,46 @@ public sealed class FakeKindleDevice : GibiOMatic.Destinations.Kindle.IKindleDev
 
     public void Dispose()
     {
+    }
+}
+
+public sealed class FakeTrayIcon : GibiOMatic.App.Services.Tray.ITrayIcon
+{
+    public bool IsSupported { get; set; } = true;
+
+    public string? Tooltip { get; private set; }
+
+    public IReadOnlyList<GibiOMatic.App.Services.Tray.TrayMenuItem?> Menu { get; private set; } = [];
+
+    public List<(string Title, string Text)> Notifications { get; } = [];
+
+    public event EventHandler? Activated;
+
+    public event EventHandler? NotificationClicked;
+
+    public void Show(string tooltip, IReadOnlyList<GibiOMatic.App.Services.Tray.TrayMenuItem?> menu) => (Tooltip, Menu) = (tooltip, menu);
+
+    public void Notify(string title, string text) => Notifications.Add((title, text));
+
+    public void Click() => Activated?.Invoke(this, EventArgs.Empty);
+
+    public void ClickNotification() => NotificationClicked?.Invoke(this, EventArgs.Empty);
+
+    public void Dispose()
+    {
+    }
+}
+
+public sealed class FakeStartupRegistration : IStartupRegistration
+{
+    public bool IsSupported => true;
+
+    public List<StartupMode> Applied { get; } = [];
+
+    public bool Apply(StartupMode mode)
+    {
+        Applied.Add(mode);
+        return true;
     }
 }
 

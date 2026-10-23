@@ -15,6 +15,18 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        // One Gibi-o-matic per user: a second start brings the running one to the front and ends.
+        using var instance = SingleInstance.Acquire();
+        if (!instance.IsFirst)
+        {
+            if (OperatingSystem.IsWindows())
+            {
+                Services.Tray.Win32TrayIcon.AllowOtherProcessToTakeFocus();
+            }
+
+            return instance.SignalFirst(args, TimeSpan.FromSeconds(5)) ? 0 : 1;
+        }
+
         var paths = AppPaths.ForCurrentUser();
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
@@ -31,7 +43,8 @@ internal static class Program
         try
         {
             Log.Information("Starting Gibi-o-matic {Version}", AppVersion());
-            using var services = ServiceRegistration.Build(paths);
+            var launch = new AppLaunch(args.Contains(StartupCommand.TrayArgument, StringComparer.OrdinalIgnoreCase), instance);
+            using var services = ServiceRegistration.Build(paths, s => s.AddSingleton(launch));
 
             // Settings are read before the UI exists: the language must be set first.
             var settings = services.GetRequiredService<ISettingsService>().LoadAsync().GetAwaiter().GetResult();

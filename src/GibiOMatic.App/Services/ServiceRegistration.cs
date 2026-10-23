@@ -1,3 +1,4 @@
+using GibiOMatic.App.Services.Tray;
 using GibiOMatic.App.ViewModels;
 using GibiOMatic.Conversion;
 using GibiOMatic.Core;
@@ -24,10 +25,12 @@ namespace GibiOMatic.App.Services;
 /// <summary>Composition root.</summary>
 public static class ServiceRegistration
 {
-    public static ServiceProvider Build(AppPaths paths) =>
-        new ServiceCollection()
-            .AddGibiOMatic(paths, BuildConfiguration())
-            .BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
+    public static ServiceProvider Build(AppPaths paths, Action<IServiceCollection>? configure = null)
+    {
+        var services = new ServiceCollection().AddGibiOMatic(paths, BuildConfiguration());
+        configure?.Invoke(services);
+        return services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
+    }
 
     public static IServiceCollection AddGibiOMatic(this IServiceCollection services, AppPaths paths, IConfiguration configuration)
     {
@@ -53,6 +56,7 @@ public static class ServiceRegistration
         services.AddSingleton<ImportAnalyzer>();
         services.AddSingleton<BookImporter>();
         services.AddSingleton<ImportQueueFactory>();
+        services.AddSingleton(new InboxWatchOptions());
         services.AddMetadataSources(paths);
         services.AddSingleton<BookEditor>();
         services.AddSingleton<IdentificationQueueFactory>();
@@ -76,6 +80,17 @@ public static class ServiceRegistration
         services.AddSingleton<ReadingTracker>();
         services.AddSingleton<KindleWatcher>();
         services.AddSingleton<LibrarySession>();
+        if (OperatingSystem.IsWindows())
+        {
+            AddWindowsBackground(services);
+        }
+        else
+        {
+            services.AddSingleton<ITrayIcon, AvaloniaTrayIcon>();
+            services.AddSingleton<IStartupRegistration>(sp => new LinuxStartupRegistration(sp.GetRequiredService<ILogger<LinuxStartupRegistration>>()));
+        }
+
+        services.AddSingleton<TrayController>();
 
         // View models (a new shell and pages for each opened library)
         services.AddSingleton<MainWindowViewModel>();
@@ -91,6 +106,13 @@ public static class ServiceRegistration
         services.AddSingleton<Func<ShellViewModel>>(sp => sp.GetRequiredService<ShellViewModel>);
 
         return services;
+    }
+
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    private static void AddWindowsBackground(IServiceCollection services)
+    {
+        services.AddSingleton<ITrayIcon, Win32TrayIcon>();
+        services.AddSingleton<IStartupRegistration>(sp => new WindowsStartupRegistration(sp.GetRequiredService<ILogger<WindowsStartupRegistration>>()));
     }
 
     /// <summary>

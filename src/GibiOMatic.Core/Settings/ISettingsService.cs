@@ -9,4 +9,7 @@ public interface ISettingsService
     Task<AppSettings> LoadAsync(CancellationToken ct = default);
 
     Task SaveAsync(AppSettings settings, CancellationToken ct = default);
+
+    /// <summary>Raised after the settings were saved, with the new ones.</summary>
+    event EventHandler<AppSettings>? Saved;
 }

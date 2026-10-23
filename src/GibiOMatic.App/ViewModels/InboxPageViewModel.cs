@@ -46,8 +46,8 @@ public sealed partial class InboxItemViewModel : ViewModelBase
     public InboxItemViewModel(InboxEntry entry, string thumbnailPath, ICoverLoader covers, Func<long, ImportDecision, Task> setDecision)
     {
         Id = entry.Item.Id;
-        SourcePath = entry.Item.SourcePath;
         FileName = Path.GetFileName(entry.Item.SourcePath);
+        IsAuto = entry.Item.Auto;
         _thumbnailPath = thumbnailPath;
         _covers = covers;
         _setDecision = setDecision;
@@ -55,8 +55,14 @@ public sealed partial class InboxItemViewModel : ViewModelBase
     }
 
     public long Id { get; }
-    public string SourcePath { get; }
     public string FileName { get; }
+
+    /// <summary>Came from the watched folder: imported without confirmation.</summary>
+    public bool IsAuto { get; }
+
+    /// <summary>Where the file is now (it moves to _importados once processed).</summary>
+    [ObservableProperty]
+    public partial string SourcePath { get; private set; }
 
     public InboxEntry Entry { get; private set; } = null!;
 
@@ -103,9 +109,11 @@ public sealed partial class InboxItemViewModel : ViewModelBase
         }
     }
 
+    [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(SourcePath))]
     public void Update(InboxEntry entry)
     {
         Entry = entry;
+        SourcePath = entry.Item.SourcePath;
         var item = entry.Item;
         var a = item.Analysis;
 
@@ -234,8 +242,8 @@ public sealed partial class InboxItemViewModel : ViewModelBase
 }
 
 /// <summary>
-/// The inbox, manual version (SPEC §6, §10): files are added by picker or drag and drop,
-/// analysed in the background and imported only after "Importar".
+/// The inbox (SPEC §6, §10). Files added by picker or drag and drop are analysed in the background
+/// and imported only after "Importar"; files arriving in the watched folder go through on their own (F5).
 /// </summary>
 public sealed partial class InboxPageViewModel : PageViewModel
 {
@@ -267,7 +275,47 @@ public sealed partial class InboxPageViewModel : PageViewModel
             queue.ProgressChanged += OnProgressChanged;
             IsPaused = queue.IsPaused;
         }
+
+        session.WatcherChanged += OnWatcherChanged;
+        UpdateWatch();
     }
+
+    // ---- Watched folder (F5) ----
+
+    [ObservableProperty]
+    public partial InboxWatchStatus WatchStatus { get; private set; }
+
+    [ObservableProperty]
+    public partial string? WatchTitle { get; private set; }
+
+    [ObservableProperty]
+    public partial string? WatchText { get; private set; }
+
+    [ObservableProperty]
+    public partial string? WatchFolder { get; private set; }
+
+    public bool IsWatching => WatchStatus == InboxWatchStatus.Watching;
+
+    private void OnWatcherChanged(object? sender, EventArgs e) => _ui.Post(UpdateWatch);
+
+    private void UpdateWatch()
+    {
+        var watcher = _session.Watcher;
+        WatchStatus = watcher?.Status ?? InboxWatchStatus.Off;
+        WatchFolder = watcher?.Folder;
+        (WatchTitle, WatchText) = WatchStatus switch
+        {
+            InboxWatchStatus.Watching => (Strings.Inbox_WatchingTitle,
+                string.Format(CultureInfo.CurrentCulture, Strings.Inbox_WatchingHelp, InboxFolder.ImportedFolderName)),
+            InboxWatchStatus.Missing => (Strings.Inbox_WatchMissingTitle,
+                string.Format(CultureInfo.CurrentCulture, Strings.Inbox_WatchMissing, WatchFolder)),
+            _ => (Strings.Inbox_WatchOffTitle, Strings.Inbox_WatchOff),
+        };
+        OnPropertyChanged(nameof(IsWatching));
+    }
+
+    [RelayCommand]
+    private void ConfigureInbox() => RequestNavigation(NavPage.Settings);
 
     public override string Title => Strings.Nav_Inbox;
 
@@ -492,6 +540,7 @@ public sealed partial class InboxPageViewModel : PageViewModel
 
     public override void Dispose()
     {
+        _session.WatcherChanged -= OnWatcherChanged;
         if (_session.Queue is { } queue)
         {
             queue.Changed -= OnQueueChanged;

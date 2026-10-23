@@ -133,7 +133,8 @@
 
       <!-- General -->
       <TabItem Header="{x:Static r:Strings.Settings_TabGeneral}">
-        <StackPanel Spacing="14">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="14" Margin="0,0,12,0">
           <Grid ColumnDefinitions="*,14,*">
             <StackPanel Spacing="6">
               <TextBlock Classes="strong" Text="{x:Static r:Strings.Settings_Language}" />
@@ -199,7 +200,31 @@
               </ItemsControl>
             </Grid>
           </Border>
+
+          <!-- Background (F5) -->
+          <Border Classes="card" IsVisible="{Binding TraySupported}">
+            <Grid ColumnDefinitions="260,*">
+              <StackPanel Spacing="2" Margin="0,0,16,0" VerticalAlignment="Top">
+                <TextBlock Classes="strong" Text="{x:Static r:Strings.Settings_BackgroundLabel}" />
+                <TextBlock Classes="help" Text="{x:Static r:Strings.Settings_BackgroundHelp}" />
+              </StackPanel>
+              <StackPanel Grid.Column="1" Spacing="14">
+                <StackPanel Spacing="4">
+                  <CheckBox Content="{x:Static r:Strings.Settings_CloseToTray}" IsChecked="{Binding CloseToTray}" FontWeight="SemiBold" />
+                  <TextBlock Classes="help" Margin="28,0,0,0" Text="{x:Static r:Strings.Settings_CloseToTrayHelp}" />
+                </StackPanel>
+                <StackPanel Spacing="8" IsVisible="{Binding StartupSupported}">
+                  <CheckBox Content="{Binding StartWithSystemLabel}" IsChecked="{Binding StartWithSystem}" FontWeight="SemiBold" />
+                  <StackPanel Spacing="4" Margin="28,0,0,0" IsVisible="{Binding StartWithSystem}">
+                    <RadioButton GroupName="StartMode" Content="{x:Static r:Strings.Settings_StartInTray}" IsChecked="{Binding StartInTray}" />
+                    <RadioButton GroupName="StartMode" Content="{x:Static r:Strings.Settings_StartWithWindow}" IsChecked="{Binding StartWithWindow}" />
+                  </StackPanel>
+                </StackPanel>
+              </StackPanel>
+            </Grid>
+          </Border>
         </StackPanel>
+        </ScrollViewer>
       </TabItem>
     </TabControl>
   </DockPanel>

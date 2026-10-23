@@ -50,7 +50,7 @@
   <data name="Settings_RebuildDone" xml:space="preserve"><value>Index rebuilt: {0} books.</value></data>
   <data name="Settings_RebuildIssues" xml:space="preserve"><value>Index rebuilt: {0} books. {1} metadata.json files with problems were skipped (details in the log).</value></data>
   <data name="Settings_InboxLabel" xml:space="preserve"><value>Inbox</value></data>
-  <data name="Settings_InboxHelp" xml:space="preserve"><value>Folder where new downloads arrive. Used by automatic import.</value></data>
+  <data name="Settings_InboxHelp" xml:space="preserve"><value>Folder where new downloads arrive. What arrives there is imported on its own and then moved to _importados, inside it.</value></data>
   <data name="Settings_Language" xml:space="preserve"><value>Language</value></data>
   <data name="Settings_Theme" xml:space="preserve"><value>Theme</value></data>
   <data name="Settings_RestartNotice" xml:space="preserve"><value>The new language takes effect after restarting the app.</value></data>
@@ -620,4 +620,46 @@
   <data name="Menu_RemoveKindle" xml:space="preserve"><value>Remove from the Kindle list</value></data>
   <data name="Menu_Edit" xml:space="preserve"><value>Edit metadata</value></data>
   <data name="Menu_Review" xml:space="preserve"><value>Review metadata</value></data>
+  <data name="Tray_Open" xml:space="preserve"><value>Open Gibi-o-matic</value></data>
+  <data name="Tray_PauseInbox" xml:space="preserve"><value>Pause the Inbox</value></data>
+  <data name="Tray_ResumeInbox" xml:space="preserve"><value>Resume the Inbox</value></data>
+  <data name="Tray_Exit" xml:space="preserve"><value>Exit</value></data>
+  <data name="Tray_InboxWatching" xml:space="preserve"><value>Watching {0}</value></data>
+  <data name="Tray_InboxWorking" xml:space="preserve"><value>Inbox: {0} files in progress</value></data>
+  <data name="Tray_InboxPaused" xml:space="preserve"><value>Inbox paused</value></data>
+  <data name="Tray_InboxMissing" xml:space="preserve"><value>Inbox folder not found: {0}</value></data>
+  <data name="Tray_InboxOff" xml:space="preserve"><value>No inbox folder set</value></data>
+  <data name="Notify_Title" xml:space="preserve"><value>{0} files processed in the Inbox</value></data>
+  <data name="Notify_TitleOne" xml:space="preserve"><value>1 file processed in the Inbox</value></data>
+  <data name="Notify_Approved" xml:space="preserve"><value>{0} books approved</value></data>
+  <data name="Notify_ApprovedOne" xml:space="preserve"><value>1 book approved</value></data>
+  <data name="Notify_ToReview" xml:space="preserve"><value>{0} to review</value></data>
+  <data name="Notify_ToReviewOne" xml:space="preserve"><value>1 to review</value></data>
+  <data name="Notify_Already" xml:space="preserve"><value>{0} were already in the library</value></data>
+  <data name="Notify_AlreadyOne" xml:space="preserve"><value>1 was already in the library</value></data>
+  <data name="Notify_Failed" xml:space="preserve"><value>{0} failed</value></data>
+  <data name="Notify_FailedOne" xml:space="preserve"><value>1 failed</value></data>
+  <data name="ClosePrompt_Title" xml:space="preserve"><value>Gibi-o-matic keeps running</value></data>
+  <data name="ClosePrompt_Text" xml:space="preserve"><value>Closing the window keeps the app in the system tray, so it goes on watching the inbox folder and updating the destinations.</value></data>
+  <data name="ClosePrompt_Help" xml:space="preserve"><value>You can change this later in Settings → General. To really quit, use Exit in the tray icon's menu.</value></data>
+  <data name="ClosePrompt_KeepInTray" xml:space="preserve"><value>Keep in the tray</value></data>
+  <data name="ClosePrompt_Exit" xml:space="preserve"><value>Close the app</value></data>
+  <data name="Settings_BackgroundLabel" xml:space="preserve"><value>Background</value></data>
+  <data name="Settings_BackgroundHelp" xml:space="preserve"><value>So the Inbox folder keeps being watched with the window closed.</value></data>
+  <data name="Settings_CloseToTray" xml:space="preserve"><value>Closing the window keeps the app in the tray</value></data>
+  <data name="Settings_CloseToTrayHelp" xml:space="preserve"><value>To really quit, use Exit in the tray icon's menu.</value></data>
+  <data name="Settings_StartWithWindows" xml:space="preserve"><value>Start with Windows</value></data>
+  <data name="Settings_StartWithSystem" xml:space="preserve"><value>Start with the system</value></data>
+  <data name="Settings_StartInTray" xml:space="preserve"><value>Only the tray icon</value></data>
+  <data name="Settings_StartWithWindow" xml:space="preserve"><value>With the window open</value></data>
+  <data name="Settings_StartupFailed" xml:space="preserve"><value>Could not change the start with the system (details in the log).</value></data>
+  <data name="Settings_InboxInsideLibrary" xml:space="preserve"><value>The Inbox folder and the library cannot be inside one another.</value></data>
+  <data name="Inbox_WatchingTitle" xml:space="preserve"><value>Watching the inbox folder</value></data>
+  <data name="Inbox_WatchingHelp" xml:space="preserve"><value>New files in this folder are imported on their own (duplicates follow the suggestion) and then go to {0}.</value></data>
+  <data name="Inbox_WatchOffTitle" xml:space="preserve"><value>Automatic import is off</value></data>
+  <data name="Inbox_WatchOff" xml:space="preserve"><value>Choose the Inbox folder in Settings so new downloads come in on their own.</value></data>
+  <data name="Inbox_WatchMissingTitle" xml:space="preserve"><value>Inbox folder not found</value></data>
+  <data name="Inbox_WatchMissing" xml:space="preserve"><value>{0} does not exist now (a drive not connected?). Watching starts again when it appears.</value></data>
+  <data name="Inbox_WatchConfigure" xml:space="preserve"><value>Set up</value></data>
+  <data name="Inbox_AutoChip" xml:space="preserve"><value>automatic</value></data>
 </root>

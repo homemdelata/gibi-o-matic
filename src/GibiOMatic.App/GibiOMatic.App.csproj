@@ -11,6 +11,8 @@
     <!-- Development-only ComicVine key lives in .NET user secrets, outside the repository. -->
     <UserSecretsId>3c6e08f6-15a8-4547-9a68-52954af24a45</UserSecretsId>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- Win32 tray icon (Services/Tray/Win32TrayIcon.cs). -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>

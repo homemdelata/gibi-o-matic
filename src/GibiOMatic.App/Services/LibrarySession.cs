@@ -7,21 +7,40 @@ using GibiOMatic.Library.Editing;
 using GibiOMatic.Library.Identification;
 using GibiOMatic.Library.Import;
 using GibiOMatic.Library.Index;
+using Microsoft.Extensions.Logging;
 
 namespace GibiOMatic.App.Services;
 
 /// <summary>
-/// The library currently open in the app, with its inbox queue. Opening or creating one
-/// remembers it in the settings, so the next start opens it directly.
+/// The library currently open in the app, with its inbox queue and the watcher of the inbox
+/// folder. Opening or creating one remembers it in the settings, so the next start opens it directly.
 /// </summary>
-public sealed class LibrarySession(
-    LibraryService libraries,
-    ISettingsService settings,
-    ImportQueueFactory queues,
-    IdentificationQueueFactory identifications,
-    DestinationServiceFactory destinations,
-    BookEditor editor) : IAsyncDisposable, IDisposable
+public sealed class LibrarySession : IAsyncDisposable, IDisposable
 {
+    private readonly LibraryService _libraries;
+    private readonly ISettingsService _settings;
+    private readonly ImportQueueFactory _queues;
+    private readonly IdentificationQueueFactory _identifications;
+    private readonly DestinationServiceFactory _destinations;
+    private readonly BookEditor _editor;
+    private readonly InboxWatchOptions _watchOptions;
+    private readonly ILoggerFactory _loggers;
+
+    public LibrarySession(LibraryService libraries, ISettingsService settings, ImportQueueFactory queues,
+        IdentificationQueueFactory identifications, DestinationServiceFactory destinations, BookEditor editor,
+        InboxWatchOptions watchOptions, ILoggerFactory loggers)
+    {
+        _libraries = libraries;
+        _settings = settings;
+        _queues = queues;
+        _identifications = identifications;
+        _destinations = destinations;
+        _editor = editor;
+        _watchOptions = watchOptions;
+        _loggers = loggers;
+        settings.Saved += OnSettingsSaved;
+    }
+
     public LibraryInfo? Current { get; private set; }
 
     /// <summary>The inbox of the current library, running in the background.</summary>
@@ -33,32 +52,41 @@ public sealed class LibrarySession(
     /// <summary>Komga, Kindle…: copies generated in the background.</summary>
     public DestinationService? Destinations { get; private set; }
 
-    public LibraryIndex? Index => Current is null ? null : libraries.GetIndex(Current);
+    /// <summary>Watches the inbox folder of the settings and feeds the queue (F5).</summary>
+    public InboxWatcher? Watcher { get; private set; }
+
+    /// <summary>Raised on a background thread when the watcher starts, stops or loses its folder.</summary>
+    public event EventHandler? WatcherChanged;
+
+    /// <summary>Raised on a background thread when a batch from the watched folder is done.</summary>
+    public event EventHandler<ArrivalSummary>? ArrivalsCompleted;
+
+    public LibraryIndex? Index => Current is null ? null : _libraries.GetIndex(Current);
 
     /// <summary>Raised after a different library becomes the current one.</summary>
     public event EventHandler<LibraryInfo>? Changed;
 
     public Task<LibraryInfo> CreateAsync(string folder, CancellationToken ct = default) =>
-        ActivateAsync(libraries.CreateAsync(folder, ct), ct);
+        ActivateAsync(_libraries.CreateAsync(folder, ct), ct);
 
     public Task<LibraryInfo> OpenAsync(string folder, CancellationToken ct = default) =>
-        ActivateAsync(libraries.OpenAsync(folder, ct), ct);
+        ActivateAsync(_libraries.OpenAsync(folder, ct), ct);
 
     private async Task<LibraryInfo> ActivateAsync(Task<LibraryInfo> opening, CancellationToken ct)
     {
         var library = await opening;
-        if (settings.Current.LibraryPath != library.RootPath)
+        if (_settings.Current.LibraryPath != library.RootPath)
         {
-            await settings.SaveAsync(settings.Current with { LibraryPath = library.RootPath }, ct);
+            await _settings.SaveAsync(_settings.Current with { LibraryPath = library.RootPath }, ct);
         }
 
         await StopQueuesAsync();
 
-        var queue = queues.Create(library);
-        var identification = identifications.Create(library);
+        var queue = _queues.Create(library);
+        var identification = _identifications.Create(library);
         // Every imported book is identified afterwards (decision of 2026-10-17).
         queue.BookImported += (_, bookId) => _ = identification.EnqueueAsync([bookId], force: false);
-        var destinationService = destinations.Create(library);
+        var destinationService = _destinations.Create(library);
         // Every saved book (approval, edit, new cover) and every import reaches the automatic destinations.
         queue.BookImported += (_, bookId) => destinationService.OnBookChanged(bookId);
         _onBookSaved = (_, e) =>
@@ -68,17 +96,39 @@ public sealed class LibrarySession(
                 destinationService.OnBookChanged(e.BookId);
             }
         };
-        editor.BookSaved += _onBookSaved;
+        _editor.BookSaved += _onBookSaved;
         await queue.StartAsync(ct);
         await identification.StartAsync(ct);
         destinationService.Start();
+        var arrivals = new ArrivalTracker(queue, identification, _libraries.GetIndex(library), _watchOptions, _loggers.CreateLogger<ArrivalTracker>());
+        arrivals.Completed += (_, summary) => ArrivalsCompleted?.Invoke(this, summary);
+        var watcher = new InboxWatcher(queue, _watchOptions, _loggers.CreateLogger<InboxWatcher>());
+        watcher.StatusChanged += (_, _) => WatcherChanged?.Invoke(this, EventArgs.Empty);
         Queue = queue;
         Identification = identification;
         Destinations = destinationService;
+        _arrivals = arrivals;
+        Watcher = watcher;
         Current = library;
+        watcher.Watch(_settings.Current.InboxPath);
         Changed?.Invoke(this, library);
         return library;
     }
+
+    private ArrivalTracker? _arrivals;
+
+    private void OnSettingsSaved(object? sender, AppSettings saved)
+    {
+        if (Watcher is { } watcher && !PathsEqual(watcher.Folder, saved.InboxPath))
+        {
+            watcher.Watch(saved.InboxPath);
+        }
+    }
+
+    private static bool PathsEqual(string? a, string? b) =>
+        string.IsNullOrWhiteSpace(a) || string.IsNullOrWhiteSpace(b)
+            ? string.IsNullOrWhiteSpace(a) == string.IsNullOrWhiteSpace(b)
+            : string.Equals(Path.GetFullPath(a), Path.GetFullPath(b), StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Stops the background import; an item in progress resumes on the next start.</summary>
     public ValueTask DisposeAsync() => new(StopQueuesAsync());
@@ -87,9 +137,15 @@ public sealed class LibrarySession(
 
     private async Task StopQueuesAsync()
     {
+        // The watcher feeds the queue: it stops first.
+        Watcher?.Dispose();
+        Watcher = null;
+        _arrivals?.Dispose();
+        _arrivals = null;
+
         if (_onBookSaved is not null)
         {
-            editor.BookSaved -= _onBookSaved;
+            _editor.BookSaved -= _onBookSaved;
             _onBookSaved = null;
         }
 
