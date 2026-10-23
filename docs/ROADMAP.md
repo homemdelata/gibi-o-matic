@@ -207,9 +207,9 @@ Objetivo: agrupar séries do mesmo universo ou linha editorial (ex.: Radiant Bla
 - [ ] Mover os processados para `_importados/`.
 - [ ] Rodar em segundo plano (pedido do usuário), para a pasta continuar sendo observada com a janela fechada:
   - ícone na bandeja do sistema (Windows; Linux onde houver suporte), com menu (abrir, pausar a observação, sair) e o estado atual;
-  - fechar a janela deixa o app na bandeja, se o usuário quiser;
-  - opção de iniciar com o sistema (Windows: chave `Run` do usuário; Linux: `~/.config/autostart`), já na bandeja;
-  - aviso do sistema quando chegam livros novos ou quando algum precisa de aprovação;
+  - fechar a janela deixa o app na bandeja (padrão); na primeira vez, um aviso explica e deixa escolher entre continuar na bandeja e fechar o app; a escolha fica nas Configurações;
+  - opção de iniciar com o sistema (Windows: chave `Run` do usuário; Linux: `~/.config/autostart`), desligada por padrão; ao ligar, escolhe entre abrir só a bandeja (padrão) ou a janela;
+  - aviso do sistema em resumo, por lote processado ("5 livros novos: 3 na biblioteca, 2 aguardando aprovação"); clicar abre a Entrada;
   - uma instância só: abrir o app de novo traz a janela que já está rodando.
 
 **Pronto quando**: um download novo do Humble vai do download ao Komga sem passos manuais, ou só com a aprovação.
@@ -234,3 +234,4 @@ Objetivo: agrupar séries do mesmo universo ou linha editorial (ex.: Radiant Bla
 - OCR do ISBN na página de créditos.
 - Sugerir volumes faltantes de uma série.
 - Atualização automática do app; modo servidor/Docker.
+- Associar os tipos de arquivo (CBZ, CBR, PDF, EPUB; opcional, por tipo) ao app, para ele ser o leitor padrão: abrir um arquivo pelo Explorer abre no leitor, esteja ou não na biblioteca (fora dela, oferece importar). Windows: registro por usuário (ou pelo instalador); Linux: `.desktop` com `MimeType`.

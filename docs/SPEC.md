@@ -157,7 +157,10 @@ Faixas: **Ruim** (< 60), **Revisar** (60–84), **OK** (≥ 85). A regra já exi
 4. Lê metadados embutidos: `ComicInfo.xml` (CBZ/CBR), OPF (EPUB), Info/XMP (PDF), ISBN na página de créditos (opcional, fase posterior).
 5. Roda a identificação (seção 8) e mostra o resultado na tela Entrada.
 6. Ao confirmar: copia o original para o Arquivo, extrai a capa e grava o `metadata.json`. O arquivo na Entrada é movido para `Entrada/_importados/`, não apagado.
-7. **Segundo plano**: para observar a pasta sem a janela aberta, o app pode ficar na bandeja do sistema e iniciar com o sistema (opções nas Configurações). Só roda uma instância; abrir de novo traz a janela existente. Avisa por notificação do sistema quando chegam livros ou quando algum precisa de aprovação.
+7. **Segundo plano**: para observar a pasta sem a janela aberta, o app fica na bandeja do sistema e pode iniciar com o sistema. Só roda uma instância; abrir de novo traz a janela existente.
+   - **Fechar a janela** manda o app para a bandeja (padrão). Na primeira vez, um aviso explica que o app continua rodando na bandeja e deixa escolher: *Continuar na bandeja* ou *Fechar o app*. A escolha fica salva e pode ser mudada nas Configurações. Sair de verdade: menu da bandeja → *Sair*.
+   - **Iniciar com o sistema**: desligado por padrão. Ao ligar, o usuário escolhe se o app abre a janela ou só o ícone na bandeja (padrão: só a bandeja).
+   - **Avisos**: um resumo por notificação do sistema quando um lote de arquivos termina de ser processado (ex.: "5 livros novos: 3 na biblioteca, 2 aguardando aprovação"), não um aviso por livro. Clicar abre a tela Entrada.
 
 ## 7. Revisão e Editor
 
@@ -276,7 +279,7 @@ Não há migração do Calibre. A coleção é reconstruída a partir dos origin
 
 ## 11. Configurações
 
-- **Gerais** (`%APPDATA%\GibiOMatic\settings.json`): idioma (pt-BR, en), tema (escuro, claro, sistema), pasta do Arquivo, pasta de Entrada, fontes de metadados (ordem e liga/desliga), limiar de aprovação automática, destinos.
+- **Gerais** (`%APPDATA%\GibiOMatic\settings.json`): idioma (pt-BR, en), tema (escuro, claro, sistema), pasta do Arquivo, pasta de Entrada, fechar a janela (bandeja ou sair), iniciar com o sistema (desligado, só a bandeja, com a janela), fontes de metadados (ordem e liga/desliga), limiar de aprovação automática, destinos.
 - **Segredos** (chaves de API) **não vão para arquivos de texto**: Windows DPAPI (`ProtectedData`) e, no Linux, libsecret.
 - **Da biblioteca** (`gibiomatic-library.json`, no Drive): só o que é da coleção, independente da máquina (versão do formato, id).
 
@@ -358,7 +361,6 @@ Detecção real de quadros (Panel View com regiões por quadro), outros destinos
 
 1. Comportamento do KCC sem KindleGen no Linux.
 2. Pastas de editora no Komga (`Editora/Série/`): o modelo de nome permite `{publisher}/{series}/…`; falta testar no Komga do usuário.
-3. Segundo plano (F5): fechar a janela manda o app para a bandeja ou fecha? Ao iniciar com o sistema, abre a janela ou só a bandeja? Quais avisos aparecem (cada livro novo, só os que precisam de aprovação, um resumo)?
 
 **Decididas (2026-10-17)**:
 - Nome: **Gibi-o-matic** (repositório `gibi-o-matic`, namespace `GibiOMatic`).
@@ -367,4 +369,5 @@ Detecção real de quadros (Panel View com regiões por quadro), outros destinos
 - Aprovação automática ligada, com as regras de segurança da seção 8.2.
 - Livros que não são HQ: opção por destino, conforme a capacidade do tipo.
 - Cópia para o Kindle no Linux: a fazer.
+- Segundo plano (2026-10-23): fechar a janela vai para a bandeja por padrão, com aviso e escolha na primeira vez; iniciar com o sistema tem a opção de abrir a janela ou só a bandeja; avisos em resumo (seção 6, item 7).
 - API do Komga: `GET /api/v1/libraries` e `POST /api/v1/libraries/{id}/scan`, com o cabeçalho `X-API-Key` (ver `RESEARCH.md`).
