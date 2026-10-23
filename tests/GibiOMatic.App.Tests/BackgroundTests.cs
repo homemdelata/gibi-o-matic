@@ -1,3 +1,5 @@
+using System.Globalization;
+using GibiOMatic.App.Resources;
 using GibiOMatic.App.Services;
 using GibiOMatic.App.Services.Tray;
 using GibiOMatic.App.ViewModels;
@@ -45,6 +47,8 @@ public sealed class BackgroundTests : IDisposable
         Assert.True(condition());
     }
 
+    private static string Format(string format, int count) => string.Format(CultureInfo.CurrentCulture, format, count);
+
     private sealed class FakeHost : IAppHost
     {
         public List<NavPage?> Shown { get; } = [];
@@ -74,8 +78,8 @@ public sealed class BackgroundTests : IDisposable
 
         await WaitForAsync(() => _app.Tray.Notifications.Count > 0);
         var (title, text) = Assert.Single(_app.Tray.Notifications);
-        Assert.Equal("2 arquivos processados na Entrada", title);
-        Assert.Equal("1 livro aprovado · 1 para revisar", text);
+        Assert.Equal(Format(Strings.Notify_Title, 2), title);
+        Assert.Equal($"{Strings.Notify_ApprovedOne} · {Strings.Notify_ToReviewOne}", text);
         Assert.True(File.Exists(Inbox(InboxFolder.ImportedFolderName, "Saga_Vol1.cbz")));
         Assert.True(File.Exists(Inbox(InboxFolder.ImportedFolderName, "houseofslaughter_vol1.pdf")));
         var books = await _app.Get<LibrarySession>().Index!.GetBooksAsync(Ct);
@@ -103,8 +107,8 @@ public sealed class BackgroundTests : IDisposable
         var queue = _app.Get<LibrarySession>().Queue!;
         await WaitForAsync(() => queue.IsPaused);
         await tray.RefreshAsync();
-        Assert.Equal("Retomar a Entrada", _app.Tray.Menu[1]!.Text);
-        Assert.EndsWith("Entrada pausada", _app.Tray.Tooltip);
+        Assert.Equal(Strings.Tray_ResumeInbox, _app.Tray.Menu[1]!.Text);
+        Assert.EndsWith(Strings.Tray_InboxPaused, _app.Tray.Tooltip);
 
         Assert.Null(_app.Tray.Menu[2]);
         _app.Tray.Menu[3]!.OnClick();
@@ -118,7 +122,7 @@ public sealed class BackgroundTests : IDisposable
         using var tray = _app.Get<TrayController>();
         tray.Start(new FakeHost());
         await tray.RefreshAsync();
-        Assert.EndsWith("Pasta de entrada não configurada", _app.Tray.Tooltip);
+        Assert.EndsWith(Strings.Tray_InboxOff, _app.Tray.Tooltip);
 
         var page = _app.Get<InboxPageViewModel>();
         Assert.Equal(InboxWatchStatus.Off, page.WatchStatus);
@@ -139,9 +143,9 @@ public sealed class BackgroundTests : IDisposable
     [Fact]
     public void The_notification_names_only_what_happened_and_opens_the_right_page()
     {
-        Assert.Equal(("1 arquivo processado na Entrada", "1 livro aprovado", NavPage.Library),
+        Assert.Equal((Strings.Notify_TitleOne, Strings.Notify_ApprovedOne, NavPage.Library),
             ArrivalText.Describe(new ArrivalSummary(1, 1, 0, 0, 0)));
-        Assert.Equal(("4 arquivos processados na Entrada", "2 livros aprovados · 1 já estava na biblioteca · 1 com erro", NavPage.Inbox),
+        Assert.Equal((Format(Strings.Notify_Title, 4), $"{Format(Strings.Notify_Approved, 2)} · {Strings.Notify_AlreadyOne} · {Strings.Notify_FailedOne}", NavPage.Inbox),
             ArrivalText.Describe(new ArrivalSummary(4, 2, 0, 1, 1)));
         Assert.Equal(NavPage.Review, ArrivalText.Describe(new ArrivalSummary(3, 0, 3, 0, 0)).Page);
     }
