@@ -233,8 +233,13 @@ public sealed class InboxWatcherTests : IAsyncLifetime
             await download.WriteAsync(complete.AsMemory(0, complete.Length / 2), Ct);
             await download.FlushAsync(Ct);
             // Stays the same size for longer than the settle time, but the browser still has it open.
+            // Only Windows tells: on Linux file sharing is advisory, and the settle time is the only guard.
             await Task.Delay(FastOptions.SettleTime * 4, Ct);
-            Assert.Empty(await _queue.GetEntriesAsync(Ct));
+            if (OperatingSystem.IsWindows())
+            {
+                Assert.Empty(await _queue.GetEntriesAsync(Ct));
+            }
+
             await download.WriteAsync(complete.AsMemory(complete.Length / 2), Ct);
         }
 
