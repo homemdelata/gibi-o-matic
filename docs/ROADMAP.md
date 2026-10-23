@@ -12,7 +12,7 @@ Status: ⬜ não iniciada · 🟨 em andamento · ✅ concluída. Seções `§` 
 | F3.6 | Universos | ✅ |
 | F4 | Destino Kindle | ✅ (falta o teste do usuário com o Kindle: em 23/10 o Windows não reconheceu o aparelho; **testar de novo**) |
 | F5 | Entrada automática | ✅ |
-| F6 | Polimento e distribuição | 🟨 |
+| F6 | Polimento e distribuição | ✅ (falta o teste do usuário) |
 
 Ao terminar cada fase: build e testes verdes → atualizar este arquivo → commit e push → **parar e explicar ao usuário como testar**.
 
@@ -223,8 +223,8 @@ Objetivo: agrupar séries do mesmo universo ou linha editorial (ex.: Radiant Bla
 - [x] Interface em inglês completa (conferida: todas as chaves nas duas línguas, nada fixo no código), tema claro e "seguir o sistema".
 - [x] Versão pela tag do git (MinVer) e `tools/publish.ps1` (build *self-contained* em `.zip`/`.tar.gz`).
 - [x] Instalador para Windows e AppImage para Linux com Velopack (decisão do usuário), atualização automática pelo GitHub Releases e release gerado pelo CI numa tag `v*` (rascunho).
-- [ ] Documentação de usuário (README com capturas) e `CONTRIBUTING.md`.
-- [ ] Revisão de acessibilidade (teclado, contraste).
+- [x] Documentação de usuário (README com capturas geradas por `tools/Screenshots`) e `CONTRIBUTING.md`.
+- [x] Revisão de acessibilidade (teclado, contraste): contraste AA dos dois temas e nome acessível de botões sem texto viraram testes; os botões da barra do leitor ganharam nome. Em aberto: botões de ícone com 34 px, abaixo dos 44 px da SPEC §12 (proposta ao usuário).
 
 ---
 
