@@ -222,7 +222,7 @@ Objetivo: agrupar séries do mesmo universo ou linha editorial (ex.: Radiant Bla
 
 - [x] Interface em inglês completa (conferida: todas as chaves nas duas línguas, nada fixo no código), tema claro e "seguir o sistema".
 - [x] Versão pela tag do git (MinVer) e `tools/publish.ps1` (build *self-contained* em `.zip`/`.tar.gz`).
-- [ ] Instalador para Windows (ex.: Velopack ou MSIX) e build para Linux (AppImage ou tar).
+- [x] Instalador para Windows e AppImage para Linux com Velopack (decisão do usuário), atualização automática pelo GitHub Releases e release gerado pelo CI numa tag `v*` (rascunho).
 - [ ] Documentação de usuário (README com capturas) e `CONTRIBUTING.md`.
 - [ ] Revisão de acessibilidade (teclado, contraste).
 
@@ -235,5 +235,6 @@ Objetivo: agrupar séries do mesmo universo ou linha editorial (ex.: Radiant Bla
 - MOBI/AZW3 como originais (o usuário tem alguns): importação com metadados do cabeçalho (EXTH), capa, leitor (imagens e texto, sem DRM), CBZ para o Komga quando for quadrinho, envio direto ao Kindle.
 - OCR do ISBN na página de créditos.
 - Sugerir volumes faltantes de uma série.
-- Atualização automática do app; modo servidor/Docker.
+- Modo servidor/Docker.
+- Assinar o instalador (certificado de código), para o Windows não avisar "editor desconhecido".
 - Associar os tipos de arquivo (CBZ, CBR, PDF, EPUB; opcional, por tipo) ao app, para ele ser o leitor padrão: abrir um arquivo pelo Explorer abre no leitor, esteja ou não na biblioteca (fora dela, oferece importar). Windows: registro por usuário (ou pelo instalador); Linux: `.desktop` com `MimeType`.

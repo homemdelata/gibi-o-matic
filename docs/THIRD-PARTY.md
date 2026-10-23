@@ -13,6 +13,7 @@ Toda dependência precisa de licença compatível com MIT (sem AGPL/GPL). Atuali
 | Serilog, Serilog.Extensions.Logging, Serilog.Sinks.File | 4.4 / 10.0 / 7.0 | log em arquivo | Apache-2.0 | em uso (F0) |
 | xUnit v3 | 4.0.2 | testes | Apache-2.0 | em uso (F0) |
 | Avalonia.Headless | 12.1.4 | só `tools/Screenshots` (capturas de tela da documentação); não vai no app | MIT | em uso (F6) |
+| Velopack (biblioteca) e vpk (ferramenta, `dotnet-tools.json`) | 1.2.161 | instalador, atualizações (GitHub Releases) e AppImage | MIT | em uso (F6) |
 | MinVer | 8.0.0 | versão dos assemblies a partir da tag `v*` do git; só no build, não vai no app | Apache-2.0 | em uso (F6) |
 | Bricolage Grotesque | — | fonte de títulos (embutida, `Assets/Fonts`) | SIL OFL 1.1 | em uso (F0) |
 | IBM Plex Sans, IBM Plex Mono | — | fontes de texto (embutidas, `Assets/Fonts`) | SIL OFL 1.1 (Reserved Font Name "Plex") | em uso (F0) |

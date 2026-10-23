@@ -57,8 +57,9 @@ Licença MIT. Repositório privado por enquanto (`github.com/homemdelata/gibi-o-
   - `dotnet build GibiOMatic.sln`
   - `dotnet test --solution GibiOMatic.sln` (Microsoft.Testing.Platform, ver `global.json`)
   - `dotnet run --project src/GibiOMatic.App`
-  - `powershell -ExecutionPolicy Bypass -File tools\publish.ps1 [-Runtime linux-x64]` → `artifacts\GibiOMatic-<versão>-<rid>.zip`
-- **Versão**: vem da última tag `vX.Y.Z` do git (MinVer). Para lançar uma versão: `git tag v0.5.0` e `git push origin v0.5.0`.
+  - `powershell -ExecutionPolicy Bypass -File tools\publish.ps1 [-Runtime linux-x64]` → instalador Velopack em `artifacts\releases\<rid>\` (`Gibi-o-matic-win-Setup.exe`, `Gibi-o-matic.AppImage`)
+  - `dotnet run --project tools/Screenshots` → regera as capturas de `docs/images` (biblioteca fictícia)
+- **Versão**: vem da última tag `vX.Y.Z` do git (MinVer). Para lançar uma versão: `git tag v0.6.0` e `git push origin v0.6.0`; o workflow `release.yml` gera os instaladores e cria um release **rascunho** no GitHub, que precisa ser publicado à mão para os apps instalados verem a atualização.
 - Ambiente: Windows 11; shells PowerShell 5.1 e Git Bash. Caminhos com espaços (`G:\Meu Drive`) precisam de aspas.
 
 ## Estrutura da solução (alvo — criada na F0)
