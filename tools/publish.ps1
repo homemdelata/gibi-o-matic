@@ -1,12 +1,14 @@
 <#
 .SYNOPSIS
-    Publishes Gibi-o-matic as a self-contained build and packs it into artifacts/.
+    Builds the Gibi-o-matic installer (Velopack) into artifacts/releases/<runtime>.
 
 .DESCRIPTION
     The version comes from the latest "v*" git tag (MinVer). Run from any folder:
         powershell -ExecutionPolicy Bypass -File tools\publish.ps1
         powershell -ExecutionPolicy Bypass -File tools\publish.ps1 -Runtime linux-x64
-    Output: artifacts\GibiOMatic-<version>-<runtime>.zip (Windows) or .tar.gz (Linux).
+    Windows output: Gibi-o-matic-win-Setup.exe (installs per user, no administrator),
+    Gibi-o-matic-win-Portable.zip and the update packages. Linux output: Gibi-o-matic.AppImage and
+    its update packages. Either can be built on Windows or on Linux.
 
 .PARAMETER Runtime
     .NET runtime identifier: win-x64 (default), win-arm64, linux-x64, linux-arm64.
@@ -22,8 +24,13 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-$project = Join-Path $root 'src\GibiOMatic.App\GibiOMatic.App.csproj'
+$project = Join-Path $root 'src/GibiOMatic.App/GibiOMatic.App.csproj'
 $artifacts = Join-Path $root 'artifacts'
+$forWindows = $Runtime -like 'win-*'
+
+# The installer's id is also the install folder (%LocalAppData%\Gibi-o-matic): it must not be
+# "GibiOMatic", the app's data folder, or uninstalling would delete the index and the logs.
+$packId = 'Gibi-o-matic'
 
 function Invoke-Dotnet {
     & dotnet @args
@@ -43,24 +50,22 @@ if (-not $SkipTests) {
 $version = (& dotnet msbuild $project -target:MinVer -getProperty:MinVerVersion -p:Configuration=Release | Out-String).Trim()
 if ($LASTEXITCODE -ne 0 -or -not $version) { throw 'Could not read the version (MinVer).' }
 
-$name = "GibiOMatic-$version-$Runtime"
-$output = Join-Path $artifacts "publish\$name"
-if (Test-Path $output) { Remove-Item -Recurse -Force $output }
-
+$publish = Join-Path $artifacts "publish/$Runtime"
+if (Test-Path $publish) { Remove-Item -Recurse -Force $publish }
 Invoke-Dotnet publish $project --configuration Release --runtime $Runtime --self-contained `
-    --output $output -p:DebugType=none
+    --output $publish -p:DebugType=none
 
-if ($Runtime -like 'win-*') {
-    $package = Join-Path $artifacts "$name.zip"
-    if (Test-Path $package) { Remove-Item -Force $package }
-    Compress-Archive -Path (Join-Path $output '*') -DestinationPath $package
-} else {
-    # A package made on Windows has no executable bit: run "chmod +x GibiOMatic" after extracting.
-    $package = Join-Path $artifacts "$name.tar.gz"
-    tar -czf $package -C $output .
-    if ($LASTEXITCODE -ne 0) { throw 'tar failed.' }
-}
+# Earlier releases left in the folder become delta updates; nothing else is removed from it.
+# "[win]" / "[linux]" lets vpk package for the other system too.
+$releases = Join-Path $artifacts "releases/$Runtime"
+Invoke-Dotnet tool restore
+Invoke-Dotnet vpk $(if ($forWindows) { '[win]' } else { '[linux]' }) pack --packId $packId --packVersion $version --packDir $publish `
+    --mainExe $(if ($forWindows) { 'GibiOMatic.exe' } else { 'GibiOMatic' }) `
+    --packTitle 'Gibi-o-matic' --packAuthors 'Gustavo Ayres' `
+    --icon (Join-Path $root 'src/GibiOMatic.App/Assets/gibiomatic.ico') `
+    --channel $(if ($forWindows) { 'win' } else { 'linux' }) `
+    --outputDir $releases
 
 Write-Host ''
 Write-Host "Version: $version"
-Write-Host "Package: $package"
+Write-Host "Output:  $releases"

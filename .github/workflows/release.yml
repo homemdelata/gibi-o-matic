@@ -1,0 +1,60 @@
+name: Release
+
+# A tag like "v0.6.0" builds the Windows installer and the Linux AppImage (tools/publish.ps1) and
+# puts them in a draft GitHub release. Publishing the draft is what makes the installed apps see
+# the update. Tags with a "-" (v0.7.0-beta.1) become pre-releases.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Installers and draft release
+    runs-on: windows-latest
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # MinVer needs the tags and history to compute the version.
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Restore tools
+        run: dotnet tool restore
+
+      # The previous release lets vpk make small delta updates; the first release has none.
+      - name: Previous release
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          dotnet vpk download github --repoUrl $env:REPO_URL --token $env:GH_TOKEN --channel win --outputDir artifacts/releases/win-x64
+          dotnet vpk "[linux]" download github --repoUrl $env:REPO_URL --token $env:GH_TOKEN --channel linux --outputDir artifacts/releases/linux-x64
+
+      - name: Windows installer (with the tests)
+        shell: pwsh
+        run: ./tools/publish.ps1 -Runtime win-x64
+
+      - name: Linux AppImage
+        shell: pwsh
+        run: ./tools/publish.ps1 -Runtime linux-x64 -SkipTests
+
+      - name: Draft release
+        shell: pwsh
+        run: |
+          $pre = if ($env:GITHUB_REF_NAME -like '*-*') { @('--pre') } else { @() }
+          $common = @('--repoUrl', $env:REPO_URL, '--token', $env:GH_TOKEN, '--tag', $env:GITHUB_REF_NAME,
+                      '--releaseName', "Gibi-o-matic $env:GITHUB_REF_NAME", '--merge') + $pre
+          dotnet vpk upload github @common --channel win --outputDir artifacts/releases/win-x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet vpk "[linux]" upload github @common --channel linux --outputDir artifacts/releases/linux-x64
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

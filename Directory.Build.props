@@ -11,5 +11,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <!-- MinVer: tag "v0.5.0" builds 0.5.0; later commits build 0.5.1-alpha.0.N. -->
     <MinVerTagPrefix>v</MinVerTagPrefix>
+    <!-- Before the first tag: 0.1.0-alpha.0.N (the installer refuses 0.0.0). -->
+    <MinVerMinimumMajorMinor>0.1</MinVerMinimumMajorMinor>
   </PropertyGroup>
 </Project>
