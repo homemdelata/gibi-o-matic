@@ -63,6 +63,7 @@ internal static class Program
             using var services = new ServiceCollection()
                 .AddGibiOMatic(paths, new ConfigurationBuilder().Build())
                 .AddSingleton<IBookIdentifier>(new FictionalIdentifier())
+                .AddSingleton<IAppUpdater>(new NoUpdates())
                 .BuildServiceProvider();
 
             AppBuilder.Configure(() => new GibiOMatic.App.App(services))
@@ -201,6 +202,22 @@ internal static class Program
         }
 
         return folder;
+    }
+}
+
+/// <summary>The tool is not an installed app: Velopack is not set up, and there is nothing to update.</summary>
+internal sealed class NoUpdates : IAppUpdater
+{
+    public bool IsSupported => false;
+
+    public string CurrentVersion => AppInfo.Version;
+
+    public Task<AppUpdate?> CheckAsync(CancellationToken ct) => Task.FromResult<AppUpdate?>(null);
+
+    public Task DownloadAsync(AppUpdate update, IProgress<int>? progress, CancellationToken ct) => Task.CompletedTask;
+
+    public void ApplyOnExit(AppUpdate update)
+    {
     }
 }
 
