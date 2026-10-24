@@ -55,9 +55,9 @@ public sealed class StatusBrushConverter : IValueConverter
             },
             _ => tone switch
             {
-                "Ok" => Resource(value is StatusKind ? "OkTextBrush" : "OkBrush"),
-                "Warn" => Resource(value is StatusKind ? "WarnTextBrush" : "WarnBrush"),
-                "Bad" => Resource("BadBrush"),
+                "Ok" => Resource("OkTextBrush"),
+                "Warn" => Resource("WarnTextBrush"),
+                "Bad" => Resource("BadTextBrush"),
                 "Duplicate" or "Busy" => Resource("AccentTextBrush"),
                 _ => Resource("TextMutedBrush"),
             },

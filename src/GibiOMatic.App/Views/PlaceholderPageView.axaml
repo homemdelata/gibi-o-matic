@@ -7,7 +7,10 @@
              x:DataType="vm:PlaceholderPageViewModel">
   <DockPanel Margin="{StaticResource PagePadding}">
     <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,22">
-      <TextBlock Classes="h1" Text="{Binding Title}" />
+      <StackPanel Orientation="Horizontal">
+        <TextBlock Classes="h1" Text="{Binding Title}" />
+        <c:TitleMark />
+      </StackPanel>
       <TextBlock Classes="muted" Text="{Binding Subtitle}" TextWrapping="Wrap" />
     </StackPanel>
     <Border Classes="card" VerticalAlignment="Top" HorizontalAlignment="Left" Padding="22">

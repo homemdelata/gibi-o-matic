@@ -33,8 +33,8 @@ public sealed partial class NavItemViewModel(NavPage page, string label, PageVie
     [NotifyPropertyChangedFor(nameof(HasPlainCount), nameof(HasBadge))]
     public partial bool IsBadge { get; set; }
 
-    /// <summary>Orange pill (Revisão) instead of the yellow one (Entrada).</summary>
-    public bool IsWarnBadge { get; init; }
+    /// <summary>Magenta pill (Revisão) instead of the cyan one (Entrada).</summary>
+    public bool IsReviewBadge { get; init; }
 
     public bool HasPlainCount => !string.IsNullOrEmpty(Count) && !IsBadge;
 
@@ -67,7 +67,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
         [
             new NavItemViewModel(NavPage.Library, Strings.Nav_Library, libraryPage),
             new NavItemViewModel(NavPage.Inbox, Strings.Nav_Inbox, inboxPage) { IsBadge = true },
-            new NavItemViewModel(NavPage.Review, Strings.Nav_Review, reviewPage) { IsBadge = true, IsWarnBadge = true },
+            new NavItemViewModel(NavPage.Review, Strings.Nav_Review, reviewPage) { IsBadge = true, IsReviewBadge = true },
             new NavItemViewModel(NavPage.Editor, Strings.Nav_Editor, editorPage),
             new NavItemViewModel(NavPage.Destinations, Strings.Nav_Destinations, destinationsPage),
             new NavItemViewModel(NavPage.Settings, Strings.Nav_Settings, settingsPage),

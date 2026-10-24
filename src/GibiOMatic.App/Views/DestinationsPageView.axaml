@@ -73,7 +73,7 @@
             <SelectableTextBlock Classes="mono" FontSize="12" Text="{Binding KccStatus}" TextWrapping="Wrap"
                                  Foreground="{DynamicResource TextSecondaryBrush}" />
             <ProgressBar Minimum="0" Maximum="1" Value="{Binding DownloadProgress}" Height="4" MaxWidth="360" HorizontalAlignment="Left"
-                         IsVisible="{Binding IsDownloading}" Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+                         IsVisible="{Binding IsDownloading}" Foreground="{DynamicResource AccentTextBrush}" Background="{DynamicResource HoverBrush}" />
             <WrapPanel ItemSpacing="8" LineSpacing="8">
               <Button Classes="primary" Content="{Binding DownloadText}" Command="{Binding DownloadKccCommand}" IsVisible="{Binding CanDownloadKcc}" />
               <Button Classes="secondary" Content="{x:Static r:Strings.Kindle_ChooseKcc}" Command="{Binding ChooseKccCommand}" />
@@ -155,7 +155,7 @@
       <Setter Property="Background" Value="{DynamicResource BorderBrush}" />
     </Style>
     <Style Selector="Border.step.done">
-      <Setter Property="Background" Value="{DynamicResource AccentBrush}" />
+      <Setter Property="Background" Value="{DynamicResource AccentTextBrush}" />
     </Style>
     <Style Selector="TextBlock.step">
       <Setter Property="FontSize" Value="13" />
@@ -165,8 +165,9 @@
       <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
       <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
-    <Style Selector="Button.choice.selected">
+    <Style Selector="Button.choice.selected /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+      <Setter Property="BoxShadow" Value="{DynamicResource SelectionShadow}" />
     </Style>
     <Style Selector="Button.choice:disabled">
       <Setter Property="Opacity" Value="0.55" />
@@ -179,7 +180,10 @@
       <StackPanel Margin="{StaticResource PagePadding}" Spacing="18" MaxWidth="1100" HorizontalAlignment="Left">
         <Grid ColumnDefinitions="*,Auto">
           <StackPanel Spacing="4">
-            <TextBlock Classes="h1" Text="{Binding Title}" />
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Classes="h1" Text="{Binding Title}" />
+              <c:TitleMark />
+            </StackPanel>
             <TextBlock Classes="muted" Text="{Binding Subtitle}" TextWrapping="Wrap" />
           </StackPanel>
           <Button Grid.Column="1" Classes="primary" Padding="18,0" VerticalAlignment="Center"
@@ -229,7 +233,7 @@
                       </Border>
                       <TextBlock Classes="help" Text="{Binding ProgressText}" TextTrimming="CharacterEllipsis" />
                       <ProgressBar Minimum="0" Maximum="1" Value="{Binding ProgressValue}" Height="4" MinWidth="320"
-                                   Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+                                   Foreground="{DynamicResource AccentTextBrush}" Background="{DynamicResource HoverBrush}" />
                       <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding FileProgressText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                         <ProgressBar Minimum="0" Maximum="1" Value="{Binding FileProgressValue}" Height="2" MinHeight="2" MinWidth="240"
                                      VerticalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}" Background="{DynamicResource HoverBrush}" />
@@ -263,7 +267,10 @@
       <StackPanel Margin="{StaticResource PagePadding}" Spacing="20" MaxWidth="820" HorizontalAlignment="Left"
                   DataContext="{Binding Wizard}" x:DataType="vm:DestinationWizardViewModel">
         <StackPanel Spacing="4">
-          <TextBlock Classes="h1" Text="{x:Static r:Strings.Wizard_Title}" />
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Classes="h1" Text="{x:Static r:Strings.Wizard_Title}" />
+            <c:TitleMark />
+          </StackPanel>
           <TextBlock Classes="muted" Text="{Binding Subtitle}" />
         </StackPanel>
 
@@ -359,7 +366,10 @@
         </Button>
         <Grid ColumnDefinitions="*,Auto">
           <StackPanel Spacing="8">
-            <TextBlock Classes="h1" Text="{Binding Title}" />
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Classes="h1" Text="{Binding Title}" />
+              <c:TitleMark />
+            </StackPanel>
             <WrapPanel ItemSpacing="8" LineSpacing="8">
               <Border Classes="pill"
                       Background="{Binding DeviceKind, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Background}">
@@ -373,9 +383,8 @@
               </Border>
             </WrapPanel>
           </StackPanel>
-          <Border Grid.Column="1" VerticalAlignment="Top" BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1"
-                  CornerRadius="10" ClipToBounds="True">
-            <StackPanel Orientation="Horizontal">
+          <Border Grid.Column="1" Classes="segments" VerticalAlignment="Top">
+            <StackPanel>
               <Button Classes="segment" Classes.selected="{Binding IsSendTab}" Content="{x:Static r:Strings.Kindle_TabSend}"
                       Command="{Binding SetTabCommand}" CommandParameter="{x:Static vm:KindleTab.Send}" />
               <Button Classes="segment" Classes.selected="{Binding IsDeviceTab}" Content="{x:Static r:Strings.Kindle_TabDevice}"
@@ -392,7 +401,7 @@
         <StackPanel Spacing="6" IsVisible="{Binding IsRunning}" MaxWidth="640" HorizontalAlignment="Left">
           <TextBlock Classes="help" Text="{Binding ProgressText}" TextTrimming="CharacterEllipsis" />
           <ProgressBar Minimum="0" Maximum="1" Value="{Binding ProgressValue}" Height="4" MinWidth="320"
-                       Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+                       Foreground="{DynamicResource AccentTextBrush}" Background="{DynamicResource HoverBrush}" />
           <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding FileProgressText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
             <ProgressBar Minimum="0" Maximum="1" Value="{Binding FileProgressValue}" Height="2" MinHeight="2" MinWidth="240"
                          VerticalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}" Background="{DynamicResource HoverBrush}" />
@@ -495,7 +504,7 @@
               <StackPanel Spacing="6" IsVisible="{Binding IsSending}">
                 <TextBlock Classes="help" Text="{Binding SendProgressText}" TextTrimming="CharacterEllipsis" />
                 <ProgressBar Minimum="0" Maximum="1" Value="{Binding SendProgressValue}" Height="4"
-                             Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+                             Foreground="{DynamicResource AccentTextBrush}" Background="{DynamicResource HoverBrush}" />
               </StackPanel>
               <TextBlock Classes="success" Text="{Binding SendResultText}" TextWrapping="Wrap" Classes.error="{Binding SendResultIsError}"
                          IsVisible="{Binding SendResultText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
@@ -530,7 +539,7 @@
             </Grid>
             <TextBlock Classes="help" Text="{x:Static r:Strings.Kindle_DeviceHelp}" TextWrapping="Wrap" />
             <TextBlock Classes="muted" Text="{x:Static r:Strings.Kindle_DeviceConnectFirst}" IsVisible="{Binding !IsConnected}" />
-            <ProgressBar IsIndeterminate="True" Height="4" IsVisible="{Binding IsLoadingDevice}" Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+            <ProgressBar IsIndeterminate="True" Height="4" IsVisible="{Binding IsLoadingDevice}" Foreground="{DynamicResource AccentTextBrush}" Background="{DynamicResource HoverBrush}" />
             <TextBlock Classes="success" Text="{Binding DeviceMessage}" TextWrapping="Wrap" Classes.error="{Binding DeviceMessageIsError}"
                        IsVisible="{Binding DeviceMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
             <Border Background="{DynamicResource InputBrush}" CornerRadius="8" Padding="8,4" MaxHeight="420" IsVisible="{Binding DeviceFiles.Count}">
@@ -628,7 +637,10 @@
           </StackPanel>
         </Button>
         <StackPanel Spacing="6">
-          <TextBlock Classes="h1" Text="{Binding Title}" />
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Classes="h1" Text="{Binding Title}" />
+            <c:TitleMark />
+          </StackPanel>
           <Border Classes="pill" HorizontalAlignment="Left" IsVisible="{Binding IsIdle}"
                   Background="{Binding StatusKind, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Background}">
             <TextBlock FontSize="13" FontWeight="SemiBold" Text="{Binding StatusText}"
@@ -642,7 +654,7 @@
                       </Border>
                       <TextBlock Classes="help" Text="{Binding ProgressText}" TextTrimming="CharacterEllipsis" />
                       <ProgressBar Minimum="0" Maximum="1" Value="{Binding ProgressValue}" Height="4" MinWidth="320"
-                                   Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+                                   Foreground="{DynamicResource AccentTextBrush}" Background="{DynamicResource HoverBrush}" />
                       <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding FileProgressText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                         <ProgressBar Minimum="0" Maximum="1" Value="{Binding FileProgressValue}" Height="2" MinHeight="2" MinWidth="240"
                                      VerticalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}" Background="{DynamicResource HoverBrush}" />

@@ -8,7 +8,8 @@
              x:DataType="vm:LibraryPageViewModel"
              c:FileDrop.Command="{Binding DropFilesCommand}">
   <UserControl.DataTemplates>
-    <!-- Book card -->
+    <!-- Book card. Every card keeps 12 px free on top and on the right, where a series draws the
+         volumes behind its cover, so covers of books and series line up. -->
     <DataTemplate DataType="vm:BookCardViewModel">
       <Button Classes="cover-card" Command="{Binding SelectCommand}" Margin="3,0" Padding="6"
               c:DoubleTap.Command="{Binding OpenCommand}" AutomationProperties.Name="{Binding Title}">
@@ -28,42 +29,37 @@
             <MenuItem Header="{x:Static r:Strings.Menu_Review}" Command="{Binding ReviewCommand}" />
           </ContextMenu>
         </Button.ContextMenu>
-        <StackPanel Spacing="9">
-          <Panel>
-            <Border Margin="-6" CornerRadius="15" BorderThickness="3" BorderBrush="{DynamicResource AccentBrush}"
-                    IsVisible="{Binding IsSelected}" />
-            <c:AspectBox>
-              <Border CornerRadius="{StaticResource RadiusCover}" BoxShadow="0 8 22 0 #66000000">
-                <Border Classes="cover-frame" CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True"
-                        BorderThickness="1" BorderBrush="#10FFFFFF">
-                  <Border.Background>
-                    <SolidColorBrush Color="{Binding PlaceholderColor}" />
-                  </Border.Background>
-                  <Panel>
-                    <Border Background="{StaticResource HalftoneBrush}" />
-                    <TextBlock Text="{Binding Title}" Margin="12" VerticalAlignment="Bottom" TextWrapping="Wrap"
-                               FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="18"
-                               LineHeight="19" Foreground="White" MaxLines="4" TextTrimming="CharacterEllipsis"
-                               IsVisible="{Binding !HasThumbnail}" />
-                    <Image Source="{Binding Thumbnail}" Stretch="UniformToFill" />
-                    <Border Classes="badge">
-                      <TextBlock Classes="mono" FontSize="10.5" FontWeight="Medium" LetterSpacing="0.4" Text="{Binding Badge}"
-                                 Foreground="{Binding Band, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
-                    </Border>
-                    <Border Classes="check" IsVisible="{Binding IsChecked}">
-                      <c:StrokeIcon Data="{StaticResource Icon.Check}" Width="16" Height="16" StrokeThickness="2.6" Foreground="{DynamicResource OnAccentBrush}" />
-                    </Border>
-                    <!-- Reading status: a progress bar while being read, a mark once read -->
-                    <ProgressBar Classes="reading" Maximum="1" Value="{Binding Progress}" IsVisible="{Binding IsReading}" />
-                    <Border Classes="read-mark" IsVisible="{Binding IsRead}"
-                            ToolTip.Tip="{x:Static r:Strings.Reading_ReadBadge}" AutomationProperties.Name="{x:Static r:Strings.Reading_ReadBadge}">
-                      <c:StrokeIcon Data="{StaticResource Icon.Check}" Width="14" Height="14" StrokeThickness="2.8" Foreground="{DynamicResource OnAccentBrush}" />
-                    </Border>
-                  </Panel>
-                </Border>
+        <StackPanel Spacing="10">
+          <c:AspectBox Margin="0,12,12,0">
+            <Border Classes="cover" Classes.selected="{Binding IsSelected}">
+              <Border Classes="cover-frame" CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True"
+                      BorderThickness="1" BorderBrush="Transparent">
+                <Border.Background>
+                  <SolidColorBrush Color="{Binding PlaceholderColor}" />
+                </Border.Background>
+                <Panel>
+                  <Border Background="{StaticResource HalftoneBrush}" />
+                  <TextBlock Text="{Binding Title}" Margin="12" VerticalAlignment="Bottom" TextWrapping="Wrap"
+                             FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="18"
+                             LineHeight="19" Foreground="White" MaxLines="4" TextTrimming="CharacterEllipsis"
+                             IsVisible="{Binding !HasThumbnail}" />
+                  <Image Source="{Binding Thumbnail}" Stretch="UniformToFill" />
+                  <Border Classes="badge" Background="{Binding Band, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Fill}">
+                    <TextBlock Text="{Binding Badge}" />
+                  </Border>
+                  <Border Classes="check" IsVisible="{Binding IsChecked}">
+                    <c:StrokeIcon Data="{StaticResource Icon.Check}" Width="16" Height="16" StrokeThickness="2.6" Foreground="{DynamicResource OnAccentBrush}" />
+                  </Border>
+                  <!-- Reading status: a progress bar while being read, a mark once read -->
+                  <ProgressBar Classes="reading" Maximum="1" Value="{Binding Progress}" IsVisible="{Binding IsReading}" />
+                  <Border Classes="read-mark" IsVisible="{Binding IsRead}"
+                          ToolTip.Tip="{x:Static r:Strings.Reading_ReadBadge}" AutomationProperties.Name="{x:Static r:Strings.Reading_ReadBadge}">
+                    <c:StrokeIcon Data="{StaticResource Icon.Check}" Width="14" Height="14" StrokeThickness="2.8" Foreground="{DynamicResource OnAccentBrush}" />
+                  </Border>
+                </Panel>
               </Border>
-            </c:AspectBox>
-          </Panel>
+            </Border>
+          </c:AspectBox>
           <StackPanel Spacing="2">
             <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13.5" TextWrapping="Wrap" MaxLines="2"
                        TextTrimming="CharacterEllipsis" />
@@ -73,89 +69,63 @@
       </Button>
     </DataTemplate>
 
-    <!-- Series card: a small stack of covers -->
-    <DataTemplate DataType="vm:SeriesCardViewModel">
+    <!-- Series and universe cards: the front cover with the next volumes stacked behind it -->
+    <DataTemplate DataType="vm:StackCardViewModel">
       <Button Classes="cover-card" Command="{Binding OpenCommand}" Margin="3,0" Padding="6"
               AutomationProperties.Name="{Binding Name}">
-        <StackPanel Spacing="9">
-          <Panel Margin="0,6,6,0">
-            <Border Margin="6,-6,-6,6" CornerRadius="{StaticResource RadiusCover}" Background="{DynamicResource HoverBrush}"
-                    BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1" />
-            <c:AspectBox>
-              <Border CornerRadius="{StaticResource RadiusCover}" BoxShadow="0 8 22 0 #66000000">
-                <Border Classes="cover-frame" CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True"
-                        BorderThickness="1" BorderBrush="#10FFFFFF">
-                  <Border.Background>
-                    <SolidColorBrush Color="{Binding Cover.PlaceholderColor}" />
-                  </Border.Background>
-                  <Panel>
-                    <Border Background="{StaticResource HalftoneBrush}" />
-                    <TextBlock Text="{Binding Name}" Margin="12" VerticalAlignment="Bottom" TextWrapping="Wrap"
-                               FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="18"
-                               LineHeight="19" Foreground="White" MaxLines="4" TextTrimming="CharacterEllipsis"
-                               IsVisible="{Binding !Cover.HasThumbnail}" />
-                    <Image Source="{Binding Cover.Thumbnail}" Stretch="UniformToFill" />
-                    <Border Classes="badge">
-                      <TextBlock Classes="mono" FontSize="10.5" FontWeight="Medium" LetterSpacing="0.4" Text="{Binding Badge}"
-                                 Foreground="{Binding Band, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
-                    </Border>
-                    <!-- How many books the series has -->
-                    <Border Classes="badge count"
-                            ToolTip.Tip="{Binding BookCountText}" AutomationProperties.Name="{Binding BookCountText}">
-                      <StackPanel Orientation="Horizontal" Spacing="6">
-                        <c:StrokeIcon Data="{StaticResource Icon.Stack}" Width="15" Height="15" StrokeThickness="2.2"
-                                      Foreground="{DynamicResource OnAccentBrush}" VerticalAlignment="Center" />
-                        <TextBlock Classes="mono" FontSize="14" FontWeight="Bold" Text="{Binding BookCount}" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource OnAccentBrush}" />
-                      </StackPanel>
-                    </Border>
-                  </Panel>
-                </Border>
+        <StackPanel Spacing="10">
+          <Panel Margin="0,12,12,0">
+            <!-- Second volume behind: 12 px up and right, darkened 30% -->
+            <c:AspectBox RenderTransform="translate(12px, -12px)" IsVisible="{Binding Behind2, Converter={x:Static ObjectConverters.IsNotNull}}">
+              <Border Classes="cover-back">
+                <Border.Background>
+                  <SolidColorBrush Color="{Binding Behind2.PlaceholderColor, FallbackValue=Transparent}" />
+                </Border.Background>
+                <Panel>
+                  <Border Background="{StaticResource HalftoneBrush}" />
+                  <Image Source="{Binding Behind2.Thumbnail}" Stretch="UniformToFill" />
+                  <Border Background="#4D000000" />
+                </Panel>
               </Border>
             </c:AspectBox>
-          </Panel>
-          <StackPanel Spacing="2">
-            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13.5" TextWrapping="Wrap" MaxLines="2"
-                       TextTrimming="CharacterEllipsis" />
-            <TextBlock Classes="muted" FontSize="12" Text="{Binding MetaLine}" TextTrimming="CharacterEllipsis" />
-          </StackPanel>
-        </StackPanel>
-      </Button>
-    </DataTemplate>
-    <!-- Universe card: the same stack, for every book of the universe -->
-    <DataTemplate DataType="vm:UniverseCardViewModel">
-      <Button Classes="cover-card" Command="{Binding OpenCommand}" Margin="3,0" Padding="6"
-              AutomationProperties.Name="{Binding Name}">
-        <StackPanel Spacing="9">
-          <Panel Margin="0,6,6,0">
-            <Border Margin="6,-6,-6,6" CornerRadius="{StaticResource RadiusCover}" Background="{DynamicResource HoverBrush}"
-                    BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1" />
+            <!-- First volume behind: 6 px up and right, darkened 15% -->
+            <c:AspectBox RenderTransform="translate(6px, -6px)" IsVisible="{Binding Behind1, Converter={x:Static ObjectConverters.IsNotNull}}">
+              <Border Classes="cover-back">
+                <Border.Background>
+                  <SolidColorBrush Color="{Binding Behind1.PlaceholderColor, FallbackValue=Transparent}" />
+                </Border.Background>
+                <Panel>
+                  <Border Background="{StaticResource HalftoneBrush}" />
+                  <Image Source="{Binding Behind1.Thumbnail}" Stretch="UniformToFill" />
+                  <Border Background="#26000000" />
+                </Panel>
+              </Border>
+            </c:AspectBox>
             <c:AspectBox>
-              <Border CornerRadius="{StaticResource RadiusCover}" BoxShadow="0 8 22 0 #66000000">
+              <Border Classes="cover">
                 <Border Classes="cover-frame" CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True"
-                        BorderThickness="1" BorderBrush="#10FFFFFF">
+                        BorderThickness="1" BorderBrush="Transparent">
                   <Border.Background>
                     <SolidColorBrush Color="{Binding Cover.PlaceholderColor}" />
                   </Border.Background>
                   <Panel>
                     <Border Background="{StaticResource HalftoneBrush}" />
-                    <TextBlock Text="{Binding Name}" Margin="12" VerticalAlignment="Bottom" TextWrapping="Wrap"
+                    <TextBlock Text="{Binding Name}" Margin="12,12,12,46" VerticalAlignment="Bottom" TextWrapping="Wrap"
                                FontFamily="{StaticResource FontDisplay}" FontWeight="ExtraBold" FontSize="18"
                                LineHeight="19" Foreground="White" MaxLines="4" TextTrimming="CharacterEllipsis"
                                IsVisible="{Binding !Cover.HasThumbnail}" />
                     <Image Source="{Binding Cover.Thumbnail}" Stretch="UniformToFill" />
-                    <Border Classes="badge">
-                      <TextBlock Classes="mono" FontSize="10.5" FontWeight="Medium" LetterSpacing="0.4" Text="{Binding Badge}"
-                                 Foreground="{Binding Band, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
+                    <Border Classes="badge" Background="{Binding Band, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Fill}">
+                      <TextBlock Text="{Binding Badge}" />
                     </Border>
-                    <!-- How many books the universe has -->
+                    <!-- How many books the series (or universe) has -->
                     <Border Classes="badge count"
                             ToolTip.Tip="{Binding BookCountText}" AutomationProperties.Name="{Binding BookCountText}">
                       <StackPanel Orientation="Horizontal" Spacing="6">
-                        <c:StrokeIcon Data="{StaticResource Icon.Stack}" Width="15" Height="15" StrokeThickness="2.2"
+                        <c:StrokeIcon Data="{StaticResource Icon.Stack}" Width="15" Height="15" StrokeThickness="2.4"
                                       Foreground="{DynamicResource OnAccentBrush}" VerticalAlignment="Center" />
-                        <TextBlock Classes="mono" FontSize="14" FontWeight="Bold" Text="{Binding BookCount}" VerticalAlignment="Center"
-                                   Foreground="{DynamicResource OnAccentBrush}" />
+                        <TextBlock FontFamily="{StaticResource FontMono}" FontSize="14" FontWeight="Bold" Text="{Binding BookCount}"
+                                   VerticalAlignment="Center" Foreground="{DynamicResource OnAccentBrush}" />
                       </StackPanel>
                     </Border>
                   </Panel>
@@ -206,11 +176,17 @@
   </UserControl.Styles>
 
   <Grid ColumnDefinitions="*,Auto" Container.Name="libraryPage" Container.Sizing="Width">
+    <Border ClipToBounds="True" IsHitTestVisible="False" IsVisible="{Binding HasBooks}">
+      <Border Classes="halftone main" />
+    </Border>
     <DockPanel Margin="{StaticResource PagePadding}">
       <!-- Header -->
       <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,22">
         <StackPanel Spacing="4" VerticalAlignment="Center" Margin="0,0,16,0">
-          <TextBlock Classes="h1" Text="{Binding Title}" />
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Classes="h1" Text="{Binding Title}" />
+            <c:TitleMark />
+          </StackPanel>
           <TextBlock Classes="muted" Text="{Binding Subtitle}" TextTrimming="CharacterEllipsis" />
         </StackPanel>
         <Button Grid.Column="1" Classes="secondary" Margin="0,0,10,0" VerticalAlignment="Center" Command="{Binding ImportCommand}">
@@ -246,8 +222,8 @@
             <TextBlock Classes="section-label" Text="{x:Static r:Strings.Library_CardComplete}" />
             <StackPanel Orientation="Horizontal" Spacing="8">
               <TextBlock Classes="number" Text="{Binding CompleteCount}" />
-              <TextBlock Foreground="{DynamicResource OkBrush}" FontWeight="Medium" VerticalAlignment="Bottom" Margin="0,0,0,6"
-                         Text="{Binding CompletePercent}" />
+              <TextBlock Classes="mono" FontSize="14" FontWeight="SemiBold" Foreground="{DynamicResource OkTextBrush}"
+                         VerticalAlignment="Bottom" Margin="0,0,0,8" Text="{Binding CompletePercent}" />
             </StackPanel>
           </StackPanel>
         </Border>
@@ -269,15 +245,18 @@
             </StackPanel>
           </StackPanel>
         </Border>
-        <Border Classes="card">
-          <StackPanel Spacing="6">
-            <TextBlock Classes="section-label" Text="{x:Static r:Strings.Library_CardNeedsReview}" />
-            <StackPanel Orientation="Horizontal" Spacing="8">
-              <TextBlock Classes="number" Text="{Binding NeedsReviewCount}" />
-              <TextBlock Foreground="{DynamicResource WarnBrush}" FontWeight="Medium" VerticalAlignment="Bottom" Margin="0,0,0,6"
-                         Text="{x:Static r:Strings.Library_CardPriority}" />
+        <Border Classes="card priority">
+          <Panel>
+            <Border Classes="priority-rule" />
+            <StackPanel Spacing="6">
+              <TextBlock Classes="section-label" Text="{x:Static r:Strings.Library_CardNeedsReview}" />
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock Classes="number" Text="{Binding NeedsReviewCount}" />
+                <TextBlock Foreground="{DynamicResource BadTextBrush}" FontWeight="Bold" VerticalAlignment="Bottom" Margin="0,0,0,8"
+                           Text="{x:Static r:Strings.Library_CardPriority}" />
+              </StackPanel>
             </StackPanel>
-          </StackPanel>
+          </Panel>
         </Border>
       </UniformGrid>
 
@@ -292,11 +271,10 @@
           </TextBox.InnerLeftContent>
         </TextBox>
         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" Margin="12,0,0,0">
-        <Button Classes="secondary" MinHeight="38" Padding="14,0" Classes.selected="{Binding IsSelecting}"
+        <Button Classes="secondary" Padding="14,0" Classes.selected="{Binding IsSelecting}"
                 Content="{x:Static r:Strings.Library_Select}" Command="{Binding ToggleSelectingCommand}" />
-        <Border VerticalAlignment="Center" BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1"
-                CornerRadius="10" ClipToBounds="True">
-          <StackPanel Orientation="Horizontal">
+        <Border Classes="segments">
+          <StackPanel>
             <Button Classes="segment" Classes.selected="{Binding IsSeriesView}" Content="{x:Static r:Strings.Library_ViewSeries}"
                     Command="{Binding SetViewModeCommand}" CommandParameter="{x:Static vm:LibraryViewMode.Series}" />
             <Button Classes="segment" Classes.selected="{Binding IsBooksView}" Content="{x:Static r:Strings.Library_ViewBooks}"
@@ -354,7 +332,7 @@
                         ToolTip.Tip="{x:Static r:Strings.Library_ContinueTip}" AutomationProperties.Name="{Binding Card.Title}">
                   <Border Classes="continue-card">
                   <Grid ColumnDefinitions="48,*">
-                    <Border Width="48" Height="72" CornerRadius="6" ClipToBounds="True">
+                    <Border Width="48" Height="72" CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True">
                       <Border.Background>
                         <SolidColorBrush Color="{Binding Card.PlaceholderColor}" />
                       </Border.Background>
@@ -388,7 +366,7 @@
               <Button Classes="chip" Classes.selected="{Binding IsSelected}" Command="{Binding PickCommand}">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
-                  <TextBlock Classes="mono" FontSize="12" Opacity="0.75" Text="{Binding Count}" VerticalAlignment="Center" />
+                  <TextBlock Classes="chip-count" Text="{Binding Count}" VerticalAlignment="Center" />
                 </StackPanel>
               </Button>
             </DataTemplate>
@@ -411,9 +389,7 @@
         <!-- Empty library -->
         <StackPanel IsVisible="{Binding IsEmpty}" MaxWidth="520" Spacing="14"
                     HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,80">
-          <Border Width="72" Height="72" CornerRadius="18" HorizontalAlignment="Center"
-                  Background="{DynamicResource CardBrush}"
-                  BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+          <Border Classes="empty-icon">
             <c:StrokeIcon Data="{StaticResource Icon.Library}" Width="32" Height="32"
                           Foreground="{DynamicResource AccentTextBrush}" />
           </Border>
@@ -471,18 +447,20 @@
 
     <!-- Detail panel -->
     <Border Grid.Column="1" Classes="details" Background="{DynamicResource SurfaceBrush}" IsVisible="{Binding HasBooks}"
-            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0"
+            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1,0,0,0" ClipToBounds="True"
             AutomationProperties.Name="{x:Static r:Strings.Details_Panel}">
       <Panel>
+        <Border Classes="halftone details" />
         <TextBlock Classes="muted" Margin="24" TextWrapping="Wrap" Text="{x:Static r:Strings.Details_NoSelection}"
                    IsVisible="{Binding Selected, Converter={x:Static ObjectConverters.IsNull}}" />
         <ScrollViewer DataContext="{Binding Selected}" x:DataType="vm:BookDetailsViewModel"
                       IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}">
           <StackPanel Margin="24,28" Spacing="20">
             <!-- The cover opens the book in the reader -->
-            <Button Classes="cover-card" Width="150" HorizontalAlignment="Left" Command="{Binding OpenCommand}"
+            <!-- The book shown is the selected one: its cover has the selection's misregistration -->
+            <Button Classes="cover-card" Width="160" Margin="8,0,0,0" HorizontalAlignment="Left" Command="{Binding OpenCommand}"
                     ToolTip.Tip="{x:Static r:Strings.Reader_OpenTip}" AutomationProperties.Name="{x:Static r:Strings.Reader_Open}">
-            <Border CornerRadius="{StaticResource RadiusCover}" BoxShadow="0 12 30 0 #73000000">
+            <Border Classes="cover selected">
               <c:AspectBox>
                 <Border CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True">
                   <Border.Background>
@@ -502,7 +480,7 @@
 
             <StackPanel Spacing="6">
               <SelectableTextBlock Text="{Binding Title}" TextWrapping="Wrap"
-                                   FontFamily="{StaticResource FontDisplay}" FontSize="22" FontWeight="Bold" />
+                                   FontFamily="{StaticResource FontDisplay}" FontSize="23" FontWeight="ExtraBold" />
               <TextBlock Classes="muted" TextWrapping="Wrap" LineHeight="21" Text="{Binding CreditsLine}" />
               <ItemsControl ItemsSource="{Binding Universes}" IsVisible="{Binding Universes.Count}" Margin="0,4,0,0"
                             AutomationProperties.Name="{x:Static r:Strings.Details_Universes}">
@@ -514,7 +492,7 @@
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="x:String">
                     <Border Classes="pill" Padding="10,3" Background="{DynamicResource HoverBrush}"
-                            BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1" ToolTip.Tip="{x:Static r:Strings.Details_Universes}">
+                            BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="{StaticResource BorderControl}" ToolTip.Tip="{x:Static r:Strings.Details_Universes}">
                       <TextBlock FontSize="12" FontWeight="Medium" Text="{Binding}" />
                     </Border>
                   </DataTemplate>
@@ -538,17 +516,14 @@
               </WrapPanel>
             </StackPanel>
 
-            <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1" Padding="0,6">
+            <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1.5" Padding="0,6">
               <StackPanel>
                 <ItemsControl ItemsSource="{Binding Checks}">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:CheckRow">
                       <Grid ColumnDefinitions="Auto,72,*" Margin="0,8">
-                        <Border Width="20" Height="20" CornerRadius="10" VerticalAlignment="Top"
-                                Background="{Binding Status, Converter={x:Static conv:StatusBrushConverter.Instance}, ConverterParameter=Fill}">
-                          <TextBlock Text="{Binding Icon}" FontSize="12" FontWeight="Bold" Foreground="{DynamicResource OnAccentBrush}"
-                                     HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
+                        <c:StrokeIcon Data="{Binding Icon, Converter={x:Static conv:NavIconConverter.Instance}}" VerticalAlignment="Top"
+                                      StrokeThickness="2.4" Foreground="{Binding Status, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
                         <TextBlock Grid.Column="1" Classes="muted" Margin="10,1,0,0" Text="{Binding Field}" />
                         <TextBlock Grid.Column="2" Margin="0,1,0,0" Text="{Binding Value}" TextWrapping="Wrap" />
                       </Grid>
@@ -564,14 +539,15 @@
               <ItemsControl ItemsSource="{Binding Files}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="vm:FileRow">
-                    <Border Background="{DynamicResource InputBrush}" CornerRadius="10" Padding="12,10" Margin="0,0,0,8"
+                    <Border Background="{DynamicResource CardBrush}" CornerRadius="{StaticResource RadiusCard}" Padding="12,10" Margin="0,0,0,8"
+                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="{StaticResource BorderControl}"
                             ToolTip.Tip="{Binding DownloadedAs}">
                       <Grid ColumnDefinitions="Auto,*,Auto,Auto">
                         <Border Classes="format-chip">
-                          <TextBlock Classes="mono" FontSize="12" Text="{Binding Format}" />
+                          <TextBlock Text="{Binding Format}" />
                         </Border>
                         <StackPanel Grid.Column="1" Margin="10,0" VerticalAlignment="Center">
-                          <TextBlock Text="{Binding Label}" />
+                          <TextBlock FontWeight="SemiBold" Text="{Binding Label}" />
                           <TextBlock Classes="muted" FontSize="11.5" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
                         </StackPanel>
                         <TextBlock Grid.Column="2" Classes="mono muted" FontSize="12" VerticalAlignment="Center" Text="{Binding Size}" />

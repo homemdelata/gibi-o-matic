@@ -18,7 +18,7 @@
     <Panel IsVisible="{Binding ShowClosePrompt}">
       <Border Background="#B3000000" />
       <Border Classes="card" MaxWidth="480" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="24,22"
-              BorderBrush="{DynamicResource AccentBrush}">
+              BorderBrush="{DynamicResource AccentTextBrush}">
         <StackPanel Spacing="12">
           <TextBlock Classes="h2" Text="{x:Static r:Strings.ClosePrompt_Title}" TextWrapping="Wrap" />
           <TextBlock TextWrapping="Wrap" Text="{x:Static r:Strings.ClosePrompt_Text}" />

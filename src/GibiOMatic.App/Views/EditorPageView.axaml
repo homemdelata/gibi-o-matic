@@ -8,8 +8,7 @@
   <Panel>
     <!-- No book chosen -->
     <StackPanel IsVisible="{Binding IsEmpty}" MaxWidth="520" Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
-      <Border Width="72" Height="72" CornerRadius="18" HorizontalAlignment="Center" Background="{DynamicResource CardBrush}"
-              BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+      <Border Classes="empty-icon">
         <c:StrokeIcon Data="{StaticResource Icon.Editor}" Width="32" Height="32" Foreground="{DynamicResource AccentTextBrush}" />
       </Border>
       <TextBlock Classes="h2" HorizontalAlignment="Center" Text="{Binding Title}" />
@@ -24,8 +23,8 @@
         <TextBlock Classes="h1" FontSize="30" TextWrapping="Wrap" Text="{Binding Heading}" />
       </StackPanel>
 
-      <Border DockPanel.Dock="Top" Margin="0,0,0,18" Padding="16,12" CornerRadius="12" Background="#1AF5C542" BorderBrush="#59F5C542"
-              BorderThickness="1" IsVisible="{Binding IsBatch}">
+      <Border DockPanel.Dock="Top" Margin="0,0,0,18" Padding="16,12" CornerRadius="{StaticResource RadiusCard}" Background="{DynamicResource CardBrush}"
+              BorderBrush="{DynamicResource AccentTextBrush}" BorderThickness="{StaticResource BorderControl}" IsVisible="{Binding IsBatch}">
         <TextBlock Foreground="{DynamicResource AccentTextBrush}" TextWrapping="Wrap" Text="{Binding BatchNotice}" />
       </Border>
 
@@ -47,9 +46,9 @@
           <Grid ColumnDefinitions="Auto,*">
             <!-- Cover -->
             <StackPanel Width="210" Spacing="10" Margin="0,0,28,0" IsVisible="{Binding IsSingle}">
-              <Border CornerRadius="12" BoxShadow="0 12 30 0 #73000000">
+              <Border Classes="cover">
                 <c:AspectBox>
-                  <Border CornerRadius="12" ClipToBounds="True" Background="{DynamicResource HoverBrush}">
+                  <Border CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True" Background="{DynamicResource HoverBrush}">
                     <Panel>
                       <Border Background="{StaticResource HalftoneBrush}" />
                       <Image Source="{Binding Cover}" Stretch="UniformToFill" />
@@ -134,7 +133,7 @@
                   </ItemsControl.ItemsPanel>
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:UniverseChipViewModel">
-                      <Border Classes="pill" Background="{DynamicResource HoverBrush}" BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="1" Padding="12,4,4,4">
+                      <Border Classes="pill" Background="{DynamicResource HoverBrush}" BorderBrush="{DynamicResource BorderStrongBrush}" BorderThickness="{StaticResource BorderControl}" Padding="12,4,4,4">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                           <TextBlock Text="{Binding Name}" VerticalAlignment="Center" FontWeight="Medium" />
                           <Button Classes="tool" MinWidth="26" MinHeight="26" Padding="4" Command="{Binding RemoveCommand}"
@@ -221,7 +220,7 @@
             <ItemsControl ItemsSource="{Binding History}">
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:HistoryRowViewModel">
-                  <Border Background="{DynamicResource CardBrush}" CornerRadius="10" Padding="14,8" Margin="0,0,0,6">
+                  <Border Background="{DynamicResource CardBrush}" CornerRadius="{StaticResource RadiusCard}" Padding="14,8" Margin="0,0,0,6">
                     <Grid ColumnDefinitions="Auto,*,Auto">
                       <TextBlock Classes="mono muted" FontSize="12" VerticalAlignment="Center" Text="{Binding When}" />
                       <TextBlock Grid.Column="1" Margin="14,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="{Binding Title}" />

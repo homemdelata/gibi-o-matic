@@ -26,6 +26,7 @@
   <!-- A stack of books (series counter) -->
   <StreamGeometry x:Key="Icon.Stack">M12,3 L21,7.5 L12,12 L3,7.5 Z M3,12 L12,16.5 L21,12 M3,16.5 L12,21 L21,16.5</StreamGeometry>
   <StreamGeometry x:Key="Icon.Close">M6,6 L18,18 M18,6 L6,18</StreamGeometry>
+  <StreamGeometry x:Key="Icon.Alert">M12,5 V13.5 M12,19 V19.01</StreamGeometry>
   <StreamGeometry x:Key="Icon.Check">M20,6 L9,17 L4,12</StreamGeometry>
 
   <!-- Reader (Lucide, ISC license) -->

@@ -11,7 +11,10 @@
     <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
       <DockPanel Margin="16,28,16,16">
         <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="8,0,8,14">
-          <TextBlock Classes="h1" FontSize="28" Text="{Binding Title}" />
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Classes="h1" FontSize="28" Text="{Binding Title}" />
+            <c:TitleMark />
+          </StackPanel>
           <TextBlock Classes="muted" Text="{Binding Subtitle}" />
         </StackPanel>
         <Border DockPanel.Dock="Top" Classes="card" Padding="12,10" Margin="0,0,0,12" IsVisible="{Binding Status.IsVisible}">
@@ -35,7 +38,7 @@
             <DataTemplate x:DataType="vm:ReviewItemViewModel">
               <Button Classes="queue-item" Classes.selected="{Binding IsSelected}" Command="{Binding SelectCommand}">
                 <Grid ColumnDefinitions="Auto,*,Auto">
-                  <Border Width="34" Height="50" CornerRadius="5" ClipToBounds="True">
+                  <Border Width="34" Height="50" CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True">
                     <Border.Background>
                       <SolidColorBrush Color="{Binding Card.PlaceholderColor}" />
                     </Border.Background>
@@ -61,8 +64,7 @@
     <!-- Nothing to review -->
     <StackPanel Grid.Column="1" IsVisible="{Binding IsEmpty}" MaxWidth="520" Spacing="12"
                 HorizontalAlignment="Center" VerticalAlignment="Center">
-      <Border Width="72" Height="72" CornerRadius="18" HorizontalAlignment="Center" Background="{DynamicResource CardBrush}"
-              BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
+      <Border Classes="empty-icon">
         <c:StrokeIcon Data="{StaticResource Icon.Review}" Width="32" Height="32" Foreground="{DynamicResource OkBrush}" />
       </Border>
       <TextBlock Classes="h2" HorizontalAlignment="Center" Text="{x:Static r:Strings.Review_EmptyTitle}" />
@@ -75,7 +77,7 @@
         <!-- The book's own cover, to compare with the candidates' -->
         <Button Classes="cover-card" Margin="0,0,16,0" VerticalAlignment="Top" Command="{Binding OpenBookCommand}"
                 ToolTip.Tip="{x:Static r:Strings.Reader_OpenTip}" AutomationProperties.Name="{x:Static r:Strings.Review_OpenBook}">
-        <Border Width="64" Height="96" CornerRadius="6" ClipToBounds="True">
+        <Border Width="64" Height="96" CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True">
           <Border.Background>
             <SolidColorBrush Color="{Binding Selected.Card.PlaceholderColor, FallbackValue=#262931}" />
           </Border.Background>
@@ -88,7 +90,7 @@
         <StackPanel Grid.Column="1" Spacing="6" Margin="0,0,16,0">
           <SelectableTextBlock Classes="mono" FontSize="12" Foreground="{DynamicResource TextMutedBrush}" Text="{Binding FolderPath}"
                                TextWrapping="Wrap" />
-          <TextBlock FontFamily="{StaticResource FontDisplay}" FontSize="26" FontWeight="Bold" TextWrapping="Wrap"
+          <TextBlock FontFamily="{StaticResource FontDisplay}" FontSize="26" FontWeight="ExtraBold" TextWrapping="Wrap"
                      Text="{Binding Selected.Title, FallbackValue={x:Null}}" />
           <StackPanel Orientation="Horizontal" Spacing="12">
             <TextBlock Classes="mono muted" FontSize="12.5" VerticalAlignment="Center" Text="{Binding FileInfoText}" />
@@ -150,7 +152,7 @@
           <Border Classes="card" IsVisible="{Binding IsBusy}">
             <StackPanel Spacing="10">
               <TextBlock FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding BusyText}" />
-              <ProgressBar IsIndeterminate="True" Height="4" Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+              <ProgressBar IsIndeterminate="True" Height="4" Foreground="{DynamicResource AccentTextBrush}" Background="{DynamicResource HoverBrush}" />
               <TextBlock Classes="help" Text="{x:Static r:Strings.Review_SearchingHelp}" />
             </StackPanel>
           </Border>
@@ -173,7 +175,7 @@
                 <DataTemplate x:DataType="vm:CandidateViewModel">
                   <Button Classes="candidate" Classes.selected="{Binding IsSelected}" Command="{Binding PickCommand}" Margin="0,0,12,12">
                     <Grid ColumnDefinitions="Auto,*">
-                    <Border Width="64" Height="96" CornerRadius="6" ClipToBounds="True" VerticalAlignment="Top" Margin="0,0,12,0"
+                    <Border Width="64" Height="96" CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True" VerticalAlignment="Top" Margin="0,0,12,0"
                             Background="{DynamicResource HoverBrush}">
                       <Panel>
                         <Border Background="{StaticResource HalftoneBrush}" />
@@ -197,7 +199,7 @@
           </StackPanel>
 
           <!-- Field by field -->
-          <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="14" ClipToBounds="True"
+          <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="{StaticResource BorderControl}" CornerRadius="{StaticResource RadiusCard}" ClipToBounds="True"
                   IsVisible="{Binding ShowCandidates}">
             <StackPanel>
               <Grid ColumnDefinitions="48,150,*,1.4*" Background="{DynamicResource CardBrush}">

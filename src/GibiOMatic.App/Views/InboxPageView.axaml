@@ -11,7 +11,10 @@
     <!-- Header -->
     <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,22">
       <StackPanel Spacing="4" VerticalAlignment="Center" Margin="0,0,16,0">
-        <TextBlock Classes="h1" Text="{Binding Title}" />
+        <StackPanel Orientation="Horizontal">
+          <TextBlock Classes="h1" Text="{Binding Title}" />
+          <c:TitleMark />
+        </StackPanel>
         <TextBlock Classes="muted" Text="{Binding Subtitle}" TextWrapping="Wrap" />
       </StackPanel>
       <Button Grid.Column="1" Classes="secondary" Margin="0,0,10,0" Command="{Binding AddFolderCommand}">
@@ -66,7 +69,7 @@
         <StackPanel Spacing="8" VerticalAlignment="Center">
           <TextBlock Classes="mono" FontSize="12.5" Text="{Binding ProgressText}" TextTrimming="CharacterEllipsis" />
           <ProgressBar Minimum="0" Maximum="1" Value="{Binding ProgressValue}" IsVisible="{Binding IsWorking}" Height="4"
-                       Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+                       Foreground="{DynamicResource AccentTextBrush}" Background="{DynamicResource HoverBrush}" />
         </StackPanel>
         <Button Grid.Column="1" Classes="secondary" Margin="16,0,0,0" MinHeight="38" Command="{Binding TogglePauseCommand}"
                 Content="{Binding PauseLabel}" />
@@ -131,7 +134,7 @@
 
               <!-- What it becomes -->
               <Grid Grid.Column="2" ColumnDefinitions="Auto,*" VerticalAlignment="Center">
-                <Border Width="40" Height="60" CornerRadius="5" ClipToBounds="True" VerticalAlignment="Top"
+                <Border Width="40" Height="60" CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True" VerticalAlignment="Top"
                         Background="{DynamicResource HoverBrush}">
                   <Panel>
                     <Border Background="{StaticResource HalftoneBrush}" />
@@ -145,12 +148,11 @@
                              IsVisible="{Binding MetaLine, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                   <TextBlock FontSize="12.5" Foreground="{DynamicResource WarnTextBrush}" Text="{Binding NoteLine}" TextWrapping="Wrap"
                              IsVisible="{Binding NoteLine, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
-                  <Border HorizontalAlignment="Left" Margin="0,6,0,0" BorderBrush="{DynamicResource BorderStrongBrush}"
-                          BorderThickness="1" CornerRadius="10" ClipToBounds="True" IsVisible="{Binding HasDecisions}">
+                  <Border Classes="segments" HorizontalAlignment="Left" Margin="0,6,0,0" IsVisible="{Binding HasDecisions}">
                     <ItemsControl ItemsSource="{Binding Decisions}" AutomationProperties.Name="{x:Static r:Strings.Inbox_Decisions}">
                       <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                          <StackPanel Orientation="Horizontal" />
+                          <StackPanel Orientation="Horizontal" Spacing="4" />
                         </ItemsPanelTemplate>
                       </ItemsControl.ItemsPanel>
                       <ItemsControl.ItemTemplate>
@@ -173,7 +175,7 @@
                 </Border>
                 <ProgressBar Minimum="0" Maximum="1" Value="{Binding Progress, FallbackValue=0}" Height="3"
                              IsVisible="{Binding Progress, Converter={x:Static ObjectConverters.IsNotNull}}"
-                             Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+                             Foreground="{DynamicResource AccentTextBrush}" Background="{DynamicResource HoverBrush}" />
               </StackPanel>
             </Grid>
           </Border>

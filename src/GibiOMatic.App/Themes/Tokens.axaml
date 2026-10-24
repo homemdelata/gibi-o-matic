@@ -71,11 +71,44 @@
 
       <!-- Selection with misregistration: a cyan sliver on the left and a magenta one on the right.
            Only for selected, current or checked things (docs/design/revamp/REVAMP.md §4). -->
-      <BoxShadows x:Key="SelectionShadowCover">0 0 0 3 #FFF27A, -6 0 0 3 #19E3FF, 6 0 0 3 #FF2D87</BoxShadows>
+      <BoxShadows x:Key="SelectionShadowCover">-6 0 0 3 #19E3FF, 6 0 0 3 #FF2D87, 0 0 0 3 #FFF27A</BoxShadows>
+      <BoxShadows x:Key="SelectionShadowRing">-4 0 0 2 #19E3FF, 4 0 0 2 #FF2D87, 0 0 0 2 #FFF27A</BoxShadows>
       <BoxShadows x:Key="SelectionShadow">-3 0 0 0 #19E3FF, 3 0 0 0 #FF2D87</BoxShadows>
       <BoxShadows x:Key="SelectionShadowSmall">-2 0 0 0 #19E3FF, 2 0 0 0 #FF2D87</BoxShadows>
       <!-- Covers not selected: a hard printed shadow -->
       <BoxShadows x:Key="CoverShadow">5 5 0 0 #8C000000</BoxShadows>
+
+      <!-- Decorative halftone spots (REVAMP.md §7): behind the page title, in the sidebar, in the detail panel -->
+      <DrawingBrush x:Key="HalftoneMainBrush" TileMode="Tile" Stretch="None" SourceRect="0,0,9,9" DestinationRect="0,0,9,9">
+        <DrawingBrush.Drawing>
+          <GeometryDrawing Brush="{StaticResource HalftoneDotBrush}">
+            <GeometryDrawing.Geometry>
+              <EllipseGeometry Center="4.5,4.5" RadiusX="1.6" RadiusY="1.6" />
+            </GeometryDrawing.Geometry>
+          </GeometryDrawing>
+        </DrawingBrush.Drawing>
+      </DrawingBrush>
+      <DrawingBrush x:Key="HalftoneSidebarBrush" TileMode="Tile" Stretch="None" SourceRect="0,0,8,8" DestinationRect="0,0,8,8">
+        <DrawingBrush.Drawing>
+          <GeometryDrawing Brush="{StaticResource GlitchMagentaBrush}">
+            <GeometryDrawing.Geometry>
+              <EllipseGeometry Center="4.0,4.0" RadiusX="1.4" RadiusY="1.4" />
+            </GeometryDrawing.Geometry>
+          </GeometryDrawing>
+        </DrawingBrush.Drawing>
+      </DrawingBrush>
+      <DrawingBrush x:Key="HalftoneDetailsBrush" TileMode="Tile" Stretch="None" SourceRect="0,0,8,8" DestinationRect="0,0,8,8">
+        <DrawingBrush.Drawing>
+          <GeometryDrawing Brush="{StaticResource GlitchCyanBrush}">
+            <GeometryDrawing.Geometry>
+              <EllipseGeometry Center="4.0,4.0" RadiusX="1.4" RadiusY="1.4" />
+            </GeometryDrawing.Geometry>
+          </GeometryDrawing>
+        </DrawingBrush.Drawing>
+      </DrawingBrush>
+      <x:Double x:Key="HalftoneMainOpacity">0.7</x:Double>
+      <x:Double x:Key="HalftoneSidebarOpacity">0.22</x:Double>
+      <x:Double x:Key="HalftoneDetailsOpacity">0.2</x:Double>
 
       <!-- Fluent theme overrides so stock controls follow the tokens. -->
       <SolidColorBrush x:Key="TextControlBackground" Color="{StaticResource InputColor}" />
@@ -169,11 +202,44 @@
 
       <!-- Selection with misregistration: a cyan sliver on the left and a magenta one on the right.
            Only for selected, current or checked things (docs/design/revamp/REVAMP.md §4). -->
-      <BoxShadows x:Key="SelectionShadowCover">0 0 0 3 #FFF27A, -6 0 0 3 #0FB5D6, 6 0 0 3 #E0186E</BoxShadows>
+      <BoxShadows x:Key="SelectionShadowCover">-6 0 0 3 #0FB5D6, 6 0 0 3 #E0186E, 0 0 0 3 #FFF27A</BoxShadows>
+      <BoxShadows x:Key="SelectionShadowRing">-4 0 0 2 #0FB5D6, 4 0 0 2 #E0186E, 0 0 0 2 #FFF27A</BoxShadows>
       <BoxShadows x:Key="SelectionShadow">-3 0 0 0 #0FB5D6, 3 0 0 0 #E0186E</BoxShadows>
       <BoxShadows x:Key="SelectionShadowSmall">-2 0 0 0 #0FB5D6, 2 0 0 0 #E0186E</BoxShadows>
       <!-- Covers not selected: a hard printed shadow -->
       <BoxShadows x:Key="CoverShadow">4 4 0 0 #380B1630</BoxShadows>
+
+      <!-- Decorative halftone spots (REVAMP.md §7): behind the page title, in the sidebar, in the detail panel -->
+      <DrawingBrush x:Key="HalftoneMainBrush" TileMode="Tile" Stretch="None" SourceRect="0,0,9,9" DestinationRect="0,0,9,9">
+        <DrawingBrush.Drawing>
+          <GeometryDrawing Brush="{StaticResource HalftoneDotBrush}">
+            <GeometryDrawing.Geometry>
+              <EllipseGeometry Center="4.5,4.5" RadiusX="1.6" RadiusY="1.6" />
+            </GeometryDrawing.Geometry>
+          </GeometryDrawing>
+        </DrawingBrush.Drawing>
+      </DrawingBrush>
+      <DrawingBrush x:Key="HalftoneSidebarBrush" TileMode="Tile" Stretch="None" SourceRect="0,0,8,8" DestinationRect="0,0,8,8">
+        <DrawingBrush.Drawing>
+          <GeometryDrawing Brush="{StaticResource GlitchMagentaBrush}">
+            <GeometryDrawing.Geometry>
+              <EllipseGeometry Center="4.0,4.0" RadiusX="1.4" RadiusY="1.4" />
+            </GeometryDrawing.Geometry>
+          </GeometryDrawing>
+        </DrawingBrush.Drawing>
+      </DrawingBrush>
+      <DrawingBrush x:Key="HalftoneDetailsBrush" TileMode="Tile" Stretch="None" SourceRect="0,0,8,8" DestinationRect="0,0,8,8">
+        <DrawingBrush.Drawing>
+          <GeometryDrawing Brush="{StaticResource GlitchCyanBrush}">
+            <GeometryDrawing.Geometry>
+              <EllipseGeometry Center="4.0,4.0" RadiusX="1.4" RadiusY="1.4" />
+            </GeometryDrawing.Geometry>
+          </GeometryDrawing>
+        </DrawingBrush.Drawing>
+      </DrawingBrush>
+      <x:Double x:Key="HalftoneMainOpacity">0.35</x:Double>
+      <x:Double x:Key="HalftoneSidebarOpacity">0.11</x:Double>
+      <x:Double x:Key="HalftoneDetailsOpacity">0.1</x:Double>
 
       <!-- Fluent theme overrides so stock controls follow the tokens. -->
       <SolidColorBrush x:Key="TextControlBackground" Color="{StaticResource InputColor}" />

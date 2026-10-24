@@ -167,7 +167,7 @@
             <Button Classes="thumb" Classes.current="{Binding IsCurrent}"
                     Command="{Binding $parent[Window].((vm:ReaderViewModel)DataContext).GoToPageCommand}" CommandParameter="{Binding Index}">
               <StackPanel Spacing="4">
-                <Border Width="100" Height="150" Background="{DynamicResource CardBrush}" CornerRadius="3" ClipToBounds="True">
+                <Border Width="100" Height="150" Background="{DynamicResource CardBrush}" CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True">
                   <Image Source="{Binding Image}" Stretch="Uniform" />
                 </Border>
                 <TextBlock Classes="mono muted" FontSize="11" HorizontalAlignment="Center" Text="{Binding Label}" />
@@ -184,12 +184,12 @@
             IsHitTestVisible="False" IsVisible="{Binding IsPageLoading}">
       <StackPanel Orientation="Horizontal" Spacing="12">
         <ProgressBar IsIndeterminate="True" Width="80" Height="4" VerticalAlignment="Center"
-                     Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+                     Foreground="{DynamicResource AccentTextBrush}" Background="{DynamicResource HoverBrush}" />
         <TextBlock FontSize="13" VerticalAlignment="Center" Text="{x:Static r:Strings.Reader_PageLoading}" />
       </StackPanel>
     </Border>
     <StackPanel Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12" IsVisible="{Binding IsLoading}">
-      <ProgressBar IsIndeterminate="True" Width="200" Height="4" Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource HoverBrush}" />
+      <ProgressBar IsIndeterminate="True" Width="200" Height="4" Foreground="{DynamicResource AccentTextBrush}" Background="{DynamicResource HoverBrush}" />
       <TextBlock Classes="muted" HorizontalAlignment="Center" Text="{x:Static r:Strings.Reader_Loading}" />
     </StackPanel>
     <Border Grid.Row="1" Classes="card" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="560" Padding="20,16"
