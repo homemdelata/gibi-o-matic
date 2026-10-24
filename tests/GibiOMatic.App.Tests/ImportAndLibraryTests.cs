@@ -96,6 +96,11 @@ public sealed class ImportAndLibraryTests : IDisposable
         Assert.Equal(2, page.VisibleCards.Count);
         var saga = Assert.Single(page.VisibleCards.OfType<SeriesCardViewModel>());
         Assert.Equal(2, saga.Books.Count);
+        // A stack: volume 1 in front, volume 2 behind.
+        Assert.Equal("Saga, Vol. 1", saga.Cover.Title);
+        Assert.Equal(["Saga, Vol. 2"], saga.BehindCovers.Select(b => b.Title));
+        Assert.Null(saga.Behind2);
+        Assert.StartsWith("Série · 2 livros", saga.MetaLine, StringComparison.Ordinal);
 
         saga.OpenCommand.Execute(null);
         Assert.True(page.IsInSeries);

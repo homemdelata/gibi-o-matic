@@ -235,82 +235,105 @@ public sealed partial class BookCardViewModel : ViewModelBase
     internal static string Normalize(string text) => TitleParser.RemoveDiacritics(text).ToLowerInvariant();
 }
 
-/// <summary>A series in the grid (Séries view): opens to show its books.</summary>
-public sealed partial class SeriesCardViewModel : ViewModelBase
+/// <summary>
+/// Picks the covers of a series or universe card: the first volume in front and the next ones behind,
+/// in reading order. The books come already sorted; volumes without a number go after the numbered ones.
+/// </summary>
+public static class CoverStack
 {
-    private readonly Action<SeriesCardViewModel> _open;
+    /// <summary>At most two covers behind the front one.</summary>
+    public const int MaxBehind = 2;
 
-    public SeriesCardViewModel(string name, IReadOnlyList<BookCardViewModel> books, Action<SeriesCardViewModel> open)
+    public static (T Front, IReadOnlyList<T> Behind) Pick<T>(IReadOnlyList<T> books, Func<T, string?> number)
+    {
+        var ordered = books.OrderBy(b => string.IsNullOrWhiteSpace(number(b)) ? 1 : 0).ToList();
+        return (ordered[0], ordered.Skip(1).Take(MaxBehind).ToList());
+    }
+}
+
+/// <summary>A card that stands for several books (series, universe): a stack of covers that opens.</summary>
+public abstract partial class StackCardViewModel : ViewModelBase
+{
+    protected StackCardViewModel(string name, IReadOnlyList<BookCardViewModel> books)
     {
         Name = name;
         Books = books;
-        _open = open;
-        Cover = books[0];
+        (Cover, var behind) = CoverStack.Pick(books, b => b.Book.Metadata.Series?.Number);
+        Behind1 = behind.ElementAtOrDefault(0);
+        Behind2 = behind.ElementAtOrDefault(1);
         Band = books.Min(b => b.Band);
-        var publisher = books.Select(b => b.Book.Metadata.Publisher).FirstOrDefault(p => p is not null);
-        var count = books.Count == 1 ? Strings.Library_SeriesBooksOne : string.Format(CultureInfo.CurrentCulture, Strings.Library_SeriesBooksMany, books.Count);
-        MetaLine = publisher is null ? count : $"{count} · {publisher}";
     }
 
     public string Name { get; }
     public IReadOnlyList<BookCardViewModel> Books { get; }
 
-    /// <summary>The first book, whose cover stands for the series.</summary>
+    /// <summary>The first volume, whose cover is in front.</summary>
     public BookCardViewModel Cover { get; }
+
+    /// <summary>The next volumes, drawn behind the front cover (null when there are fewer books).</summary>
+    public BookCardViewModel? Behind1 { get; }
+
+    public BookCardViewModel? Behind2 { get; }
+
+    public IReadOnlyList<BookCardViewModel> BehindCovers => new[] { Behind1, Behind2 }.OfType<BookCardViewModel>().ToList();
 
     /// <summary>The worst quality among the books.</summary>
     public QualityBand Band { get; }
 
     public string Badge => QualityText.BadgeOf(Band);
 
-    /// <summary>Shown in the cover's bottom-right corner.</summary>
+    /// <summary>Shown in the cover's bottom-left corner.</summary>
     public string BookCount => Books.Count.ToString(CultureInfo.CurrentCulture);
 
     /// <summary>"12 livros", for screen readers and the tooltip of the counter.</summary>
     public string BookCountText => Books.Count == 1 ? Strings.Library_SeriesBooksOne : string.Format(CultureInfo.CurrentCulture, Strings.Library_SeriesBooksMany, Books.Count);
 
-    public string MetaLine { get; }
+    public abstract string MetaLine { get; }
 
     [RelayCommand]
-    private void Open() => _open(this);
+    private void Open() => OnOpen();
+
+    protected abstract void OnOpen();
+}
+
+/// <summary>A series in the grid (Séries view): opens to show its books.</summary>
+public sealed class SeriesCardViewModel : StackCardViewModel
+{
+    private readonly Action<SeriesCardViewModel> _open;
+
+    public SeriesCardViewModel(string name, IReadOnlyList<BookCardViewModel> books, Action<SeriesCardViewModel> open)
+        : base(name, books)
+    {
+        _open = open;
+        var publisher = books.Select(b => b.Book.Metadata.Publisher).FirstOrDefault(p => p is not null);
+        string[] parts = publisher is null ? [Strings.Library_SeriesKind, BookCountText] : [Strings.Library_SeriesKind, BookCountText, publisher];
+        MetaLine = string.Join(" · ", parts);
+    }
+
+    /// <summary>"Série · 3 livros · Editora".</summary>
+    public override string MetaLine { get; }
+
+    protected override void OnOpen() => _open(this);
 }
 
 /// <summary>A universe in the grid (Universos view): opens to show its series.</summary>
-public sealed partial class UniverseCardViewModel : ViewModelBase
+public sealed class UniverseCardViewModel : StackCardViewModel
 {
     private readonly Action<UniverseCardViewModel> _open;
 
     public UniverseCardViewModel(string name, IReadOnlyList<BookCardViewModel> books, Action<UniverseCardViewModel> open)
+        : base(name, books)
     {
-        Name = name;
-        Books = books;
         _open = open;
-        Cover = books[0];
-        Band = books.Min(b => b.Band);
         var series = books.Select(b => b.Book.Metadata.Series?.Name ?? b.Title).Distinct(StringComparer.OrdinalIgnoreCase).Count();
         var seriesText = series == 1 ? Strings.Library_UniverseSeriesOne : string.Format(CultureInfo.CurrentCulture, Strings.Library_UniverseSeriesMany, series);
         MetaLine = string.Format(CultureInfo.CurrentCulture, Strings.Library_UniverseSummary, seriesText, BookCountText);
     }
 
-    public string Name { get; }
-    public IReadOnlyList<BookCardViewModel> Books { get; }
-
-    /// <summary>The first book, whose cover stands for the universe.</summary>
-    public BookCardViewModel Cover { get; }
-
-    public QualityBand Band { get; }
-
-    public string Badge => QualityText.BadgeOf(Band);
-
-    public string BookCount => Books.Count.ToString(CultureInfo.CurrentCulture);
-
-    public string BookCountText => Books.Count == 1 ? Strings.Library_SeriesBooksOne : string.Format(CultureInfo.CurrentCulture, Strings.Library_SeriesBooksMany, Books.Count);
-
     /// <summary>"3 séries · 9 livros".</summary>
-    public string MetaLine { get; }
+    public override string MetaLine { get; }
 
-    [RelayCommand]
-    private void Open() => _open(this);
+    protected override void OnOpen() => _open(this);
 }
 
 /// <summary>One row of the virtualized grid; the last row may have fewer cards than columns.</summary>
@@ -325,11 +348,12 @@ public enum CheckStatus
 
 public sealed record CheckRow(string Field, string Value, CheckStatus Status)
 {
+    /// <summary>Resource key of the icon drawn in the status colour.</summary>
     public string Icon => Status switch
     {
-        CheckStatus.Ok => "✓",
-        CheckStatus.Warn => "!",
-        _ => "×",
+        CheckStatus.Ok => "Icon.Check",
+        CheckStatus.Warn => "Icon.Alert",
+        _ => "Icon.Close",
     };
 }
 

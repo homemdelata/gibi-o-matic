@@ -93,6 +93,7 @@
   <data name="Library_NoPublisher" xml:space="preserve"><value>Sem editora</value></data>
   <data name="Library_NoDate" xml:space="preserve"><value>sem data</value></data>
   <data name="Library_NoSeries" xml:space="preserve"><value>sem série</value></data>
+  <data name="Library_SeriesKind" xml:space="preserve"><value>Série</value></data>
   <data name="Library_SeriesBooksOne" xml:space="preserve"><value>1 livro</value></data>
   <data name="Library_SeriesBooksMany" xml:space="preserve"><value>{0} livros</value></data>
   <data name="Library_Summary" xml:space="preserve"><value>{0} · {1} séries · {2} com metadados completos</value></data>
