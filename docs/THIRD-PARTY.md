@@ -15,7 +15,7 @@ Toda dependência precisa de licença compatível com MIT (sem AGPL/GPL). Atuali
 | Avalonia.Headless | 12.1.4 | só `tools/Screenshots` (capturas de tela da documentação); não vai no app | MIT | em uso (F6) |
 | Velopack (biblioteca) e vpk (ferramenta, `dotnet-tools.json`) | 1.2.161 | instalador, atualizações (GitHub Releases) e AppImage | MIT | em uso (F6) |
 | MinVer | 8.0.0 | versão dos assemblies a partir da tag `v*` do git; só no build, não vai no app | Apache-2.0 | em uso (F6) |
-| Anybody (Etcetera Type Co., TTFs estáticos Bold e ExtraBold) | — | fonte de títulos e números grandes (embutida, `Assets/Fonts`); substituiu a Bricolage Grotesque | SIL OFL 1.1 | em uso (F7) |
+| Anybody (Etcetera Type Co.) | — | fonte de títulos e números grandes (embutida, `Assets/Fonts`); substituiu a Bricolage Grotesque. Os TTFs estáticos Bold (700) e ExtraBold (800), largura 100, são instâncias da fonte variável do google/fonts (`ofl/anybody`), geradas com o `fontTools.varLib.instancer`, como a pasta `static/` do pacote do Google Fonts | SIL OFL 1.1 (sem Reserved Font Name) | em uso (F7) |
 | IBM Plex Sans, IBM Plex Mono | — | fontes de texto (embutidas, `Assets/Fonts`) | SIL OFL 1.1 (Reserved Font Name "Plex") | em uso (F0) |
 | Lucide (ícones folder-plus, folder-open, rotate-cw) | — | ícones, como geometria em `Themes/Icons.axaml` | ISC | em uso (F0) |
 | PDFium (`bblanchon.PDFium.Win32` e `.Linux`) | 157.0.8100 | renderizar páginas do PDF (capa, CBZ), Info do PDF, extrair o JPEG original das páginas; chamado por P/Invoke próprio | Apache-2.0 (binários); PDFium: BSD-3-Clause | em uso (F1) |
@@ -27,6 +27,6 @@ Toda dependência precisa de licença compatível com MIT (sem AGPL/GPL). Atuali
 | KCC (Kindle Comic Converter), `kcc-c2e` | 12.0.0 | conversão para Kindle, chamado como **processo externo**. **Não é distribuído com o app**: o usuário instala, ou o app baixa o arquivo do release oficial no GitHub quando o usuário pede, conferindo o SHA-256 fixado no código. O executável do KCC inclui PyMuPDF (AGPL) e 7-Zip; como o app só o executa e não o redistribui, nada disso entra no app | ISC (KCC) | em uso (F4) |
 | KindleGen (do Kindle Previewer, Amazon) | — | usado pelo KCC para gerar MOBI; vem com o Kindle Previewer, que o usuário instala | licença da Amazon (não redistribuído) | dependência externa (F4) |
 
-As licenças das fontes (`OFL-*.txt`) acompanham os arquivos em `src/GibiOMatic.App/Assets/Fonts/`. As fontes são distribuídas sem modificação.
+As licenças das fontes (`OFL-*.txt`) acompanham os arquivos em `src/GibiOMatic.App/Assets/Fonts/`. As fontes são distribuídas sem modificação, exceto a Anybody, que vai como instâncias estáticas da fonte variável (permitido pela OFL).
 
 **Não usar**: MuPDF / PyMuPDF (AGPL), Calibre como biblioteca (GPL).
