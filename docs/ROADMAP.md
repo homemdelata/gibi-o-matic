@@ -13,7 +13,7 @@ Status: ⬜ não iniciada · 🟨 em andamento · ✅ concluída. Seções `§` 
 | F4 | Destino Kindle | ✅ (falta o teste do usuário com o Kindle: em 23/10 o Windows não reconheceu o aparelho; **testar de novo**) |
 | F5 | Entrada automática | ✅ |
 | F6 | Polimento e distribuição | ✅ (falta o teste do usuário) |
-| F7 | Revamp visual | 🟨 |
+| F7 | Revamp visual | ✅ (falta o teste do usuário) |
 
 Ao terminar cada fase: build e testes verdes → atualizar este arquivo → commit e push → **parar e explicar ao usuário como testar**.
 
@@ -233,13 +233,13 @@ Objetivo: agrupar séries do mesmo universo ou linha editorial (ex.: Radiant Bla
 
 Visual "Aranhaverso sutil", especificado em `docs/design/revamp/REVAMP.md`.
 
-- [ ] Ícone novo (`tools/IconGen`), `.ico` e logo da barra lateral.
-- [ ] Fonte Anybody e tokens novos dos dois temas (escuro azul-noite, claro papel creme), com os testes de contraste.
-- [ ] Forma e controles, com a seleção com deslocamento (ciano à esquerda, magenta à direita).
-- [ ] Pilha de capas nas séries e universos, com testes do ViewModel.
-- [ ] Retícula decorativa e enfeite do título.
-- [ ] Passada em todas as telas.
-- [ ] Capturas regeradas, `DESIGN.md` e `DECISIONS.md` atualizados.
+- [x] Ícone novo (`tools/IconGen`), `.ico` e logo da barra lateral (também na tela de boas-vindas).
+- [x] Fonte Anybody e tokens novos dos dois temas (escuro azul-noite, claro papel creme), com os testes de contraste. Ajustes para o AA: `BadText` novo; no claro, `Bad` `#E8448A` e `OkText` `#0A6A85`.
+- [x] Forma e controles, com a seleção com deslocamento (ciano à esquerda, magenta à direita).
+- [x] Pilha de capas nas séries e universos, com testes da escolha das capas (`CoverStackTests`).
+- [x] Retícula decorativa e enfeite do título.
+- [x] Passada em todas as telas (Entrada, Revisão, Editor, Destinos, Configurações, leitor, boas-vindas e o aviso de fechar).
+- [x] Capturas regeradas (o `tools/Screenshots` voltou a funcionar: o atualizador do Velopack quebrava o shell), `DESIGN.md` e `DECISIONS.md` atualizados.
 
 **Pronto quando**: o usuário aprova os dois temas no app.
 

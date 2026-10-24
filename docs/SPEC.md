@@ -298,7 +298,7 @@ Baseada no protótipo do Claude Design. Telas:
 | Assistente de destino | 3 passos: tipo → detalhes → nome e regras |
 | Configurações | Pastas, Metadados, Geral |
 
-- **Visual**: tema escuro por padrão, amarelo de impressão (`#F5C542`) como destaque, Bricolage Grotesque para títulos, IBM Plex Sans/Mono para o resto.
+- **Visual**: tema escuro azul-noite por padrão e tema claro em papel creme, amarelo-limão (`#FFF27A`) como destaque, ciano e magenta só no deslocamento da seleção, Anybody para títulos, IBM Plex Sans/Mono para o resto (revamp da F7; detalhes em `docs/DESIGN.md`).
 - **Acessibilidade**: navegação por teclado, contraste AA, áreas de toque ≥ 44 px.
 - **Idiomas**: `resx`, com pt-BR e en desde o início.
 

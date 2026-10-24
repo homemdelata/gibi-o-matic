@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 64 64">
+  <!-- Gibi-o-matic icon (option 3a): glitch speech-balloon G over a navy tile with blue halftone.
+       Reference for tools/IconGen; the ghosts use screen blending. -->
+  <defs>
+    <g id="g">
+      <path d="M45,20.1 A17,17 0 1 0 49,31 H34" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+      <polygon points="17.3,39.5 23.5,45.7 11,53" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+    </g>
+    <pattern id="dots" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(30)">
+      <circle cx="1.5" cy="1.5" r="0.85" fill="#1D7FC0"/>
+    </pattern>
+    <linearGradient id="fade" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.65" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <mask id="fadeMask" maskUnits="userSpaceOnUse" x="0" y="0" width="64" height="64">
+      <rect width="64" height="64" fill="url(#fade)"/>
+    </mask>
+    <clipPath id="sliceA"><rect x="0" y="0" width="64" height="21"/></clipPath>
+    <clipPath id="sliceB"><rect x="0" y="21" width="64" height="7"/></clipPath>
+    <clipPath id="sliceC"><rect x="0" y="28" width="64" height="9"/></clipPath>
+    <clipPath id="sliceD"><rect x="0" y="37" width="64" height="27"/></clipPath>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#0B1630"/>
+  <rect width="64" height="64" rx="14" fill="url(#dots)" mask="url(#fadeMask)"/>
+  <use href="#g" transform="translate(-2.4 0)" style="color:#19E3FF;mix-blend-mode:screen"/>
+  <use href="#g" transform="translate(2.4 0)" style="color:#FF2D87;mix-blend-mode:screen"/>
+  <g clip-path="url(#sliceA)"><use href="#g" style="color:#FFF27A"/></g>
+  <g clip-path="url(#sliceB)"><use href="#g" transform="translate(-3.5 0)" style="color:#FFF27A"/></g>
+  <g clip-path="url(#sliceC)"><use href="#g" transform="translate(3 0)" style="color:#FFF27A"/></g>
+  <g clip-path="url(#sliceD)"><use href="#g" style="color:#FFF27A"/></g>
+  <rect x="41" y="23.5" width="13" height="2" fill="#FF2D87"/>
+  <rect x="7" y="34" width="9" height="1.6" fill="#19E3FF"/>
+</svg>
