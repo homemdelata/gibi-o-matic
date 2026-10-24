@@ -288,7 +288,7 @@ internal sealed record FictionalBook(
         using var band = new SKPaint { Color = SKColors.White.WithAlpha(235) };
         canvas.DrawRect(0, 70, width, 250, band);
 
-        using var display = SKTypeface.FromFile(Program.FontFile("BricolageGrotesque-ExtraBold.ttf"));
+        using var display = SKTypeface.FromFile(Program.FontFile("Anybody-ExtraBold.ttf"));
         using var text = SKTypeface.FromFile(Program.FontFile("IBMPlexSans-SemiBold.ttf"));
         using var titleFont = new SKFont(display, 96);
         using var lineFont = new SKFont(text, 40);

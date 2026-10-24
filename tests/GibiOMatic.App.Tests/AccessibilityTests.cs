@@ -55,7 +55,7 @@ public sealed class AccessibilityTests
     public void Text_has_aa_contrast_on_every_background(string theme)
     {
         var colors = Colors(theme);
-        string[] texts = ["TextColor", "TextSecondaryColor", "TextMutedColor", "TextFaintColor", "AccentTextColor", "OkTextColor", "WarnTextColor", "BadColor"];
+        string[] texts = ["TextColor", "TextSecondaryColor", "TextMutedColor", "TextFaintColor", "AccentTextColor", "OkTextColor", "WarnTextColor", "BadTextColor"];
         string[] backgrounds = ["BgColor", "SurfaceColor", "CardColor", "InputColor", "HoverColor"];
 
         var failures = (from text in texts

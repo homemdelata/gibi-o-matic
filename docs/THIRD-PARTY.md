@@ -15,7 +15,7 @@ Toda dependência precisa de licença compatível com MIT (sem AGPL/GPL). Atuali
 | Avalonia.Headless | 12.1.4 | só `tools/Screenshots` (capturas de tela da documentação); não vai no app | MIT | em uso (F6) |
 | Velopack (biblioteca) e vpk (ferramenta, `dotnet-tools.json`) | 1.2.161 | instalador, atualizações (GitHub Releases) e AppImage | MIT | em uso (F6) |
 | MinVer | 8.0.0 | versão dos assemblies a partir da tag `v*` do git; só no build, não vai no app | Apache-2.0 | em uso (F6) |
-| Bricolage Grotesque | — | fonte de títulos (embutida, `Assets/Fonts`) | SIL OFL 1.1 | em uso (F0) |
+| Anybody (Etcetera Type Co., TTFs estáticos Bold e ExtraBold) | — | fonte de títulos e números grandes (embutida, `Assets/Fonts`); substituiu a Bricolage Grotesque | SIL OFL 1.1 | em uso (F7) |
 | IBM Plex Sans, IBM Plex Mono | — | fontes de texto (embutidas, `Assets/Fonts`) | SIL OFL 1.1 (Reserved Font Name "Plex") | em uso (F0) |
 | Lucide (ícones folder-plus, folder-open, rotate-cw) | — | ícones, como geometria em `Themes/Icons.axaml` | ISC | em uso (F0) |
 | PDFium (`bblanchon.PDFium.Win32` e `.Linux`) | 157.0.8100 | renderizar páginas do PDF (capa, CBZ), Info do PDF, extrair o JPEG original das páginas; chamado por P/Invoke próprio | Apache-2.0 (binários); PDFium: BSD-3-Clause | em uso (F1) |

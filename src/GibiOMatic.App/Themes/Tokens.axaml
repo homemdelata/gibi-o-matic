@@ -6,29 +6,35 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <ResourceDictionary.ThemeDictionaries>
     <ResourceDictionary x:Key="Dark">
-      <Color x:Key="BgColor">#121317</Color>
-      <Color x:Key="SurfaceColor">#17181D</Color>
-      <Color x:Key="CardColor">#1A1B21</Color>
-      <Color x:Key="InputColor">#1D1F25</Color>
-      <Color x:Key="HoverColor">#262931</Color>
-      <Color x:Key="BorderColor">#262931</Color>
-      <Color x:Key="BorderStrongColor">#2E313A</Color>
-      <Color x:Key="TextColor">#ECEDEF</Color>
-      <Color x:Key="TextSecondaryColor">#C9CCD3</Color>
-      <Color x:Key="TextMutedColor">#A3A8B3</Color>
-      <Color x:Key="TextFaintColor">#8C919C</Color>
-      <Color x:Key="AccentColor">#F5C542</Color>
-      <Color x:Key="AccentHoverColor">#FFD970</Color>
-      <Color x:Key="OnAccentColor">#17181D</Color>
-      <Color x:Key="AccentTextColor">#F5C542</Color>
-      <Color x:Key="AccentTextHoverColor">#FFD970</Color>
+      <Color x:Key="BgColor">#060B1C</Color>
+      <Color x:Key="SurfaceColor">#0B1630</Color>
+      <Color x:Key="CardColor">#0F1D3D</Color>
+      <Color x:Key="InputColor">#0B1630</Color>
+      <Color x:Key="HoverColor">#13244D</Color>
+      <Color x:Key="BorderColor">#1E3266</Color>
+      <Color x:Key="BorderStrongColor">#2A4580</Color>
+      <Color x:Key="TextColor">#F1F4FA</Color>
+      <Color x:Key="TextSecondaryColor">#CFD8EC</Color>
+      <Color x:Key="TextMutedColor">#9DB0D6</Color>
+      <Color x:Key="TextFaintColor">#8496BE</Color>
+      <Color x:Key="AccentColor">#FFF27A</Color>
+      <Color x:Key="AccentHoverColor">#FFF7A8</Color>
+      <Color x:Key="OnAccentColor">#0B1630</Color>
+      <Color x:Key="AccentTextColor">#FFF27A</Color>
+      <Color x:Key="AccentTextHoverColor">#FFF7A8</Color>
+      <Color x:Key="AccentBorderColor">#00000000</Color>
       <Color x:Key="CoverHoverBorderColor">#40FFFFFF</Color>
-      <Color x:Key="OkColor">#4CC38A</Color>
-      <Color x:Key="OkTextColor">#6FD9A5</Color>
-      <Color x:Key="WarnColor">#F08A4B</Color>
-      <Color x:Key="WarnTextColor">#F5A574</Color>
-      <Color x:Key="BadColor">#F2677A</Color>
-      <Color x:Key="OffColor">#5B606B</Color>
+      <Color x:Key="OkColor">#19E3FF</Color>
+      <Color x:Key="OkTextColor">#19E3FF</Color>
+      <Color x:Key="WarnColor">#FFA45C</Color>
+      <Color x:Key="WarnTextColor">#FFB074</Color>
+      <Color x:Key="BadColor">#FF2D87</Color>
+      <Color x:Key="BadTextColor">#FF6FB0</Color>
+      <Color x:Key="BadSoftColor">#FF6FB0</Color>
+      <Color x:Key="OffColor">#5A6A90</Color>
+      <Color x:Key="GlitchCyanColor">#19E3FF</Color>
+      <Color x:Key="GlitchMagentaColor">#FF2D87</Color>
+      <Color x:Key="HalftoneDotColor">#1D7FC0</Color>
 
       <SolidColorBrush x:Key="BgBrush" Color="{StaticResource BgColor}" />
       <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}" />
@@ -44,7 +50,7 @@
       <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
       <SolidColorBrush x:Key="AccentHoverBrush" Color="{StaticResource AccentHoverColor}" />
       <SolidColorBrush x:Key="OnAccentBrush" Color="{StaticResource OnAccentColor}" />
-      <!-- Accent as text, icons and focus: the yellow itself in the dark theme, a dark gold in the light one -->
+      <!-- Accent as text, icons and focus: the yellow itself in the dark theme, a blue in the light one -->
       <SolidColorBrush x:Key="AccentTextBrush" Color="{StaticResource AccentTextColor}" />
       <SolidColorBrush x:Key="AccentTextHoverBrush" Color="{StaticResource AccentTextHoverColor}" />
       <SolidColorBrush x:Key="CoverHoverBorderBrush" Color="{StaticResource CoverHoverBorderColor}" />
@@ -54,11 +60,27 @@
       <SolidColorBrush x:Key="WarnTextBrush" Color="{StaticResource WarnTextColor}" />
       <SolidColorBrush x:Key="BadBrush" Color="{StaticResource BadColor}" />
       <SolidColorBrush x:Key="OffBrush" Color="{StaticResource OffColor}" />
+      <SolidColorBrush x:Key="BadTextBrush" Color="{StaticResource BadTextColor}" />
+      <!-- Bad as a fill under dark text (the Review counter in the sidebar) -->
+      <SolidColorBrush x:Key="BadSoftBrush" Color="{StaticResource BadSoftColor}" />
+      <!-- Border of primary buttons and checked chips: keeps the lemon visible on the cream paper -->
+      <SolidColorBrush x:Key="AccentBorderBrush" Color="{StaticResource AccentBorderColor}" />
+      <SolidColorBrush x:Key="GlitchCyanBrush" Color="{StaticResource GlitchCyanColor}" />
+      <SolidColorBrush x:Key="GlitchMagentaBrush" Color="{StaticResource GlitchMagentaColor}" />
+      <SolidColorBrush x:Key="HalftoneDotBrush" Color="{StaticResource HalftoneDotColor}" />
+
+      <!-- Selection with misregistration: a cyan sliver on the left and a magenta one on the right.
+           Only for selected, current or checked things (docs/design/revamp/REVAMP.md §4). -->
+      <BoxShadows x:Key="SelectionShadowCover">0 0 0 3 #FFF27A, -6 0 0 3 #19E3FF, 6 0 0 3 #FF2D87</BoxShadows>
+      <BoxShadows x:Key="SelectionShadow">-3 0 0 0 #19E3FF, 3 0 0 0 #FF2D87</BoxShadows>
+      <BoxShadows x:Key="SelectionShadowSmall">-2 0 0 0 #19E3FF, 2 0 0 0 #FF2D87</BoxShadows>
+      <!-- Covers not selected: a hard printed shadow -->
+      <BoxShadows x:Key="CoverShadow">5 5 0 0 #8C000000</BoxShadows>
 
       <!-- Fluent theme overrides so stock controls follow the tokens. -->
-      <SolidColorBrush x:Key="TextControlBackground" Color="{StaticResource BgColor}" />
-      <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="{StaticResource BgColor}" />
-      <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="{StaticResource BgColor}" />
+      <SolidColorBrush x:Key="TextControlBackground" Color="{StaticResource InputColor}" />
+      <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="{StaticResource InputColor}" />
+      <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="{StaticResource InputColor}" />
       <SolidColorBrush x:Key="TextControlBackgroundDisabled" Color="{StaticResource CardColor}" />
       <SolidColorBrush x:Key="TextControlBorderBrush" Color="{StaticResource BorderStrongColor}" />
       <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="{StaticResource TextFaintColor}" />
@@ -67,9 +89,9 @@
       <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="{StaticResource TextColor}" />
       <SolidColorBrush x:Key="TextControlForegroundFocused" Color="{StaticResource TextColor}" />
       <SolidColorBrush x:Key="TextControlPlaceholderForeground" Color="{StaticResource TextFaintColor}" />
-      <SolidColorBrush x:Key="TextControlSelectionHighlightColor" Color="#66F5C542" />
-      <SolidColorBrush x:Key="ComboBoxBackground" Color="{StaticResource CardColor}" />
-      <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="{StaticResource InputColor}" />
+      <SolidColorBrush x:Key="TextControlSelectionHighlightColor" Color="#66FFF27A" />
+      <SolidColorBrush x:Key="ComboBoxBackground" Color="{StaticResource InputColor}" />
+      <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="{StaticResource HoverColor}" />
       <SolidColorBrush x:Key="ComboBoxBackgroundPressed" Color="{StaticResource HoverColor}" />
       <SolidColorBrush x:Key="ComboBoxBorderBrush" Color="{StaticResource BorderStrongColor}" />
       <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver" Color="{StaticResource TextFaintColor}" />
@@ -82,29 +104,35 @@
     </ResourceDictionary>
 
     <ResourceDictionary x:Key="Light">
-      <Color x:Key="BgColor">#F4F4F1</Color>
-      <Color x:Key="SurfaceColor">#EBEBE6</Color>
-      <Color x:Key="CardColor">#FFFFFF</Color>
-      <Color x:Key="InputColor">#F8F8F5</Color>
-      <Color x:Key="HoverColor">#E7E7E1</Color>
-      <Color x:Key="BorderColor">#DCDCD4</Color>
-      <Color x:Key="BorderStrongColor">#C4C4BA</Color>
-      <Color x:Key="TextColor">#17181D</Color>
-      <Color x:Key="TextSecondaryColor">#2F323A</Color>
-      <Color x:Key="TextMutedColor">#525762</Color>
-      <Color x:Key="TextFaintColor">#62666F</Color>
-      <Color x:Key="AccentColor">#E0A91F</Color>
-      <Color x:Key="AccentHoverColor">#EBB93A</Color>
-      <Color x:Key="OnAccentColor">#17181D</Color>
-      <Color x:Key="AccentTextColor">#7A5800</Color>
-      <Color x:Key="AccentTextHoverColor">#5A4100</Color>
-      <Color x:Key="CoverHoverBorderColor">#40000000</Color>
-      <Color x:Key="OkColor">#1F9D63</Color>
-      <Color x:Key="OkTextColor">#146B42</Color>
+      <Color x:Key="BgColor">#F4EEDD</Color>
+      <Color x:Key="SurfaceColor">#FBF6E9</Color>
+      <Color x:Key="CardColor">#FFFBF0</Color>
+      <Color x:Key="InputColor">#FFFBF0</Color>
+      <Color x:Key="HoverColor">#EAE2CB</Color>
+      <Color x:Key="BorderColor">#D9CFB4</Color>
+      <Color x:Key="BorderStrongColor">#B9AD8E</Color>
+      <Color x:Key="TextColor">#0B1630</Color>
+      <Color x:Key="TextSecondaryColor">#26314F</Color>
+      <Color x:Key="TextMutedColor">#4A5470</Color>
+      <Color x:Key="TextFaintColor">#5A6380</Color>
+      <Color x:Key="AccentColor">#FFF27A</Color>
+      <Color x:Key="AccentHoverColor">#FFF7A8</Color>
+      <Color x:Key="OnAccentColor">#0B1630</Color>
+      <Color x:Key="AccentTextColor">#145E92</Color>
+      <Color x:Key="AccentTextHoverColor">#0B4670</Color>
+      <Color x:Key="AccentBorderColor">#0B1630</Color>
+      <Color x:Key="CoverHoverBorderColor">#400B1630</Color>
+      <Color x:Key="OkColor">#0FB5D6</Color>
+      <Color x:Key="OkTextColor">#0A6A85</Color>
       <Color x:Key="WarnColor">#D9692B</Color>
       <Color x:Key="WarnTextColor">#A3480F</Color>
-      <Color x:Key="BadColor">#B8263E</Color>
-      <Color x:Key="OffColor">#8E939C</Color>
+      <Color x:Key="BadColor">#E8448A</Color>
+      <Color x:Key="BadTextColor">#A3134D</Color>
+      <Color x:Key="BadSoftColor">#E8448A</Color>
+      <Color x:Key="OffColor">#A39A82</Color>
+      <Color x:Key="GlitchCyanColor">#0FB5D6</Color>
+      <Color x:Key="GlitchMagentaColor">#E0186E</Color>
+      <Color x:Key="HalftoneDotColor">#1D7FC0</Color>
 
       <SolidColorBrush x:Key="BgBrush" Color="{StaticResource BgColor}" />
       <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}" />
@@ -120,7 +148,7 @@
       <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
       <SolidColorBrush x:Key="AccentHoverBrush" Color="{StaticResource AccentHoverColor}" />
       <SolidColorBrush x:Key="OnAccentBrush" Color="{StaticResource OnAccentColor}" />
-      <!-- Accent as text, icons and focus: the yellow itself in the dark theme, a dark gold in the light one -->
+      <!-- Accent as text, icons and focus: the yellow itself in the dark theme, a blue in the light one -->
       <SolidColorBrush x:Key="AccentTextBrush" Color="{StaticResource AccentTextColor}" />
       <SolidColorBrush x:Key="AccentTextHoverBrush" Color="{StaticResource AccentTextHoverColor}" />
       <SolidColorBrush x:Key="CoverHoverBorderBrush" Color="{StaticResource CoverHoverBorderColor}" />
@@ -130,11 +158,27 @@
       <SolidColorBrush x:Key="WarnTextBrush" Color="{StaticResource WarnTextColor}" />
       <SolidColorBrush x:Key="BadBrush" Color="{StaticResource BadColor}" />
       <SolidColorBrush x:Key="OffBrush" Color="{StaticResource OffColor}" />
+      <SolidColorBrush x:Key="BadTextBrush" Color="{StaticResource BadTextColor}" />
+      <!-- Bad as a fill under dark text (the Review counter in the sidebar) -->
+      <SolidColorBrush x:Key="BadSoftBrush" Color="{StaticResource BadSoftColor}" />
+      <!-- Border of primary buttons and checked chips: keeps the lemon visible on the cream paper -->
+      <SolidColorBrush x:Key="AccentBorderBrush" Color="{StaticResource AccentBorderColor}" />
+      <SolidColorBrush x:Key="GlitchCyanBrush" Color="{StaticResource GlitchCyanColor}" />
+      <SolidColorBrush x:Key="GlitchMagentaBrush" Color="{StaticResource GlitchMagentaColor}" />
+      <SolidColorBrush x:Key="HalftoneDotBrush" Color="{StaticResource HalftoneDotColor}" />
+
+      <!-- Selection with misregistration: a cyan sliver on the left and a magenta one on the right.
+           Only for selected, current or checked things (docs/design/revamp/REVAMP.md §4). -->
+      <BoxShadows x:Key="SelectionShadowCover">0 0 0 3 #FFF27A, -6 0 0 3 #0FB5D6, 6 0 0 3 #E0186E</BoxShadows>
+      <BoxShadows x:Key="SelectionShadow">-3 0 0 0 #0FB5D6, 3 0 0 0 #E0186E</BoxShadows>
+      <BoxShadows x:Key="SelectionShadowSmall">-2 0 0 0 #0FB5D6, 2 0 0 0 #E0186E</BoxShadows>
+      <!-- Covers not selected: a hard printed shadow -->
+      <BoxShadows x:Key="CoverShadow">4 4 0 0 #380B1630</BoxShadows>
 
       <!-- Fluent theme overrides so stock controls follow the tokens. -->
-      <SolidColorBrush x:Key="TextControlBackground" Color="{StaticResource BgColor}" />
-      <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="{StaticResource BgColor}" />
-      <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="{StaticResource BgColor}" />
+      <SolidColorBrush x:Key="TextControlBackground" Color="{StaticResource InputColor}" />
+      <SolidColorBrush x:Key="TextControlBackgroundPointerOver" Color="{StaticResource InputColor}" />
+      <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="{StaticResource InputColor}" />
       <SolidColorBrush x:Key="TextControlBackgroundDisabled" Color="{StaticResource CardColor}" />
       <SolidColorBrush x:Key="TextControlBorderBrush" Color="{StaticResource BorderStrongColor}" />
       <SolidColorBrush x:Key="TextControlBorderBrushPointerOver" Color="{StaticResource TextFaintColor}" />
@@ -143,9 +187,9 @@
       <SolidColorBrush x:Key="TextControlForegroundPointerOver" Color="{StaticResource TextColor}" />
       <SolidColorBrush x:Key="TextControlForegroundFocused" Color="{StaticResource TextColor}" />
       <SolidColorBrush x:Key="TextControlPlaceholderForeground" Color="{StaticResource TextFaintColor}" />
-      <SolidColorBrush x:Key="TextControlSelectionHighlightColor" Color="#66E0A91F" />
-      <SolidColorBrush x:Key="ComboBoxBackground" Color="{StaticResource CardColor}" />
-      <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="{StaticResource InputColor}" />
+      <SolidColorBrush x:Key="TextControlSelectionHighlightColor" Color="#99FFF27A" />
+      <SolidColorBrush x:Key="ComboBoxBackground" Color="{StaticResource InputColor}" />
+      <SolidColorBrush x:Key="ComboBoxBackgroundPointerOver" Color="{StaticResource HoverColor}" />
       <SolidColorBrush x:Key="ComboBoxBackgroundPressed" Color="{StaticResource HoverColor}" />
       <SolidColorBrush x:Key="ComboBoxBorderBrush" Color="{StaticResource BorderStrongColor}" />
       <SolidColorBrush x:Key="ComboBoxBorderBrushPointerOver" Color="{StaticResource TextFaintColor}" />
@@ -159,19 +203,23 @@
   </ResourceDictionary.ThemeDictionaries>
 
   <!-- Typography -->
-  <FontFamily x:Key="FontDisplay">avares://GibiOMatic/Assets/Fonts#Bricolage Grotesque</FontFamily>
+  <FontFamily x:Key="FontDisplay">avares://GibiOMatic/Assets/Fonts#Anybody</FontFamily>
   <FontFamily x:Key="FontText">avares://GibiOMatic/Assets/Fonts#IBM Plex Sans</FontFamily>
   <FontFamily x:Key="FontMono">avares://GibiOMatic/Assets/Fonts#IBM Plex Mono</FontFamily>
 
   <!-- Shape -->
-  <CornerRadius x:Key="RadiusControl">10</CornerRadius>
-  <CornerRadius x:Key="RadiusField">9</CornerRadius>
-  <CornerRadius x:Key="RadiusCard">14</CornerRadius>
-  <CornerRadius x:Key="RadiusCardLarge">16</CornerRadius>
+  <CornerRadius x:Key="RadiusControl">6</CornerRadius>
+  <CornerRadius x:Key="RadiusField">6</CornerRadius>
+  <CornerRadius x:Key="RadiusCard">8</CornerRadius>
+  <CornerRadius x:Key="RadiusCardLarge">10</CornerRadius>
   <CornerRadius x:Key="RadiusPill">99</CornerRadius>
-  <CornerRadius x:Key="RadiusCover">10</CornerRadius>
-  <CornerRadius x:Key="ControlCornerRadius">9</CornerRadius>
-  <CornerRadius x:Key="OverlayCornerRadius">12</CornerRadius>
+  <CornerRadius x:Key="RadiusBadge">4</CornerRadius>
+  <CornerRadius x:Key="RadiusCover">4</CornerRadius>
+  <CornerRadius x:Key="ControlCornerRadius">6</CornerRadius>
+  <CornerRadius x:Key="OverlayCornerRadius">8</CornerRadius>
+
+  <!-- Border of controls and cards -->
+  <Thickness x:Key="BorderControl">1.5</Thickness>
 
   <!-- Space (4 px base) -->
   <x:Double x:Key="ControlHeight">44</x:Double>

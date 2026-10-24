@@ -31,10 +31,10 @@
   <Application.Styles>
     <FluentTheme>
       <FluentTheme.Palettes>
-        <ColorPaletteResources x:Key="Dark" Accent="#F5C542" RegionColor="#121317" AltHigh="#121317"
-                               BaseHigh="#ECEDEF" ErrorText="#F2677A" />
-        <ColorPaletteResources x:Key="Light" Accent="#E0A91F" RegionColor="#F4F4F1" AltHigh="#F4F4F1"
-                               BaseHigh="#17181D" ErrorText="#B8263E" />
+        <ColorPaletteResources x:Key="Dark" Accent="#FFF27A" RegionColor="#060B1C" AltHigh="#060B1C"
+                               BaseHigh="#F1F4FA" ErrorText="#FF6FB0" />
+        <ColorPaletteResources x:Key="Light" Accent="#145E92" RegionColor="#F4EEDD" AltHigh="#F4EEDD"
+                               BaseHigh="#0B1630" ErrorText="#A3134D" />
       </FluentTheme.Palettes>
     </FluentTheme>
     <StyleInclude Source="/Themes/Controls.axaml" />
