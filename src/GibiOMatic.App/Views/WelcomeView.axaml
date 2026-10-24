@@ -8,10 +8,7 @@
   <ScrollViewer>
     <StackPanel MaxWidth="760" Margin="32,64" Spacing="28" VerticalAlignment="Center">
       <StackPanel Orientation="Horizontal" Spacing="12">
-        <Border Width="44" Height="44" CornerRadius="11" Background="{DynamicResource AccentBrush}">
-          <c:StrokeIcon Data="{StaticResource Icon.Logo}" Width="26" Height="26" StrokeThickness="2.2"
-                        Foreground="{DynamicResource OnAccentBrush}" />
-        </Border>
+        <Image Source="/Assets/logo.png" Width="48" Height="48" RenderOptions.BitmapInterpolationMode="HighQuality" />
         <TextBlock Classes="brand" FontSize="26" Text="Gibi-o-matic" VerticalAlignment="Center" />
       </StackPanel>
 

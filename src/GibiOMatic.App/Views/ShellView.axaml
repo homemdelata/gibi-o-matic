@@ -13,10 +13,7 @@
             BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
       <DockPanel>
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="10" Margin="8,0,8,28">
-          <Border Width="34" Height="34" CornerRadius="9" Background="{DynamicResource AccentBrush}">
-            <c:StrokeIcon Data="{StaticResource Icon.Logo}" Width="20" Height="20" StrokeThickness="2.2"
-                          Foreground="{DynamicResource OnAccentBrush}" />
-          </Border>
+          <Image Source="/Assets/logo.png" Width="40" Height="40" RenderOptions.BitmapInterpolationMode="HighQuality" />
           <TextBlock Classes="brand" Text="Gibi-o-matic" VerticalAlignment="Center" />
         </StackPanel>
 

@@ -13,6 +13,7 @@ Status: ⬜ não iniciada · 🟨 em andamento · ✅ concluída. Seções `§` 
 | F4 | Destino Kindle | ✅ (falta o teste do usuário com o Kindle: em 23/10 o Windows não reconheceu o aparelho; **testar de novo**) |
 | F5 | Entrada automática | ✅ |
 | F6 | Polimento e distribuição | ✅ (falta o teste do usuário) |
+| F7 | Revamp visual | 🟨 |
 
 Ao terminar cada fase: build e testes verdes → atualizar este arquivo → commit e push → **parar e explicar ao usuário como testar**.
 
@@ -225,6 +226,22 @@ Objetivo: agrupar séries do mesmo universo ou linha editorial (ex.: Radiant Bla
 - [x] Instalador para Windows e AppImage para Linux com Velopack (decisão do usuário), atualização automática pelo GitHub Releases e release gerado pelo CI numa tag `v*` (rascunho).
 - [x] Documentação de usuário (README com capturas geradas por `tools/Screenshots`) e `CONTRIBUTING.md`.
 - [x] Revisão de acessibilidade (teclado, contraste): contraste AA dos dois temas e nome acessível de botões sem texto viraram testes; os botões da barra do leitor ganharam nome. Em aberto: botões de ícone com 34 px, abaixo dos 44 px da SPEC §12 (proposta ao usuário).
+
+---
+
+## F7 · Revamp visual (pedido do usuário)
+
+Visual "Aranhaverso sutil", especificado em `docs/design/revamp/REVAMP.md`.
+
+- [ ] Ícone novo (`tools/IconGen`), `.ico` e logo da barra lateral.
+- [ ] Fonte Anybody e tokens novos dos dois temas (escuro azul-noite, claro papel creme), com os testes de contraste.
+- [ ] Forma e controles, com a seleção com deslocamento (ciano à esquerda, magenta à direita).
+- [ ] Pilha de capas nas séries e universos, com testes do ViewModel.
+- [ ] Retícula decorativa e enfeite do título.
+- [ ] Passada em todas as telas.
+- [ ] Capturas regeradas, `DESIGN.md` e `DECISIONS.md` atualizados.
+
+**Pronto quando**: o usuário aprova os dois temas no app.
 
 ---
 
