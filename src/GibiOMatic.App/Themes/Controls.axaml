@@ -791,6 +791,8 @@
     <Setter Property="CornerRadius" Value="{StaticResource RadiusControl}" />
     <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
     <Setter Property="Cursor" Value="Hand" />
+    <!-- The slivers of the selected tab are drawn outside the item -->
+    <Setter Property="ClipToBounds" Value="False" />
   </Style>
   <Style Selector="TabControl.sections TabItem:pointerover /template/ Border#PART_LayoutRoot">
     <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
