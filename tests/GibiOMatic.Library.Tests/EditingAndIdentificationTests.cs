@@ -73,7 +73,7 @@ public sealed class EditingAndIdentificationTests : IAsyncLifetime
         _editor = new BookEditor(_libraries, reader, NullLogger<BookEditor>.Instance);
         _covers = new CoverImageCache(new HttpClient(new LimeCovers()), _temp.Combine("covers"), NullLogger<CoverImageCache>.Instance);
         _imports = new ImportQueueFactory(_libraries, new ImportAnalyzer(reader, thumbnails),
-            new BookImporter(reader, NullLogger<BookImporter>.Instance), thumbnails, _settings, NullLogger<ImportQueue>.Instance);
+            new BookImporter(reader, NullLogger<BookImporter>.Instance), thumbnails, _settings, new FakeRecycleBin(_temp.Combine("Lixeira")), NullLogger<ImportQueue>.Instance);
     }
 
     public async ValueTask InitializeAsync() => _library = await _libraries.CreateAsync(_temp.Combine("Arquivo"), Ct);
@@ -116,31 +116,42 @@ public sealed class EditingAndIdentificationTests : IAsyncLifetime
     public async Task Saving_keeps_history_renames_folder_and_file_and_can_be_undone()
     {
         var book = await ImportAsync("saga_vol1.pdf");
-        Assert.StartsWith("Livros/_Sem editora/saga vol1 [", book.Folder);
+        Assert.StartsWith("Livros/_a revisar/saga vol1 [", book.Folder);
 
-        var saved = await _editor.UpdateAsync(_library, book.Metadata.Id, m => m with
+        // Not approved yet: the file follows the title, but the book waits in "_a revisar".
+        var edited = await _editor.UpdateAsync(_library, book.Metadata.Id, m => m with
         {
             Title = "Saga, Vol. 1",
             Publisher = "Image Comics",
             Series = new SeriesInfo("Saga", "1"),
         }, Ct);
+        Assert.StartsWith("Livros/_a revisar/Saga, Vol. 1 [", edited.Folder);
+        Assert.Equal("Saga, Vol. 1.pdf", edited.Metadata.Files[0].Name);
+
+        var saved = await _editor.UpdateAsync(_library, book.Metadata.Id,
+            m => m with { Review = new ReviewInfo { Status = ReviewStatus.Approved, MatchedBy = MatchedBy.Manual } }, Ct);
 
         Assert.StartsWith("Livros/Image Comics/Saga/Saga, Vol. 1 [", saved.Folder);
-        Assert.Equal("Saga, Vol. 1.pdf", saved.Metadata.Files[0].Name);
         Assert.True(File.Exists(Path.Combine(_library.RootPath, saved.Folder, "Saga, Vol. 1.pdf")));
-        Assert.False(Directory.Exists(Path.Combine(_library.RootPath, "Livros", "_Sem editora")));
+        Assert.False(Directory.Exists(Path.Combine(_library.RootPath, "Livros", LibraryLayout.ToReviewFolderName)));
         Assert.Equal(saved.Folder, (await Index.GetBookAsync(book.Metadata.Id, Ct))!.Folder);
 
         var history = await _editor.GetHistoryAsync(_library, book.Metadata.Id, Ct);
-        Assert.Equal("saga vol1", Assert.Single(history).Metadata.Title);
+        Assert.Equal(2, history.Count);
+        Assert.Equal("saga vol1", history[^1].Metadata.Title);
 
-        var restored = await _editor.RestoreAsync(_library, book.Metadata.Id, history[0], Ct);
+        var restored = await _editor.RestoreAsync(_library, book.Metadata.Id, history[^1], Ct);
 
         Assert.Equal("saga vol1", restored.Metadata.Title);
         Assert.Null(restored.Metadata.Publisher);
-        Assert.StartsWith("Livros/_Sem editora/saga vol1 [", restored.Folder);
+        Assert.StartsWith("Livros/_a revisar/saga vol1 [", restored.Folder);
         Assert.Equal("saga vol1.pdf", restored.Metadata.Files[0].Name);
-        Assert.Equal(2, (await _editor.GetHistoryAsync(_library, book.Metadata.Id, Ct)).Count);
+        Assert.Equal(3, (await _editor.GetHistoryAsync(_library, book.Metadata.Id, Ct)).Count);
+
+        // Approved without a publisher: "_Sem editora".
+        var noPublisher = await _editor.UpdateAsync(_library, book.Metadata.Id,
+            m => m with { Review = new ReviewInfo { Status = ReviewStatus.Approved, MatchedBy = MatchedBy.Manual } }, Ct);
+        Assert.StartsWith("Livros/_Sem editora/saga vol1 [", noPublisher.Folder);
     }
 
     [Fact]

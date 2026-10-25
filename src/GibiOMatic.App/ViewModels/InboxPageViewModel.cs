@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using GibiOMatic.App.Resources;
 using GibiOMatic.App.Services;
 using GibiOMatic.Conversion.Images;
+using GibiOMatic.Core.Settings;
 using GibiOMatic.Library;
 using GibiOMatic.Library.Import;
 using Microsoft.Extensions.Logging;
@@ -252,19 +253,21 @@ public sealed partial class InboxPageViewModel : PageViewModel
     private readonly IFolderPicker _folderPicker;
     private readonly ThumbnailCache _thumbnails;
     private readonly ICoverLoader _covers;
+    private readonly ISettingsService _settings;
     private readonly IUiThread _ui;
     private readonly ILogger<InboxPageViewModel> _logger;
     private readonly Debouncer _refresh;
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
 
     public InboxPageViewModel(LibrarySession session, IFilePicker filePicker, IFolderPicker folderPicker, ThumbnailCache thumbnails,
-        ICoverLoader covers, IUiThread ui, ILogger<InboxPageViewModel> logger)
+        ICoverLoader covers, ISettingsService settings, IUiThread ui, ILogger<InboxPageViewModel> logger)
     {
         _session = session;
         _filePicker = filePicker;
         _folderPicker = folderPicker;
         _thumbnails = thumbnails;
         _covers = covers;
+        _settings = settings;
         _ui = ui;
         _logger = logger;
         _refresh = new Debouncer(ui, TimeSpan.FromMilliseconds(200), () => RefreshAsync());
@@ -277,6 +280,7 @@ public sealed partial class InboxPageViewModel : PageViewModel
         }
 
         session.WatcherChanged += OnWatcherChanged;
+        settings.Saved += OnSettingsSaved;
         UpdateWatch();
     }
 
@@ -298,6 +302,9 @@ public sealed partial class InboxPageViewModel : PageViewModel
 
     private void OnWatcherChanged(object? sender, EventArgs e) => _ui.Post(UpdateWatch);
 
+    // The help text tells where processed files go.
+    private void OnSettingsSaved(object? sender, AppSettings e) => _ui.Post(UpdateWatch);
+
     private void UpdateWatch()
     {
         var watcher = _session.Watcher;
@@ -305,8 +312,12 @@ public sealed partial class InboxPageViewModel : PageViewModel
         WatchFolder = watcher?.Folder;
         (WatchTitle, WatchText) = WatchStatus switch
         {
-            InboxWatchStatus.Watching => (Strings.Inbox_WatchingTitle,
-                string.Format(CultureInfo.CurrentCulture, Strings.Inbox_WatchingHelp, InboxFolder.ImportedFolderName)),
+            InboxWatchStatus.Watching => (Strings.Inbox_WatchingTitle, _settings.Current.AfterImport switch
+            {
+                AfterImportAction.RecycleBin => Strings.Inbox_WatchingHelpRecycleBin,
+                AfterImportAction.Delete => Strings.Inbox_WatchingHelpDelete,
+                _ => string.Format(CultureInfo.CurrentCulture, Strings.Inbox_WatchingHelp, InboxFolder.ImportedFolderName),
+            }),
             InboxWatchStatus.Missing => (Strings.Inbox_WatchMissingTitle,
                 string.Format(CultureInfo.CurrentCulture, Strings.Inbox_WatchMissing, WatchFolder)),
             _ => (Strings.Inbox_WatchOffTitle, Strings.Inbox_WatchOff),
@@ -541,6 +552,7 @@ public sealed partial class InboxPageViewModel : PageViewModel
     public override void Dispose()
     {
         _session.WatcherChanged -= OnWatcherChanged;
+        _settings.Saved -= OnSettingsSaved;
         if (_session.Queue is { } queue)
         {
             queue.Changed -= OnQueueChanged;

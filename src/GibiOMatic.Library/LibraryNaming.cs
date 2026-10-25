@@ -7,7 +7,8 @@ namespace GibiOMatic.Library;
 /// <summary>
 /// Folder and file names inside the library (SPEC §4.2):
 /// <c>Livros/{Editora}/{Série}/{Título} [{id6}]/{Título}.{ext}</c>. Books without a series
-/// skip the series level.
+/// skip the series level. Books not approved yet wait in <c>Livros/_a revisar/{Título} [{id6}]</c>,
+/// since their publisher and series are still guesses.
 /// </summary>
 public static class LibraryNaming
 {
@@ -23,10 +24,17 @@ public static class LibraryNaming
     public static string BookFolder(BookMetadata book)
     {
         var parts = new List<string> { LibraryLayout.BooksFolderName };
-        parts.Add(Segment(book.Publisher) ?? LibraryLayout.NoPublisherFolderName);
-        if (Segment(book.Series?.Name) is { } series)
+        if (book.Review.Status != ReviewStatus.Approved)
         {
-            parts.Add(series);
+            parts.Add(LibraryLayout.ToReviewFolderName);
+        }
+        else
+        {
+            parts.Add(Segment(book.Publisher) ?? LibraryLayout.NoPublisherFolderName);
+            if (Segment(book.Series?.Name) is { } series)
+            {
+                parts.Add(series);
+            }
         }
 
         var title = Segment(book.Title) ?? "Livro";

@@ -50,7 +50,12 @@
   <data name="Settings_RebuildDone" xml:space="preserve"><value>Index rebuilt: {0} books.</value></data>
   <data name="Settings_RebuildIssues" xml:space="preserve"><value>Index rebuilt: {0} books. {1} metadata.json files with problems were skipped (details in the log).</value></data>
   <data name="Settings_InboxLabel" xml:space="preserve"><value>Inbox</value></data>
-  <data name="Settings_InboxHelp" xml:space="preserve"><value>Folder where new downloads arrive. What arrives there is imported on its own and then moved to _importados, inside it.</value></data>
+  <data name="Settings_InboxHelp" xml:space="preserve"><value>Folder where new downloads arrive. What arrives there is imported on its own.</value></data>
+  <data name="Settings_AfterImportLabel" xml:space="preserve"><value>After importing</value></data>
+  <data name="Settings_AfterImportHelp" xml:space="preserve"><value>What to do with the file in the Inbox folder. It only leaves once its copy in the library has been verified.</value></data>
+  <data name="AfterImport_RecycleBin" xml:space="preserve"><value>Send to the Recycle Bin</value></data>
+  <data name="AfterImport_MoveToImported" xml:space="preserve"><value>Move to {0}</value></data>
+  <data name="AfterImport_Delete" xml:space="preserve"><value>Delete</value></data>
   <data name="Settings_Language" xml:space="preserve"><value>Language</value></data>
   <data name="Settings_Theme" xml:space="preserve"><value>Theme</value></data>
   <data name="Settings_RestartNotice" xml:space="preserve"><value>The new language takes effect after restarting the app.</value></data>
@@ -657,6 +662,8 @@
   <data name="Settings_InboxInsideLibrary" xml:space="preserve"><value>The Inbox folder and the library cannot be inside one another.</value></data>
   <data name="Inbox_WatchingTitle" xml:space="preserve"><value>Watching the inbox folder</value></data>
   <data name="Inbox_WatchingHelp" xml:space="preserve"><value>New files in this folder are imported on their own (duplicates follow the suggestion) and then go to {0}.</value></data>
+  <data name="Inbox_WatchingHelpRecycleBin" xml:space="preserve"><value>New files in this folder are imported on their own (duplicates follow the suggestion) and then go to the Recycle Bin.</value></data>
+  <data name="Inbox_WatchingHelpDelete" xml:space="preserve"><value>New files in this folder are imported on their own (duplicates follow the suggestion) and then are deleted from here.</value></data>
   <data name="Inbox_WatchOffTitle" xml:space="preserve"><value>Automatic import is off</value></data>
   <data name="Inbox_WatchOff" xml:space="preserve"><value>Choose the Inbox folder in Settings so new downloads come in on their own.</value></data>
   <data name="Inbox_WatchMissingTitle" xml:space="preserve"><value>Inbox folder not found</value></data>

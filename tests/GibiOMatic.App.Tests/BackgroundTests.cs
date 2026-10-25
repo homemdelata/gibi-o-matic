@@ -80,8 +80,9 @@ public sealed class BackgroundTests : IDisposable
         var (title, text) = Assert.Single(_app.Tray.Notifications);
         Assert.Equal(Format(Strings.Notify_Title, 2), title);
         Assert.Equal($"{Strings.Notify_ApprovedOne} · {Strings.Notify_ToReviewOne}", text);
-        Assert.True(File.Exists(Inbox(InboxFolder.ImportedFolderName, "Saga_Vol1.cbz")));
-        Assert.True(File.Exists(Inbox(InboxFolder.ImportedFolderName, "houseofslaughter_vol1.pdf")));
+        // By default the downloads go to the recycle bin once they are in the library.
+        Assert.Equal(["houseofslaughter_vol1.pdf", "Saga_Vol1.cbz"], _app.RecycleBin.Recycled.Order(StringComparer.OrdinalIgnoreCase));
+        Assert.False(Directory.Exists(Inbox(InboxFolder.ImportedFolderName)));
         var books = await _app.Get<LibrarySession>().Index!.GetBooksAsync(Ct);
         Assert.Equal(2, books.Count);
 

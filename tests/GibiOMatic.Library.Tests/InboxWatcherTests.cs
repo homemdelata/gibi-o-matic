@@ -32,18 +32,20 @@ public sealed class InboxWatcherTests : IAsyncLifetime
     private readonly ImportQueueFactory _imports;
     private readonly IdentificationQueueFactory _identifications;
     private readonly FakeIdentifier _identifier = new();
+    private readonly FakeRecycleBin _recycleBin;
     private LibraryInfo _library = null!;
     private ImportQueue _queue = null!;
 
     public InboxWatcherTests()
     {
         _paths = new AppPaths(_temp.Combine("config"), _temp.Combine("data"));
+        _recycleBin = new FakeRecycleBin(_temp.Combine("Lixeira"));
         _libraries = new LibraryService(_paths, NullLogger<LibraryService>.Instance);
         _settings = new JsonSettingsService(_paths, NullLogger<JsonSettingsService>.Instance);
         var reader = new BookFileReader(NullLogger<BookFileReader>.Instance);
         var thumbnails = new ThumbnailCache(_paths, NullLogger<ThumbnailCache>.Instance);
         _imports = new ImportQueueFactory(_libraries, new ImportAnalyzer(reader, thumbnails),
-            new BookImporter(reader, NullLogger<BookImporter>.Instance), thumbnails, _settings, NullLogger<ImportQueue>.Instance);
+            new BookImporter(reader, NullLogger<BookImporter>.Instance), thumbnails, _settings, _recycleBin, NullLogger<ImportQueue>.Instance);
         var covers = new CoverImageCache(new HttpClient(new LimeCovers()), _temp.Combine("covers"), NullLogger<CoverImageCache>.Instance);
         _identifications = new IdentificationQueueFactory(_libraries, _identifier, new BookEditor(_libraries, reader, NullLogger<BookEditor>.Instance),
             covers, _settings, NullLogger<IdentificationQueue>.Instance);
@@ -53,7 +55,8 @@ public sealed class InboxWatcherTests : IAsyncLifetime
     {
         _library = await _libraries.CreateAsync(_temp.Combine("Arquivo"), Ct);
         Directory.CreateDirectory(Inbox());
-        await _settings.SaveAsync(_settings.Current with { InboxPath = Inbox() }, Ct);
+        // Most tests follow the files to _importados; the recycle bin and deleting have their own.
+        await _settings.SaveAsync(_settings.Current with { InboxPath = Inbox(), AfterImport = AfterImportAction.MoveToImported }, Ct);
         _queue = _imports.Create(_library);
         await _queue.StartAsync(Ct);
     }
@@ -174,6 +177,55 @@ public sealed class InboxWatcherTests : IAsyncLifetime
         Assert.Equal((InboxItemState.Skipped, InboxMessage.AlreadyInLibrary), (second.State, second.Message));
         Assert.False(File.Exists(Inbox("saga.cbz")));
         Assert.True(File.Exists(Imported("saga (2).cbz")));
+    }
+
+    [Fact]
+    public async Task By_default_an_imported_file_goes_to_the_recycle_bin()
+    {
+        await _settings.SaveAsync(_settings.Current with { AfterImport = AfterImportAction.RecycleBin }, Ct);
+        var source = SyntheticBooks.Cbz(Inbox("Humble", "Saga_Vol1.cbz"), comicInfoXml: SagaInfo);
+
+        await AddAutoAndWaitAsync(source);
+
+        Assert.Single(await Index.GetBooksAsync(Ct));
+        Assert.Equal(["Saga_Vol1.cbz"], _recycleBin.Recycled);
+        Assert.False(File.Exists(source));
+        Assert.False(Directory.Exists(Imported()));
+        Assert.False(Directory.Exists(Inbox("Humble")));
+
+        // The same file again: already in the library, so it goes to the recycle bin too.
+        SyntheticBooks.Cbz(Inbox("Saga_Vol1.cbz"), comicInfoXml: SagaInfo);
+        await AddAutoAndWaitAsync(Inbox("Saga_Vol1.cbz"));
+        Assert.Equal(2, _recycleBin.Recycled.Count);
+        Assert.Single(await Index.GetBooksAsync(Ct));
+    }
+
+    [Fact]
+    public async Task Without_a_recycle_bin_the_file_goes_to_importados_instead_of_being_deleted()
+    {
+        await _settings.SaveAsync(_settings.Current with { AfterImport = AfterImportAction.RecycleBin }, Ct);
+        _recycleBin.Available = false;
+        var source = SyntheticBooks.Cbz(Inbox("Saga_Vol1.cbz"), comicInfoXml: SagaInfo);
+
+        await AddAutoAndWaitAsync(source);
+
+        Assert.Empty(_recycleBin.Recycled);
+        Assert.True(File.Exists(Imported("Saga_Vol1.cbz")));
+    }
+
+    [Fact]
+    public async Task Deleting_removes_the_file_from_the_inbox_for_good()
+    {
+        await _settings.SaveAsync(_settings.Current with { AfterImport = AfterImportAction.Delete }, Ct);
+        var source = SyntheticBooks.Cbz(Inbox("Humble", "Saga_Vol1.cbz"), comicInfoXml: SagaInfo);
+
+        await AddAutoAndWaitAsync(source);
+
+        Assert.Single(await Index.GetBooksAsync(Ct));
+        Assert.False(File.Exists(source));
+        Assert.Empty(_recycleBin.Recycled);
+        Assert.False(Directory.Exists(Imported()));
+        Assert.False(Directory.Exists(Inbox("Humble")));
     }
 
     [Fact]

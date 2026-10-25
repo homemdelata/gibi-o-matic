@@ -197,7 +197,7 @@ public sealed class SyncTests : IAsyncLifetime
         var thumbnails = new ThumbnailCache(paths, NullLogger<ThumbnailCache>.Instance);
         _editor = new BookEditor(_libraries, reader, NullLogger<BookEditor>.Instance);
         _imports = new ImportQueueFactory(_libraries, new ImportAnalyzer(reader, thumbnails),
-            new BookImporter(reader, NullLogger<BookImporter>.Instance), thumbnails, _settings, NullLogger<ImportQueue>.Instance);
+            new BookImporter(reader, NullLogger<BookImporter>.Instance), thumbnails, _settings, new FakeRecycleBin(_temp.Combine("Lixeira")), NullLogger<ImportQueue>.Instance);
         _komga = new KomgaDestinationType(new KomgaClient(new HttpClient(), NullLogger<KomgaClient>.Instance), new NoSecrets(), NullLoggerFactory.Instance);
     }
 

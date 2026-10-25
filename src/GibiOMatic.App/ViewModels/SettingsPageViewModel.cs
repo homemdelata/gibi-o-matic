@@ -9,6 +9,7 @@ using GibiOMatic.Core.Domain;
 using GibiOMatic.Core.Libraries;
 using GibiOMatic.Core.Secrets;
 using GibiOMatic.Core.Settings;
+using GibiOMatic.Library.Import;
 using GibiOMatic.Metadata;
 using GibiOMatic.Metadata.Http;
 using GibiOMatic.Metadata.Sources;
@@ -19,6 +20,8 @@ namespace GibiOMatic.App.ViewModels;
 public sealed record LanguageOption(string Code, string DisplayName);
 
 public sealed record ThemeOption(AppTheme Theme, string DisplayName, bool IsAvailable);
+
+public sealed record AfterImportOption(AfterImportAction Action, string DisplayName);
 
 /// <summary>A metadata source in the priority list.</summary>
 public sealed partial class SourceOptionViewModel(string id, string name, string help, bool enabled) : ObservableObject
@@ -101,6 +104,13 @@ public sealed partial class SettingsPageViewModel : PageViewModel
         new(AppTheme.System, Strings.Theme_System, IsAvailable: true),
     ];
 
+    public IReadOnlyList<AfterImportOption> AfterImportOptions { get; } =
+    [
+        new(AfterImportAction.RecycleBin, Strings.AfterImport_RecycleBin),
+        new(AfterImportAction.MoveToImported, string.Format(CultureInfo.CurrentCulture, Strings.AfterImport_MoveToImported, InboxFolder.ImportedFolderName)),
+        new(AfterImportAction.Delete, Strings.AfterImport_Delete),
+    ];
+
     public string LibraryPath => _session.Current?.RootPath ?? string.Empty;
 
     /// <summary>Metadata sources in priority order (SPEC §8.1).</summary>
@@ -127,6 +137,10 @@ public sealed partial class SettingsPageViewModel : PageViewModel
 
     [ObservableProperty]
     public partial string? InboxPath { get; set; }
+
+    /// <summary>What happens to a downloaded file once it is in the library.</summary>
+    [ObservableProperty]
+    public partial AfterImportOption SelectedAfterImport { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(RestartRequired))]
@@ -387,6 +401,7 @@ public sealed partial class SettingsPageViewModel : PageViewModel
         var updated = _settings.Current with
         {
             InboxPath = inbox,
+            AfterImport = SelectedAfterImport.Action,
             Background = background with
             {
                 // Not asked yet and left as is: the first close still asks.
@@ -421,10 +436,11 @@ public sealed partial class SettingsPageViewModel : PageViewModel
         }
     }
 
-    [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(SelectedLanguage), nameof(SelectedTheme))]
+    [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(SelectedLanguage), nameof(SelectedTheme), nameof(SelectedAfterImport))]
     private void LoadFrom(AppSettings settings)
     {
         InboxPath = settings.InboxPath;
+        SelectedAfterImport = AfterImportOptions.FirstOrDefault(o => o.Action == settings.AfterImport) ?? AfterImportOptions[0];
         SelectedLanguage = Languages.FirstOrDefault(l => l.Code == settings.Language) ?? Languages[0];
         SelectedTheme = Themes.FirstOrDefault(t => t.Theme == settings.Theme && t.IsAvailable) ?? Themes[0];
         SetFormats(settings.FormatPreference);

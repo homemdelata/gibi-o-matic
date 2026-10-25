@@ -1,4 +1,5 @@
 using GibiOMatic.Core.Domain;
+using GibiOMatic.Core.IO;
 using GibiOMatic.Core.Libraries;
 using GibiOMatic.Core.Settings;
 using GibiOMatic.Library.Index;
@@ -22,6 +23,7 @@ public sealed class ImportQueue : IAsyncDisposable
     private readonly BookImporter _importer;
     private readonly ThumbnailCache _thumbnails;
     private readonly ISettingsService _settings;
+    private readonly IRecycleBin _recycleBin;
     private readonly ILogger<ImportQueue> _logger;
     private readonly SemaphoreSlim _wake = new(0);
     private readonly CancellationTokenSource _stop = new();
@@ -30,8 +32,9 @@ public sealed class ImportQueue : IAsyncDisposable
     private Task _worker = Task.CompletedTask;
 
     public ImportQueue(LibraryInfo library, LibraryIndex index, ImportAnalyzer analyzer, BookImporter importer,
-        ThumbnailCache thumbnails, ISettingsService settings, ILogger<ImportQueue> logger)
+        ThumbnailCache thumbnails, ISettingsService settings, IRecycleBin recycleBin, ILogger<ImportQueue> logger)
     {
+        _recycleBin = recycleBin;
         _library = library;
         _index = index;
         _store = new InboxStore(index);
@@ -461,26 +464,68 @@ public sealed class ImportQueue : IAsyncDisposable
 
     /// <summary>
     /// Records how an item ended. A file from the watched folder that is now in the library (or was
-    /// already there) moves to <c>_importados</c>; a failed one stays where it is, to be retried.
+    /// already there) leaves the inbox as the settings say; a failed one stays where it is, to be retried.
     /// </summary>
     private async Task FinishAsync(InboxItem item, InboxItemState state, CancellationToken ct,
         string? bookId = null, InboxMessage message = InboxMessage.None, string? detail = null)
     {
-        // Moved before the state changes: whoever sees the item finished finds the file in its final place.
+        // Handled before the state changes: whoever sees the item finished finds the file in its final place.
         if (item.Auto && state is InboxItemState.Imported or InboxItemState.Skipped)
         {
-            await MoveToImportedAsync(item, ct);
+            // Only a file whose exact copy is in the library may go away; other skips are kept in _importados.
+            var inLibrary = state == InboxItemState.Imported || message == InboxMessage.AlreadyInLibrary;
+            await ClearFromInboxAsync(item, inLibrary ? _settings.Current.AfterImport : AfterImportAction.MoveToImported, ct);
         }
 
         await _store.SetStateAsync(item.Id, state, ct, bookId: bookId, message: message, detail: detail);
         ItemFinished?.Invoke(this, new InboxItemFinished(item.Id, item.Auto, state, bookId ?? item.BookId, message));
     }
 
-    private async Task MoveToImportedAsync(InboxItem item, CancellationToken ct)
+    private async Task ClearFromInboxAsync(InboxItem item, AfterImportAction action, CancellationToken ct)
     {
         if (_settings.Current.InboxPath is not { } inbox
-            || InboxFolder.ImportedPathFor(inbox, item.SourcePath) is not { } target
+            || !InboxFolder.IsInside(inbox, item.SourcePath)
             || !File.Exists(item.SourcePath))
+        {
+            return;
+        }
+
+        if (action == AfterImportAction.RecycleBin)
+        {
+            if (_recycleBin.TryRecycle(item.SourcePath))
+            {
+                _logger.LogInformation("Inbox: sent {Source} to the recycle bin", item.SourcePath);
+                InboxFolder.RemoveEmptyFolders(inbox, Path.GetDirectoryName(item.SourcePath)!);
+                return;
+            }
+
+            // Never deleted for good instead (a drive without a recycle bin, a file in use).
+            _logger.LogWarning("Inbox: could not send {Source} to the recycle bin; moving it to {Folder}",
+                item.SourcePath, InboxFolder.ImportedFolderName);
+        }
+        else if (action == AfterImportAction.Delete)
+        {
+            try
+            {
+                File.Delete(item.SourcePath);
+                _logger.LogInformation("Inbox: deleted {Source}", item.SourcePath);
+                InboxFolder.RemoveEmptyFolders(inbox, Path.GetDirectoryName(item.SourcePath)!);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // It is in the library anyway; the next scan finds it again, sees it is there and retries.
+                _logger.LogWarning(ex, "Could not delete {Source}", item.SourcePath);
+            }
+
+            return;
+        }
+
+        await MoveToImportedAsync(inbox, item, ct);
+    }
+
+    private async Task MoveToImportedAsync(string inbox, InboxItem item, CancellationToken ct)
+    {
+        if (InboxFolder.ImportedPathFor(inbox, item.SourcePath) is not { } target)
         {
             return;
         }

@@ -96,3 +96,36 @@ public sealed class SecretStoreTests
         await Assert.ThrowsAsync<PlatformNotSupportedException>(() => store.SetAsync("x", "y", TestContext.Current.CancellationToken));
     }
 }
+
+public sealed class FreedesktopTrashTests : IDisposable
+{
+    private readonly TempDirectory _temp = new();
+
+    public void Dispose() => _temp.Dispose();
+
+    [Fact]
+    public void A_file_goes_to_the_trash_with_its_info_and_names_do_not_collide()
+    {
+        var trash = new FreedesktopTrash(_temp.Combine("Trash"));
+        Directory.CreateDirectory(_temp.Combine("Entrada"));
+        var first = _temp.Combine("Entrada", "Saga 1.cbz");
+        File.WriteAllText(first, "one");
+
+        Assert.True(trash.TryRecycle(first));
+        File.WriteAllText(first, "two");
+        Assert.True(trash.TryRecycle(first));
+
+        Assert.False(File.Exists(first));
+        Assert.Equal("one", File.ReadAllText(_temp.Combine("Trash", "files", "Saga 1.cbz")));
+        Assert.Equal("two", File.ReadAllText(_temp.Combine("Trash", "files", "Saga 1 (2).cbz")));
+        var info = File.ReadAllText(_temp.Combine("Trash", "info", "Saga 1 (2).cbz.trashinfo"));
+        Assert.StartsWith("[Trash Info]\nPath=", info);
+        Assert.Contains("Saga%201.cbz\nDeletionDate=", info);
+    }
+
+    [Fact]
+    public void A_missing_file_is_not_recycled()
+    {
+        Assert.False(new FreedesktopTrash(_temp.Combine("Trash")).TryRecycle(_temp.Combine("nada.cbz")));
+    }
+}

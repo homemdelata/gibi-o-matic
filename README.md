@@ -12,7 +12,8 @@ originais intocados, acerta os metadados e gera as cópias de leitura para onde 
   EPUB), a capa e um `metadata.json`. O original nunca é alterado; o mesmo livro em vários formatos vira um
   livro só, com o formato preferido como principal.
 - **Entrada automática.** Aponte a pasta de downloads e cada arquivo novo entra sozinho na biblioteca. Depois
-  ele vai para `_importados`, dentro dela. O app pode ficar na bandeja do sistema e iniciar com ele.
+  ele vai para a Lixeira (ou para `_importados`, dentro dela, se preferir). Os livros esperam em `_a revisar`
+  até os metadados serem aprovados. O app pode ficar na bandeja do sistema e iniciar com ele.
 - **Metadados.** Busca no ComicVine e na Open Library. As identificações seguras são aprovadas sozinhas, e
   as outras esperam na **Revisão**, com a comparação campo a campo. O **Editor** cuida do resto, inclusive
   em lote. Uma nota de qualidade aponta o que falta em cada livro.

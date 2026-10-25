@@ -110,7 +110,7 @@ public sealed class KindleTests : IAsyncLifetime
         var thumbnails = new ThumbnailCache(_paths, NullLogger<ThumbnailCache>.Instance);
         _editor = new BookEditor(_libraries, reader, NullLogger<BookEditor>.Instance);
         _imports = new ImportQueueFactory(_libraries, new ImportAnalyzer(reader, thumbnails),
-            new BookImporter(reader, NullLogger<BookImporter>.Instance), thumbnails, _settings, NullLogger<ImportQueue>.Instance);
+            new BookImporter(reader, NullLogger<BookImporter>.Instance), thumbnails, _settings, new FakeRecycleBin(_temp.Combine("Lixeira")), NullLogger<ImportQueue>.Instance);
         _type = new KindleDestinationType(_kcc, _paths, NullLoggerFactory.Instance);
     }
 

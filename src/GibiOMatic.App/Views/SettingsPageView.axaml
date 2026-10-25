@@ -69,6 +69,24 @@
               </Grid>
             </Grid>
           </Border>
+
+          <Border Classes="card">
+            <Grid ColumnDefinitions="260,*">
+              <StackPanel Spacing="2" Margin="0,0,16,0" VerticalAlignment="Center">
+                <TextBlock Classes="strong" Text="{x:Static r:Strings.Settings_AfterImportLabel}" />
+                <TextBlock Classes="help" Text="{x:Static r:Strings.Settings_AfterImportHelp}" />
+              </StackPanel>
+              <ComboBox Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Stretch"
+                        ItemsSource="{Binding AfterImportOptions}" SelectedItem="{Binding SelectedAfterImport}"
+                        AutomationProperties.Name="{x:Static r:Strings.Settings_AfterImportLabel}">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="vm:AfterImportOption">
+                    <TextBlock Text="{Binding DisplayName}" />
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+            </Grid>
+          </Border>
         </StackPanel>
       </TabItem>
 

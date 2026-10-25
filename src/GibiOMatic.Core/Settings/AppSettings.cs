@@ -22,6 +22,9 @@ public sealed record AppSettings
     /// <summary>Folder watched for new downloads (F5).</summary>
     public string? InboxPath { get; init; }
 
+    /// <summary>What happens to a file of the watched folder once it is safely in the library.</summary>
+    public AfterImportAction AfterImport { get; init; } = AfterImportAction.RecycleBin;
+
     /// <summary>Tray icon and starting with the system, so the inbox is watched with the window closed (F5).</summary>
     public BackgroundSettings Background { get; init; } = new();
 
@@ -68,6 +71,18 @@ public sealed record BackgroundSettings
     public bool? CloseToTray { get; init; }
 
     public StartupMode StartWithSystem { get; init; } = StartupMode.Off;
+}
+
+public enum AfterImportAction
+{
+    /// <summary>To the system's recycle bin (default); to <c>_importados</c> when the drive has none.</summary>
+    RecycleBin,
+
+    /// <summary>To <c>_importados</c>, inside the inbox, keeping the subfolders.</summary>
+    MoveToImported,
+
+    /// <summary>Deleted for good.</summary>
+    Delete,
 }
 
 public enum StartupMode

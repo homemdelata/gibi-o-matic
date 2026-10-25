@@ -18,8 +18,12 @@ public sealed class AppTestContext : IDisposable
     public AppTestContext()
     {
         Paths = new AppPaths(_temp.Combine("config"), _temp.Combine("data"));
+        RecycleBin = new FakeRecycleBin(_temp.Combine("Lixeira"));
         _services = CreateServices();
     }
+
+    /// <summary>Never the real recycle bin: files go to a folder of the test.</summary>
+    public FakeRecycleBin RecycleBin { get; }
 
     public AppPaths Paths { get; }
 
@@ -79,6 +83,7 @@ public sealed class AppTestContext : IDisposable
             .AddSingleton<GibiOMatic.App.Services.Tray.ITrayIcon>(Tray)
             .AddSingleton<IStartupRegistration>(Startup)
             .AddSingleton<IAppUpdater>(Updater)
+            .AddSingleton<GibiOMatic.Core.IO.IRecycleBin>(RecycleBin)
             // The app waits for downloads to settle for seconds; tests do not.
             .AddSingleton(new GibiOMatic.Library.Import.InboxWatchOptions
             {

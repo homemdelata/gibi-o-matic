@@ -75,14 +75,17 @@ ENTRADA ──importar──► ARQUIVO (original + metadata.json) ──gerar�
       House of Slaughter/
         House of Slaughter, Vol. 1 [p81xq0]/
           ...
-    _Sem editora/
+    _Sem editora/               # aprovados sem editora
+      ...
+    _a revisar/                 # ainda não revisados: {Título} [id]/, sem editora e série
       ...
   .gibiomatic/
     history/<id>/<timestamp>.json  # versões anteriores do metadata.json (últimas 20)
 ```
 
 - `[k3f9a2]` = id curto e estável do livro (6 caracteres de um ULID). Garante nomes únicos e permite achar o livro mesmo depois de renomear.
-- A pasta é **renomeada** quando editora, série ou título mudam. No Drive isso é um "mover", barato.
+- Enquanto o livro não foi revisado, ele fica em `Livros/_a revisar/{Título} [id]/`, porque editora e série ainda são palpites. Ao ser aprovado (automaticamente, na Revisão ou no Editor), vai para `{Editora}/{Série}/`; aprovado sem editora, para `_Sem editora/`.
+- A pasta é **renomeada** quando editora, série, título ou o status de revisão mudam. No Drive isso é um "mover", barato.
 - O nome do original vira `{Título}.{ext}`. O conteúdo nunca é alterado; o nome de download fica registrado em `metadata.json`.
 
 ### 4.3 `metadata.json`
@@ -156,7 +159,7 @@ Faixas: **Ruim** (< 60), **Revisar** (60–84), **OK** (≥ 85). A regra já exi
    - mesmo livro identificado com arquivo diferente: pergunta *Substituir o atual* / *Manter os dois* (formato extra) / *Ignorar*. Sugere "Substituir" quando o novo arquivo é de um formato preferido (ver seção 10).
 4. Lê metadados embutidos: `ComicInfo.xml` (CBZ/CBR), OPF (EPUB), Info/XMP (PDF), ISBN na página de créditos (opcional, fase posterior).
 5. Roda a identificação (seção 8) e mostra o resultado na tela Entrada.
-6. Ao confirmar: copia o original para o Arquivo, extrai a capa e grava o `metadata.json`. O arquivo na Entrada é movido para `Entrada/_importados/` (mantendo as subpastas), não apagado. Os arquivos que chegam na pasta observada são confirmados sozinhos, com a decisão sugerida para duplicados; os adicionados à mão continuam esperando "Importar" e ficam onde estão.
+6. Ao confirmar: copia o original para o Arquivo, extrai a capa e grava o `metadata.json`. Depois de a cópia ser conferida pelo hash, o arquivo da pasta observada sai da Entrada conforme a configuração "Depois de importar": **Lixeira do sistema** (padrão), mover para `Entrada/_importados/` (mantendo as subpastas) ou apagar. Numa unidade sem Lixeira (rede, pendrive, Google Drive), a opção Lixeira move para `_importados`; o app nunca apaga de vez sem o usuário ter escolhido "Apagar". Os arquivos que chegam na pasta observada são confirmados sozinhos, com a decisão sugerida para duplicados; os adicionados à mão continuam esperando "Importar" e ficam onde estão.
 7. **Segundo plano**: para observar a pasta sem a janela aberta, o app fica na bandeja do sistema e pode iniciar com o sistema. Só roda uma instância; abrir de novo traz a janela existente.
    - **Fechar a janela** manda o app para a bandeja (padrão). Na primeira vez, um aviso explica que o app continua rodando na bandeja e deixa escolher: *Continuar na bandeja* ou *Fechar o app*. A escolha fica salva e pode ser mudada nas Configurações. Sair de verdade: menu da bandeja → *Sair*.
    - **Iniciar com o sistema**: desligado por padrão. Ao ligar, o usuário escolhe se o app abre a janela ou só o ícone na bandeja (padrão: só a bandeja).
@@ -279,7 +282,7 @@ Não há migração do Calibre. A coleção é reconstruída a partir dos origin
 
 ## 11. Configurações
 
-- **Gerais** (`%APPDATA%\GibiOMatic\settings.json`): idioma (pt-BR, en), tema (escuro, claro, sistema), pasta do Arquivo, pasta de Entrada, fechar a janela (bandeja ou sair), iniciar com o sistema (desligado, só a bandeja, com a janela), fontes de metadados (ordem e liga/desliga), limiar de aprovação automática, destinos.
+- **Gerais** (`%APPDATA%\GibiOMatic\settings.json`): idioma (pt-BR, en), tema (escuro, claro, sistema), pasta do Arquivo, pasta de Entrada, o que fazer com o arquivo depois de importar (Lixeira, `_importados` ou apagar), fechar a janela (bandeja ou sair), iniciar com o sistema (desligado, só a bandeja, com a janela), fontes de metadados (ordem e liga/desliga), limiar de aprovação automática, destinos.
 - **Segredos** (chaves de API) **não vão para arquivos de texto**: Windows DPAPI (`ProtectedData`) e, no Linux, libsecret.
 - **Da biblioteca** (`gibiomatic-library.json`, no Drive): só o que é da coleção, independente da máquina (versão do formato, id).
 

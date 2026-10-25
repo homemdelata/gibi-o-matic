@@ -32,7 +32,7 @@ public sealed class ImportQueueTests : IAsyncLifetime
         var reader = new BookFileReader(NullLogger<BookFileReader>.Instance);
         var thumbnails = new ThumbnailCache(_paths, NullLogger<ThumbnailCache>.Instance);
         _factory = new ImportQueueFactory(_libraries, new ImportAnalyzer(reader, thumbnails),
-            new BookImporter(reader, NullLogger<BookImporter>.Instance), thumbnails, _settings, NullLogger<ImportQueue>.Instance);
+            new BookImporter(reader, NullLogger<BookImporter>.Instance), thumbnails, _settings, new FakeRecycleBin(_temp.Combine("Lixeira")), NullLogger<ImportQueue>.Instance);
     }
 
     public async ValueTask InitializeAsync()
@@ -101,7 +101,8 @@ public sealed class ImportQueueTests : IAsyncLifetime
         Assert.Equal(InboxItemState.Imported, imported.Item.State);
         var book = Assert.Single(await BooksAsync());
         Assert.Equal(imported.Item.BookId, book.Metadata.Id);
-        Assert.Equal($"Livros/Image Comics/Saga/Saga, Vol. 1 [{Ulid.ShortId(book.Metadata.Id)}]", book.Folder);
+        // Publisher and series are still guesses: the book waits in "_a revisar" until approved.
+        Assert.Equal($"Livros/_a revisar/Saga, Vol. 1 [{Ulid.ShortId(book.Metadata.Id)}]", book.Folder);
 
         var folder = Path.Combine(_library.RootPath, book.Folder);
         var original = Path.Combine(folder, "Saga, Vol. 1.cbz");
@@ -119,7 +120,7 @@ public sealed class ImportQueueTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Books_without_metadata_go_to_the_no_publisher_folder_with_the_file_name_as_title()
+    public async Task Books_without_metadata_go_to_the_to_review_folder_with_the_file_name_as_title()
     {
         var source = SyntheticBooks.Pdf(Downloads("houseofslaughter_vol1.pdf"));
 
@@ -128,7 +129,7 @@ public sealed class ImportQueueTests : IAsyncLifetime
 
         var book = Assert.Single(await BooksAsync());
         Assert.Equal("houseofslaughter vol1", book.Metadata.Title);
-        Assert.StartsWith("Livros/_Sem editora/houseofslaughter vol1 [", book.Folder);
+        Assert.StartsWith("Livros/_a revisar/houseofslaughter vol1 [", book.Folder);
         Assert.Equal(QualityBand.Bad, QualityAnalyzer.Analyze(book.Metadata).Band);
     }
 
@@ -171,10 +172,10 @@ public sealed class ImportQueueTests : IAsyncLifetime
         Assert.Equal(2, book.Metadata.Files.Count);
         Assert.Equal(BookFormat.Cbz, book.MainFile!.Format);
         Assert.Equal(BookFormat.Pdf, Assert.Single(book.Metadata.Files, f => f.Role == FileRole.Extra).Format);
-        // The CBZ only filled what the PDF did not have, and the book moved to its publisher's folder.
+        // The CBZ only filled what the PDF did not have; the book is still waiting for review.
         Assert.Equal("Image Comics", book.Metadata.Publisher);
-        Assert.StartsWith("Livros/Image Comics/Saga/Saga, Vol. 1 [", book.Folder);
-        Assert.False(Directory.Exists(Path.Combine(_library.RootPath, "Livros", "_Sem editora")));
+        Assert.StartsWith("Livros/_a revisar/Saga, Vol. 1 [", book.Folder);
+        Assert.Single(Directory.GetDirectories(Path.Combine(_library.RootPath, "Livros")));
         Assert.True(File.Exists(Path.Combine(_library.RootPath, book.Folder, "Saga, Vol. 1.cbz")));
         Assert.True(File.Exists(Path.Combine(_library.RootPath, book.Folder, "Saga, Vol. 1.pdf")));
     }

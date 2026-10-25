@@ -245,6 +245,13 @@ Visual "Aranhaverso sutil", especificado em `docs/design/revamp/REVAMP.md`.
 
 ---
 
+## Ajustes depois da F7 (pedidos do usuário)
+
+- [x] Entrada: depois de importar, o arquivo vai para a Lixeira (padrão), para `_importados` ou é apagado, à escolha nas Configurações.
+- [x] Biblioteca: livros não revisados ficam em `Livros/_a revisar/` e só vão para `{Editora}/{Série}/` depois de aprovados.
+
+---
+
 ## Backlog
 - Detecção real de quadros (Panel View com regiões por quadro).
 - Destinos: Kavita, Kobo, Pasta simples, OPDS, Calibre-Web.

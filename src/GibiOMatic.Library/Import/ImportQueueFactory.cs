@@ -1,3 +1,4 @@
+using GibiOMatic.Core.IO;
 using GibiOMatic.Core.Libraries;
 using GibiOMatic.Core.Settings;
 using Microsoft.Extensions.Logging;
@@ -11,8 +12,9 @@ public sealed class ImportQueueFactory(
     BookImporter importer,
     ThumbnailCache thumbnails,
     ISettingsService settings,
+    IRecycleBin recycleBin,
     ILogger<ImportQueue> logger)
 {
     public ImportQueue Create(LibraryInfo library) =>
-        new(library, libraries.GetIndex(library), analyzer, importer, thumbnails, settings, logger);
+        new(library, libraries.GetIndex(library), analyzer, importer, thumbnails, settings, recycleBin, logger);
 }

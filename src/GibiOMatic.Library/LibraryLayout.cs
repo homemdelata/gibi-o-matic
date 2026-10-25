@@ -11,8 +11,11 @@ public static class LibraryLayout
     public const string MetadataFileName = "metadata.json";
     public const string CoverFileName = "cover.jpg";
 
-    /// <summary>Folder of books without a publisher.</summary>
+    /// <summary>Folder of approved books without a publisher.</summary>
     public const string NoPublisherFolderName = "_Sem editora";
+
+    /// <summary>Folder of books not approved yet: they move to their place once the metadata is reviewed.</summary>
+    public const string ToReviewFolderName = "_a revisar";
 
     /// <summary>Versions of a book's <c>metadata.json</c> kept in the history.</summary>
     public const int HistoryLimit = 20;

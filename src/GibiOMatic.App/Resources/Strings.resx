@@ -50,7 +50,12 @@
   <data name="Settings_RebuildDone" xml:space="preserve"><value>Índice reconstruído: {0} livros.</value></data>
   <data name="Settings_RebuildIssues" xml:space="preserve"><value>Índice reconstruído: {0} livros. {1} arquivos metadata.json com problema foram ignorados (detalhes no log).</value></data>
   <data name="Settings_InboxLabel" xml:space="preserve"><value>Entrada</value></data>
-  <data name="Settings_InboxHelp" xml:space="preserve"><value>Pasta onde chegam os downloads novos. O que chega nela é importado sozinho e depois movido para _importados, dentro dela.</value></data>
+  <data name="Settings_InboxHelp" xml:space="preserve"><value>Pasta onde chegam os downloads novos. O que chega nela é importado sozinho.</value></data>
+  <data name="Settings_AfterImportLabel" xml:space="preserve"><value>Depois de importar</value></data>
+  <data name="Settings_AfterImportHelp" xml:space="preserve"><value>O que fazer com o arquivo da pasta de Entrada. Ele só sai de lá depois que a cópia na biblioteca foi conferida.</value></data>
+  <data name="AfterImport_RecycleBin" xml:space="preserve"><value>Mandar para a Lixeira</value></data>
+  <data name="AfterImport_MoveToImported" xml:space="preserve"><value>Mover para {0}</value></data>
+  <data name="AfterImport_Delete" xml:space="preserve"><value>Apagar</value></data>
   <data name="Settings_Language" xml:space="preserve"><value>Idioma</value></data>
   <data name="Settings_Theme" xml:space="preserve"><value>Tema</value></data>
   <data name="Settings_RestartNotice" xml:space="preserve"><value>O novo idioma vale depois de reiniciar o app.</value></data>
@@ -657,6 +662,8 @@
   <data name="Settings_InboxInsideLibrary" xml:space="preserve"><value>A pasta de Entrada e o Arquivo não podem ficar um dentro do outro.</value></data>
   <data name="Inbox_WatchingTitle" xml:space="preserve"><value>Observando a pasta de entrada</value></data>
   <data name="Inbox_WatchingHelp" xml:space="preserve"><value>Arquivos novos nesta pasta são importados sozinhos (duplicados seguem a sugestão) e depois vão para {0}.</value></data>
+  <data name="Inbox_WatchingHelpRecycleBin" xml:space="preserve"><value>Arquivos novos nesta pasta são importados sozinhos (duplicados seguem a sugestão) e depois vão para a Lixeira.</value></data>
+  <data name="Inbox_WatchingHelpDelete" xml:space="preserve"><value>Arquivos novos nesta pasta são importados sozinhos (duplicados seguem a sugestão) e depois são apagados daqui.</value></data>
   <data name="Inbox_WatchOffTitle" xml:space="preserve"><value>Importação automática desligada</value></data>
   <data name="Inbox_WatchOff" xml:space="preserve"><value>Escolha a pasta de Entrada nas Configurações para os downloads novos entrarem sozinhos.</value></data>
   <data name="Inbox_WatchMissingTitle" xml:space="preserve"><value>Pasta de entrada não encontrada</value></data>

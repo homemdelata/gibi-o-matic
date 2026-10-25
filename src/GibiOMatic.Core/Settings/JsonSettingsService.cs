@@ -92,6 +92,11 @@ public sealed class JsonSettingsService(AppPaths paths, ILogger<JsonSettingsServ
             settings = settings with { Background = (settings.Background ?? new BackgroundSettings()) with { StartWithSystem = StartupMode.Off } };
         }
 
+        if (!Enum.IsDefined(settings.AfterImport))
+        {
+            settings = settings with { AfterImport = AfterImportAction.RecycleBin };
+        }
+
         var metadata = (settings.Metadata ?? new MetadataSettings()).Normalized();
         return ReferenceEquals(metadata, settings.Metadata) ? settings : settings with { Metadata = metadata };
     }

@@ -2,6 +2,7 @@ using GibiOMatic.App.Services.Tray;
 using GibiOMatic.App.ViewModels;
 using GibiOMatic.Conversion;
 using GibiOMatic.Core;
+using GibiOMatic.Core.IO;
 using GibiOMatic.Core.Libraries;
 using GibiOMatic.Core.Secrets;
 using GibiOMatic.Core.Settings;
@@ -47,6 +48,15 @@ public static class ServiceRegistration
         else
         {
             services.AddSingleton<ISecretStore, UnsupportedSecretStore>();
+        }
+
+        if (OperatingSystem.IsWindows())
+        {
+            services.AddSingleton<IRecycleBin, WindowsRecycleBin>();
+        }
+        else
+        {
+            services.AddSingleton<IRecycleBin>(new FreedesktopTrash(FreedesktopTrash.DefaultFolder));
         }
 
         services.AddSingleton<LibraryService>();
