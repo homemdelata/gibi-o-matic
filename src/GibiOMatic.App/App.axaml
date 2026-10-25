@@ -9,6 +9,7 @@
 
   <Application.DataTemplates>
     <DataTemplate DataType="vm:WelcomeViewModel"><v:WelcomeView /></DataTemplate>
+    <DataTemplate DataType="vm:LibraryOpeningViewModel"><v:LibraryOpeningView /></DataTemplate>
     <DataTemplate DataType="vm:ShellViewModel"><v:ShellView /></DataTemplate>
     <DataTemplate DataType="vm:LibraryPageViewModel"><v:LibraryPageView /></DataTemplate>
     <DataTemplate DataType="vm:InboxPageViewModel"><v:InboxPageView /></DataTemplate>

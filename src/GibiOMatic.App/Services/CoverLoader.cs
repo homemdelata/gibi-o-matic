@@ -25,7 +25,8 @@ public sealed class CoverLoader : ICoverLoader
         DateTime modified;
         try
         {
-            modified = File.GetLastWriteTimeUtc(path);
+            // Off the UI thread: the library may be on a slow drive (Google Drive wakes up on first access).
+            modified = await Task.Run(() => File.GetLastWriteTimeUtc(path), ct);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

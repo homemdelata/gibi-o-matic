@@ -472,10 +472,8 @@ public sealed partial class BookDetailsViewModel : ViewModelBase
 
     private async Task LoadCoverAsync(string path, ICoverLoader covers)
     {
-        if (File.Exists(path))
-        {
-            Cover = await covers.LoadAsync(path, 300);
-        }
+        // A missing cover loads as null.
+        Cover = await covers.LoadAsync(path, 300);
     }
 }
 

@@ -325,7 +325,7 @@ public sealed partial class EditorPageViewModel : PageViewModel
         if (_session.Current is { } library)
         {
             var path = Path.Combine(library.RootPath, book.Folder, LibraryLayout.CoverFileName);
-            Cover = File.Exists(path) ? await _covers.LoadAsync(path, 420, ct) : null;
+            Cover = await _covers.LoadAsync(path, 420, ct);
         }
     }
 

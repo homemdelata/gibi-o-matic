@@ -66,15 +66,18 @@ public sealed class LibrarySession : IAsyncDisposable, IDisposable
     /// <summary>Raised after a different library becomes the current one.</summary>
     public event EventHandler<LibraryInfo>? Changed;
 
+    // The disk work runs off the UI thread: a library on Google Drive can take seconds to answer.
     public Task<LibraryInfo> CreateAsync(string folder, CancellationToken ct = default) =>
-        ActivateAsync(_libraries.CreateAsync(folder, ct), ct);
+        ActivateAsync(Task.Run(() => _libraries.CreateAsync(folder, ct), ct), ct);
 
+    /// <summary>Opens a library; a cancelled <paramref name="ct"/> stops it from becoming current even if the disk answers later.</summary>
     public Task<LibraryInfo> OpenAsync(string folder, CancellationToken ct = default) =>
-        ActivateAsync(_libraries.OpenAsync(folder, ct), ct);
+        ActivateAsync(Task.Run(() => _libraries.OpenAsync(folder, ct), ct), ct);
 
     private async Task<LibraryInfo> ActivateAsync(Task<LibraryInfo> opening, CancellationToken ct)
     {
         var library = await opening;
+        ct.ThrowIfCancellationRequested();
         if (_settings.Current.LibraryPath != library.RootPath)
         {
             await _settings.SaveAsync(_settings.Current with { LibraryPath = library.RootPath }, ct);
@@ -110,7 +113,8 @@ public sealed class LibrarySession : IAsyncDisposable, IDisposable
         _arrivals = arrivals;
         Watcher = watcher;
         Current = library;
-        watcher.Watch(_settings.Current.InboxPath);
+        var inbox = _settings.Current.InboxPath;
+        await Task.Run(() => watcher.Watch(inbox), CancellationToken.None);
         Changed?.Invoke(this, library);
         return library;
     }

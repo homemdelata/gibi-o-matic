@@ -688,4 +688,10 @@
   <data name="Update_Downloading" xml:space="preserve"><value>Downloading version {0}… {1}%</value></data>
   <data name="Update_Failed" xml:space="preserve"><value>Could not look for updates (offline, or the repository is still private).</value></data>
   <data name="Update_Unsupported" xml:space="preserve"><value>Automatic updates only in the version installed with the setup.</value></data>
+  <data name="Opening_Title" xml:space="preserve"><value>Opening the library…</value></data>
+  <data name="Opening_Slow" xml:space="preserve"><value>The library is taking a while to answer…</value></data>
+  <data name="Opening_SlowHelp" xml:space="preserve"><value>On cloud drives such as Google Drive, the first read after the computer starts can take a while.</value></data>
+  <data name="Opening_KeepWaiting" xml:space="preserve"><value>Keep waiting</value></data>
+  <data name="Opening_ChooseAnother" xml:space="preserve"><value>Choose another library</value></data>
+  <data name="Opening_Retry" xml:space="preserve"><value>Try again</value></data>
 </root>

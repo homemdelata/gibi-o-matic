@@ -110,6 +110,11 @@ public sealed partial class MainWindowViewModel : ViewModelBase
         }
     }
 
+    /// <summary>How long the opening screen waits before saying the drive is slow.</summary>
+    public TimeSpan SlowOpeningAfter { get; set; } = TimeSpan.FromSeconds(10);
+
+    private CancellationTokenSource? _opening;
+
     /// <summary>Opens the library remembered from the last run, or shows the welcome screen.</summary>
     public async Task InitializeAsync(CancellationToken ct = default)
     {
@@ -120,17 +125,60 @@ public sealed partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
+        await OpenRememberedAsync(remembered, ct);
+    }
+
+    private async Task OpenRememberedAsync(string path, CancellationToken ct)
+    {
+        using var opening = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        _opening?.Cancel();
+        _opening = opening;
+        var screen = new LibraryOpeningViewModel(path, () => OpenRememberedAsync(path, CancellationToken.None), ChooseAnotherLibrary);
+        Content = screen;
+        _ = WarnWhenSlowAsync(screen, opening.Token);
         try
         {
-            await _session.OpenAsync(remembered, ct);
+            // On success the session raises Changed and the shell replaces this screen.
+            await _session.OpenAsync(path, opening.Token);
+        }
+        catch (OperationCanceledException) when (opening.IsCancellationRequested)
+        {
+            // Another library was chosen meanwhile.
         }
         catch (Exception ex) when (LibrarySession.IsExpectedFailure(ex))
         {
-            _logger.LogWarning(ex, "Could not open the remembered library at {Path}", remembered);
-            var welcome = _createWelcome();
-            welcome.ErrorMessage = string.Format(Strings.Error_RememberedLibrary, remembered, LibrarySession.DescribeError(ex));
-            Content = welcome;
+            _logger.LogWarning(ex, "Could not open the remembered library at {Path}", path);
+            screen.IsSlow = false;
+            screen.ErrorMessage = string.Format(Strings.Error_RememberedLibrary, path, LibrarySession.DescribeError(ex));
         }
+        finally
+        {
+            if (_opening == opening)
+            {
+                _opening = null;
+            }
+
+            await opening.CancelAsync();
+        }
+    }
+
+    private async Task WarnWhenSlowAsync(LibraryOpeningViewModel screen, CancellationToken ct)
+    {
+        try
+        {
+            await Task.Delay(SlowOpeningAfter, ct);
+            screen.IsSlow = true;
+        }
+        catch (OperationCanceledException)
+        {
+            // Opened, failed or abandoned in time.
+        }
+    }
+
+    private void ChooseAnotherLibrary()
+    {
+        _opening?.Cancel();
+        Content = _createWelcome();
     }
 
     private async void OnLibraryChanged(object? sender, LibraryInfo library)
