@@ -82,3 +82,7 @@ git push origin v0.6.0
 O workflow `release.yml` roda os testes, gera o instalador do Windows e o AppImage do Linux (Velopack) e cria
 um release **rascunho** no GitHub. Publicar o rascunho libera a atualização para os apps instalados. Para gerar
 os pacotes na sua máquina: `powershell -ExecutionPolicy Bypass -File tools\publish.ps1 [-Runtime linux-x64]`.
+
+Para testar a atualização sem o GitHub, defina a variável de ambiente `GIBIOMATIC_UPDATE_SOURCE` com a pasta
+dos pacotes (`artifacts\releases\win-x64`): o app instalado passa a procurar versões novas nela. Instale uma
+versão, gere outra (depois de um commit novo) na mesma pasta e abra o app.

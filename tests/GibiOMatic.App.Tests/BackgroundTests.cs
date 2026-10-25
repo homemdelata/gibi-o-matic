@@ -359,6 +359,14 @@ public sealed class BackgroundTests : IDisposable
     }
 
     [Fact]
+    public void Updates_come_from_github_unless_a_local_folder_is_set()
+    {
+        Assert.IsType<Velopack.Sources.GithubSource>(VelopackUpdater.CreateSource(null));
+        Assert.IsType<Velopack.Sources.GithubSource>(VelopackUpdater.CreateSource(" "));
+        Assert.IsType<Velopack.Sources.SimpleFileSource>(VelopackUpdater.CreateSource(@"D:\releases"));
+    }
+
+    [Fact]
     public async Task A_second_start_hands_its_command_line_to_the_first()
     {
         var name = $"GibiOMatic.Tests.{Guid.NewGuid():N}";

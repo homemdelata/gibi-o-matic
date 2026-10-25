@@ -29,7 +29,28 @@ public sealed class VelopackUpdater : IAppUpdater
 {
     public const string RepositoryUrl = "https://github.com/homemdelata/gibi-o-matic";
 
-    private readonly UpdateManager _manager = new(new GithubSource(RepositoryUrl, accessToken: null, prerelease: false));
+    /// <summary>
+    /// A folder with packages made by <c>tools/publish.ps1</c>, used instead of GitHub: lets an
+    /// installed app be updated from local builds, to test updates while the repository is private.
+    /// </summary>
+    public const string SourceVariable = "GIBIOMATIC_UPDATE_SOURCE";
+
+    private readonly UpdateManager _manager;
+
+    public VelopackUpdater(ILogger<VelopackUpdater> logger)
+    {
+        var folder = Environment.GetEnvironmentVariable(SourceVariable);
+        _manager = new UpdateManager(CreateSource(folder));
+        if (!string.IsNullOrWhiteSpace(folder))
+        {
+            logger.LogInformation("Updates come from the local folder {Folder} ({Variable})", folder, SourceVariable);
+        }
+    }
+
+    public static IUpdateSource CreateSource(string? folder) =>
+        string.IsNullOrWhiteSpace(folder)
+            ? new GithubSource(RepositoryUrl, accessToken: null, prerelease: false)
+            : new SimpleFileSource(new DirectoryInfo(folder.Trim()));
 
     public bool IsSupported => _manager.IsInstalled;
 
