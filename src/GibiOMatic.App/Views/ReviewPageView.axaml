@@ -16,7 +16,23 @@
             <c:TitleMark />
           </StackPanel>
           <TextBlock Classes="muted" Text="{Binding Subtitle}" />
+          <Button Classes="secondary" MinHeight="32" Padding="12,0" Margin="0,8,0,0" HorizontalAlignment="Left" FontSize="13"
+                  Content="{Binding SearchAllText}" Command="{Binding AskSearchAllCommand}"
+                  ToolTip.Tip="{x:Static r:Strings.Review_SearchAllHelp}"
+                  IsVisible="{Binding SearchAllText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
         </StackPanel>
+        <Border DockPanel.Dock="Top" Classes="card" Padding="12,10" Margin="0,0,0,12"
+                IsVisible="{Binding SearchAllConfirmText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="help" TextWrapping="Wrap" Text="{Binding SearchAllConfirmText}" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Classes="primary" MinHeight="32" Padding="12,0" FontSize="13"
+                      Content="{x:Static r:Strings.Review_SearchAllGo}" Command="{Binding SearchAllCommand}" />
+              <Button Classes="secondary" MinHeight="32" Padding="12,0" FontSize="13"
+                      Content="{x:Static r:Strings.Common_Cancel}" Command="{Binding CancelSearchAllCommand}" />
+            </StackPanel>
+          </StackPanel>
+        </Border>
         <Border DockPanel.Dock="Top" Classes="card" Padding="12,10" Margin="0,0,0,12" IsVisible="{Binding Status.IsVisible}">
           <StackPanel Spacing="8">
             <TextBlock Classes="help" Text="{Binding Status.Text}" />

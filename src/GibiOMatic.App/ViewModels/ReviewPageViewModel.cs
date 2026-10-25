@@ -162,6 +162,9 @@ public sealed partial class ReviewPageViewModel : PageViewModel
     private readonly Debouncer _refresh;
     private readonly SemaphoreSlim _refreshGate = new(1, 1);
     private string? _pendingBookId;
+
+    /// <summary>The books of the queue still under review (not an approved one opened from the Library).</summary>
+    private IReadOnlyList<string> _toReview = [];
     private CatalogBook? _book;
     private readonly IReaderLauncher _readerWindows;
 
@@ -211,6 +214,38 @@ public sealed partial class ReviewPageViewModel : PageViewModel
     public partial bool HasItems { get; private set; }
 
     public bool IsEmpty => !HasItems;
+
+    /// <summary>"Buscar de novo todos (12)": after a ComicVine key was set, or a source was down.</summary>
+    [ObservableProperty]
+    public partial string? SearchAllText { get; private set; }
+
+    /// <summary>The batch asks first (CLAUDE.md, rule 7): the current suggestions are replaced.</summary>
+    [ObservableProperty]
+    public partial string? SearchAllConfirmText { get; private set; }
+
+    [RelayCommand]
+    private void AskSearchAll() => SearchAllConfirmText = _toReview.Count == 0
+        ? null
+        : string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchAllConfirm, _toReview.Count);
+
+    [RelayCommand]
+    private void CancelSearchAll() => SearchAllConfirmText = null;
+
+    [RelayCommand]
+    private async Task SearchAllAsync(CancellationToken ct)
+    {
+        SearchAllConfirmText = null;
+        if (_session.Identification is not { } queue)
+        {
+            return;
+        }
+
+        var ids = _toReview;
+        _logger.LogInformation("Review: {Count} books sent to be searched again", ids.Count);
+        await queue.EnqueueAsync(ids, force: true, ct);
+        await Status.RefreshAsync();
+        await RefreshAsync(ct);
+    }
 
     [ObservableProperty]
     public partial string? EmptyText { get; private set; }
@@ -348,6 +383,12 @@ public sealed partial class ReviewPageViewModel : PageViewModel
             }
 
             HasItems = Items.Count > 0;
+            _toReview = items.Where(i => books[i.BookId].Metadata.Review.Status == ReviewStatus.Pending).Select(i => i.BookId).ToList();
+            SearchAllText = _toReview.Count == 0 ? null : string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchAll, _toReview.Count);
+            if (SearchAllText is null)
+            {
+                SearchAllConfirmText = null;
+            }
             Subtitle = string.Format(CultureInfo.CurrentCulture, Strings.Review_Subtitle_Count, Items.Count);
             var counts = await queue.GetCountsAsync(ct);
             EmptyText = string.Format(CultureInfo.CurrentCulture, Strings.Review_Empty, counts.AutoApproved, counts.Approved);

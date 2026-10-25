@@ -696,4 +696,8 @@
   <data name="Opening_ChooseAnother" xml:space="preserve"><value>Escolher outra biblioteca</value></data>
   <data name="Opening_Retry" xml:space="preserve"><value>Tentar de novo</value></data>
   <data name="Destination_Checking" xml:space="preserve"><value>Verificando…</value></data>
+  <data name="Review_SearchAll" xml:space="preserve"><value>Buscar de novo todos ({0})</value></data>
+  <data name="Review_SearchAllHelp" xml:space="preserve"><value>Procura de novo os metadados de todos os livros da Revisão. Útil depois de configurar a chave do ComicVine ou quando uma fonte estava fora do ar.</value></data>
+  <data name="Review_SearchAllConfirm" xml:space="preserve"><value>Buscar de novo os {0} livros da Revisão? As sugestões de agora serão trocadas pelas novas, e os livros encontrados com segurança são aprovados sozinhos. A busca roda em segundo plano, um livro por vez.</value></data>
+  <data name="Review_SearchAllGo" xml:space="preserve"><value>Buscar de novo</value></data>
 </root>

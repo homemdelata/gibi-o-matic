@@ -101,6 +101,34 @@ public sealed class ReviewAndEditorTests : IDisposable
     }
 
     [Fact]
+    public async Task Search_all_again_asks_first_and_then_searches_every_book_of_the_review()
+    {
+        // No ComicVine key at first: nothing is found.
+        _app.Identifier.Respond = (_, _) => [];
+        await ImportAsync("saga_vol1.pdf", "saga_vol2.pdf");
+        var review = _app.Get<ReviewPageViewModel>();
+        await review.OnNavigatedToAsync(Ct);
+        Assert.Equal(2, review.Items.Count);
+        Assert.Contains("2", review.SearchAllText);
+
+        review.AskSearchAllCommand.Execute(null);
+        Assert.Contains("2", review.SearchAllConfirmText);
+        review.CancelSearchAllCommand.Execute(null);
+        Assert.Null(review.SearchAllConfirmText);
+
+        // The key was set: the sources find them now.
+        _app.Identifier.Respond = (_, _) => [FakeIdentifier.Candidate("Saga, Vol. 1", "Saga", "1", 0.6)];
+        review.AskSearchAllCommand.Execute(null);
+        await review.SearchAllCommand.ExecuteAsync(null);
+        Assert.Null(review.SearchAllConfirmText);
+        await Session.Identification!.WaitUntilIdleAsync(Ct);
+        await review.RefreshAsync(Ct);
+
+        Assert.Equal(2, review.Items.Count);
+        Assert.Single(review.Candidates);
+    }
+
+    [Fact]
     public async Task Searching_again_shows_that_it_is_searching_and_then_what_was_not_found()
     {
         _app.Identifier.Respond = (_, text) => text is null ? [FakeIdentifier.Candidate("Saga, Vol. 1", "Saga", "1", 0.6)] : [];
