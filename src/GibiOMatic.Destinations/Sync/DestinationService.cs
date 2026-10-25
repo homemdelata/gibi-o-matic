@@ -140,8 +140,13 @@ public sealed class DestinationService : IAsyncDisposable
     /// <summary>Changes that come close together (a batch edit) wait this long to go in the same run.</summary>
     public TimeSpan GatherDelay { get; init; } = TimeSpan.FromSeconds(1.5);
 
-    public async Task<SyncPlan> PlanAsync(string destinationId, CancellationToken ct = default) =>
-        await _sync.PlanAsync(Find(destinationId) ?? throw new InvalidOperationException($"Unknown destination {destinationId}."), ct);
+    // Planning and the summary check the destination folder (a network drive that does not answer
+    // takes up to a minute), so they never run on the caller's (UI) thread.
+    public Task<SyncPlan> PlanAsync(string destinationId, CancellationToken ct = default)
+    {
+        var destination = Find(destinationId) ?? throw new InvalidOperationException($"Unknown destination {destinationId}.");
+        return Task.Run(() => _sync.PlanAsync(destination, ct), ct);
+    }
 
     /// <summary>Runs a plan the user confirmed; afterwards the destination follows edits on its own.</summary>
     public void Run(SyncPlan plan) => WorkerOf(plan.DestinationId).Enqueue(async ct =>
@@ -322,7 +327,10 @@ public sealed class DestinationService : IAsyncDisposable
     public Task<IReadOnlyList<DestinationLogEntry>> HistoryAsync(string destinationId, int limit = 200, CancellationToken ct = default) =>
         _sync.HistoryAsync(destinationId, limit, ct);
 
-    public async Task<DestinationSummary> SummaryAsync(IDestination destination, CancellationToken ct = default)
+    public Task<DestinationSummary> SummaryAsync(IDestination destination, CancellationToken ct = default) =>
+        Task.Run(() => SummarizeAsync(destination, ct), ct);
+
+    private async Task<DestinationSummary> SummarizeAsync(IDestination destination, CancellationToken ct)
     {
         var plan = await _sync.PlanAsync(destination, ct);
         var recorded = await _sync.RecordedAsync(destination.Config.Id, ct);

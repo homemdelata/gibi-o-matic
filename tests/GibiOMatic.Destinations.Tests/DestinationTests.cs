@@ -396,4 +396,42 @@ public sealed class SyncTests : IAsyncLifetime
         Assert.Null(_service.LastResult(DestinationId));
         Assert.False(Directory.Exists(_temp.Combine("unplugged")));
     }
+    /// <summary>A destination on a network drive that does not answer: the folder check waits for the gate.</summary>
+    private sealed class HangingDestination(IDestination inner, ManualResetEventSlim gate) : IDestination
+    {
+        public DestinationConfig Config => inner.Config;
+
+        public DestinationStatus GetStatus()
+        {
+            gate.Wait(TimeSpan.FromSeconds(30));
+            return inner.GetStatus();
+        }
+
+        public bool Includes(BookMetadata book) => inner.Includes(book);
+
+        public string OutputPath(CatalogBook book) => inner.OutputPath(book);
+
+        public string ContentSignature(CatalogBook book) => inner.ContentSignature(book);
+
+        public Task GenerateAsync(LibraryInfo library, CatalogBook book, string target, IProgress<double>? progress, CancellationToken ct) =>
+            inner.GenerateAsync(library, book, target, progress, ct);
+
+        public Task<AfterSyncResult?> AfterSyncAsync(CancellationToken ct) => inner.AfterSyncAsync(ct);
+    }
+
+    [Fact]
+    public async Task A_folder_that_does_not_answer_does_not_hold_the_caller()
+    {
+        using var gate = new ManualResetEventSlim();
+        var hanging = new HangingDestination(Destination, gate);
+
+        var summarizing = _service.SummaryAsync(hanging, Ct);
+        var planning = _service.PlanAsync(DestinationId, Ct);
+
+        // Both calls returned to the caller (the UI) while the folder check is still waiting.
+        Assert.False(summarizing.IsCompleted);
+        gate.Set();
+        Assert.Equal(DestinationHealth.Ready, (await summarizing).Status.Health);
+        Assert.True((await planning).IsEmpty);
+    }
 }
