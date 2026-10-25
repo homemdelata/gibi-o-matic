@@ -65,32 +65,36 @@ public sealed partial class DestinationsStatusViewModel : ViewModelBase, IDispos
             return;
         }
 
-        // Off the UI thread: the folder check of a network drive can take a while.
-        var states = await Task.Run(async () =>
-        {
-            var list = new List<(IDestination Destination, DestinationSummary Summary)>();
-            foreach (var destination in service.Destinations)
-            {
-                list.Add((destination, await service.SummaryAsync(destination)));
-            }
-
-            return list;
-        });
-
+        // Every destination shows up right away; each status arrives on its own, so a network
+        // drive that does not answer (up to a minute) holds only its own line.
         var byId = Items.ToDictionary(i => i.Id);
         Items.Clear();
-        foreach (var (destination, summary) in states)
+        var loads = new List<Task>();
+        foreach (var destination in service.Destinations)
         {
-            var item = byId.TryGetValue(destination.Config.Id, out var existing) && existing.Name == destination.Config.Name
-                ? existing
-                : new SidebarDestinationViewModel(destination.Config.Id, destination.Config.Name, _open);
-            Show(item, summary, service.LastResult(destination.Config.Id));
-            if (service.CurrentOf(item.Id) is { } progress)
+            if (!byId.TryGetValue(destination.Config.Id, out var item) || item.Name != destination.Config.Name)
             {
-                Show(item, progress);
+                item = new SidebarDestinationViewModel(destination.Config.Id, destination.Config.Name, _open)
+                {
+                    StatusText = Strings.Destination_Checking,
+                    Kind = StatusKind.Neutral,
+                };
             }
 
             Items.Add(item);
+            loads.Add(LoadAsync(service, destination, item));
+        }
+
+        await Task.WhenAll(loads);
+    }
+
+    private static async Task LoadAsync(DestinationService service, IDestination destination, SidebarDestinationViewModel item)
+    {
+        var summary = await service.SummaryAsync(destination);
+        Show(item, summary, service.LastResult(destination.Config.Id));
+        if (service.CurrentOf(item.Id) is { } progress)
+        {
+            Show(item, progress);
         }
     }
 

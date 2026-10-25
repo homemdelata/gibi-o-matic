@@ -97,6 +97,35 @@ public sealed class DestinationsPageTests : IDisposable
     }
 
     [Fact]
+    public async Task The_cards_show_up_before_their_status_is_checked()
+    {
+        await ImportSagaAsync();
+        await CreateKomgaAsync();
+        var page = _app.Get<DestinationsPageViewModel>();
+        page.ShowList();
+        var shell = _app.Get<ShellViewModel>();
+
+        // A network drive can take a minute to answer: the lists do not wait for it.
+        var refreshing = page.RefreshAsync(Ct);
+        var sidebar = shell.DestinationsStatus.RefreshAsync();
+        Assert.Single(page.Cards);
+        Assert.Single(shell.DestinationsStatus.Items);
+        await Task.WhenAll(refreshing, sidebar);
+
+        Assert.Equal(StatusKind.Warn, page.Cards.Single().StatusKind);
+        Assert.Equal(StatusKind.Warn, shell.DestinationsStatus.Items.Single().Kind);
+    }
+
+    [Fact]
+    public void A_card_says_it_is_checking_until_its_summary_arrives()
+    {
+        var card = new DestinationCardViewModel(new DestinationConfig { Id = "01ARYZ6S41TSV4RRFFQ69G5KOM", Type = "komga", Name = "Komga de casa" }, (_, _) => { });
+
+        Assert.Null(card.Summary);
+        Assert.Equal((Resources.Strings.Destination_Checking, StatusKind.Neutral), (card.StatusText, card.StatusKind));
+    }
+
+    [Fact]
     public async Task The_sidebar_shows_each_destination_status()
     {
         await ImportSagaAsync();

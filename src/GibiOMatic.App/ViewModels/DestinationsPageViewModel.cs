@@ -25,31 +25,52 @@ public enum DestinationsMode
 }
 
 /// <summary>A destination card in the list (SPEC §12, Destinos).</summary>
-public sealed partial class DestinationCardViewModel(DestinationSummary summary, SyncResult? lastResult, Action<DestinationCardViewModel, bool> open)
+/// <summary>
+/// A destination in the list. It shows up as soon as the page opens ("Verificando…"); the summary
+/// arrives later, because checking a network folder that does not answer takes up to a minute.
+/// </summary>
+public sealed partial class DestinationCardViewModel(DestinationConfig config, Action<DestinationCardViewModel, bool> open)
     : ViewModelBase, ISyncActivity
 {
-    public DestinationSummary Summary { get; } = summary;
-    public string Id => Summary.Config.Id;
-    public string Name => Summary.Config.Name;
-    public bool IsKindle => Summary.Config.Type == KindleDestinationType.TypeId;
+    private SyncResult? _lastResult;
+
+    public DestinationConfig Config { get; } = config;
+    public string Id => Config.Id;
+    public string Name => Config.Name;
+    public bool IsKindle => Config.Type == KindleDestinationType.TypeId;
     public string TypeLine => IsKindle ? Strings.Destination_KindleType : Strings.Destination_KomgaType;
 
     /// <summary>Komga: "Atualizar agora"; Kindle: "Enviar" (opens the list and, with the device connected, the confirmation).</summary>
     public string ActionText => IsKindle ? Strings.Kindle_SendShort : Strings.Destinations_SyncNow;
-    public string WhichText => Summary.Config.Which == DestinationScope.AllBooks ? Strings.Destination_AllBooks : Strings.Destination_ChosenBooks;
-    public string WhenText => Summary.Config.When == DestinationTiming.Automatic ? Strings.Destination_Automatic : Strings.Destination_Manual;
-    public string? Folder => Summary.Config.Folder;
+    public string WhichText => Config.Which == DestinationScope.AllBooks ? Strings.Destination_AllBooks : Strings.Destination_ChosenBooks;
+    public string WhenText => Config.When == DestinationTiming.Automatic ? Strings.Destination_Automatic : Strings.Destination_Manual;
+    public string? Folder => Config.Folder;
 
-    public StatusKind StatusKind => Summary.Status.Health != DestinationHealth.Ready || lastResult?.Failures.Count > 0
-        ? StatusKind.Bad
-        : !Summary.Confirmed || Summary.Pending > 0 ? StatusKind.Warn : StatusKind.Ok;
+    /// <summary>Null while the status is being checked.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StatusKind), nameof(StatusText))]
+    public partial DestinationSummary? Summary { get; private set; }
+
+    public StatusKind StatusKind => Summary is not { } summary
+        ? StatusKind.Neutral
+        : summary.Status.Health != DestinationHealth.Ready || _lastResult?.Failures.Count > 0
+            ? StatusKind.Bad
+            : !summary.Confirmed || summary.Pending > 0 ? StatusKind.Warn : StatusKind.Ok;
 
     /// <summary>The folder chip: a Kindle's local folder says little, its status line says more.</summary>
     public string? FolderChip => IsKindle ? null : Folder;
 
-    public string StatusText => lastResult?.Failures.Count > 0 && Summary.Status.Health == DestinationHealth.Ready
-        ? string.Format(CultureInfo.CurrentCulture, Strings.Destination_StatusLastErrors, lastResult.Failures.Count, DestinationText.Status(Summary))
-        : DestinationText.Status(Summary);
+    public string StatusText => Summary is not { } summary
+        ? Strings.Destination_Checking
+        : _lastResult?.Failures.Count > 0 && summary.Status.Health == DestinationHealth.Ready
+            ? string.Format(CultureInfo.CurrentCulture, Strings.Destination_StatusLastErrors, _lastResult.Failures.Count, DestinationText.Status(summary))
+            : DestinationText.Status(summary);
+
+    public void Show(DestinationSummary summary, SyncResult? lastResult)
+    {
+        _lastResult = lastResult;
+        Summary = summary;
+    }
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SyncNowCommand))]
@@ -782,43 +803,60 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
             return;
         }
 
+        // The cards show up right away; each summary arrives on its own, so a network drive that
+        // does not answer (up to a minute) holds only its own card.
+        var byId = Cards.ToDictionary(c => c.Id);
+        Cards.Clear();
+        var loads = new List<Task>();
+        foreach (var destination in service.Destinations)
+        {
+            if (!byId.TryGetValue(destination.Config.Id, out var card) || card.Config != destination.Config)
+            {
+                card = new DestinationCardViewModel(destination.Config, (c, sync) => _ = OpenAsync(c.Id, sync));
+            }
+
+            ShowActivity(service, card, destination.Config.Id);
+            Cards.Add(card);
+            loads.Add(LoadCardAsync(service, destination, card, ct));
+        }
+
         try
         {
-            var summaries = new List<DestinationSummary>();
-            foreach (var destination in service.Destinations)
-            {
-                summaries.Add(await service.SummaryAsync(destination, ct));
-            }
-
-            Cards.Clear();
-            foreach (var summary in summaries)
-            {
-                var card = new DestinationCardViewModel(summary, service.LastResult(summary.Config.Id), (c, sync) => _ = OpenAsync(c.Id, sync));
-                ShowActivity(service, card, summary.Config.Id);
-                Cards.Add(card);
-            }
-
             if (KindleDetail is { } kindle)
             {
                 ShowActivity(service, kindle, kindle.Config.Id);
                 await kindle.RefreshAsync(ct);
                 await kindle.LoadHistoryAsync();
             }
+        }
+        catch (Exception ex) when (LibrarySession.IsExpectedFailure(ex))
+        {
+            _logger.LogError(ex, "Could not read the destinations");
+        }
 
-            if (Detail is { } detail && summaries.FirstOrDefault(s => s.Config.Id == detail.Config.Id) is { } current)
+        await Task.WhenAll(loads);
+    }
+
+    private async Task LoadCardAsync(DestinationService service, IDestination destination, DestinationCardViewModel card, CancellationToken ct)
+    {
+        try
+        {
+            var summary = await service.SummaryAsync(destination, ct);
+            card.Show(summary, service.LastResult(summary.Config.Id));
+            if (Detail is { } detail && detail.Config.Id == summary.Config.Id)
             {
-                detail.StatusText = DestinationText.Status(current);
-                detail.StatusKind = Cards.First(c => c.Id == current.Config.Id).StatusKind;
-                ShowActivity(service, detail, current.Config.Id);
+                detail.StatusText = DestinationText.Status(summary);
+                detail.StatusKind = card.StatusKind;
+                ShowActivity(service, detail, summary.Config.Id);
                 // Read before clearing: two refreshes at once would otherwise both add their rows.
-                var history = await service.HistoryAsync(current.Config.Id, 200, ct);
+                var history = await service.HistoryAsync(summary.Config.Id, 200, ct);
                 detail.History.Clear();
                 foreach (var entry in history)
                 {
                     detail.History.Add(DestinationText.History(entry));
                 }
 
-                if (service.LastResult(current.Config.Id) is { } result && !detail.IsRunning)
+                if (service.LastResult(summary.Config.Id) is { } result && !detail.IsRunning)
                 {
                     detail.ResultIsError = result.Failures.Count > 0;
                     detail.ResultText = result.Failures.Count == 0
@@ -828,9 +866,12 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
                 }
             }
         }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+        }
         catch (Exception ex) when (LibrarySession.IsExpectedFailure(ex))
         {
-            _logger.LogError(ex, "Could not read the destinations");
+            _logger.LogError(ex, "Could not read the destination {DestinationId}", destination.Config.Id);
         }
     }
 

@@ -694,4 +694,5 @@
   <data name="Opening_KeepWaiting" xml:space="preserve"><value>Continuar esperando</value></data>
   <data name="Opening_ChooseAnother" xml:space="preserve"><value>Escolher outra biblioteca</value></data>
   <data name="Opening_Retry" xml:space="preserve"><value>Tentar de novo</value></data>
+  <data name="Destination_Checking" xml:space="preserve"><value>Verificando…</value></data>
 </root>
