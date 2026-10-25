@@ -4,14 +4,14 @@ namespace GibiOMatic.Library.Import;
 public static class InboxFolder
 {
     /// <summary>Where processed files go, inside the inbox (SPEC §6, item 6).</summary>
-    public const string ImportedFolderName = "_importados";
+    public const string ImportedFolderName = "_imported";
 
     /// <summary>Files that may be books; the format is still confirmed by content.</summary>
     public static readonly IReadOnlySet<string> BookExtensions =
         new HashSet<string>([".pdf", ".cbz", ".cbr", ".epub", ".zip", ".rar"], StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// A file of the inbox that should be picked up: a likely book, not hidden, not in <c>_importados</c>.
+    /// A file of the inbox that should be picked up: a likely book, not hidden, not in <c>_imported</c>.
     /// Downloads in progress have their own extensions (.crdownload, .part…) and are left out by this too.
     /// </summary>
     public static bool IsCandidate(string inbox, string file)
@@ -28,7 +28,7 @@ public static class InboxFolder
 
     /// <summary>
     /// Where a file of the inbox goes once processed, keeping its subfolders; null when the file is
-    /// not inside the inbox or is already in <c>_importados</c>.
+    /// not inside the inbox or is already in <c>_imported</c>.
     /// </summary>
     public static string? ImportedPathFor(string inbox, string file)
     {

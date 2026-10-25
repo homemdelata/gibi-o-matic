@@ -6,8 +6,8 @@ namespace GibiOMatic.Library;
 
 /// <summary>
 /// Folder and file names inside the library (SPEC §4.2):
-/// <c>Livros/{Editora}/{Série}/{Título} [{id6}]/{Título}.{ext}</c>. Books without a series
-/// skip the series level. Books not approved yet wait in <c>Livros/_a revisar/{Título} [{id6}]</c>,
+/// <c>Books/{Editora}/{Série}/{Título} [{id6}]/{Título}.{ext}</c>. Books without a series
+/// skip the series level. Books not approved yet wait in <c>Books/_To review/{Título} [{id6}]</c>,
 /// since their publisher and series are still guesses.
 /// </summary>
 public static class LibraryNaming
@@ -37,14 +37,14 @@ public static class LibraryNaming
             }
         }
 
-        var title = Segment(book.Title) ?? "Livro";
+        var title = Segment(book.Title) ?? "Book";
         parts.Add($"{title} [{Ulid.ShortId(book.Id)}]");
         return string.Join('/', parts);
     }
 
     /// <summary>"{Título}.{ext}" for a file of the book.</summary>
     public static string FileName(string title, BookFormat format) =>
-        $"{Segment(title) ?? "Livro"}.{Extension(format)}";
+        $"{Segment(title) ?? "Book"}.{Extension(format)}";
 
     public static string Extension(BookFormat format) => format.ToString().ToLowerInvariant();
 

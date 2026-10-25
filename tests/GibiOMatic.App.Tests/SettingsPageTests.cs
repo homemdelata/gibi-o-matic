@@ -62,7 +62,7 @@ public sealed class SettingsPageTests : IDisposable
     public async Task Rebuild_index_reports_how_many_books_were_found()
     {
         var root = await OpenLibraryAsync();
-        var bookFolder = Path.Combine(root, LibraryLayout.BooksFolderName, "_Sem editora", "Plutona [abcdef]");
+        var bookFolder = Path.Combine(root, LibraryLayout.BooksFolderName, "_No publisher", "Plutona [abcdef]");
         Directory.CreateDirectory(bookFolder);
         await MetadataFile.WriteAsync(Path.Combine(bookFolder, LibraryLayout.MetadataFileName),
             new BookMetadata { Id = Ulid.NewUlid(), Title = "Plutona" }, Ct);

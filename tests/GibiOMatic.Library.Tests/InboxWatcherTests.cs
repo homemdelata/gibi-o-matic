@@ -55,7 +55,7 @@ public sealed class InboxWatcherTests : IAsyncLifetime
     {
         _library = await _libraries.CreateAsync(_temp.Combine("Arquivo"), Ct);
         Directory.CreateDirectory(Inbox());
-        // Most tests follow the files to _importados; the recycle bin and deleting have their own.
+        // Most tests follow the files to _imported; the recycle bin and deleting have their own.
         await _settings.SaveAsync(_settings.Current with { InboxPath = Inbox(), AfterImport = AfterImportAction.MoveToImported }, Ct);
         _queue = _imports.Create(_library);
         await _queue.StartAsync(Ct);
@@ -104,7 +104,7 @@ public sealed class InboxWatcherTests : IAsyncLifetime
     // ---- Paths ----
 
     [Fact]
-    public void Only_likely_books_outside_importados_are_picked_up_and_they_keep_their_subfolders()
+    public void Only_likely_books_outside_imported_are_picked_up_and_they_keep_their_subfolders()
     {
         var inbox = Inbox();
         Assert.True(InboxFolder.IsCandidate(inbox, Inbox("Saga.cbz")));
@@ -126,7 +126,7 @@ public sealed class InboxWatcherTests : IAsyncLifetime
     // ---- Queue without confirmation ----
 
     [Fact]
-    public async Task A_file_from_the_watched_folder_is_imported_without_confirmation_and_moved_to_importados()
+    public async Task A_file_from_the_watched_folder_is_imported_without_confirmation_and_moved_to_imported()
     {
         var source = SyntheticBooks.Cbz(Inbox("Humble", "Saga_Vol1.cbz"), comicInfoXml: SagaInfo);
 
@@ -201,7 +201,7 @@ public sealed class InboxWatcherTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Without_a_recycle_bin_the_file_goes_to_importados_instead_of_being_deleted()
+    public async Task Without_a_recycle_bin_the_file_goes_to_imported_instead_of_being_deleted()
     {
         await _settings.SaveAsync(_settings.Current with { AfterImport = AfterImportAction.RecycleBin }, Ct);
         _recycleBin.Available = false;

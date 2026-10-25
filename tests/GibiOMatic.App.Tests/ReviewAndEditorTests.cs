@@ -198,7 +198,7 @@ public sealed class ReviewAndEditorTests : IDisposable
         Assert.Equal(("Saga, Vol. 1", "Image Comics"), (saved.Metadata.Title, saved.Metadata.Publisher));
         Assert.Equal(new PartialDate(2012, 10), saved.Metadata.Date);
         Assert.Equal((ReviewStatus.Approved, MatchedBy.Manual), (saved.Metadata.Review.Status, saved.Metadata.Review.MatchedBy));
-        Assert.StartsWith("Livros/Image Comics/Saga/Saga, Vol. 1 [", saved.Folder);
+        Assert.StartsWith("Books/Image Comics/Saga/Saga, Vol. 1 [", saved.Folder);
         Assert.Equal("Saga/Saga v01 (2012).cbz", editor.KomgaPreview);
 
         var history = Assert.Single(editor.History);

@@ -75,10 +75,10 @@ public sealed record BackgroundSettings
 
 public enum AfterImportAction
 {
-    /// <summary>To the system's recycle bin (default); to <c>_importados</c> when the drive has none.</summary>
+    /// <summary>To the system's recycle bin (default); to <c>_imported</c> when the drive has none.</summary>
     RecycleBin,
 
-    /// <summary>To <c>_importados</c>, inside the inbox, keeping the subfolders.</summary>
+    /// <summary>To <c>_imported</c>, inside the inbox, keeping the subfolders.</summary>
     MoveToImported,
 
     /// <summary>Deleted for good.</summary>

@@ -4,7 +4,7 @@ namespace GibiOMatic.Library;
 public static class LibraryLayout
 {
     public const string ManifestFileName = "gibiomatic-library.json";
-    public const string BooksFolderName = "Livros";
+    public const string BooksFolderName = "Books";
     public const string InternalFolderName = ".gibiomatic";
     public const string HistoryFolderName = "history";
     public const string TrashFolderName = "trash";
@@ -12,10 +12,10 @@ public static class LibraryLayout
     public const string CoverFileName = "cover.jpg";
 
     /// <summary>Folder of approved books without a publisher.</summary>
-    public const string NoPublisherFolderName = "_Sem editora";
+    public const string NoPublisherFolderName = "_No publisher";
 
     /// <summary>Folder of books not approved yet: they move to their place once the metadata is reviewed.</summary>
-    public const string ToReviewFolderName = "_a revisar";
+    public const string ToReviewFolderName = "_To review";
 
     /// <summary>Versions of a book's <c>metadata.json</c> kept in the history.</summary>
     public const int HistoryLimit = 20;

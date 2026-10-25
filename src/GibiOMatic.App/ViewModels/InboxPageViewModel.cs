@@ -61,7 +61,7 @@ public sealed partial class InboxItemViewModel : ViewModelBase
     /// <summary>Came from the watched folder: imported without confirmation.</summary>
     public bool IsAuto { get; }
 
-    /// <summary>Where the file is now (it moves to _importados once processed).</summary>
+    /// <summary>Where the file is now (it moves to _imported once processed).</summary>
     [ObservableProperty]
     public partial string SourcePath { get; private set; }
 

@@ -472,7 +472,7 @@ public sealed class ImportQueue : IAsyncDisposable
         // Handled before the state changes: whoever sees the item finished finds the file in its final place.
         if (item.Auto && state is InboxItemState.Imported or InboxItemState.Skipped)
         {
-            // Only a file whose exact copy is in the library may go away; other skips are kept in _importados.
+            // Only a file whose exact copy is in the library may go away; other skips are kept in _imported.
             var inLibrary = state == InboxItemState.Imported || message == InboxMessage.AlreadyInLibrary;
             await ClearFromInboxAsync(item, inLibrary ? _settings.Current.AfterImport : AfterImportAction.MoveToImported, ct);
         }

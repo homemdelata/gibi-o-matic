@@ -101,8 +101,8 @@ public sealed class ImportQueueTests : IAsyncLifetime
         Assert.Equal(InboxItemState.Imported, imported.Item.State);
         var book = Assert.Single(await BooksAsync());
         Assert.Equal(imported.Item.BookId, book.Metadata.Id);
-        // Publisher and series are still guesses: the book waits in "_a revisar" until approved.
-        Assert.Equal($"Livros/_a revisar/Saga, Vol. 1 [{Ulid.ShortId(book.Metadata.Id)}]", book.Folder);
+        // Publisher and series are still guesses: the book waits in "_To review" until approved.
+        Assert.Equal($"Books/_To review/Saga, Vol. 1 [{Ulid.ShortId(book.Metadata.Id)}]", book.Folder);
 
         var folder = Path.Combine(_library.RootPath, book.Folder);
         var original = Path.Combine(folder, "Saga, Vol. 1.cbz");
@@ -129,7 +129,7 @@ public sealed class ImportQueueTests : IAsyncLifetime
 
         var book = Assert.Single(await BooksAsync());
         Assert.Equal("houseofslaughter vol1", book.Metadata.Title);
-        Assert.StartsWith("Livros/_a revisar/houseofslaughter vol1 [", book.Folder);
+        Assert.StartsWith("Books/_To review/houseofslaughter vol1 [", book.Folder);
         Assert.Equal(QualityBand.Bad, QualityAnalyzer.Analyze(book.Metadata).Band);
     }
 
@@ -174,8 +174,8 @@ public sealed class ImportQueueTests : IAsyncLifetime
         Assert.Equal(BookFormat.Pdf, Assert.Single(book.Metadata.Files, f => f.Role == FileRole.Extra).Format);
         // The CBZ only filled what the PDF did not have; the book is still waiting for review.
         Assert.Equal("Image Comics", book.Metadata.Publisher);
-        Assert.StartsWith("Livros/_a revisar/Saga, Vol. 1 [", book.Folder);
-        Assert.Single(Directory.GetDirectories(Path.Combine(_library.RootPath, "Livros")));
+        Assert.StartsWith("Books/_To review/Saga, Vol. 1 [", book.Folder);
+        Assert.Single(Directory.GetDirectories(Path.Combine(_library.RootPath, "Books")));
         Assert.True(File.Exists(Path.Combine(_library.RootPath, book.Folder, "Saga, Vol. 1.cbz")));
         Assert.True(File.Exists(Path.Combine(_library.RootPath, book.Folder, "Saga, Vol. 1.pdf")));
     }
@@ -281,7 +281,7 @@ public sealed class ImportQueueTests : IAsyncLifetime
     public async Task Files_inside_the_library_are_ignored_and_repeated_paths_are_added_once()
     {
         var source = SyntheticBooks.Pdf(Downloads("a.pdf"));
-        var inside = SyntheticBooks.Pdf(Path.Combine(_library.RootPath, "Livros", "x.pdf"));
+        var inside = SyntheticBooks.Pdf(Path.Combine(_library.RootPath, "Books", "x.pdf"));
 
         Assert.Equal(1, await _queue.AddAsync([source, source, inside], Ct));
         Assert.Equal(0, await _queue.AddAsync([source], Ct));
@@ -338,7 +338,7 @@ public sealed class ImportQueueTests : IAsyncLifetime
             Files = [new BookFile { Name = $"{i}.cbz", Format = BookFormat.Cbz, Sha256 = $"{i:x64}", Bytes = 1000 }],
             CreatedAt = now,
             UpdatedAt = now,
-        }, $"Livros/Image Comics/Series/{i}", DateTime.UtcNow));
+        }, $"Books/Image Comics/Series/{i}", DateTime.UtcNow));
         await index.ReplaceAllAsync(books, Ct);
 
         var watch = Stopwatch.StartNew();

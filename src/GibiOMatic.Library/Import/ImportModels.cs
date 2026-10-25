@@ -91,7 +91,7 @@ public sealed record ImportAnalysis
 /// <summary>A row of the inbox as stored.</summary>
 /// <param name="Auto">
 /// Picked up from the watched inbox folder (F5): confirmed with the suggested decision as soon as it is
-/// analysed, and moved to <c>_importados</c> once it is in the library.
+/// analysed, and moved to <c>_imported</c> once it is in the library.
 /// </param>
 public sealed record InboxItem(
     long Id,

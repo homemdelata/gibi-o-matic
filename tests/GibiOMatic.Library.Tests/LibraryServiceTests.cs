@@ -35,7 +35,7 @@ public sealed class LibraryServiceTests : IDisposable
 
         Assert.True(Ulid.IsValid(library.Id));
         Assert.Equal(1, library.FormatVersion);
-        Assert.True(Directory.Exists(Path.Combine(_root, "Livros")));
+        Assert.True(Directory.Exists(Path.Combine(_root, "Books")));
         Assert.True(Directory.Exists(Path.Combine(_root, ".gibiomatic", "history")));
 
         using var manifest = JsonDocument.Parse(await File.ReadAllTextAsync(Path.Combine(_root, "gibiomatic-library.json"), Ct));
@@ -94,14 +94,14 @@ public sealed class LibraryServiceTests : IDisposable
         var library = await _service.CreateAsync(_root, Ct);
         var saga = await WriteBookAsync("Image/Saga/Saga, Vol. 1 [aaaaaa]", "Saga, Vol. 1", "Saga");
         var plutona = await WriteBookAsync("Image/Plutona [bbbbbb]", "Plutona", series: null);
-        await WriteRawAsync("_Sem editora/Broken [cccccc]", "{ this is not json");
-        await WriteRawAsync("_Sem editora/Duplicate [dddddd]", MetadataFile.Serialize(saga with { Title = "Copy" }));
+        await WriteRawAsync("_No publisher/Broken [cccccc]", "{ this is not json");
+        await WriteRawAsync("_No publisher/Duplicate [dddddd]", MetadataFile.Serialize(saga with { Title = "Copy" }));
 
         var result = await _service.RebuildIndexAsync(library, Ct);
 
         Assert.Equal(2, result.IndexedBooks);
         Assert.Equal(2, result.Issues.Count);
-        Assert.Contains(result.Issues, i => i.RelativePath == "Livros/_Sem editora/Broken [cccccc]/metadata.json");
+        Assert.Contains(result.Issues, i => i.RelativePath == "Books/_No publisher/Broken [cccccc]/metadata.json");
         Assert.Contains(result.Issues, i => i.Message.Contains("Duplicate", StringComparison.Ordinal));
 
         var index = new LibraryIndex(IndexPath(library));
@@ -115,7 +115,7 @@ public sealed class LibraryServiceTests : IDisposable
         await WriteBookAsync("Image/Saga/Saga, Vol. 1 [aaaaaa]", "Saga, Vol. 1", "Saga");
         Assert.Equal(1, (await _service.RebuildIndexAsync(library, Ct)).IndexedBooks);
 
-        Directory.Delete(Path.Combine(_root, "Livros", "Image"), recursive: true);
+        Directory.Delete(Path.Combine(_root, "Books", "Image"), recursive: true);
         await _service.RebuildIndexAsync(library, Ct);
 
         Assert.Equal(0, await _service.CountBooksAsync(library, Ct));
@@ -170,7 +170,7 @@ public sealed class LibraryServiceTests : IDisposable
 
     private async Task WriteRawAsync(string folder, string content)
     {
-        var dir = Path.Combine(_root, "Livros", folder);
+        var dir = Path.Combine(_root, "Books", folder);
         Directory.CreateDirectory(dir);
         await File.WriteAllTextAsync(Path.Combine(dir, "metadata.json"), content, Ct);
     }

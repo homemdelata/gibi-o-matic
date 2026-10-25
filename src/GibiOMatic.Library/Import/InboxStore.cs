@@ -73,7 +73,7 @@ internal sealed class InboxStore(LibraryIndex index)
             "DELETE FROM inbox_items WHERE id IN @ids;", new { ids = ids.ToArray() }, cancellationToken: ct));
     }
 
-    /// <summary>The file was moved (to <c>_importados</c>): the list shows where it is now.</summary>
+    /// <summary>The file was moved (to <c>_imported</c>): the list shows where it is now.</summary>
     public async Task SetSourcePathAsync(long id, string sourcePath, CancellationToken ct)
     {
         await using var connection = await index.OpenAsync(ct);
