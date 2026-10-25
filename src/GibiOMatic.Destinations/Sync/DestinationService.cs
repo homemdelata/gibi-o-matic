@@ -56,6 +56,7 @@ public sealed class DestinationService : IAsyncDisposable
     private readonly CancellationTokenSource _stop = new();
     private readonly ConcurrentDictionary<string, SyncResult> _lastResults = new();
     private readonly ConcurrentDictionary<string, Lazy<Worker>> _workers = new();
+    private readonly ConcurrentDictionary<string, DestinationHealth> _health = new();
     private readonly Lock _gate = new();
     private bool _started;
 
@@ -135,6 +136,63 @@ public sealed class DestinationService : IAsyncDisposable
                 Interlocked.Decrement(ref _recording);
             }
         });
+        _ = Task.Run(() => WatchHealthAsync(_stop.Token), CancellationToken.None);
+    }
+
+    /// <summary>How often the destination folders are checked (a network drive that went away or came back).</summary>
+    public TimeSpan HealthCheckInterval { get; init; } = TimeSpan.FromSeconds(20);
+
+    /// <summary>
+    /// Nothing else notices when a network drive comes back, so the folders are checked now and then;
+    /// a check that does not answer holds only this loop. Not awaited on dispose for the same reason.
+    /// </summary>
+    private async Task WatchHealthAsync(CancellationToken ct)
+    {
+        using var timer = new PeriodicTimer(HealthCheckInterval);
+        try
+        {
+            do
+            {
+                foreach (var destination in Destinations)
+                {
+                    try
+                    {
+                        Observe(destination, destination.GetStatus().Health);
+                    }
+                    catch (Exception ex) when (ex is not OperationCanceledException)
+                    {
+                        _logger.LogWarning(ex, "Could not check destination {Destination}", destination.Config.Id);
+                    }
+                }
+            }
+            while (await timer.WaitForNextTickAsync(ct));
+        }
+        catch (OperationCanceledException)
+        {
+        }
+    }
+
+    /// <summary>
+    /// Records what a check found. A change is announced (the sidebar and the page follow), and a
+    /// destination that is ready again takes the books that waited for it.
+    /// </summary>
+    private void Observe(IDestination destination, DestinationHealth health)
+    {
+        var id = destination.Config.Id;
+        var known = _health.TryGetValue(id, out var before);
+        _health[id] = health;
+        if (!known || before == health)
+        {
+            return;
+        }
+
+        _logger.LogInformation("Destination {Destination} is now {Health}", id, health);
+        if (health == DestinationHealth.Ready && destination.Config.When == DestinationTiming.Automatic)
+        {
+            RequestAutomaticRun(id);
+        }
+
+        Changed?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>Changes that come close together (a batch edit) wait this long to go in the same run.</summary>
@@ -335,7 +393,9 @@ public sealed class DestinationService : IAsyncDisposable
         var plan = await _sync.PlanAsync(destination, ct);
         var recorded = await _sync.RecordedAsync(destination.Config.Id, ct);
         var included = plan.UpToDate + plan.Creates + plan.Updates;
-        return new DestinationSummary(destination.Config, destination.GetStatus(), await IsConfirmedAsync(destination.Config.Id, ct),
+        var status = destination.GetStatus();
+        Observe(destination, status.Health);
+        return new DestinationSummary(destination.Config, status, await IsConfirmedAsync(destination.Config.Id, ct),
             included, plan.UpToDate, plan.Actions.Count, recorded.Values.Select(r => (DateTimeOffset?)r.GeneratedAt).Max());
     }
 
@@ -487,6 +547,9 @@ public sealed class DestinationServiceFactory(LibraryService libraries, IEnumera
     /// <summary>See <see cref="DestinationService.GatherDelay"/> (tests shorten it).</summary>
     public TimeSpan GatherDelay { get; set; } = TimeSpan.FromSeconds(1.5);
 
+    /// <summary>See <see cref="DestinationService.HealthCheckInterval"/>.</summary>
+    public TimeSpan HealthCheckInterval { get; set; } = TimeSpan.FromSeconds(20);
+
     public DestinationService Create(LibraryInfo library) =>
-        new(library, libraries.GetIndex(library), types, settings, logger) { GatherDelay = GatherDelay };
+        new(library, libraries.GetIndex(library), types, settings, logger) { GatherDelay = GatherDelay, HealthCheckInterval = HealthCheckInterval };
 }

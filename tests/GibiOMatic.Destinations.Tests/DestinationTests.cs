@@ -396,6 +396,41 @@ public sealed class SyncTests : IAsyncLifetime
         Assert.Null(_service.LastResult(DestinationId));
         Assert.False(Directory.Exists(_temp.Combine("unplugged")));
     }
+
+    [Fact]
+    public async Task A_folder_that_comes_back_is_noticed_and_the_books_that_waited_go()
+    {
+        var book = await ImportAsync("saga.cbz");
+        await RunAsync();
+        var unplugged = _temp.Combine("unplugged");
+        await ConfigureAsync(c => c with { Folder = unplugged });
+        await using var service = new DestinationServiceFactory(_libraries, [_komga], _settings, NullLogger<DestinationService>.Instance)
+        {
+            GatherDelay = TimeSpan.FromMilliseconds(20),
+            HealthCheckInterval = TimeSpan.FromMilliseconds(50),
+        }.Create(_library);
+        service.Start();
+
+        await _editor.UpdateAsync(_library, book.Metadata.Id, m => m with { Summary = "edited while away" }, Ct);
+        service.OnBookChanged(book.Metadata.Id);
+        await service.WaitUntilIdleAsync(Ct);
+        Assert.False(Directory.Exists(unplugged));
+
+        var changed = new TaskCompletionSource();
+        service.Changed += (_, _) => changed.TrySetResult();
+        Directory.CreateDirectory(unplugged);
+        await changed.Task.WaitAsync(TimeSpan.FromSeconds(10), Ct);
+
+        var cbz = Path.Combine(unplugged, "Saga", "Saga v01 (2012).cbz");
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(Ct);
+        timeout.CancelAfter(TimeSpan.FromSeconds(10));
+        while (!File.Exists(cbz) || service.IsBusy)
+        {
+            await Task.Delay(25, timeout.Token);
+        }
+
+        Assert.True((await service.SummaryAsync(service.Find(DestinationId)!, Ct)) is { Status.Health: DestinationHealth.Ready, Pending: 0 });
+    }
     /// <summary>A destination on a network drive that does not answer: the folder check waits for the gate.</summary>
     private sealed class HangingDestination(IDestination inner, ManualResetEventSlim gate) : IDestination
     {
