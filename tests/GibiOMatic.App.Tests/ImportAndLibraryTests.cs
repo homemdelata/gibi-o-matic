@@ -1,3 +1,4 @@
+using System.Globalization;
 using GibiOMatic.App.Resources;
 using GibiOMatic.App.Services;
 using GibiOMatic.App.ViewModels;
@@ -100,7 +101,8 @@ public sealed class ImportAndLibraryTests : IDisposable
         Assert.Equal("Saga, Vol. 1", saga.Cover.Title);
         Assert.Equal(["Saga, Vol. 2"], saga.BehindCovers.Select(b => b.Title));
         Assert.Null(saga.Behind2);
-        Assert.StartsWith("Série · 2 livros", saga.MetaLine, StringComparison.Ordinal);
+        // The CI runs in English: the expected text comes from the resources, not a fixed pt-BR string.
+        Assert.StartsWith($"{Strings.Library_SeriesKind} · {string.Format(CultureInfo.CurrentCulture, Strings.Library_SeriesBooksMany, 2)}", saga.MetaLine, StringComparison.Ordinal);
 
         saga.OpenCommand.Execute(null);
         Assert.True(page.IsInSeries);
