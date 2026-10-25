@@ -173,6 +173,7 @@
   <data name="Inbox_DoneSummary" xml:space="preserve"><value>Import finished: {0} imported, {1} skipped, {2} with errors.</value></data>
   <data name="Inbox_SkipAll" xml:space="preserve"><value>Skip all</value></data>
   <data name="Inbox_ClearFinished" xml:space="preserve"><value>Clear finished</value></data>
+  <data name="Inbox_RetryFailed" xml:space="preserve"><value>Retry failed ({0})</value></data>
   <data name="Inbox_Import" xml:space="preserve"><value>Import</value></data>
   <data name="Inbox_Pause" xml:space="preserve"><value>Pause</value></data>
   <data name="Inbox_Resume" xml:space="preserve"><value>Resume</value></data>

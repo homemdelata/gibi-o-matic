@@ -278,6 +278,24 @@ public sealed class ImportQueueTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_failed_file_can_be_tried_again_and_starts_over_from_the_analysis()
+    {
+        var source = SyntheticBooks.Pdf(Downloads("saga.pdf"));
+        await AddAndAnalyzeAsync(source);
+        SyntheticBooks.Pdf(source, new SyntheticBooks.PdfOptions { Pages = 5 });
+        Assert.Equal(InboxItemState.Failed, Assert.Single(await ConfirmAndWaitAsync()).Item.State);
+
+        Assert.Equal(1, await _queue.RetryFailedAsync(Ct));
+        await _queue.WaitUntilIdleAsync(Ct);
+        var entry = Assert.Single(await _queue.GetEntriesAsync(Ct));
+        Assert.Equal((InboxItemState.Ready, InboxMessage.None), (entry.Item.State, entry.Item.Message));
+
+        await ConfirmAndWaitAsync();
+        Assert.Single(await BooksAsync());
+        Assert.Equal(0, await _queue.RetryFailedAsync(Ct));
+    }
+
+    [Fact]
     public async Task Files_inside_the_library_are_ignored_and_repeated_paths_are_added_once()
     {
         var source = SyntheticBooks.Pdf(Downloads("a.pdf"));

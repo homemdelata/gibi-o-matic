@@ -295,6 +295,28 @@ public sealed class ImportQueue : IAsyncDisposable
         OnChanged();
     }
 
+    /// <summary>
+    /// "Tentar de novo": failed items start over from the analysis (the library may have changed
+    /// since, and a full disk or a file in use may be fixed now). Returns how many went back in line.
+    /// </summary>
+    public async Task<int> RetryFailedAsync(CancellationToken ct = default)
+    {
+        var failed = (await _store.GetAllAsync(ct)).Where(i => i.State == InboxItemState.Failed).ToList();
+        foreach (var item in failed)
+        {
+            await _store.SetStateAsync(item.Id, InboxItemState.Pending, ct);
+        }
+
+        if (failed.Count > 0)
+        {
+            _logger.LogInformation("Inbox: {Count} failed files sent back in line", failed.Count);
+            OnChanged();
+            _wake.Release();
+        }
+
+        return failed.Count;
+    }
+
     /// <summary>Removes imported, skipped and failed items from the list.</summary>
     public async Task ClearFinishedAsync(CancellationToken ct = default)
     {

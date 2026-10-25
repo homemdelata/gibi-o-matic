@@ -355,6 +355,10 @@ public sealed partial class InboxPageViewModel : PageViewModel
     [NotifyCanExecuteChangedFor(nameof(ClearFinishedCommand))]
     public partial bool HasFinished { get; private set; }
 
+    /// <summary>"Tentar de novo (3)", shown while there are failed files.</summary>
+    [ObservableProperty]
+    public partial string? RetryFailedText { get; private set; }
+
     /// <summary>Shown once the queue is done: how many were imported, skipped and failed.</summary>
     [ObservableProperty]
     public partial string? DoneSummary { get; private set; }
@@ -442,6 +446,7 @@ public sealed partial class InboxPageViewModel : PageViewModel
 
         var finished = s.Imported + s.Skipped + s.Failed;
         HasFinished = finished > 0;
+        RetryFailedText = s.Failed > 0 ? string.Format(CultureInfo.CurrentCulture, Strings.Inbox_RetryFailed, s.Failed) : null;
         DoneSummary = finished > 0 && !s.HasWork && s.Ready == 0
             ? string.Format(CultureInfo.CurrentCulture, Strings.Inbox_DoneSummary, s.Imported, s.Skipped, s.Failed)
             : null;
@@ -496,6 +501,16 @@ public sealed partial class InboxPageViewModel : PageViewModel
         if (_session.Queue is { } queue)
         {
             await queue.SkipAllReadyAsync(ct);
+            await RefreshAsync(ct);
+        }
+    }
+
+    [RelayCommand]
+    private async Task RetryFailedAsync(CancellationToken ct)
+    {
+        if (_session.Queue is { } queue)
+        {
+            await queue.RetryFailedAsync(ct);
             await RefreshAsync(ct);
         }
     }
