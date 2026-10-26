@@ -100,6 +100,9 @@ public sealed class ArrivalTracker : IDisposable
             var toReview = 0;
             foreach (var bookId in bookIds)
             {
+                // The state is read before the book: an automatic approval saves the book first and
+                // the state after, so the other order could see a pending book that is already approved.
+                var state = (await _identification.GetAsync(bookId))?.State;
                 var book = await _index.GetBookAsync(bookId);
                 if (book is null)
                 {
@@ -113,7 +116,6 @@ public sealed class ArrivalTracker : IDisposable
                 }
 
                 // Still to be identified: wait, unless identification is paused (then it waits for the user anyway).
-                var state = (await _identification.GetAsync(bookId))?.State;
                 if (!_identification.IsPaused && state is null or IdentificationState.Queued or IdentificationState.Searching)
                 {
                     return;
