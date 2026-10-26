@@ -322,11 +322,10 @@
   <data name="Review_Pages" xml:space="preserve"><value>{0} pages</value></data>
   <data name="Review_FilePages" xml:space="preserve"><value>File: {0} pages · {1}</value></data>
   <data name="Review_FileFormat" xml:space="preserve"><value>File: {0}</value></data>
-  <data name="Review_OpenComicVine" xml:space="preserve"><value>Open on ComicVine</value></data>
-  <data name="Review_OpenComicVineHelp" xml:space="preserve"><value>Opens the ComicVine search in the browser. Found the right book? Copy the page address and paste it below.</value></data>
-  <data name="Review_LinkPlaceholder" xml:space="preserve"><value>Paste the link of the right ComicVine page (…/4000-123456/ or …/4050-123456/)</value></data>
+  <data name="Review_OpenComicVineHelp" xml:space="preserve"><value>Opens the ComicVine search in the browser. Found the right book? Copy the page address and paste it in the field below.</value></data>
+  <data name="Review_LinkPlaceholder" xml:space="preserve"><value>Paste a ComicVine link, an Amazon link (print edition) or an ISBN</value></data>
   <data name="Review_UseLink" xml:space="preserve"><value>Use this one</value></data>
-  <data name="Review_LinkInvalid" xml:space="preserve"><value>That link does not look like a ComicVine issue (4000-…) or volume (4050-…).</value></data>
+  <data name="Review_LinkInvalid" xml:space="preserve"><value>That was not recognised. Paste the link of a ComicVine issue (4000-…) or volume (4050-…), the link of the print edition on Amazon, or an ISBN.</value></data>
   <data name="Review_LinkNotFound" xml:space="preserve"><value>ComicVine found nothing at that link.</value></data>
   <data name="Review_LoadingLink" xml:space="preserve"><value>Loading the book from the ComicVine link…</value></data>
   <data name="Reason_ChosenByUser" xml:space="preserve"><value>chosen by you</value></data>
@@ -700,4 +699,11 @@
   <data name="Review_SearchAllHelp" xml:space="preserve"><value>Searches metadata again for every book in the Review. Useful after setting the ComicVine key or when a source was down.</value></data>
   <data name="Review_SearchAllConfirm" xml:space="preserve"><value>Search the {0} books in the Review again? The current suggestions are replaced by the new ones, and books found with confidence are approved on their own. The search runs in the background, one book at a time.</value></data>
   <data name="Review_SearchAllGo" xml:space="preserve"><value>Search again</value></data>
+  <data name="Review_OpenIn" xml:space="preserve"><value>Look it up in the browser:</value></data>
+  <data name="Review_OpenAmazonHelp" xml:space="preserve"><value>Opens the Amazon book search in the browser. On the page of the print edition (paperback or hardcover, not Kindle), copy the address and paste it in the field below: the app uses the ISBN in the link.</value></data>
+  <data name="Review_OpenGoodreadsHelp" xml:space="preserve"><value>Opens the Goodreads search in the browser. Found the right edition? Copy the ISBN from “Edition details” and paste it in the field below.</value></data>
+  <data name="Review_LinkKindle" xml:space="preserve"><value>This link is for the Kindle edition, which has no ISBN. On the same Amazon page, choose the print edition (paperback or hardcover) and paste its link.</value></data>
+  <data name="Review_LinkGoodreads" xml:space="preserve"><value>A Goodreads link does not carry the ISBN. On the book page, open “Edition details”, copy the ISBN and paste it here.</value></data>
+  <data name="Review_LoadingIsbn" xml:space="preserve"><value>Searching ISBN {0}…</value></data>
+  <data name="Review_IsbnNotFound" xml:space="preserve"><value>Open Library and Google Books do not have ISBN {0}.</value></data>
 </root>

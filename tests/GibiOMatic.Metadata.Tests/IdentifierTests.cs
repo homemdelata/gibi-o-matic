@@ -253,6 +253,22 @@ public sealed class IdentifierTests
     public void ComicVine_links_are_recognised(string link, bool isIssue, int id) =>
         Assert.Equal((isIssue, id), BookIdentifier.ParseComicVineLink(link));
 
+    [Theory]
+    [InlineData("https://comicvine.gamespot.com/x/4000-937068/", BookReferenceKind.ComicVineIssue, null)]
+    [InlineData("https://comicvine.gamespot.com/deadly-class/4050-71032/", BookReferenceKind.ComicVineVolume, null)]
+    [InlineData("https://www.amazon.com/Saga-Vol-1-Brian-Vaughan/dp/1607066017/ref=sr_1_1?crid=X", BookReferenceKind.Isbn, "9781607066019")]
+    [InlineData("https://www.amazon.com.br/gp/product/1607066017", BookReferenceKind.Isbn, "9781607066019")]
+    [InlineData("https://www.amazon.com/Saga-Vol-1-ebook/dp/B00AAJQ8WE", BookReferenceKind.AmazonKindle, null)]
+    [InlineData("https://www.goodreads.com/book/show/15704307-saga-volume-1", BookReferenceKind.Goodreads, null)]
+    [InlineData("ISBN 978-1-60706-601-9", BookReferenceKind.Isbn, "9781607066019")]
+    [InlineData("160706601X", BookReferenceKind.Unknown, null)]
+    [InlineData("https://example.com/whatever", BookReferenceKind.Unknown, null)]
+    public void Pasted_links_and_isbns_are_recognised(string text, BookReferenceKind kind, string? isbn)
+    {
+        var reference = BookReference.Parse(text);
+        Assert.Equal((kind, isbn), (reference.Kind, reference.Isbn));
+    }
+
     [Fact]
     public async Task An_issue_link_chosen_by_the_user_is_the_candidate()
     {

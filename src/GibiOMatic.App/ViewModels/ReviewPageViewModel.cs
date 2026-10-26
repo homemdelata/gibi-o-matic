@@ -256,9 +256,9 @@ public sealed partial class ReviewPageViewModel : PageViewModel
     [ObservableProperty]
     public partial string? SearchText { get; set; }
 
-    /// <summary>A ComicVine page the user found in the browser.</summary>
+    /// <summary>The right book found in the browser: a ComicVine or Amazon link, or an ISBN.</summary>
     [ObservableProperty]
-    public partial string? ComicVineLink { get; set; }
+    public partial string? LinkText { get; set; }
 
     [ObservableProperty]
     public partial string? LinkError { get; private set; }
@@ -464,7 +464,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel
         item.IsSelected = true;
         _book = item.Card.Book;
         FolderPath = Path.Combine(library.RootPath, _book.Folder);
-        ComicVineLink = null;
+        LinkText = null;
         LinkError = null;
         _ = ShowFileInfoAsync(item, library);
         var result = item.Identification.Result;
@@ -561,18 +561,28 @@ public sealed partial class ReviewPageViewModel : PageViewModel
 
     /// <summary>Opens the ComicVine search for the current words in the browser.</summary>
     [RelayCommand]
-    private async Task OpenComicVineAsync()
+    private Task OpenComicVineAsync() => OpenSearchAsync("https://comicvine.gamespot.com/search/?i=&q=");
+
+    /// <summary>Opens Amazon's book search (print editions carry the ISBN in their link).</summary>
+    [RelayCommand]
+    private Task OpenAmazonAsync() => OpenSearchAsync("https://www.amazon.com/s?i=stripbooks&k=");
+
+    /// <summary>Opens the Goodreads search (the ISBN is in the edition details).</summary>
+    [RelayCommand]
+    private Task OpenGoodreadsAsync() => OpenSearchAsync("https://www.goodreads.com/search?q=");
+
+    private async Task OpenSearchAsync(string prefix)
     {
         var words = string.IsNullOrWhiteSpace(SearchText) ? Selected?.Title : SearchText.Trim();
         if (!string.IsNullOrWhiteSpace(words))
         {
-            await _urls.OpenAsync(new Uri("https://comicvine.gamespot.com/search/?i=&q=" + Uri.EscapeDataString(words)));
+            await _urls.OpenAsync(new Uri(prefix + Uri.EscapeDataString(words)));
         }
     }
 
-    /// <summary>"Esta é a certa": the book of a pasted ComicVine link becomes the candidate.</summary>
+    /// <summary>"Usar este": the book of a pasted ComicVine link, or of an ISBN (pasted, or from an Amazon link), becomes the candidate.</summary>
     [RelayCommand(CanExecute = nameof(IsIdle))]
-    private async Task UseComicVineLinkAsync(CancellationToken ct)
+    private async Task UseLinkAsync(CancellationToken ct)
     {
         if (Selected is not { } item || _session.Identification is not { } queue)
         {
@@ -580,9 +590,17 @@ public sealed partial class ReviewPageViewModel : PageViewModel
         }
 
         LinkError = null;
-        if (Metadata.Identification.BookIdentifier.ParseComicVineLink(ComicVineLink) is null)
+        var reference = BookReference.Parse(LinkText);
+        var problem = reference.Kind switch
         {
-            LinkError = Strings.Review_LinkInvalid;
+            BookReferenceKind.Unknown => Strings.Review_LinkInvalid,
+            BookReferenceKind.AmazonKindle => Strings.Review_LinkKindle,
+            BookReferenceKind.Goodreads => Strings.Review_LinkGoodreads,
+            _ => null,
+        };
+        if (problem is not null)
+        {
+            LinkError = problem;
             return;
         }
 
@@ -590,16 +608,19 @@ public sealed partial class ReviewPageViewModel : PageViewModel
         Rows.Clear();
         SelectedCandidate = null;
         ConfidenceText = null;
-        SetBusy(Strings.Review_LoadingLink);
+        var byIsbn = reference.Kind == BookReferenceKind.Isbn;
+        SetBusy(byIsbn ? string.Format(CultureInfo.CurrentCulture, Strings.Review_LoadingIsbn, reference.Isbn) : Strings.Review_LoadingLink);
         try
         {
-            var found = await queue.UseComicVineLinkAsync(item.BookId, ComicVineLink!.Trim(), ct);
+            var found = byIsbn
+                ? (await queue.SearchByIsbnAsync(item.BookId, reference.Isbn!, ct)).Candidates.Any(c => c.Reasons.Contains(MatchReason.Isbn))
+                : await queue.UseComicVineLinkAsync(item.BookId, LinkText!.Trim(), ct) > 0;
             SetBusy(null);
             Selected = null;
             await RefreshAsync(ct, item.BookId);
-            if (found == 0)
+            if (!found)
             {
-                LinkError = Strings.Review_LinkNotFound;
+                LinkError = byIsbn ? string.Format(CultureInfo.CurrentCulture, Strings.Review_IsbnNotFound, reference.Isbn) : Strings.Review_LinkNotFound;
             }
         }
         catch (MetadataSourceException ex)

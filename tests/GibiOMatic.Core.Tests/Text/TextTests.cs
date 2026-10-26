@@ -23,6 +23,12 @@ public sealed class IsbnTests
     [InlineData("uuid:1234-5678", null)]
     [InlineData("hum-saga_vol1", null)]
     public void Finds_an_isbn_inside_text(string text, string? expected) => Assert.Equal(expected, Isbn.Find(text));
+
+    [Theory]
+    [InlineData("1607066017", "9781607066019")]
+    [InlineData("0-8044-2957-X", "9780804429573")]
+    [InlineData("978-1-60706-601-9", "9781607066019")]
+    public void Converts_isbn10_to_isbn13(string isbn, string expected) => Assert.Equal(expected, Isbn.ToIsbn13(isbn));
 }
 
 public sealed class TitleParserTests

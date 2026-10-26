@@ -193,15 +193,38 @@ public sealed class IdentificationQueue : IAsyncDisposable
         OnChanged();
     }
 
-    /// <summary>"Buscar de novo" from the Review with other words; runs now and stores the result.</summary>
+    /// <summary>"Buscar de novo" from the Review with other words (or an ISBN); runs now and stores the result.</summary>
     public async Task<IdentificationResult> SearchAgainAsync(string bookId, string? searchText, CancellationToken ct = default)
     {
+        if (Core.Text.Isbn.IsValid(searchText))
+        {
+            return await SearchByIsbnAsync(bookId, Core.Text.Isbn.ToIsbn13(searchText!), ct);
+        }
+
         var book = await _index.GetBookAsync(bookId, ct) ?? throw new InvalidOperationException($"Book {bookId} not found.");
         var result = await _identifier.IdentifyAsync(book.Metadata, _settings.Current.Metadata, searchText, ct);
+        await StoreSearchAsync(bookId, result, ct);
+        return result;
+    }
+
+    /// <summary>
+    /// An ISBN the user pasted (from Amazon, Goodreads or the book itself): searched as if it were the
+    /// file's, so its record is a candidate and its title searches ComicVine. The book is not changed.
+    /// </summary>
+    public async Task<IdentificationResult> SearchByIsbnAsync(string bookId, string isbn, CancellationToken ct = default)
+    {
+        var book = await _index.GetBookAsync(bookId, ct) ?? throw new InvalidOperationException($"Book {bookId} not found.");
+        var withIsbn = book.Metadata with { Identifiers = book.Metadata.Identifiers with { Isbn = isbn } };
+        var result = await _identifier.IdentifyAsync(withIsbn, _settings.Current.Metadata, null, ct);
+        await StoreSearchAsync(bookId, result, ct);
+        return result;
+    }
+
+    private async Task StoreSearchAsync(string bookId, IdentificationResult result, CancellationToken ct)
+    {
         await SetStateAsync(bookId, result.Candidates.Count > 0 ? IdentificationState.NeedsReview : IdentificationState.NoMatch, result,
             MessageOf(result), ct);
         OnChanged();
-        return result;
     }
 
     /// <summary>A ComicVine link pasted in the Review: its book becomes the candidates. Returns how many.</summary>

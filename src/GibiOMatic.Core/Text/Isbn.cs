@@ -43,6 +43,25 @@ public static partial class Isbn
         return false;
     }
 
+    /// <summary>"1607066017" → "9781607066019"; an ISBN-13 (or anything else) comes back as it is, normalized.</summary>
+    public static string ToIsbn13(string value)
+    {
+        var v = Normalize(value);
+        if (v.Length != 10 || !IsValid(v))
+        {
+            return v;
+        }
+
+        var body = "978" + v[..9];
+        var sum = 0;
+        for (var i = 0; i < 12; i++)
+        {
+            sum += (body[i] - '0') * (i % 2 == 0 ? 1 : 3);
+        }
+
+        return body + (char)('0' + (10 - sum % 10) % 10);
+    }
+
     /// <summary>Finds the first valid ISBN inside free text such as "urn:isbn:978-1-60706-601-9".</summary>
     public static string? Find(string? text)
     {

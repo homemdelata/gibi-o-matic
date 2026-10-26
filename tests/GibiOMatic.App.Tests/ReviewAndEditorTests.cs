@@ -101,6 +101,47 @@ public sealed class ReviewAndEditorTests : IDisposable
     }
 
     [Fact]
+    public async Task Amazon_links_and_isbns_search_by_isbn_and_kindle_or_goodreads_links_say_what_to_do()
+    {
+        _app.Identifier.Respond = (book, _) => book.Identifiers.Isbn == "9781607066019"
+            ? [FakeIdentifier.Candidate("Saga, Vol. 1", "Saga", "1", 0.96, MatchReason.Isbn)]
+            : [];
+        await ImportAsync("saga_vol1.pdf");
+        var review = _app.Get<ReviewPageViewModel>();
+        await review.OnNavigatedToAsync(Ct);
+        Assert.Empty(review.Candidates);
+
+        review.SearchText = "Saga";
+        await review.OpenAmazonCommand.ExecuteAsync(null);
+        await review.OpenGoodreadsCommand.ExecuteAsync(null);
+        Assert.Equal(["www.amazon.com", "www.goodreads.com"], _app.Urls.Opened.Select(u => u.Host));
+
+        review.LinkText = "https://www.amazon.com/Saga-Kindle-edition/dp/B00AAJQ8WE/ref=sr_1_1";
+        await review.UseLinkCommand.ExecuteAsync(null);
+        Assert.Equal(Resources.Strings.Review_LinkKindle, review.LinkError);
+
+        review.LinkText = "https://www.goodreads.com/book/show/15704307-saga-volume-1";
+        await review.UseLinkCommand.ExecuteAsync(null);
+        Assert.Equal(Resources.Strings.Review_LinkGoodreads, review.LinkError);
+
+        review.LinkText = "978-0-00-000000-2";
+        await review.UseLinkCommand.ExecuteAsync(null);
+        Assert.Contains("9780000000002", review.LinkError);
+        Assert.Empty(review.Candidates);
+
+        review.LinkText = "https://www.amazon.com/Saga-Vol-1-Brian-Vaughan/dp/1607066017/ref=sr_1_1";
+        await review.UseLinkCommand.ExecuteAsync(null);
+        Assert.Null(review.LinkError);
+        Assert.Equal("Saga, Vol. 1", Assert.Single(review.Candidates).Title);
+
+        // An ISBN typed in the search box is searched as an ISBN too; the book itself is not changed.
+        review.SearchText = "1607066017";
+        await review.SearchAgainCommand.ExecuteAsync(null);
+        Assert.Single(review.Candidates);
+        Assert.Null((await BookAsync(review.Selected!.BookId)).Identifiers.Isbn);
+    }
+
+    [Fact]
     public async Task Search_all_again_asks_first_and_then_searches_every_book_of_the_review()
     {
         // No ComicVine key at first: nothing is found.
@@ -169,12 +210,12 @@ public sealed class ReviewAndEditorTests : IDisposable
         await review.OpenComicVineCommand.ExecuteAsync(null);
         Assert.Contains("q=House%20of%20Slaughter", Assert.Single(_app.Urls.Opened).AbsoluteUri);
 
-        review.ComicVineLink = "https://example.com/wrong";
-        await review.UseComicVineLinkCommand.ExecuteAsync(null);
+        review.LinkText = "https://example.com/wrong";
+        await review.UseLinkCommand.ExecuteAsync(null);
         Assert.NotNull(review.LinkError);
 
-        review.ComicVineLink = "https://comicvine.gamespot.com/house-of-slaughter-1/4000-123/";
-        await review.UseComicVineLinkCommand.ExecuteAsync(null);
+        review.LinkText = "https://comicvine.gamespot.com/house-of-slaughter-1/4000-123/";
+        await review.UseLinkCommand.ExecuteAsync(null);
 
         Assert.Null(review.LinkError);
         var candidate = Assert.Single(review.Candidates);

@@ -322,11 +322,10 @@
   <data name="Review_Pages" xml:space="preserve"><value>{0} páginas</value></data>
   <data name="Review_FilePages" xml:space="preserve"><value>Arquivo: {0} páginas · {1}</value></data>
   <data name="Review_FileFormat" xml:space="preserve"><value>Arquivo: {0}</value></data>
-  <data name="Review_OpenComicVine" xml:space="preserve"><value>Abrir no ComicVine</value></data>
   <data name="Review_OpenComicVineHelp" xml:space="preserve"><value>Abre a busca do ComicVine no navegador. Achou o livro certo? Copie o endereço da página e cole no campo abaixo.</value></data>
-  <data name="Review_LinkPlaceholder" xml:space="preserve"><value>Cole aqui o link da página certa no ComicVine (…/4000-123456/ ou …/4050-123456/)</value></data>
+  <data name="Review_LinkPlaceholder" xml:space="preserve"><value>Cole o link do ComicVine, o link da Amazon (edição impressa) ou um ISBN</value></data>
   <data name="Review_UseLink" xml:space="preserve"><value>Usar este</value></data>
-  <data name="Review_LinkInvalid" xml:space="preserve"><value>Esse link não parece ser de uma edição (4000-…) ou de um volume (4050-…) do ComicVine.</value></data>
+  <data name="Review_LinkInvalid" xml:space="preserve"><value>Não reconheci isso. Cole o link de uma edição (4000-…) ou de um volume (4050-…) do ComicVine, o link da edição impressa na Amazon ou um ISBN.</value></data>
   <data name="Review_LinkNotFound" xml:space="preserve"><value>O ComicVine não encontrou nada nesse link.</value></data>
   <data name="Review_LoadingLink" xml:space="preserve"><value>Carregando o livro do link do ComicVine…</value></data>
   <data name="Reason_ChosenByUser" xml:space="preserve"><value>escolhido por você</value></data>
@@ -700,4 +699,11 @@
   <data name="Review_SearchAllHelp" xml:space="preserve"><value>Procura de novo os metadados de todos os livros da Revisão. Útil depois de configurar a chave do ComicVine ou quando uma fonte estava fora do ar.</value></data>
   <data name="Review_SearchAllConfirm" xml:space="preserve"><value>Buscar de novo os {0} livros da Revisão? As sugestões de agora serão trocadas pelas novas, e os livros encontrados com segurança são aprovados sozinhos. A busca roda em segundo plano, um livro por vez.</value></data>
   <data name="Review_SearchAllGo" xml:space="preserve"><value>Buscar de novo</value></data>
+  <data name="Review_OpenIn" xml:space="preserve"><value>Procurar no navegador:</value></data>
+  <data name="Review_OpenAmazonHelp" xml:space="preserve"><value>Abre a busca de livros da Amazon no navegador. Na página da edição impressa (capa comum ou dura, não a Kindle), copie o endereço e cole no campo abaixo: o app usa o ISBN que vem no link.</value></data>
+  <data name="Review_OpenGoodreadsHelp" xml:space="preserve"><value>Abre a busca do Goodreads no navegador. Achou a edição certa? Copie o ISBN em “Detalhes da edição” e cole no campo abaixo.</value></data>
+  <data name="Review_LinkKindle" xml:space="preserve"><value>Esse link é da edição Kindle, que não tem ISBN. Na mesma página da Amazon, escolha a edição impressa (capa comum ou dura) e cole o link dela.</value></data>
+  <data name="Review_LinkGoodreads" xml:space="preserve"><value>O link do Goodreads não traz o ISBN. Na página do livro, abra “Detalhes da edição”, copie o ISBN e cole aqui.</value></data>
+  <data name="Review_LoadingIsbn" xml:space="preserve"><value>Buscando o ISBN {0}…</value></data>
+  <data name="Review_IsbnNotFound" xml:space="preserve"><value>O Open Library e o Google Books não têm o ISBN {0}.</value></data>
 </root>

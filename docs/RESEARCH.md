@@ -12,6 +12,11 @@ Tudo aqui foi verificado em 2026-10-16/17, numa sessão de análise da antiga bi
 - O plugin também lista editores e letristas como "autores".
 - A fonte Google do Calibre recebe **HTTP 500**. A fonte Amazon falha porque depende de busca no Google (bloqueada) ou no Bing (resultados brasileiros irrelevantes).
 
+### Amazon e Goodreads (2026-10-25)
+- **Amazon:** não há API utilizável. A Product Advertising API exige conta de afiliado com vendas, e ler as páginas vai contra os termos e é bloqueado. Mas o link já ajuda: na edição **impressa**, o ASIN do link (`/dp/1607066017`, `/gp/product/…`) é o próprio **ISBN-10**. Na edição Kindle, o ASIN começa com `B0` e não é ISBN.
+- **Goodreads:** a API pública fechou em dezembro de 2020. O link (`/book/show/15704307-saga-volume-1`) só tem o número interno do Goodreads, e ler a página vai contra os termos. O ISBN aparece na página, em "Detalhes da edição".
+- Por isso a Revisão usa dos dois só o ISBN: o do link da Amazon, ou um ISBN colado pelo usuário. A busca é feita pelo Open Library e pelo Google Books.
+
 ### ComicVine API
 - Base: `https://comicvine.gamespot.com/api/`. Parâmetros: `api_key`, `format=json`, `field_list` para reduzir a resposta. Exige User-Agent próprio.
 - Busca: `search/?resources=volume&query=...` funcionou. Exemplo para "Deadly Class":
