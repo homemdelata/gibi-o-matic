@@ -42,8 +42,9 @@
         </Border>
         <ListBox ItemsSource="{Binding Items}" Background="Transparent" AutomationProperties.Name="{x:Static r:Strings.Review_Queue}">
           <ListBox.Styles>
+            <!-- Room for the selection ring, which reaches 6px past the item's sides; the list clips what goes beyond it -->
             <Style Selector="ListBoxItem">
-              <Setter Property="Padding" Value="0" />
+              <Setter Property="Padding" Value="4,2" />
               <Setter Property="Margin" Value="0,0,0,4" />
             </Style>
             <Style Selector="ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
@@ -132,6 +133,9 @@
       <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">
         <TextBox Text="{Binding SearchText}" PlaceholderText="{x:Static r:Strings.Review_SearchPlaceholder}"
                  AutomationProperties.Name="{x:Static r:Strings.Review_SearchPlaceholder}">
+          <TextBox.KeyBindings>
+            <KeyBinding Gesture="Enter" Command="{Binding SearchAgainCommand}" />
+          </TextBox.KeyBindings>
           <TextBox.InnerLeftContent>
             <c:StrokeIcon Data="{StaticResource Icon.Search}" Width="17" Height="17" Margin="12,0,0,0" Foreground="{DynamicResource TextMutedBrush}" />
           </TextBox.InnerLeftContent>
@@ -155,7 +159,11 @@
       <StackPanel DockPanel.Dock="Top" Spacing="4" Margin="0,0,0,18">
         <Grid ColumnDefinitions="*,Auto">
           <TextBox Classes="mono" FontSize="12.5" Text="{Binding LinkText}" PlaceholderText="{x:Static r:Strings.Review_LinkPlaceholder}"
-                   AutomationProperties.Name="{x:Static r:Strings.Review_LinkPlaceholder}" />
+                   AutomationProperties.Name="{x:Static r:Strings.Review_LinkPlaceholder}">
+            <TextBox.KeyBindings>
+              <KeyBinding Gesture="Enter" Command="{Binding UseLinkCommand}" />
+            </TextBox.KeyBindings>
+          </TextBox>
           <Button Grid.Column="1" Classes="secondary" Margin="10,0,0,0" Content="{x:Static r:Strings.Review_UseLink}"
                   Command="{Binding UseLinkCommand}" />
         </Grid>
@@ -190,7 +198,8 @@
           <!-- Candidates -->
           <StackPanel Spacing="10" IsVisible="{Binding ShowCandidates}">
             <TextBlock Classes="section-label" Text="{x:Static r:Strings.Review_Candidates}" />
-            <ItemsControl ItemsSource="{Binding Candidates}">
+            <!-- Room for the cyan sliver of a selected card in the first column -->
+            <ItemsControl ItemsSource="{Binding Candidates}" Padding="3,0,0,0">
               <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
                   <UniformGrid Columns="3" />

@@ -554,6 +554,8 @@
     <Setter Property="HorizontalAlignment" Value="Stretch" />
     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
     <Setter Property="FontWeight" Value="Normal" />
+    <!-- The selection slivers are drawn outside the button -->
+    <Setter Property="ClipToBounds" Value="False" />
   </Style>
   <Style Selector="Button.queue-item:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
@@ -590,6 +592,8 @@
     <Setter Property="HorizontalContentAlignment" Value="Stretch" />
     <Setter Property="VerticalContentAlignment" Value="Top" />
     <Setter Property="FontWeight" Value="Normal" />
+    <!-- The selection slivers are drawn outside the button -->
+    <Setter Property="ClipToBounds" Value="False" />
   </Style>
   <Style Selector="Button.candidate:pointerover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
