@@ -162,4 +162,14 @@ public sealed class QualityAnalyzerTests
         Assert.Contains(QualityAnalyzer.Analyze(Book("Saga", publisher: null)).Problems, p => p.Issue == QualityIssue.NoPublisher);
         Assert.Contains(QualityAnalyzer.Analyze(Book("Saga", publisher: " ")).Problems, p => p.Issue == QualityIssue.NoPublisher);
     }
+
+    [Fact]
+    public void An_author_counts_as_a_known_author()
+    {
+        var book = Book("Saga", authors: "") with { Credits = [new Credit(CreditRole.Author, "Ann Smith"), new Credit(CreditRole.Artist, "Bo Jones")] };
+
+        Assert.Equal(["Ann Smith"], QualityAnalyzer.AuthorsOf(book));
+        Assert.False(QualityAnalyzer.HasUnknownAuthor(book));
+        Assert.False(QualityAnalyzer.Analyze(book).HasProblemIn(QualityField.Authors));
+    }
 }

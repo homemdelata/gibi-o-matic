@@ -134,7 +134,7 @@ ENTRADA ──importar──► ARQUIVO (original + metadata.json) ──gerar�
 }
 ```
 
-**Funções de crédito** (`role`): `writer`, `artist` (lápis), `inker`, `colorist`, `letterer`, `cover`, `editor`, `translator`, `other`. "Autores", nos lugares que só aceitam um campo, significa os `writer`.
+**Funções de crédito** (`role`): `author` (autor da obra inteira, como num livro que não é quadrinho), `writer`, `artist` (lápis), `inker`, `colorist`, `letterer`, `cover`, `editor`, `translator`, `other`. "Autores", nos lugares que só aceitam um campo, significa os `author` e os `writer` (no ComicInfo, ambos vão em `Writer`).
 
 ## 5. Qualidade dos metadados
 

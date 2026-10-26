@@ -59,6 +59,8 @@ public sealed record Credit(CreditRole Role, string Name);
 
 public enum CreditRole
 {
+    /// <summary>The author of the whole work, typically of a book that is not a comic; counts as a writer everywhere.</summary>
+    Author,
     Writer,
     Artist,
     Inker,

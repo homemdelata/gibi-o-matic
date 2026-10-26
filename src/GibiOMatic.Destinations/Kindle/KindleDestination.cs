@@ -5,6 +5,7 @@ using GibiOMatic.Conversion.Kcc;
 using GibiOMatic.Core;
 using GibiOMatic.Core.Domain;
 using GibiOMatic.Core.Libraries;
+using GibiOMatic.Core.Quality;
 using GibiOMatic.Core.Settings;
 using GibiOMatic.Destinations.Sync;
 using GibiOMatic.Library.Index;
@@ -160,10 +161,10 @@ public sealed class KindleDestination(DestinationConfig config, IKccRunner kcc, 
         }
     }
 
-    /// <summary>The writers (or else the artists), as the Kindle shows under the title.</summary>
+    /// <summary>The authors and writers (or else the artists), as the Kindle shows under the title.</summary>
     internal static string? AuthorOf(BookMetadata book)
     {
-        var names = book.Credits.Where(c => c.Role == CreditRole.Writer).Select(c => c.Name).Distinct().ToList();
+        var names = QualityAnalyzer.AuthorsOf(book).Distinct().ToList();
         if (names.Count == 0)
         {
             names = book.Credits.Where(c => c.Role == CreditRole.Artist).Select(c => c.Name).Distinct().ToList();

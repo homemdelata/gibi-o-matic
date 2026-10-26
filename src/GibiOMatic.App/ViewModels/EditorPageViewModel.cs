@@ -93,7 +93,7 @@ public sealed partial class EditorPageViewModel : PageViewModel
         Subtitle = Strings.Editor_Subtitle;
         Roles =
         [
-            new(CreditRole.Writer, Strings.Role_Writer), new(CreditRole.Artist, Strings.Role_Artist), new(CreditRole.Inker, Strings.Role_Inker),
+            new(CreditRole.Author, Strings.Role_Author), new(CreditRole.Writer, Strings.Role_Writer), new(CreditRole.Artist, Strings.Role_Artist), new(CreditRole.Inker, Strings.Role_Inker),
             new(CreditRole.Colorist, Strings.Role_Colorist), new(CreditRole.Letterer, Strings.Role_Letterer), new(CreditRole.Cover, Strings.Role_Cover),
             new(CreditRole.Editor, Strings.Role_Editor), new(CreditRole.Translator, Strings.Role_Translator), new(CreditRole.Other, Strings.Role_Other),
         ];

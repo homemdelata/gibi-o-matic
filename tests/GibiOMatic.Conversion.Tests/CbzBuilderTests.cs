@@ -168,4 +168,14 @@ public sealed class CbzBuilderTests : IDisposable
         var plutona = XDocument.Parse(ComicInfoWriter.Write(Saga with { Title = "Plutona", Series = null, OneShot = true }, 10)).Root!;
         Assert.Equal(("Plutona", "1", "1"), (plutona.Element("Series")?.Value, plutona.Element("Number")?.Value, plutona.Element("Count")?.Value));
     }
+
+    [Fact]
+    public void An_author_goes_in_the_writer_field()
+    {
+        var book = Saga with { Credits = [new Credit(CreditRole.Author, "Jim Lee"), new Credit(CreditRole.Writer, "Brian K. Vaughan")] };
+
+        var info = XDocument.Parse(ComicInfoWriter.Write(book, 144)).Root!;
+
+        Assert.Equal("Jim Lee, Brian K. Vaughan", info.Element("Writer")?.Value);
+    }
 }

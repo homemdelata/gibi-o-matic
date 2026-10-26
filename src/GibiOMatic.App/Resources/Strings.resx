@@ -288,6 +288,7 @@
   <data name="Review_Source" xml:space="preserve"><value>Fonte: {0}</value></data>
   <data name="Review_Subtitle_Count" xml:space="preserve"><value>{0} livros · ordenados por gravidade</value></data>
   <data name="Role_Artist" xml:space="preserve"><value>Arte</value></data>
+  <data name="Role_Author" xml:space="preserve"><value>Autor</value></data>
   <data name="Role_Colorist" xml:space="preserve"><value>Cores</value></data>
   <data name="Role_Cover" xml:space="preserve"><value>Capa</value></data>
   <data name="Role_Editor" xml:space="preserve"><value>Editor</value></data>

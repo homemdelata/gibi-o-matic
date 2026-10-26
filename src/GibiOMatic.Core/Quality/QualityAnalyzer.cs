@@ -63,9 +63,9 @@ public static partial class QualityAnalyzer
         return new QualityReport(score, BandOf(score), problems);
     }
 
-    /// <summary>The writers: "Autores" wherever a single field is expected (SPEC §4.3).</summary>
+    /// <summary>The authors and writers: "Autores" wherever a single field is expected (SPEC §4.3).</summary>
     public static IReadOnlyList<string> AuthorsOf(BookMetadata book) =>
-        book.Credits.Where(c => c.Role == CreditRole.Writer).Select(c => c.Name).ToList();
+        book.Credits.Where(c => c.Role is CreditRole.Author or CreditRole.Writer).OrderBy(c => c.Role).Select(c => c.Name).ToList();
 
     public static bool HasUnknownAuthor(BookMetadata book)
     {

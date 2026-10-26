@@ -31,9 +31,9 @@ public static class ComicInfoWriter
                 }
             }
 
-            string? Names(CreditRole role)
+            string? Names(params CreditRole[] roles)
             {
-                var names = book.Credits.Where(c => c.Role == role).Select(c => c.Name).Distinct().ToList();
+                var names = book.Credits.Where(c => roles.Contains(c.Role)).Select(c => c.Name).Distinct().ToList();
                 return names.Count == 0 ? null : string.Join(", ", names);
             }
 
@@ -53,7 +53,8 @@ public static class ComicInfoWriter
             Element("Year", book.Date?.Year.ToString(CultureInfo.InvariantCulture));
             Element("Month", book.Date?.Month?.ToString(CultureInfo.InvariantCulture));
             Element("Day", book.Date?.Day?.ToString(CultureInfo.InvariantCulture));
-            Element("Writer", Names(CreditRole.Writer));
+            // ComicInfo has no author: the author of a book is its writer.
+            Element("Writer", Names(CreditRole.Author, CreditRole.Writer));
             Element("Penciller", Names(CreditRole.Artist));
             Element("Inker", Names(CreditRole.Inker));
             Element("Colorist", Names(CreditRole.Colorist));
