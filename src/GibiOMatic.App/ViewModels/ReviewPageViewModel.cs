@@ -199,6 +199,13 @@ public sealed partial class ReviewPageViewModel : PageViewModel
 
     public bool HasSelection => Selected is not null;
 
+    /// <summary>Width at which covers are decoded for the hover preview.</summary>
+    private const int LargeCoverWidth = 400;
+
+    /// <summary>The selected book's cover, shown bigger when hovering it.</summary>
+    [ObservableProperty]
+    public partial Bitmap? LargeCover { get; private set; }
+
     /// <summary>Opens the book under review in the reader, to see which edition it is.</summary>
     [RelayCommand]
     private void OpenBook()
@@ -448,6 +455,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel
         }
 
         Selected = item;
+        LargeCover = null;
         Candidates.Clear();
         Rows.Clear();
         SelectedCandidate = null;
@@ -467,6 +475,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel
         LinkText = null;
         LinkError = null;
         _ = ShowFileInfoAsync(item, library);
+        _ = LoadLargeCoverAsync(item, library);
         var result = item.Identification.Result;
         SearchText = (result?.Query ?? BookQuery.From(_book.Metadata)).EditableText;
         NoCandidateText = string.Format(CultureInfo.CurrentCulture, Strings.Review_NothingFor, SearchText);
@@ -636,9 +645,22 @@ public sealed partial class ReviewPageViewModel : PageViewModel
         }
     }
 
-    /// <summary>Downloads (once) and decodes a candidate's cover; <c>null</c> when it cannot be had.</summary>
+    /// <summary>
+    /// Downloads (once) and decodes a candidate's cover, big enough for the hover preview;
+    /// <c>null</c> when it cannot be had.
+    /// </summary>
     private async Task<Bitmap?> LoadRemoteCoverAsync(string? url) =>
-        await _remoteCovers.GetAsync(url) is { } path ? await _covers.LoadAsync(path, 160) : null;
+        await _remoteCovers.GetAsync(url) is { } path ? await _covers.LoadAsync(path, LargeCoverWidth) : null;
+
+    /// <summary>The book's own cover at preview size; the thumbnail is too small to show bigger.</summary>
+    private async Task LoadLargeCoverAsync(ReviewItemViewModel item, LibraryInfo library)
+    {
+        var cover = await _covers.LoadAsync(Path.Combine(library.RootPath, item.Card.Book.Folder, LibraryLayout.CoverFileName), LargeCoverWidth);
+        if (Selected == item)
+        {
+            LargeCover = cover;
+        }
+    }
 
     private void UpdateSummary() =>
         AppliedSummary = string.Format(CultureInfo.CurrentCulture, Strings.Review_AppliedSummary, Rows.Count(r => r.IsApplied), Rows.Count(r => r.CanApply));

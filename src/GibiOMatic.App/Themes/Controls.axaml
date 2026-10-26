@@ -441,6 +441,12 @@
     <Setter Property="BorderBrush" Value="{DynamicResource CoverHoverBorderBrush}" />
   </Style>
 
+  <!-- A cover seen bigger on hover (Review): wider than the default tooltip -->
+  <Style Selector="ToolTip.cover-preview">
+    <Setter Property="MaxWidth" Value="420" />
+    <Setter Property="Padding" Value="8" />
+  </Style>
+
   <!-- A cover: hard printed shadow; when selected, the accent ring with cyan and magenta slivers -->
   <Style Selector="Border.cover">
     <Setter Property="CornerRadius" Value="{StaticResource RadiusCover}" />

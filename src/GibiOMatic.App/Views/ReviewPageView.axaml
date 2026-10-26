@@ -92,8 +92,19 @@
     <DockPanel Grid.Column="1" Margin="{StaticResource PagePadding}" IsVisible="{Binding HasSelection}">
       <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,18">
         <!-- The book's own cover, to compare with the candidates' -->
+        <!-- Hovering shows it bigger, which is quicker than opening a large PDF just to see which book it is -->
         <Button Classes="cover-card" Margin="0,0,16,0" VerticalAlignment="Top" Command="{Binding OpenBookCommand}"
-                ToolTip.Tip="{x:Static r:Strings.Reader_OpenTip}" AutomationProperties.Name="{x:Static r:Strings.Review_OpenBook}">
+                ToolTip.Placement="RightEdgeAlignedTop" ToolTip.ShowDelay="250"
+                AutomationProperties.Name="{x:Static r:Strings.Review_OpenBook}">
+        <ToolTip.Tip>
+          <ToolTip Classes="cover-preview">
+            <StackPanel Spacing="8">
+              <Image Source="{Binding LargeCover}" MaxWidth="400" MaxHeight="560" Stretch="Uniform"
+                     IsVisible="{Binding LargeCover, Converter={x:Static ObjectConverters.IsNotNull}}" />
+              <TextBlock Text="{x:Static r:Strings.Reader_OpenTip}" TextWrapping="Wrap" />
+            </StackPanel>
+          </ToolTip>
+        </ToolTip.Tip>
         <Border Width="64" Height="96" CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True">
           <Border.Background>
             <SolidColorBrush Color="{Binding Selected.Card.PlaceholderColor, FallbackValue=#262931}" />
@@ -210,7 +221,14 @@
                   <Button Classes="candidate" Classes.selected="{Binding IsSelected}" Command="{Binding PickCommand}" Margin="0,0,12,12">
                     <Grid ColumnDefinitions="Auto,*">
                     <Border Width="64" Height="96" CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True" VerticalAlignment="Top" Margin="0,0,12,0"
-                            Background="{DynamicResource HoverBrush}">
+                            Background="{DynamicResource HoverBrush}"
+                            ToolTip.Placement="RightEdgeAlignedTop" ToolTip.ShowDelay="250"
+                            ToolTip.IsEnabled="{Binding Cover, Converter={x:Static ObjectConverters.IsNotNull}}">
+                      <ToolTip.Tip>
+                        <ToolTip Classes="cover-preview">
+                          <Image Source="{Binding Cover}" MaxWidth="400" MaxHeight="560" Stretch="Uniform" />
+                        </ToolTip>
+                      </ToolTip.Tip>
                       <Panel>
                         <Border Background="{StaticResource HalftoneBrush}" />
                         <Image Source="{Binding Cover}" Stretch="UniformToFill" />
