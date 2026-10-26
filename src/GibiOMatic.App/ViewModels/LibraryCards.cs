@@ -175,7 +175,7 @@ public sealed partial class BookCardViewModel : ViewModelBase
 
     /// <summary>How far the book was read; null if it was never opened or marked.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsReading), nameof(IsRead), nameof(Progress), nameof(ReadMenuText))]
+    [NotifyPropertyChangedFor(nameof(IsReading), nameof(IsRead), nameof(Progress), nameof(ProgressText), nameof(ReadMenuText))]
     public partial BookReading? Reading { get; set; }
 
     /// <summary>In the list of a Kindle destination (it is prepared and offered when the Kindle is connected).</summary>
@@ -211,6 +211,9 @@ public sealed partial class BookCardViewModel : ViewModelBase
 
     /// <summary>From 0 to 1, for the bar at the bottom of the cover.</summary>
     public double Progress => Reading?.Fraction ?? 0;
+
+    /// <summary>"42% lido".</summary>
+    public string ProgressText => string.Format(CultureInfo.CurrentCulture, Strings.Reading_Percent, Progress.ToString("0%", CultureInfo.CurrentCulture));
 
     [RelayCommand]
     private void Select() => _select(this);
@@ -500,9 +503,6 @@ public interface IBookActions : IReadingActions
 public sealed partial class ContinueReadingViewModel(BookCardViewModel card, Action<BookCardViewModel> open) : ViewModelBase
 {
     public BookCardViewModel Card { get; } = card;
-
-    public string PercentText { get; } = string.Format(CultureInfo.CurrentCulture, Strings.Reading_Percent,
-        card.Progress.ToString("0%", CultureInfo.CurrentCulture));
 
     [RelayCommand]
     private void Open() => open(Card);

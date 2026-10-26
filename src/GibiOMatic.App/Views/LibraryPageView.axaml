@@ -11,24 +11,8 @@
     <!-- Book card. Every card keeps 12 px free on top and on the right, where a series draws the
          volumes behind its cover, so covers of books and series line up. -->
     <DataTemplate DataType="vm:BookCardViewModel">
-      <Button Classes="cover-card" Command="{Binding SelectCommand}" Margin="3,0" Padding="6"
+      <Button Classes="cover-card book-menu" Command="{Binding SelectCommand}" Margin="3,0" Padding="6"
               c:DoubleTap.Command="{Binding OpenCommand}" AutomationProperties.Name="{Binding Title}">
-        <Button.ContextMenu>
-          <ContextMenu IsVisible="{Binding HasMenu}">
-            <MenuItem Header="{x:Static r:Strings.Menu_Open}" Command="{Binding OpenCommand}">
-              <MenuItem.Icon>
-                <c:StrokeIcon Data="{StaticResource Icon.BookOpen}" Width="16" Height="16" />
-              </MenuItem.Icon>
-            </MenuItem>
-            <MenuItem Header="{Binding KindleMenuText}" Command="{Binding ToggleKindleCommand}" />
-            <Separator />
-            <MenuItem Header="{Binding ReadMenuText}" Command="{Binding ToggleReadCommand}" />
-            <MenuItem Header="{x:Static r:Strings.Reading_Clear}" Command="{Binding ClearProgressCommand}" IsVisible="{Binding IsReading}" />
-            <Separator />
-            <MenuItem Header="{x:Static r:Strings.Menu_Edit}" Command="{Binding EditCommand}" />
-            <MenuItem Header="{x:Static r:Strings.Menu_Review}" Command="{Binding ReviewCommand}" />
-          </ContextMenu>
-        </Button.ContextMenu>
         <StackPanel Spacing="10">
           <c:AspectBox Margin="0,12,12,0">
             <Border Classes="cover" Classes.selected="{Binding IsSelected}">
@@ -144,6 +128,27 @@
   </UserControl.DataTemplates>
 
   <UserControl.Styles>
+    <!-- A book's right-click menu, on the library cards and on "Continuar lendo" (the DataContext is the book card) -->
+    <Style Selector=":is(Control).book-menu" x:DataType="vm:BookCardViewModel">
+      <Setter Property="ContextMenu">
+        <Template>
+          <ContextMenu IsVisible="{Binding HasMenu}">
+            <MenuItem Header="{x:Static r:Strings.Menu_Open}" Command="{Binding OpenCommand}">
+              <MenuItem.Icon>
+                <c:StrokeIcon Data="{StaticResource Icon.BookOpen}" Width="16" Height="16" />
+              </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="{Binding KindleMenuText}" Command="{Binding ToggleKindleCommand}" />
+            <Separator />
+            <MenuItem Header="{Binding ReadMenuText}" Command="{Binding ToggleReadCommand}" />
+            <MenuItem Header="{x:Static r:Strings.Reading_Clear}" Command="{Binding ClearProgressCommand}" IsVisible="{Binding IsReading}" />
+            <Separator />
+            <MenuItem Header="{x:Static r:Strings.Menu_Edit}" Command="{Binding EditCommand}" />
+            <MenuItem Header="{x:Static r:Strings.Menu_Review}" Command="{Binding ReviewCommand}" />
+          </ContextMenu>
+        </Template>
+      </Setter>
+    </Style>
     <!-- Defaults live in styles (not local values) so the container query below can change them. -->
     <Style Selector="UniformGrid.summary">
       <Setter Property="Columns" Value="4" />
@@ -330,19 +335,19 @@
               <DataTemplate x:DataType="vm:ContinueReadingViewModel">
                 <Button Classes="cover-card" Width="230" Command="{Binding OpenCommand}"
                         ToolTip.Tip="{x:Static r:Strings.Library_ContinueTip}" AutomationProperties.Name="{Binding Card.Title}">
-                  <Border Classes="continue-card">
+                  <Border Classes="continue-card book-menu" DataContext="{Binding Card}" x:DataType="vm:BookCardViewModel">
                   <Grid ColumnDefinitions="48,*">
                     <Border Width="48" Height="72" CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True">
                       <Border.Background>
-                        <SolidColorBrush Color="{Binding Card.PlaceholderColor}" />
+                        <SolidColorBrush Color="{Binding PlaceholderColor}" />
                       </Border.Background>
-                      <Image Source="{Binding Card.Thumbnail}" Stretch="UniformToFill" />
+                      <Image Source="{Binding Thumbnail}" Stretch="UniformToFill" />
                     </Border>
                     <StackPanel Grid.Column="1" Margin="12,2,4,0" Spacing="6" VerticalAlignment="Center">
-                      <TextBlock Text="{Binding Card.Title}" FontWeight="SemiBold" FontSize="13" TextWrapping="Wrap" MaxLines="2"
+                      <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13" TextWrapping="Wrap" MaxLines="2"
                                  TextTrimming="CharacterEllipsis" />
-                      <ProgressBar Classes="reading inline" Maximum="1" Value="{Binding Card.Progress}" />
-                      <TextBlock Classes="muted mono" FontSize="11" Text="{Binding PercentText}" />
+                      <ProgressBar Classes="reading inline" Maximum="1" Value="{Binding Progress}" />
+                      <TextBlock Classes="muted mono" FontSize="11" Text="{Binding ProgressText}" />
                     </StackPanel>
                   </Grid>
                   </Border>
