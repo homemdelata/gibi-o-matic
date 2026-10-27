@@ -93,11 +93,12 @@ public sealed class EditingAndIdentificationTests : IAsyncLifetime
     private LibraryIndex Index => _libraries.GetIndex(_library);
 
     /// <summary>Imports a synthetic PDF called <paramref name="fileName"/> and returns its book.</summary>
-    private async Task<CatalogBook> ImportAsync(string fileName)
+    /// <param name="pages">Another page count makes another file (the same file twice is a duplicate).</param>
+    private async Task<CatalogBook> ImportAsync(string fileName, int pages = 2)
     {
         await using var imports = _imports.Create(_library);
         await imports.StartAsync(Ct);
-        await imports.AddAsync([SyntheticBooks.Pdf(_temp.Combine("Downloads", fileName))], Ct);
+        await imports.AddAsync([SyntheticBooks.Pdf(_temp.Combine("Downloads", fileName), new SyntheticBooks.PdfOptions { Pages = pages })], Ct);
         await imports.WaitUntilIdleAsync(Ct);
         await imports.ConfirmAsync(Ct);
         await imports.WaitUntilIdleAsync(Ct);
@@ -325,6 +326,91 @@ public sealed class EditingAndIdentificationTests : IAsyncLifetime
         await _queue.ResumeAsync(Ct);
         await _queue.WaitUntilIdleAsync(Ct);
         Assert.Single(_identifier.Asked);
+    }
+
+    [Fact]
+    public async Task Removing_a_book_moves_its_folder_to_the_trash_and_forgets_it()
+    {
+        var book = await ImportAsync("wrong_file.pdf");
+        var keep = await ImportAsync("saga_vol1.pdf", pages: 3);
+        await _editor.UpdateAsync(_library, book.Metadata.Id, m => m with { Title = "Wrong file" }, Ct);
+        var queue = await StartQueueAsync();
+        string? removed = null;
+        _editor.BookRemoved += (_, e) => removed = e.BookId;
+        var folder = Path.Combine(_library.RootPath, (await Index.GetBookAsync(book.Metadata.Id, Ct))!.Folder);
+
+        await _editor.RemoveAsync(_library, book.Metadata.Id, BookRemoval.ToTrash, Ct);
+
+        Assert.Equal(book.Metadata.Id, removed);
+        Assert.False(Directory.Exists(folder));
+        Assert.Null(await Index.GetBookAsync(book.Metadata.Id, Ct));
+        Assert.Null(await queue.GetAsync(book.Metadata.Id, Ct));
+        Assert.NotNull(await Index.GetBookAsync(keep.Metadata.Id, Ct));
+        // "_To review" still has the other book; nothing above the removed folder is left empty.
+        Assert.True(Directory.Exists(Path.Combine(_library.RootPath, "Books", LibraryLayout.ToReviewFolderName)));
+
+        var trashed = Directory.GetDirectories(LibraryLayout.TrashPath(_library.RootPath)).Single();
+        var moved = Directory.GetDirectories(trashed).Single();
+        Assert.True(File.Exists(Path.Combine(moved, "Wrong file.pdf")));
+        Assert.True(File.Exists(Path.Combine(moved, LibraryLayout.MetadataFileName)));
+        var note = await File.ReadAllTextAsync(moved + ".trash.json", Ct);
+        Assert.Contains(book.Metadata.Id, note);
+        // The history stays, in case the folder is brought back.
+        Assert.NotEmpty(await _editor.GetHistoryAsync(_library, book.Metadata.Id, Ct));
+
+        // The trash is not part of the library.
+        var rebuilt = await _libraries.RebuildIndexAsync(_library, Ct);
+        Assert.Equal(1, rebuilt.IndexedBooks);
+    }
+
+    [Fact]
+    public async Task Removing_a_book_and_its_files_deletes_the_folder_and_the_history()
+    {
+        var book = await ImportAsync("wrong_file.pdf");
+        await _editor.UpdateAsync(_library, book.Metadata.Id, m => m with
+        {
+            Title = "Wrong file",
+            Review = new ReviewInfo { Status = ReviewStatus.Approved, MatchedBy = MatchedBy.Manual },
+        }, Ct);
+        var folder = Path.Combine(_library.RootPath, (await Index.GetBookAsync(book.Metadata.Id, Ct))!.Folder);
+        Assert.True(Directory.Exists(folder));
+
+        await _editor.RemoveAsync(_library, book.Metadata.Id, BookRemoval.DeleteFiles, Ct);
+
+        Assert.False(Directory.Exists(folder));
+        // "_No publisher" was left empty, so it goes too.
+        Assert.False(Directory.Exists(Path.Combine(_library.RootPath, "Books", "_No publisher")));
+        Assert.True(Directory.Exists(LibraryLayout.BooksPath(_library.RootPath)));
+        Assert.False(Directory.Exists(LibraryLayout.TrashPath(_library.RootPath)));
+        Assert.Empty(await _editor.GetHistoryAsync(_library, book.Metadata.Id, Ct));
+        Assert.Equal(0, await Index.CountBooksAsync(Ct));
+    }
+
+    [Fact]
+    public async Task A_book_whose_files_were_deleted_by_hand_can_still_be_removed()
+    {
+        var book = await ImportAsync("wrong_file.pdf");
+        var folder = Path.Combine(_library.RootPath, book.Folder);
+        File.Delete(Path.Combine(folder, book.MainFile!.Name));
+
+        var check = BookFilesCheck.Check(_library.RootPath, await Index.GetBooksAsync(Ct), Ct)!;
+        Assert.Equal([book.Metadata.Id], check.MissingOriginal);
+        Assert.Empty(check.MissingFolder);
+
+        Directory.Delete(folder, recursive: true);
+        check = BookFilesCheck.Check(_library.RootPath, await Index.GetBooksAsync(Ct), Ct)!;
+        Assert.Empty(check.MissingOriginal);
+        Assert.Equal([book.Metadata.Id], check.MissingFolder);
+
+        await _editor.RemoveAsync(_library, book.Metadata.Id, BookRemoval.ToTrash, Ct);
+        Assert.Equal(0, await Index.CountBooksAsync(Ct));
+        Assert.False(Directory.Exists(LibraryLayout.TrashPath(_library.RootPath)));
+    }
+
+    [Fact]
+    public void An_unreachable_library_is_not_reported_as_missing_every_file()
+    {
+        Assert.Null(BookFilesCheck.Check(_temp.Combine("Unplugged"), [new CatalogBook(new BookMetadata { Id = "x", Title = "X" }, "Books/X")], Ct));
     }
 }
 

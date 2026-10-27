@@ -48,7 +48,8 @@ public static class BookFolders
         return wanted;
     }
 
-    private static void RemoveEmptyParents(string root, string from)
+    /// <summary>Removes the folders above <paramref name="from"/> that were left empty, up to <c>Books</c>.</summary>
+    internal static void RemoveEmptyParents(string root, string from)
     {
         var books = Path.GetFullPath(LibraryLayout.BooksPath(root));
         for (var parent = Path.GetDirectoryName(from); parent is not null && Path.GetFullPath(parent).Length > books.Length; parent = Path.GetDirectoryName(parent))

@@ -96,6 +96,20 @@ public sealed class LibraryIndex(string databasePath)
         await tx.CommitAsync(ct);
     }
 
+    /// <summary>Forgets a book removed from the library: its row, files, identification and reading state.</summary>
+    public async Task DeleteBookAsync(string id, CancellationToken ct = default)
+    {
+        await using var connection = await OpenAsync(ct);
+        await connection.ExecuteAsync(new CommandDefinition(
+            """
+            DELETE FROM books WHERE id = @id;
+            DELETE FROM book_files WHERE book_id = @id;
+            DELETE FROM identifications WHERE book_id = @id;
+            DELETE FROM reading_state WHERE book_id = @id;
+            """,
+            new { id }, cancellationToken: ct));
+    }
+
     private static async Task InsertAsync(SqliteConnection connection, System.Data.Common.DbTransaction tx, IndexedBook book, string indexedAt, CancellationToken ct)
     {
         var m = book.Metadata;
