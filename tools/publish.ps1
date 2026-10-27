@@ -55,7 +55,7 @@ if (Test-Path $publish) { Remove-Item -Recurse -Force $publish }
 Invoke-Dotnet publish $project --configuration Release --runtime $Runtime --self-contained `
     --output $publish -p:DebugType=none
 
-# Earlier releases left in the folder become delta updates; nothing else is removed from it.
+# The release left in the folder by the previous run becomes a delta update.
 # "[win]" / "[linux]" lets vpk package for the other system too.
 $releases = Join-Path $artifacts "releases/$Runtime"
 Invoke-Dotnet tool restore
@@ -65,6 +65,12 @@ Invoke-Dotnet vpk $(if ($forWindows) { '[win]' } else { '[linux]' }) pack --pack
     --icon (Join-Path $root 'src/GibiOMatic.App/Assets/gibiomatic.ico') `
     --channel $(if ($forWindows) { 'win' } else { 'linux' }) `
     --outputDir $releases
+
+# Only the newest release is needed: its full package makes the next delta, and installed apps
+# update from GitHub. Older packages would pile up (about 60 MB each).
+Get-ChildItem $releases -Filter "$packId-*.nupkg" |
+    Where-Object { $_.Name -notlike "$packId-$version-*" } |
+    Remove-Item -Force
 
 Write-Host ''
 Write-Host "Version: $version"
