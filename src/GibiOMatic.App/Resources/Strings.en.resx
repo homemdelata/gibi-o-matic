@@ -627,6 +627,19 @@
   <data name="Menu_RemoveKindle" xml:space="preserve"><value>Remove from the Kindle list</value></data>
   <data name="Menu_Edit" xml:space="preserve"><value>Edit metadata</value></data>
   <data name="Menu_Review" xml:space="preserve"><value>Review metadata</value></data>
+  <data name="Menu_Remove" xml:space="preserve"><value>Remove from library…</value></data>
+  <data name="Menu_RevealWindows" xml:space="preserve"><value>Show in Explorer</value></data>
+  <data name="Menu_RevealOther" xml:space="preserve"><value>Show in folder</value></data>
+  <data name="Remove_Question" xml:space="preserve"><value>Remove “{0}” from the library?</value></data>
+  <data name="Remove_Help" xml:space="preserve"><value>“Remove” moves the book folder (original, cover and metadata) to the library's internal trash, in .gibiomatic/trash, where it can be recovered by hand. “Remove and delete the files” deletes everything for good. The copies in the destinations are deleted; what is already on the Kindle stays on the device.</value></data>
+  <data name="Remove_ToTrash" xml:space="preserve"><value>Remove</value></data>
+  <data name="Remove_ToTrashTip" xml:space="preserve"><value>Moves the book folder to .gibiomatic/trash, in the library</value></data>
+  <data name="Remove_Delete" xml:space="preserve"><value>Remove and delete the files</value></data>
+  <data name="Remove_DeleteTip" xml:space="preserve"><value>Deletes the book's original, cover, metadata and history for good</value></data>
+  <data name="Remove_Error" xml:space="preserve"><value>Could not remove the book: {0}</value></data>
+  <data name="Missing_Title" xml:space="preserve"><value>Original file not found</value></data>
+  <data name="Missing_Help" xml:space="preserve"><value>The file {0} is no longer in the book folder. If it was deleted on purpose, remove the book from the library.</value></data>
+  <data name="Filter_MissingFile" xml:space="preserve"><value>No file</value></data>
   <data name="Tray_Open" xml:space="preserve"><value>Open Gibi-o-matic</value></data>
   <data name="Tray_PauseInbox" xml:space="preserve"><value>Pause the Inbox</value></data>
   <data name="Tray_ResumeInbox" xml:space="preserve"><value>Resume the Inbox</value></data>

@@ -10,6 +10,7 @@ using GibiOMatic.Core.Domain;
 using GibiOMatic.Core.Libraries;
 using GibiOMatic.Core.Quality;
 using GibiOMatic.Library;
+using GibiOMatic.Library.Editing;
 using GibiOMatic.Library.Identification;
 using GibiOMatic.Library.Index;
 using GibiOMatic.Metadata;
@@ -20,7 +21,8 @@ using Microsoft.Extensions.Logging;
 namespace GibiOMatic.App.ViewModels;
 
 /// <summary>A book in the Review queue.</summary>
-public sealed partial class ReviewItemViewModel(BookCardViewModel card, BookIdentification identification, string issue, Action<ReviewItemViewModel> select)
+public sealed partial class ReviewItemViewModel(BookCardViewModel card, BookIdentification identification, string issue, Action<ReviewItemViewModel> select,
+    IBookFileActions? files = null)
     : ViewModelBase
 {
     public BookCardViewModel Card { get; } = card;
@@ -38,6 +40,14 @@ public sealed partial class ReviewItemViewModel(BookCardViewModel card, BookIden
 
     [RelayCommand]
     private void Select() => select(this);
+
+    public string RevealText => BookFileText.Reveal;
+
+    [RelayCommand]
+    private void Reveal() => files?.Reveal(Card);
+
+    [RelayCommand]
+    private void AskRemove() => files?.AskRemove(Card);
 }
 
 public sealed partial class CandidateViewModel : ViewModelBase
@@ -149,7 +159,7 @@ public sealed partial class FieldRowViewModel(FieldChange change, Action changed
 /// The Review (SPEC §7): books whose identification needs the user, most serious first; for each,
 /// the candidates and a field-by-field comparison. "Aprovar e próximo" applies the checked fields.
 /// </summary>
-public sealed partial class ReviewPageViewModel : PageViewModel
+public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileActions
 {
     private readonly LibrarySession _session;
     private readonly ThumbnailCache _thumbnails;
@@ -167,10 +177,14 @@ public sealed partial class ReviewPageViewModel : PageViewModel
     private IReadOnlyList<string> _toReview = [];
     private CatalogBook? _book;
     private readonly IReaderLauncher _readerWindows;
+    private readonly IFileRevealer _revealer;
 
     public ReviewPageViewModel(LibrarySession session, ThumbnailCache thumbnails, ICoverLoader covers, CoverImageCache remoteCovers,
-        IBookFileReader reader, IUrlOpener urls, IUiThread ui, IReaderLauncher readerWindows, ILogger<ReviewPageViewModel> logger)
+        IBookFileReader reader, IUrlOpener urls, IUiThread ui, IReaderLauncher readerWindows, IFileRevealer revealer, BookEditor editor,
+        ILogger<ReviewPageViewModel> logger)
     {
+        _revealer = revealer;
+        RemovePrompt = new RemoveBookPromptViewModel(session, editor, logger) { Removed = id => _ = OnRemovedAsync(id) };
         _readerWindows = readerWindows;
         _remoteCovers = remoteCovers;
         _reader = reader;
@@ -198,6 +212,61 @@ public sealed partial class ReviewPageViewModel : PageViewModel
     public partial ReviewItemViewModel? Selected { get; private set; }
 
     public bool HasSelection => Selected is not null;
+
+    /// <summary>"Remover da biblioteca", asked from the queue's right-click menu or the missing-file warning.</summary>
+    public RemoveBookPromptViewModel RemovePrompt { get; }
+
+    /// <summary>The selected book's main original is not on disk.</summary>
+    [ObservableProperty]
+    public partial bool IsFileMissing { get; private set; }
+
+    [ObservableProperty]
+    public partial string? MissingText { get; private set; }
+
+    public string RevealText => BookFileText.Reveal;
+
+    public void Reveal(BookCardViewModel card)
+    {
+        if (_session.Current is { } library)
+        {
+            _revealer.RevealBook(library, card.Book);
+        }
+    }
+
+    public void AskRemove(BookCardViewModel card) => RemovePrompt.Ask(card.Id, card.Title);
+
+    [RelayCommand]
+    private void RevealSelected()
+    {
+        if (Selected is { } item)
+        {
+            Reveal(item.Card);
+        }
+    }
+
+    [RelayCommand]
+    private void AskRemoveSelected()
+    {
+        if (Selected is { } item)
+        {
+            AskRemove(item.Card);
+        }
+    }
+
+    /// <summary>The removed book leaves the queue; the next one (or the previous, at the end) is shown.</summary>
+    private async Task OnRemovedAsync(string bookId)
+    {
+        var index = Items.ToList().FindIndex(i => i.BookId == bookId);
+        var next = index < 0 ? Selected?.BookId
+            : Items.ElementAtOrDefault(index + 1)?.BookId ?? Items.ElementAtOrDefault(index - 1)?.BookId;
+        if (Selected?.BookId == bookId)
+        {
+            Selected = null;
+        }
+
+        await Status.RefreshAsync();
+        await RefreshAsync(CancellationToken.None, next);
+    }
 
     /// <summary>Width at which covers are decoded for the hover preview.</summary>
     private const int LargeCoverWidth = 400;
@@ -375,7 +444,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel
                 {
                     var book = books[i.BookId];
                     var card = new BookCardViewModel(book, QualityAnalyzer.Analyze(book.Metadata, context), library, _thumbnails, _covers, _ => { });
-                    return new ReviewItemViewModel(card, i, IssueOf(i, card.Report), SelectItem);
+                    return new ReviewItemViewModel(card, i, IssueOf(i, card.Report), SelectItem, this);
                 })
                 .OrderBy(i => i.Identification.Skipped)
                 .ThenBy(i => i.Score)
@@ -466,12 +535,15 @@ public sealed partial class ReviewPageViewModel : PageViewModel
         {
             _book = null;
             FolderPath = null;
+            IsFileMissing = false;
             return;
         }
 
         item.IsSelected = true;
         _book = item.Card.Book;
         FolderPath = Path.Combine(library.RootPath, _book.Folder);
+        IsFileMissing = _session.CheckFile(_book);
+        MissingText = BookFileText.Missing(_book);
         LinkText = null;
         LinkError = null;
         _ = ShowFileInfoAsync(item, library);

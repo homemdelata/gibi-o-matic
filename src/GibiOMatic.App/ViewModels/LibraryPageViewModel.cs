@@ -11,6 +11,7 @@ using GibiOMatic.Core.Settings;
 using GibiOMatic.Destinations.Kindle;
 using GibiOMatic.Destinations.Sync;
 using GibiOMatic.Library;
+using GibiOMatic.Library.Editing;
 using GibiOMatic.Library.Reading;
 using Microsoft.Extensions.Logging;
 
@@ -28,6 +29,7 @@ public enum LibraryFilter
     Reading,
     Read,
     Unread,
+    MissingFile,
 }
 
 public enum LibraryViewMode
@@ -43,7 +45,11 @@ public sealed partial class FilterChipViewModel(LibraryFilter filter, string lab
     public string Label { get; } = label;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsShown))]
     public partial int Count { get; set; }
+
+    /// <summary>"Sem arquivo" only shows while some book lacks its original.</summary>
+    public bool IsShown => Filter != LibraryFilter.MissingFile || Count > 0;
 
     [ObservableProperty]
     public partial bool IsSelected { get; set; }
@@ -75,12 +81,17 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
     private readonly ISettingsService _settings;
     private readonly ILogger<LibraryPageViewModel> _logger;
     private readonly Debouncer _reload;
+    private readonly Debouncer _reloadMissing;
+    private readonly IFileRevealer _revealer;
     private List<BookCardViewModel> _books = [];
     private double _viewportWidth;
 
     public LibraryPageViewModel(LibrarySession session, ThumbnailCache thumbnails, ICoverLoader covers, IFilePicker filePicker,
-        ISettingsService settings, IUiThread ui, IReaderLauncher reader, ReadingTracker reading, ILogger<LibraryPageViewModel> logger)
+        ISettingsService settings, IUiThread ui, IReaderLauncher reader, ReadingTracker reading, IFileRevealer revealer, BookEditor editor,
+        ILogger<LibraryPageViewModel> logger)
     {
+        _revealer = revealer;
+        RemovePrompt = new RemoveBookPromptViewModel(session, editor, logger) { Removed = id => _ = LoadAsync() };
         _reader = reader;
         _reading = reading;
         _reloadReading = new Debouncer(ui, TimeSpan.FromMilliseconds(300), () => RefreshReadingAsync());
@@ -92,6 +103,13 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
         _settings = settings;
         _logger = logger;
         _reload = new Debouncer(ui, TimeSpan.FromMilliseconds(400), () => LoadAsync());
+        _reloadMissing = new Debouncer(ui, TimeSpan.FromMilliseconds(200), () =>
+        {
+            ApplyMissing();
+            return Task.CompletedTask;
+        });
+        session.MissingFilesChanged += OnMissingFilesChanged;
+        session.BookRemoved += OnBookImported;
         if (session.Queue is { } queue)
         {
             queue.BookImported += OnBookImported;
@@ -114,6 +132,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
             new(LibraryFilter.Reading, Strings.Filter_Reading, PickFilter),
             new(LibraryFilter.Read, Strings.Filter_Read, PickFilter),
             new(LibraryFilter.Unread, Strings.Filter_Unread, PickFilter),
+            new(LibraryFilter.MissingFile, Strings.Filter_MissingFile, PickFilter),
         ];
         Filters[0].IsSelected = true;
     }
@@ -121,6 +140,9 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
     public override string Title => Strings.Nav_Library;
 
     public string LibraryPath => _session.Current?.RootPath ?? string.Empty;
+
+    /// <summary>"Remover da biblioteca", asked from a card's menu or the detail panel.</summary>
+    public RemoveBookPromptViewModel RemovePrompt { get; }
 
     /// <summary>Selection mode: clicking a card checks it instead of showing it.</summary>
     [ObservableProperty]
@@ -263,6 +285,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
                 .ToList();
 
             BookCount = _books.Count;
+            SetMissingFlags();
             UpdateKindleFlags();
             await ApplyReadingAsync(ct);
             if (IsSelecting)
@@ -291,6 +314,32 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
             _logger.LogError(ex, "Could not read the index of library {LibraryId}", library.Id);
         }
     }
+
+    private void SetMissingFlags()
+    {
+        var missing = _session.MissingFiles;
+        foreach (var book in _books)
+        {
+            book.IsFileMissing = missing.Contains(book.Id);
+        }
+    }
+
+    /// <summary>The check of the files ended (or one book was checked again): marks, counts and filter.</summary>
+    private void ApplyMissing()
+    {
+        SetMissingFlags();
+        UpdateSummary();
+        if (Filter == LibraryFilter.MissingFile && !_books.Any(b => b.IsFileMissing))
+        {
+            Filter = LibraryFilter.All;
+        }
+        else if (Filter == LibraryFilter.MissingFile)
+        {
+            ApplyView();
+        }
+    }
+
+    private void OnMissingFilesChanged(object? sender, EventArgs e) => _reloadMissing.Trigger();
 
     private void UpdateSummary()
     {
@@ -322,6 +371,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
         LibraryFilter.Reading => book.IsReading,
         LibraryFilter.Read => book.IsRead,
         LibraryFilter.Unread => !book.IsReading && !book.IsRead,
+        LibraryFilter.MissingFile => book.IsFileMissing,
         _ => true,
     };
 
@@ -603,6 +653,16 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
 
     public void Review(BookCardViewModel card) => RequestNavigation(NavPage.Review, [card.Id]);
 
+    public void Reveal(BookCardViewModel card)
+    {
+        if (_session.Current is { } library)
+        {
+            _revealer.RevealBook(library, card.Book);
+        }
+    }
+
+    public void AskRemove(BookCardViewModel card) => RemovePrompt.Ask(card.Id, card.Title);
+
     /// <summary>"Pôr na lista do Kindle", or "Tirar da lista do Kindle" when the selected book is in it.</summary>
     [ObservableProperty]
     public partial string KindleButtonText { get; private set; } = Strings.Menu_AddKindle;
@@ -679,7 +739,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
         }
 
         card.IsSelected = true;
-        Selected = new BookDetailsViewModel(card, library, _covers, file => _reader.Open(ReaderRequest.For(library, card.Book, file)), this);
+        Selected = new BookDetailsViewModel(card, library, _covers, file => _reader.Open(ReaderRequest.For(library, card.Book, file)), this, this);
         UpdateKindleButton();
         _ = LoadCopiesAsync(Selected);
     }
@@ -867,8 +927,11 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
             identification.BookUpdated -= OnBookImported;
         }
 
+        _session.MissingFilesChanged -= OnMissingFilesChanged;
+        _session.BookRemoved -= OnBookImported;
         _reading.Changed -= OnReadingChanged;
         _reload.Dispose();
+        _reloadMissing.Dispose();
         _reloadReading.Dispose();
     }
 }

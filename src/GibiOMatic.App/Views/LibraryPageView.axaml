@@ -40,6 +40,11 @@
                           ToolTip.Tip="{x:Static r:Strings.Reading_ReadBadge}" AutomationProperties.Name="{x:Static r:Strings.Reading_ReadBadge}">
                     <c:StrokeIcon Data="{StaticResource Icon.Check}" Width="14" Height="14" StrokeThickness="2.8" Foreground="{DynamicResource OnAccentBrush}" />
                   </Border>
+                  <!-- The original is gone from the disk -->
+                  <Border Classes="missing-mark" IsVisible="{Binding IsFileMissing}"
+                          ToolTip.Tip="{x:Static r:Strings.Missing_Title}" AutomationProperties.Name="{x:Static r:Strings.Missing_Title}">
+                    <c:StrokeIcon Data="{StaticResource Icon.Alert}" Width="14" Height="14" StrokeThickness="2.8" Foreground="{DynamicResource OnAccentBrush}" />
+                  </Border>
                 </Panel>
               </Border>
             </Border>
@@ -145,6 +150,17 @@
             <Separator />
             <MenuItem Header="{x:Static r:Strings.Menu_Edit}" Command="{Binding EditCommand}" />
             <MenuItem Header="{x:Static r:Strings.Menu_Review}" Command="{Binding ReviewCommand}" />
+            <Separator />
+            <MenuItem Header="{Binding RevealText}" Command="{Binding RevealCommand}">
+              <MenuItem.Icon>
+                <c:StrokeIcon Data="{StaticResource Icon.FolderOpen}" Width="16" Height="16" />
+              </MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="{x:Static r:Strings.Menu_Remove}" Command="{Binding AskRemoveCommand}">
+              <MenuItem.Icon>
+                <c:StrokeIcon Data="{StaticResource Icon.Trash}" Width="16" Height="16" />
+              </MenuItem.Icon>
+            </MenuItem>
           </ContextMenu>
         </Template>
       </Setter>
@@ -219,6 +235,9 @@
           <Button Grid.Column="2" Classes="secondary" Content="{x:Static r:Strings.Common_Cancel}" Command="{Binding CancelFetchCommand}" />
         </Grid>
       </Border>
+
+      <!-- "Remover da biblioteca" asks first -->
+      <ContentControl DockPanel.Dock="Top" Margin="0,0,0,16" Content="{Binding RemovePrompt}" IsVisible="{Binding RemovePrompt.IsOpen}" />
 
       <!-- Health of the library -->
       <UniformGrid DockPanel.Dock="Top" Classes="summary" Margin="0,0,-12,10" IsVisible="{Binding HasBooks}">
@@ -368,7 +387,7 @@
           </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="vm:FilterChipViewModel">
-              <Button Classes="chip" Classes.selected="{Binding IsSelected}" Command="{Binding PickCommand}">
+              <Button Classes="chip" Classes.selected="{Binding IsSelected}" Command="{Binding PickCommand}" IsVisible="{Binding IsShown}">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
                   <TextBlock Classes="chip-count" Text="{Binding Count}" VerticalAlignment="Center" />
@@ -541,6 +560,14 @@
 
             <StackPanel Spacing="8">
               <TextBlock Classes="section-label" Text="{x:Static r:Strings.Details_Files}" />
+              <Border Classes="card" Padding="12,10" BorderBrush="{DynamicResource BadBrush}" IsVisible="{Binding Card.IsFileMissing}">
+                <StackPanel Spacing="8">
+                  <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource BadTextBrush}" Text="{x:Static r:Strings.Missing_Title}" />
+                  <TextBlock Classes="help" TextWrapping="Wrap" Text="{Binding MissingText}" />
+                  <Button Classes="secondary" MinHeight="32" Padding="12,0" FontSize="13" HorizontalAlignment="Left"
+                          Content="{x:Static r:Strings.Menu_Remove}" Command="{Binding AskRemoveCommand}" />
+                </StackPanel>
+              </Border>
               <ItemsControl ItemsSource="{Binding Files}">
                 <ItemsControl.ItemTemplate>
                   <DataTemplate x:DataType="vm:FileRow">
@@ -567,6 +594,12 @@
               </ItemsControl>
               <SelectableTextBlock Classes="mono" FontSize="11.5" Foreground="{DynamicResource TextFaintBrush}"
                                    TextWrapping="Wrap" Text="{Binding FolderPath}" />
+              <Button Classes="link" HorizontalAlignment="Left" Command="{Binding RevealCommand}">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <c:StrokeIcon Data="{StaticResource Icon.FolderOpen}" Width="15" Height="15" />
+                  <TextBlock Text="{Binding RevealText}" />
+                </StackPanel>
+              </Button>
             </StackPanel>
 
             <StackPanel Spacing="8" IsVisible="{Binding Copies.Count}">

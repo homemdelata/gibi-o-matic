@@ -21,7 +21,40 @@
       <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,18">
         <Button Classes="link" Content="{x:Static r:Strings.Editor_Back}" Command="{Binding BackToLibraryCommand}" />
         <TextBlock Classes="h1" FontSize="30" TextWrapping="Wrap" Text="{Binding Heading}" />
+        <!-- Where the book is, and taking it out of the library -->
+        <WrapPanel ItemSpacing="14" LineSpacing="4" IsVisible="{Binding IsSingle}">
+          <SelectableTextBlock Classes="mono" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}"
+                               TextWrapping="Wrap" Text="{Binding FolderPath}" />
+          <Button Classes="link" Command="{Binding RevealCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <c:StrokeIcon Data="{StaticResource Icon.FolderOpen}" Width="15" Height="15" />
+              <TextBlock Text="{Binding RevealText}" />
+            </StackPanel>
+          </Button>
+          <Button Classes="link" Command="{Binding AskRemoveCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <c:StrokeIcon Data="{StaticResource Icon.Trash}" Width="15" Height="15" />
+              <TextBlock Text="{x:Static r:Strings.Menu_Remove}" />
+            </StackPanel>
+          </Button>
+        </WrapPanel>
       </StackPanel>
+
+      <ContentControl DockPanel.Dock="Top" Margin="0,0,0,18" Content="{Binding RemovePrompt}" IsVisible="{Binding RemovePrompt.IsOpen}" />
+
+      <!-- The original is gone from the disk -->
+      <Border DockPanel.Dock="Top" Classes="card" Padding="14,12" Margin="0,0,0,18" BorderBrush="{DynamicResource BadBrush}">
+        <Border.IsVisible>
+          <MultiBinding Converter="{x:Static BoolConverters.And}">
+            <Binding Path="IsFileMissing" />
+            <Binding Path="!RemovePrompt.IsOpen" />
+          </MultiBinding>
+        </Border.IsVisible>
+        <StackPanel Spacing="4">
+          <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource BadTextBrush}" Text="{x:Static r:Strings.Missing_Title}" />
+          <TextBlock Classes="help" TextWrapping="Wrap" Text="{Binding MissingText}" />
+        </StackPanel>
+      </Border>
 
       <Border DockPanel.Dock="Top" Margin="0,0,0,18" Padding="16,12" CornerRadius="{StaticResource RadiusCard}" Background="{DynamicResource CardBrush}"
               BorderBrush="{DynamicResource AccentTextBrush}" BorderThickness="{StaticResource BorderControl}" IsVisible="{Binding IsBatch}">

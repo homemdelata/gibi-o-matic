@@ -627,6 +627,19 @@
   <data name="Menu_RemoveKindle" xml:space="preserve"><value>Tirar da lista do Kindle</value></data>
   <data name="Menu_Edit" xml:space="preserve"><value>Editar metadados</value></data>
   <data name="Menu_Review" xml:space="preserve"><value>Revisar metadados</value></data>
+  <data name="Menu_Remove" xml:space="preserve"><value>Remover da biblioteca…</value></data>
+  <data name="Menu_RevealWindows" xml:space="preserve"><value>Mostrar no Explorer</value></data>
+  <data name="Menu_RevealOther" xml:space="preserve"><value>Mostrar na pasta</value></data>
+  <data name="Remove_Question" xml:space="preserve"><value>Remover “{0}” da biblioteca?</value></data>
+  <data name="Remove_Help" xml:space="preserve"><value>“Remover” leva a pasta do livro (original, capa e metadados) para a lixeira interna do Arquivo, em .gibiomatic/trash, de onde dá para recuperar à mão. “Remover e apagar os arquivos” apaga tudo de vez. As cópias nos destinos são apagadas; o que já está no Kindle continua no aparelho.</value></data>
+  <data name="Remove_ToTrash" xml:space="preserve"><value>Remover</value></data>
+  <data name="Remove_ToTrashTip" xml:space="preserve"><value>Leva a pasta do livro para .gibiomatic/trash, no Arquivo</value></data>
+  <data name="Remove_Delete" xml:space="preserve"><value>Remover e apagar os arquivos</value></data>
+  <data name="Remove_DeleteTip" xml:space="preserve"><value>Apaga de vez o original, a capa, os metadados e o histórico do livro</value></data>
+  <data name="Remove_Error" xml:space="preserve"><value>Não foi possível remover o livro: {0}</value></data>
+  <data name="Missing_Title" xml:space="preserve"><value>Arquivo original não encontrado</value></data>
+  <data name="Missing_Help" xml:space="preserve"><value>O arquivo {0} não está mais na pasta do livro. Se ele foi apagado de propósito, remova o livro da biblioteca.</value></data>
+  <data name="Filter_MissingFile" xml:space="preserve"><value>Sem arquivo</value></data>
   <data name="Tray_Open" xml:space="preserve"><value>Abrir o Gibi-o-matic</value></data>
   <data name="Tray_PauseInbox" xml:space="preserve"><value>Pausar a Entrada</value></data>
   <data name="Tray_ResumeInbox" xml:space="preserve"><value>Retomar a Entrada</value></data>

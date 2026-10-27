@@ -79,12 +79,16 @@ public sealed partial class EditorPageViewModel : PageViewModel
     private readonly ICoverLoader _covers;
     private readonly IFilePicker _filePicker;
     private readonly ILogger<EditorPageViewModel> _logger;
+    private readonly IFileRevealer _revealer;
     private IReadOnlyList<string> _bookIds = [];
     private bool _loading;
     private List<CatalogBook> _books = [];
 
-    public EditorPageViewModel(LibrarySession session, BookEditor editor, ICoverLoader covers, IFilePicker filePicker, ILogger<EditorPageViewModel> logger)
+    public EditorPageViewModel(LibrarySession session, BookEditor editor, ICoverLoader covers, IFilePicker filePicker, IFileRevealer revealer,
+        ILogger<EditorPageViewModel> logger)
     {
+        _revealer = revealer;
+        RemovePrompt = new RemoveBookPromptViewModel(session, editor, logger) { Removed = _ => RequestNavigation(NavPage.Library) };
         _session = session;
         _editor = editor;
         _covers = covers;
@@ -130,6 +134,40 @@ public sealed partial class EditorPageViewModel : PageViewModel
 
     [ObservableProperty]
     public partial string? BatchNotice { get; private set; }
+
+    /// <summary>The book's folder (one book only).</summary>
+    [ObservableProperty]
+    public partial string? FolderPath { get; private set; }
+
+    /// <summary>The book's main original is not on disk.</summary>
+    [ObservableProperty]
+    public partial bool IsFileMissing { get; private set; }
+
+    [ObservableProperty]
+    public partial string? MissingText { get; private set; }
+
+    public string RevealText => BookFileText.Reveal;
+
+    /// <summary>"Remover da biblioteca" (one book only); afterwards the Library opens.</summary>
+    public RemoveBookPromptViewModel RemovePrompt { get; }
+
+    [RelayCommand]
+    private void Reveal()
+    {
+        if (IsSingle && _session.Current is { } library)
+        {
+            _revealer.RevealBook(library, _books[0]);
+        }
+    }
+
+    [RelayCommand]
+    private void AskRemove()
+    {
+        if (IsSingle)
+        {
+            RemovePrompt.Ask(_books[0].Metadata.Id, _books[0].Metadata.Title);
+        }
+    }
 
     // Fields
     [ObservableProperty]
@@ -255,6 +293,7 @@ public sealed partial class EditorPageViewModel : PageViewModel
     private async Task LoadAsync(CancellationToken ct)
     {
         Message = null;
+        RemovePrompt.CancelCommand.Execute(null);
         if (_session.Index is not { } index || _bookIds.Count == 0)
         {
             HasBooks = false;
@@ -300,6 +339,9 @@ public sealed partial class EditorPageViewModel : PageViewModel
         var m = book.Metadata;
         Heading = m.Title;
         BatchNotice = null;
+        FolderPath = _session.Current is { } root ? Path.Combine(root.RootPath, book.Folder) : null;
+        IsFileMissing = _session.CheckFile(book);
+        MissingText = BookFileText.Missing(book);
         BookTitle = m.Title;
         SeriesName = m.Series?.Name;
         Number = m.Series?.Number;
@@ -334,6 +376,8 @@ public sealed partial class EditorPageViewModel : PageViewModel
     {
         var first = _books[0].Metadata;
         Heading = string.Format(CultureInfo.CurrentCulture, Strings.Editor_BatchHeading, _books.Count);
+        FolderPath = null;
+        IsFileMissing = false;
         BatchNotice = string.Format(CultureInfo.CurrentCulture, Strings.Editor_BatchNotice, _books.Count);
         string? Common(Func<BookMetadata, string?> value) => _books.Select(b => value(b.Metadata)).Distinct().Count() == 1 ? value(first) : null;
         BookTitle = null;

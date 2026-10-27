@@ -171,6 +171,9 @@ Faixas: **Ruim** (< 60), **Revisar** (60–84), **OK** (≥ 85). A regra já exi
 - **Editor**: todos os campos da seção 4.3, créditos com função, capa (trocar ou usar a página 1), prévia dos nomes que cada destino vai gerar.
 - **Edição em lote**: selecionar N livros e editar os campos em comum. Campos vazios não alteram nada. "Numerar em sequência" serve para o número da série.
 - Toda gravação gera uma entrada em `.gibiomatic/history` e pode ser desfeita.
+- **Remover da biblioteca** (menu do botão direito na Biblioteca, em "Continuar lendo" e na fila da Revisão; Editor de um livro): pede confirmação, com duas saídas. "Remover" leva a pasta do livro (original, capa, `metadata.json`) para `.gibiomatic/trash/<data>-<id6>/`, com um `.trash.json`; "Remover e apagar os arquivos" apaga a pasta e o histórico de vez. O livro sai do índice, da identificação, do status de leitura e das listas dos destinos; as cópias dos destinos são apagadas, mas nunca a que já está no Kindle.
+- **Mostrar no Explorer** ("Mostrar na pasta" fora do Windows), nos mesmos lugares e ao lado do caminho do livro: abre o gerenciador de arquivos com o original selecionado.
+- **Arquivo não encontrado**: ao abrir a biblioteca, o app confere se o original de cada livro ainda está no disco. Os que sumiram ganham um selo na capa e o filtro "Sem arquivo"; a Revisão, o Editor e o painel do livro avisam e oferecem a remoção. Se a pasta inteira de um livro sumiu (apagada ou movida à mão), o índice é reconstruído a partir dos `metadata.json`.
 
 ## 8. Fontes de metadados e identificação
 

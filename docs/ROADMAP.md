@@ -250,6 +250,7 @@ Visual "Aranhaverso sutil", especificado em `docs/design/revamp/REVAMP.md`.
 
 - [x] Entrada: depois de importar, o arquivo vai para a Lixeira (padrão), para `_importados` ou é apagado, à escolha nas Configurações.
 - [x] Biblioteca: livros não revisados ficam em `Livros/_a revisar/` e só vão para `{Editora}/{Série}/` depois de aprovados.
+- [x] Remover da biblioteca (lixeira interna ou apagar de vez), "Mostrar no Explorer" e aviso de arquivo original não encontrado (selo, filtro "Sem arquivo", Revisão e Editor).
 
 ---
 

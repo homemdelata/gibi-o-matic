@@ -85,6 +85,7 @@ public static class ServiceRegistration
         services.AddSingleton<IFilePicker, AvaloniaFilePicker>();
         services.AddSingleton<ICoverLoader, CoverLoader>();
         services.AddSingleton<IUrlOpener, AvaloniaUrlOpener>();
+        services.AddSingleton<IFileRevealer, FileRevealer>();
         services.AddSingleton<IReaderImages, AvaloniaReaderImages>();
         services.AddSingleton<IReaderLauncher, ReaderWindowLauncher>();
         services.AddSingleton<ReadingTracker>();

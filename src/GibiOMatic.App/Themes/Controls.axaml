@@ -525,6 +525,16 @@
     <Setter Property="VerticalAlignment" Value="Bottom" />
     <Setter Property="Background" Value="{DynamicResource OkBrush}" />
   </Style>
+  <!-- A book whose original is gone from the disk -->
+  <Style Selector="Border.missing-mark">
+    <Setter Property="Width" Value="24" />
+    <Setter Property="Height" Value="24" />
+    <Setter Property="CornerRadius" Value="12" />
+    <Setter Property="Margin" Value="8" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Bottom" />
+    <Setter Property="Background" Value="{DynamicResource BadBrush}" />
+  </Style>
   <Style Selector="Border.format-chip">
     <Setter Property="Background" Value="{DynamicResource BorderBrush}" />
     <Setter Property="CornerRadius" Value="{StaticResource RadiusBadge}" />

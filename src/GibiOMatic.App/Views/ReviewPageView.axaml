@@ -33,6 +33,7 @@
             </StackPanel>
           </StackPanel>
         </Border>
+        <ContentControl DockPanel.Dock="Top" Margin="0,0,0,12" Content="{Binding RemovePrompt}" IsVisible="{Binding RemovePrompt.IsOpen}" />
         <Border DockPanel.Dock="Top" Classes="card" Padding="12,10" Margin="0,0,0,12" IsVisible="{Binding Status.IsVisible}">
           <StackPanel Spacing="8">
             <TextBlock Classes="help" Text="{Binding Status.Text}" />
@@ -54,6 +55,20 @@
           <ListBox.ItemTemplate>
             <DataTemplate x:DataType="vm:ReviewItemViewModel">
               <Button Classes="queue-item" Classes.selected="{Binding IsSelected}" Command="{Binding SelectCommand}">
+                <Button.ContextMenu>
+                  <ContextMenu>
+                    <MenuItem Header="{Binding RevealText}" Command="{Binding RevealCommand}">
+                      <MenuItem.Icon>
+                        <c:StrokeIcon Data="{StaticResource Icon.FolderOpen}" Width="16" Height="16" />
+                      </MenuItem.Icon>
+                    </MenuItem>
+                    <MenuItem Header="{x:Static r:Strings.Menu_Remove}" Command="{Binding AskRemoveCommand}">
+                      <MenuItem.Icon>
+                        <c:StrokeIcon Data="{StaticResource Icon.Trash}" Width="16" Height="16" />
+                      </MenuItem.Icon>
+                    </MenuItem>
+                  </ContextMenu>
+                </Button.ContextMenu>
                 <Grid ColumnDefinitions="Auto,*,Auto">
                   <Border Width="34" Height="50" CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True">
                     <Border.Background>
@@ -128,6 +143,12 @@
                 <TextBlock Text="{x:Static r:Strings.Review_OpenBook}" />
               </StackPanel>
             </Button>
+            <Button Classes="link" Command="{Binding RevealSelectedCommand}">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <c:StrokeIcon Data="{StaticResource Icon.FolderOpen}" Width="15" Height="15" />
+                <TextBlock Text="{Binding RevealText}" />
+              </StackPanel>
+            </Button>
           </StackPanel>
         </StackPanel>
         <Border Grid.Column="2" Classes="pill" Padding="14,8" VerticalAlignment="Top"
@@ -139,6 +160,19 @@
 
       <TextBlock DockPanel.Dock="Top" Classes="help" Foreground="{DynamicResource WarnTextBrush}" Margin="0,0,0,12" Text="{Binding NotesText}"
                  IsVisible="{Binding NotesText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+      <!-- The original is gone from the disk: probably removed on purpose -->
+      <Border DockPanel.Dock="Top" Classes="card" Padding="14,12" Margin="0,0,0,14" BorderBrush="{DynamicResource BadBrush}"
+              IsVisible="{Binding IsFileMissing}">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Spacing="4" Margin="0,0,16,0">
+            <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource BadTextBrush}" Text="{x:Static r:Strings.Missing_Title}" />
+            <TextBlock Classes="help" TextWrapping="Wrap" Text="{Binding MissingText}" />
+          </StackPanel>
+          <Button Grid.Column="1" Classes="secondary" VerticalAlignment="Center" Content="{x:Static r:Strings.Menu_Remove}"
+                  Command="{Binding AskRemoveSelectedCommand}" />
+        </Grid>
+      </Border>
 
       <!-- Search again with other words -->
       <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,10">

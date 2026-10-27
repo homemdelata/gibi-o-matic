@@ -18,6 +18,7 @@
     <DataTemplate DataType="vm:SettingsPageViewModel"><v:SettingsPageView /></DataTemplate>
     <DataTemplate DataType="vm:DestinationsPageViewModel"><v:DestinationsPageView /></DataTemplate>
     <DataTemplate DataType="vm:PlaceholderPageViewModel"><v:PlaceholderPageView /></DataTemplate>
+    <DataTemplate DataType="vm:RemoveBookPromptViewModel"><v:RemoveBookPromptView /></DataTemplate>
   </Application.DataTemplates>
 
   <Application.Resources>

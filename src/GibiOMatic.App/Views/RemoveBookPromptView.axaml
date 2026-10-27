@@ -1,0 +1,24 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GibiOMatic.App.ViewModels"
+             xmlns:r="using:GibiOMatic.App.Resources"
+             x:Class="GibiOMatic.App.Views.RemoveBookPromptView"
+             x:DataType="vm:RemoveBookPromptViewModel">
+  <!-- "Remover da biblioteca": to the internal trash, or deleted for good -->
+  <Border Classes="card" BorderBrush="{DynamicResource WarnBrush}" IsVisible="{Binding IsOpen}">
+    <StackPanel Spacing="10">
+      <TextBlock FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding Question}" />
+      <TextBlock Classes="help" TextWrapping="Wrap" Text="{x:Static r:Strings.Remove_Help}" />
+      <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding Error}"
+                 IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <WrapPanel ItemSpacing="8" LineSpacing="8">
+        <Button Classes="primary" MinHeight="34" Padding="14,0" Content="{x:Static r:Strings.Remove_ToTrash}"
+                Command="{Binding RemoveCommand}" ToolTip.Tip="{x:Static r:Strings.Remove_ToTrashTip}" />
+        <Button Classes="secondary" MinHeight="34" Padding="14,0" Content="{x:Static r:Strings.Remove_Delete}"
+                Command="{Binding DeleteCommand}" ToolTip.Tip="{x:Static r:Strings.Remove_DeleteTip}" />
+        <Button Classes="secondary" MinHeight="34" Padding="14,0" Content="{x:Static r:Strings.Common_Cancel}"
+                Command="{Binding CancelCommand}" />
+      </WrapPanel>
+    </StackPanel>
+  </Border>
+</UserControl>

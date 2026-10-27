@@ -28,6 +28,8 @@
   <StreamGeometry x:Key="Icon.Close">M6,6 L18,18 M18,6 L6,18</StreamGeometry>
   <StreamGeometry x:Key="Icon.Alert">M12,5 V13.5 M12,19 V19.01</StreamGeometry>
   <StreamGeometry x:Key="Icon.Check">M20,6 L9,17 L4,12</StreamGeometry>
+  <!-- Lucide "trash-2" (ISC license) -->
+  <StreamGeometry x:Key="Icon.Trash">M3,6 H21 M19,6 V20 A2,2 0 0 1 17,22 H7 A2,2 0 0 1 5,20 V6 M8,6 V4 A2,2 0 0 1 10,2 H14 A2,2 0 0 1 16,4 V6 M10,11 V17 M14,11 V17</StreamGeometry>
 
   <!-- Reader (Lucide, ISC license) -->
   <StreamGeometry x:Key="Icon.ChevronRight">M9,18 L15,12 L9,6</StreamGeometry>

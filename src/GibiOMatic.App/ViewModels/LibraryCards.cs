@@ -101,6 +101,17 @@ public static class QualityText
     private static string Format(string format, params object[] args) => string.Format(CultureInfo.CurrentCulture, format, args);
 }
 
+/// <summary>Texts about a book's files on disk.</summary>
+public static class BookFileText
+{
+    /// <summary>"Mostrar no Explorer" on Windows, "Mostrar na pasta" elsewhere.</summary>
+    public static string Reveal => OperatingSystem.IsWindows() ? Strings.Menu_RevealWindows : Strings.Menu_RevealOther;
+
+    /// <summary>"O arquivo X.pdf não está mais na pasta do livro…"</summary>
+    public static string Missing(CatalogBook book) =>
+        string.Format(CultureInfo.CurrentCulture, Strings.Missing_Help, book.MainFile?.Name ?? "—");
+}
+
 /// <summary>A book in the grid.</summary>
 public sealed partial class BookCardViewModel : ViewModelBase
 {
@@ -185,6 +196,18 @@ public sealed partial class BookCardViewModel : ViewModelBase
 
     /// <summary>The right-click menu is offered (the Library's cards, not the Review's).</summary>
     public bool HasMenu => _actions is not null;
+
+    /// <summary>The main original is not on disk (deleted or moved outside the app).</summary>
+    [ObservableProperty]
+    public partial bool IsFileMissing { get; set; }
+
+    public string RevealText => BookFileText.Reveal;
+
+    [RelayCommand]
+    private void Reveal() => _actions?.Reveal(this);
+
+    [RelayCommand]
+    private void AskRemove() => _actions?.AskRemove(this);
 
     public string KindleMenuText => IsInKindleList ? Strings.Menu_RemoveKindle : Strings.Menu_AddKindle;
 
@@ -367,13 +390,16 @@ public sealed partial class BookDetailsViewModel : ViewModelBase
 {
     private readonly Action<BookFile>? _open;
     private readonly IReadingActions? _reading;
+    private readonly IBookFileActions? _files;
 
     public BookDetailsViewModel(BookCardViewModel card, LibraryInfo library, ICoverLoader covers, Action<BookFile>? open = null,
-        IReadingActions? reading = null)
+        IReadingActions? reading = null, IBookFileActions? files = null)
     {
         Card = card;
         _open = open;
         _reading = reading;
+        _files = files;
+        MissingText = BookFileText.Missing(card.Book);
         card.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(BookCardViewModel.Reading))
@@ -428,6 +454,17 @@ public sealed partial class BookDetailsViewModel : ViewModelBase
         }
     }
     public string CreditsLine { get; }
+
+    /// <summary>Shown while <see cref="BookCardViewModel.IsFileMissing"/>.</summary>
+    public string MissingText { get; }
+
+    public string RevealText => BookFileText.Reveal;
+
+    [RelayCommand]
+    private void Reveal() => _files?.Reveal(Card);
+
+    [RelayCommand]
+    private void AskRemove() => _files?.AskRemove(Card);
 
     /// <summary>Universes the book belongs to (shown as pills under the credits).</summary>
     public IReadOnlyList<string> Universes { get; }
@@ -488,8 +525,18 @@ public interface IReadingActions
     Task ClearProgressAsync(BookCardViewModel card);
 }
 
+/// <summary>Where a book is on disk, and taking it out of the library.</summary>
+public interface IBookFileActions
+{
+    /// <summary>Shows the main original (or the book folder) in the file manager.</summary>
+    void Reveal(BookCardViewModel card);
+
+    /// <summary>Asks whether to remove the book from the library.</summary>
+    void AskRemove(BookCardViewModel card);
+}
+
 /// <summary>What the right-click menu of a book in the Library does.</summary>
-public interface IBookActions : IReadingActions
+public interface IBookActions : IReadingActions, IBookFileActions
 {
     /// <summary>Puts books in the Kindle's list (they are prepared at once) or takes them out.</summary>
     Task SetKindleAsync(IReadOnlyList<BookCardViewModel> cards, bool inList);
