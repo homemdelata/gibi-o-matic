@@ -477,6 +477,11 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             {
                 next.IsSelected = true;
                 Selected = next;
+                if (LargeCover is null)
+                {
+                    // The first try may have failed (Google Drive waking up); failures are not cached.
+                    _ = LoadLargeCoverAsync(next, library);
+                }
             }
         }
         catch (Exception ex) when (LibrarySession.IsExpectedFailure(ex))
@@ -631,7 +636,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             _pageCounts[item.BookId] = pages;
         }
 
-        if (Selected == item)
+        if (Selected?.BookId == item.BookId)
         {
             var format = QualityText.FormatLabel(main.Format);
             FileInfoText = pages is { } n
@@ -728,7 +733,8 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
     private async Task LoadLargeCoverAsync(ReviewItemViewModel item, LibraryInfo library)
     {
         var cover = await _covers.LoadAsync(Path.Combine(library.RootPath, item.Card.Book.Folder, LibraryLayout.CoverFileName), LargeCoverWidth);
-        if (Selected == item)
+        // By id: a refresh while loading replaces the selected item with a new one for the same book.
+        if (Selected?.BookId == item.BookId)
         {
             LargeCover = cover;
         }
