@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Gibi-o-matic — Adicionar destino</title>
+<title>Gibi-o-matic — Add destination</title>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -18,18 +18,18 @@ input:focus,select:focus{outline:2px solid #F5C542;outline-offset:1px}
 </style>
 </helmet>
 <div style="min-height: 100vh; box-sizing: border-box; padding: 48px 16px; display: flex; justify-content: center; align-items: flex-start; background: #0D0E11; color: #ECEDEF; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 14px">
-  <div role="dialog" aria-label="Adicionar destino" style="width: 100%; max-width: 760px; box-sizing: border-box; padding: 32px; border-radius: 20px; background: #17181D; border: 1px solid #2A2D35; box-shadow: 0 30px 80px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 26px">
+  <div role="dialog" aria-label="Add destination" style="width: 100%; max-width: 760px; box-sizing: border-box; padding: 32px; border-radius: 20px; background: #17181D; border: 1px solid #2A2D35; box-shadow: 0 30px 80px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 26px">
 
     <header style="display: flex; align-items: flex-start; gap: 16px">
       <div style="flex: 1">
-        <h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px; letter-spacing: -0.02em">Adicionar destino</h1>
+        <h1 style="margin: 0; font-family: 'Bricolage Grotesque', sans-serif; font-weight: 800; font-size: 28px; letter-spacing: -0.02em">Add destination</h1>
         <p style="margin: 4px 0 0; color: #A3A8B3">{{subtitle}}</p>
       </div>
-      <a href="Destinos.dc.html" aria-label="Fechar" style="width: 40px; height: 40px; border-radius: 10px; border: 1px solid #2E313A; color: #A3A8B3; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg></a>
+      <a href="Destinations.dc.html" aria-label="Close" style="width: 40px; height: 40px; border-radius: 10px; border: 1px solid #2E313A; color: #A3A8B3; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"></path><path d="M18 6L6 18"></path></svg></a>
     </header>
 
-    <!-- Passos -->
-    <ol aria-label="Passos" style="list-style: none; margin: 0; padding: 0; display: flex; gap: 8px">
+    <!-- Steps -->
+    <ol aria-label="Steps" style="list-style: none; margin: 0; padding: 0; display: flex; gap: 8px">
       <sc-for list="{{steps}}" as="s" hint-placeholder-count="3">
         <li style="flex: 1; display: flex; flex-direction: column; gap: 8px">
           <span style="{{s.bar}}"></span>
@@ -38,9 +38,9 @@ input:focus,select:focus{outline:2px solid #F5C542;outline-offset:1px}
       </sc-for>
     </ol>
 
-    <!-- Passo 1: tipo -->
+    <!-- Step 1: type -->
     <sc-if value="{{is1}}" hint-placeholder-val="{{ true }}">
-      <div role="radiogroup" aria-label="Tipo de destino" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+      <div role="radiogroup" aria-label="Destination type" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
         <sc-for list="{{types}}" as="t" hint-placeholder-count="4">
           <button type="button" role="radio" aria-checked="{{t.on}}" disabled="{{t.disabled}}" onClick="{{t.pick}}" style="{{t.style}}">
             <span style="font-family: 'Bricolage Grotesque', sans-serif; font-size: 19px; font-weight: 700">{{t.name}}</span>
@@ -51,62 +51,62 @@ input:focus,select:focus{outline:2px solid #F5C542;outline-offset:1px}
       </div>
     </sc-if>
 
-    <!-- Passo 2: Kindle -->
+    <!-- Step 2: Kindle -->
     <sc-if value="{{is2kindle}}" hint-placeholder-val="{{ false }}">
       <div style="display: flex; flex-direction: column; gap: 18px">
         <div style="display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; background: rgba(76,195,138,0.1); border: 1px solid rgba(76,195,138,0.35)">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6FD9A5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"></rect><path d="M9 18h6"></path></svg>
-          <span style="flex: 1">Encontramos um <strong>Kindle Colorsoft</strong> conectado neste computador.</span>
-          <button type="button" style="height: 36px; padding: 0 14px; border-radius: 9px; border: 0; background: #4CC38A; color: #0D0E11; font: inherit; font-weight: 600; cursor: pointer">Usar este</button>
+          <span style="flex: 1">We found a <strong>Kindle Colorsoft</strong> connected to this computer.</span>
+          <button type="button" style="height: 36px; padding: 0 14px; border-radius: 9px; border: 0; background: #4CC38A; color: #0D0E11; font: inherit; font-weight: 600; cursor: pointer">Use this one</button>
         </div>
-        <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-weight: 600">Qual é o modelo?</span><select style="height: 46px; padding: 0 10px; border-radius: 10px; border: 1px solid #2E313A; background: #1A1B21; color: #ECEDEF; font: inherit"><option>Kindle Colorsoft</option><option>Kindle Paperwhite</option><option>Kindle Scribe</option><option>Kindle básico</option></select></label>
+        <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-weight: 600">Which model is it?</span><select style="height: 46px; padding: 0 10px; border-radius: 10px; border: 1px solid #2E313A; background: #1A1B21; color: #ECEDEF; font: inherit"><option>Kindle Colorsoft</option><option>Kindle Paperwhite</option><option>Kindle Scribe</option><option>Kindle (basic)</option></select></label>
         <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px">
-          <legend style="font-weight: 600; margin-bottom: 8px">Como os livros vão chegar ao Kindle?</legend>
-          <label style="display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 12px; border: 2px solid #F5C542; background: #1F2128"><input type="radio" name="via" checked style="width: 18px; height: 18px; accent-color: #F5C542; margin: 2px 0 0"><span><span style="font-weight: 600">Cabo USB</span> <span style="font-size: 12px; color: #6FD9A5">recomendado</span><br><span style="font-size: 13px; color: #A3A8B3">Melhor qualidade e leitura quadro a quadro.</span></span></label>
-          <label style="display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 12px; border: 2px solid #262931; background: #1A1B21"><input type="radio" name="via" style="width: 18px; height: 18px; accent-color: #F5C542; margin: 2px 0 0"><span><span style="font-weight: 600">Send to Kindle (e-mail ou app)</span><br><span style="font-size: 13px; color: #A3A8B3">Sem cabo, mas a Amazon comprime as imagens.</span></span></label>
+          <legend style="font-weight: 600; margin-bottom: 8px">How will the books reach the Kindle?</legend>
+          <label style="display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 12px; border: 2px solid #F5C542; background: #1F2128"><input type="radio" name="via" checked style="width: 18px; height: 18px; accent-color: #F5C542; margin: 2px 0 0"><span><span style="font-weight: 600">USB cable</span> <span style="font-size: 12px; color: #6FD9A5">recommended</span><br><span style="font-size: 13px; color: #A3A8B3">Best quality and panel-by-panel reading.</span></span></label>
+          <label style="display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; border-radius: 12px; border: 2px solid #262931; background: #1A1B21"><input type="radio" name="via" style="width: 18px; height: 18px; accent-color: #F5C542; margin: 2px 0 0"><span><span style="font-weight: 600">Send to Kindle (email or app)</span><br><span style="font-size: 13px; color: #A3A8B3">No cable, but Amazon compresses the images.</span></span></label>
         </fieldset>
       </div>
     </sc-if>
 
-    <!-- Passo 2: Komga -->
+    <!-- Step 2: Komga -->
     <sc-if value="{{is2komga}}" hint-placeholder-val="{{ false }}">
       <div style="display: flex; flex-direction: column; gap: 18px">
-        <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-weight: 600">Em qual pasta o Komga procura os quadrinhos?</span>
-          <span style="display: flex; gap: 8px"><input value="Z:\Quadrinhos" style="flex: 1; min-width: 0; height: 46px; padding: 0 12px; border-radius: 10px; border: 1px solid #2E313A; background: #1A1B21; color: #ECEDEF; font-family: 'IBM Plex Mono', monospace; font-size: 13px"><button type="button" style="height: 46px; padding: 0 16px; border-radius: 10px; border: 1px solid #2E313A; background: transparent; color: #ECEDEF; font: inherit; cursor: pointer">Escolher</button></span>
+        <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-weight: 600">Which folder does Komga look for comics in?</span>
+          <span style="display: flex; gap: 8px"><input value="Z:\Comics" style="flex: 1; min-width: 0; height: 46px; padding: 0 12px; border-radius: 10px; border: 1px solid #2E313A; background: #1A1B21; color: #ECEDEF; font-family: 'IBM Plex Mono', monospace; font-size: 13px"><button type="button" style="height: 46px; padding: 0 16px; border-radius: 10px; border: 1px solid #2E313A; background: transparent; color: #ECEDEF; font: inherit; cursor: pointer">Choose</button></span>
         </label>
-        <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-weight: 600">Endereço do servidor <span style="font-weight: 400; color: #A3A8B3">(opcional)</span></span>
-          <span style="display: flex; gap: 8px"><input placeholder="http://192.168.0.10:25600" style="flex: 1; min-width: 0; height: 46px; padding: 0 12px; border-radius: 10px; border: 1px solid #2E313A; background: #1A1B21; color: #ECEDEF; font-family: 'IBM Plex Mono', monospace; font-size: 13px"><button type="button" style="height: 46px; padding: 0 16px; border-radius: 10px; border: 1px solid #2E313A; background: transparent; color: #ECEDEF; font: inherit; cursor: pointer">Testar</button></span>
-          <span style="font-size: 13px; color: #A3A8B3">Com o endereço, o Gibi-o-matic avisa o Komga para atualizar a biblioteca sozinho.</span>
+        <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-weight: 600">Server address <span style="font-weight: 400; color: #A3A8B3">(optional)</span></span>
+          <span style="display: flex; gap: 8px"><input placeholder="http://192.168.0.10:25600" style="flex: 1; min-width: 0; height: 46px; padding: 0 12px; border-radius: 10px; border: 1px solid #2E313A; background: #1A1B21; color: #ECEDEF; font-family: 'IBM Plex Mono', monospace; font-size: 13px"><button type="button" style="height: 46px; padding: 0 16px; border-radius: 10px; border: 1px solid #2E313A; background: transparent; color: #ECEDEF; font: inherit; cursor: pointer">Test</button></span>
+          <span style="font-size: 13px; color: #A3A8B3">With the address, Gibi-o-matic tells Komga to refresh the library by itself.</span>
         </label>
-        <div style="padding: 14px 16px; border-radius: 12px; background: #1A1B21; border: 1px solid #262931"><div style="font-size: 12px; color: #A3A8B3; text-transform: uppercase; letter-spacing: 0.08em">Como os arquivos vão ficar</div><div style="margin-top: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 13px">Image/Saga/Saga v01 (2012).cbz</div><div style="font-size: 12.5px; color: #A3A8B3; margin-top: 6px">Dá para mudar depois, em Avançado.</div></div>
+        <div style="padding: 14px 16px; border-radius: 12px; background: #1A1B21; border: 1px solid #262931"><div style="font-size: 12px; color: #A3A8B3; text-transform: uppercase; letter-spacing: 0.08em">What the files will look like</div><div style="margin-top: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 13px">Image/Saga/Saga v01 (2012).cbz</div><div style="font-size: 12.5px; color: #A3A8B3; margin-top: 6px">You can change it later, under Advanced.</div></div>
       </div>
     </sc-if>
 
-    <!-- Passo 3 -->
+    <!-- Step 3 -->
     <sc-if value="{{is3}}" hint-placeholder-val="{{ false }}">
       <div style="display: flex; flex-direction: column; gap: 18px">
-        <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-weight: 600">Nome do destino</span><input value="{{defaultName}}" style="height: 46px; padding: 0 12px; border-radius: 10px; border: 1px solid #2E313A; background: #1A1B21; color: #ECEDEF; font: inherit"></label>
+        <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-weight: 600">Destination name</span><input value="{{defaultName}}" style="height: 46px; padding: 0 12px; border-radius: 10px; border: 1px solid #2E313A; background: #1A1B21; color: #ECEDEF; font: inherit"></label>
         <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
-          <legend style="font-weight: 600; margin-bottom: 8px">Quais livros?</legend>
-          <label style="display: flex; gap: 10px; align-items: center"><input type="radio" name="q3" checked="{{allBooks}}" style="width: 18px; height: 18px; accent-color: #F5C542; margin: 0">Toda a biblioteca</label>
-          <label style="display: flex; gap: 10px; align-items: center"><input type="radio" name="q3" checked="{{pickBooks}}" style="width: 18px; height: 18px; accent-color: #F5C542; margin: 0">Só os que eu escolher</label>
+          <legend style="font-weight: 600; margin-bottom: 8px">Which books?</legend>
+          <label style="display: flex; gap: 10px; align-items: center"><input type="radio" name="q3" checked="{{allBooks}}" style="width: 18px; height: 18px; accent-color: #F5C542; margin: 0">The whole library</label>
+          <label style="display: flex; gap: 10px; align-items: center"><input type="radio" name="q3" checked="{{pickBooks}}" style="width: 18px; height: 18px; accent-color: #F5C542; margin: 0">Only the ones I choose</label>
         </fieldset>
         <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px">
-          <legend style="font-weight: 600; margin-bottom: 8px">Quando?</legend>
-          <label style="display: flex; gap: 10px; align-items: center"><input type="radio" name="w3" checked="{{allBooks}}" style="width: 18px; height: 18px; accent-color: #F5C542; margin: 0">Automaticamente</label>
-          <label style="display: flex; gap: 10px; align-items: center"><input type="radio" name="w3" checked="{{pickBooks}}" style="width: 18px; height: 18px; accent-color: #F5C542; margin: 0">Quando eu mandar</label>
+          <legend style="font-weight: 600; margin-bottom: 8px">When?</legend>
+          <label style="display: flex; gap: 10px; align-items: center"><input type="radio" name="w3" checked="{{allBooks}}" style="width: 18px; height: 18px; accent-color: #F5C542; margin: 0">Automatically</label>
+          <label style="display: flex; gap: 10px; align-items: center"><input type="radio" name="w3" checked="{{pickBooks}}" style="width: 18px; height: 18px; accent-color: #F5C542; margin: 0">When I say so</label>
         </fieldset>
-        <p style="margin: 0; font-size: 13px; color: #A3A8B3">Sugestão já marcada para {{typeName}}. Tudo pode ser mudado depois.</p>
+        <p style="margin: 0; font-size: 13px; color: #A3A8B3">Suggestion already ticked for {{typeName}}. Everything can be changed later.</p>
       </div>
     </sc-if>
 
     <footer style="display: flex; gap: 10px; justify-content: space-between; border-top: 1px solid #262931; padding-top: 18px">
-      <button type="button" onClick="{{back}}" style="{{backStyle}}">Voltar</button>
+      <button type="button" onClick="{{back}}" style="{{backStyle}}">Back</button>
       <sc-if value="{{notLast}}" hint-placeholder-val="{{ true }}">
-        <button type="button" onClick="{{next}}" style="height: 46px; padding: 0 24px; border-radius: 11px; border: 0; background: #F5C542; color: #17181D; font: inherit; font-weight: 600; cursor: pointer">Continuar</button>
+        <button type="button" onClick="{{next}}" style="height: 46px; padding: 0 24px; border-radius: 11px; border: 0; background: #F5C542; color: #17181D; font: inherit; font-weight: 600; cursor: pointer">Continue</button>
       </sc-if>
       <sc-if value="{{is3}}" hint-placeholder-val="{{ false }}">
-        <a href="Destinos.dc.html" style="height: 46px; padding: 0 24px; border-radius: 11px; background: #F5C542; color: #17181D; font-weight: 600; text-decoration: none; display: flex; align-items: center">Criar destino</a>
+        <a href="Destinations.dc.html" style="height: 46px; padding: 0 24px; border-radius: 11px; background: #F5C542; color: #17181D; font-weight: 600; text-decoration: none; display: flex; align-items: center">Create destination</a>
       </sc-if>
     </footer>
   </div>
@@ -120,23 +120,23 @@ class Component extends DCLogic {
   }
   renderVals() {
     const st = this.state.step;
-    const labels = ['Tipo', 'Detalhes', 'Nome e regras'];
+    const labels = ['Kind', 'Details', 'Name and rules'];
     const steps = labels.map((label, i) => ({
       label: (i + 1) + '. ' + label,
       bar: 'height: 4px; border-radius: 99px; background: ' + (i + 1 <= st ? '#F5C542' : '#2E313A'),
       labelStyle: 'font-size: 13px; ' + (i + 1 === st ? 'color: #ECEDEF; font-weight: 600' : 'color: #8C919C')
     }));
     const td = [
-      ['komga', 'Komga', 'Servidor de quadrinhos para ler no tablet, celular ou navegador.', false],
-      ['kindle', 'Kindle', 'Gera arquivos prontos para o Kindle, com leitura quadro a quadro.', false],
-      ['kavita', 'Kavita', 'Outro servidor de leitura.', true],
-      ['folder', 'Pasta simples', 'Copia para uma pasta, no formato que você escolher.', true]
+      ['komga', 'Komga', 'A comics server for reading on a tablet, phone or browser.', false],
+      ['kindle', 'Kindle', 'Makes files ready for the Kindle, with panel-by-panel reading.', false],
+      ['kavita', 'Kavita', 'Another reading server.', true],
+      ['folder', 'Plain folder', 'Copies to a folder, in the format you choose.', true]
     ];
     const types = td.map(([id, name, help, soon]) => {
       const on = this.state.type === id;
       return {
         name, help, on, disabled: soon,
-        tag: soon ? 'Em breve' : (on ? 'Selecionado' : ''),
+        tag: soon ? 'Coming soon' : (on ? 'Selecionado' : ''),
         tagStyle: 'font-size: 12px; font-weight: 600; color: ' + (soon ? '#8C919C' : '#F5C542'),
         style: 'all: unset; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; min-height: 130px; padding: 18px; border-radius: 14px; ' +
           (soon ? 'background: #141519; border: 2px solid #22242B; opacity: 0.6; cursor: not-allowed' : on ? 'background: #1F2128; border: 2px solid #F5C542; cursor: pointer' : 'background: #1A1B21; border: 2px solid #262931; cursor: pointer'),
@@ -144,11 +144,11 @@ class Component extends DCLogic {
       };
     });
     const isKindle = this.state.type === 'kindle';
-    const subtitles = { 1: 'Para onde seus quadrinhos devem ir?', 2: isKindle ? 'Conte sobre o seu Kindle' : 'Onde fica o seu Komga?', 3: 'Quase lá' };
+    const subtitles = { 1: 'Where should your comics go?', 2: isKindle ? 'Tell us about your Kindle' : 'Where is your Komga?', 3: 'Almost there' };
     return {
       steps, types, subtitle: subtitles[st],
       is1: st === 1, is2kindle: st === 2 && isKindle, is2komga: st === 2 && !isKindle, is3: st === 3, notLast: st < 3,
-      defaultName: isKindle ? 'Meu Kindle' : 'Komga de casa',
+      defaultName: isKindle ? 'My Kindle' : 'Home Komga',
       typeName: isKindle ? 'Kindle' : 'Komga',
       allBooks: !isKindle, pickBooks: isKindle,
       next: () => this.setState({ step: Math.min(3, st + 1) }),
