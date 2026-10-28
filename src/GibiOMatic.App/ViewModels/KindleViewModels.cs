@@ -17,7 +17,7 @@ namespace GibiOMatic.App.ViewModels;
 /// <summary>A Kindle model in "Modelo", and the KCC profile it uses.</summary>
 public sealed record KindleModel(string Profile, string Name, bool IsColor);
 
-/// <summary>"1 livro" or "3 livros" in the Kindle's texts.</summary>
+/// <summary>"1 book" or "3 books" in the Kindle's texts.</summary>
 internal static class Plural
 {
     public static string Format(int count, string one, string many, params object[] more) =>
@@ -311,7 +311,7 @@ public sealed partial class KindleDeviceFileViewModel(KindleFile file, bool sent
 public sealed record KindleSendRow(string Title, string DeviceFile, string KindText, bool IsBlocked);
 
 /// <summary>
-/// A Kindle destination opened (prototype DestinoKindle): the books of its list and their state,
+/// A Kindle destination opened (prototype KindleDestination): the books of its list and their state,
 /// sending to the connected device with confirmation, the device's books (deleted only by hand),
 /// its settings and history.
 /// </summary>
@@ -444,7 +444,7 @@ public sealed partial class KindleDetailViewModel : ViewModelBase, ISyncActivity
     [NotifyCanExecuteChangedFor(nameof(ShowSendPlanCommand))]
     public partial int ReadyCount { get; private set; }
 
-    /// <summary>"3 prontos para enviar · cerca de 120 MB".</summary>
+    /// <summary>"3 ready to send · about 120 MB".</summary>
     [ObservableProperty]
     public partial string? ReadyText { get; private set; }
 

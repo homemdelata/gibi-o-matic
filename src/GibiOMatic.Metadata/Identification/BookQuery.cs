@@ -39,7 +39,7 @@ public sealed partial record BookQuery
         }
     }
 
-    /// <param name="overrideText">Text typed by the user in the Review ("Buscar de novo").</param>
+    /// <param name="overrideText">Text typed by the user in the Review ("Search again").</param>
     public static BookQuery From(BookMetadata book, string? overrideText = null)
     {
         var title = Clean(overrideText ?? book.Title);

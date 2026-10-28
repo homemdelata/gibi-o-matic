@@ -33,7 +33,7 @@ public sealed partial class NavItemViewModel(NavPage page, string label, PageVie
     [NotifyPropertyChangedFor(nameof(HasPlainCount), nameof(HasBadge))]
     public partial bool IsBadge { get; set; }
 
-    /// <summary>Magenta pill (Revisão) instead of the cyan one (Entrada).</summary>
+    /// <summary>Magenta pill (Review) instead of the cyan one (Inbox).</summary>
     public bool IsReviewBadge { get; init; }
 
     public bool HasPlainCount => !string.IsNullOrEmpty(Count) && !IsBadge;
@@ -111,7 +111,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
 
     public IReadOnlyList<NavItemViewModel> NavItems { get; }
 
-    /// <summary>"Versão 0.7.0 disponível" at the top (F6).</summary>
+    /// <summary>"Version 0.7.0 is available." at the top (F6).</summary>
     public UpdateStatusViewModel Update { get; }
 
     /// <summary>Inbox and metadata search in the sidebar status card.</summary>
@@ -144,7 +144,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
 
     // ---- Kindle connected ----
 
-    /// <summary>"Kindle conectado: 3 livros prontos para enviar." Nothing is sent from here: it opens the confirmation.</summary>
+    /// <summary>"Kindle connected: 3 books ready to send." Nothing is sent from here: it opens the confirmation.</summary>
     [ObservableProperty]
     public partial string? KindleBannerText { get; private set; }
 
@@ -209,7 +209,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
 
     public void NavigateTo(NavPage page) => SelectedNavItem = NavItems.First(i => i.Page == page);
 
-    /// <summary>Shows a page with the books chosen on another one (Biblioteca → Editor, Revisão → Editor…).</summary>
+    /// <summary>Shows a page with the books chosen on another one (Library → Editor, Review → Editor…).</summary>
     public void Navigate(NavigationRequest request)
     {
         var item = NavItems.First(i => i.Page == request.Page);

@@ -20,7 +20,7 @@ public sealed class DestinationsPageTests : IDisposable
 
     private async Task ImportSagaAsync()
     {
-        await Session.CreateAsync(_app.Folder("Arquivo"), Ct);
+        await Session.CreateAsync(_app.Folder("Library"), Ct);
         string Info(string number, int year) => SyntheticBooks.ComicInfo(series: "Saga", number: number, year: year, writer: "Brian K. Vaughan",
             publisher: "Image Comics", format: "TPB");
         await Session.Queue!.AddAsync(

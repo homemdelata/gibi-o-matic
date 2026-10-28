@@ -1,13 +1,13 @@
 namespace GibiOMatic.Core.Settings;
 
-/// <summary>"Quais livros" (SPEC §9.1).</summary>
+/// <summary>"Which books" (SPEC §9.1).</summary>
 public enum DestinationScope
 {
     AllBooks,
     ChosenBooks,
 }
 
-/// <summary>"Quando" (SPEC §9.1).</summary>
+/// <summary>"When" (SPEC §9.1).</summary>
 public enum DestinationTiming
 {
     /// <summary>Copies follow the library as books are approved or edited.</summary>
@@ -37,7 +37,7 @@ public sealed record DestinationConfig
     /// <summary>Books not reviewed yet also go (off by default: decision of 2026-10-17).</summary>
     public bool IncludeUnreviewed { get; init; }
 
-    /// <summary>"Incluir livros que não são quadrinhos": text EPUBs go as they are.</summary>
+    /// <summary>"Include books that aren't comics": text EPUBs go as they are.</summary>
     public bool IncludeTextBooks { get; init; }
 
     /// <summary>

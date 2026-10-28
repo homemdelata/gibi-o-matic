@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 namespace GibiOMatic.App.ViewModels;
 
 /// <summary>
-/// "Remover da biblioteca" asks first, then sends the book folder to the library's internal trash
+/// "Remove from library" asks first, then sends the book folder to the library's internal trash
 /// or deletes it for good (decision of 2026-10-27). Shared by the Library, the Review and the Editor.
 /// </summary>
 public sealed partial class RemoveBookPromptViewModel(LibrarySession session, BookEditor editor, ILogger logger) : ViewModelBase
@@ -22,7 +22,7 @@ public sealed partial class RemoveBookPromptViewModel(LibrarySession session, Bo
     [ObservableProperty]
     public partial bool IsOpen { get; private set; }
 
-    /// <summary>"Remover “Saga, Vol. 1” da biblioteca?"</summary>
+    /// <summary>"Remove “Saga, Vol. 1” from the library?"</summary>
     [ObservableProperty]
     public partial string? Question { get; private set; }
 

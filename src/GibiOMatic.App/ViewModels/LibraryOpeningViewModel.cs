@@ -5,7 +5,7 @@ namespace GibiOMatic.App.ViewModels;
 
 /// <summary>
 /// Shown while the remembered library opens: the window keeps answering even when the drive
-/// (Google Drive) is slow. A failure stays here with "Tentar de novo"; nothing retries by itself.
+/// (Google Drive) is slow. A failure stays here with "Try again"; nothing retries by itself.
 /// </summary>
 public sealed partial class LibraryOpeningViewModel(string path, Func<Task> retry, Action chooseAnother) : ViewModelBase
 {

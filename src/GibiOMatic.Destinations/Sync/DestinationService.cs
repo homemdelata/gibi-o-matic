@@ -13,7 +13,7 @@ namespace GibiOMatic.Destinations.Sync;
 /// <summary>How a book's copy is in a destination.</summary>
 public enum CopyState
 {
-    /// <summary>The book is not in this destination ("quais livros" or not reviewed yet).</summary>
+    /// <summary>The book is not in this destination ("which books" or not reviewed yet).</summary>
     NotIncluded,
     NotGenerated,
     UpToDate,
@@ -240,7 +240,7 @@ public sealed class DestinationService : IAsyncDisposable
             worker.Arrived[bookId] = 0;
             if (worker.Current is { IsFinished: false } current)
             {
-                // "3 de 10 · mais 2 na fila" while a run is going.
+                // "3 of 10 · 2 more queued" while a run is going.
                 worker.Current = current with { Queued = worker.Arrived.Count };
                 ProgressChanged?.Invoke(this, worker.Current);
             }
@@ -274,7 +274,7 @@ public sealed class DestinationService : IAsyncDisposable
         finally
         {
             Interlocked.Decrement(ref _recording);
-            // The counts ("4 para preparar") follow every book, not only the first of a run.
+            // The counts ("4 to prepare") follow every book, not only the first of a run.
             Changed?.Invoke(this, EventArgs.Empty);
         }
     }

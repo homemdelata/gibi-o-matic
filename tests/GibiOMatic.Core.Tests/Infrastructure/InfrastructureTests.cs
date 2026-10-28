@@ -107,8 +107,8 @@ public sealed class FreedesktopTrashTests : IDisposable
     public void A_file_goes_to_the_trash_with_its_info_and_names_do_not_collide()
     {
         var trash = new FreedesktopTrash(_temp.Combine("Trash"));
-        Directory.CreateDirectory(_temp.Combine("Entrada"));
-        var first = _temp.Combine("Entrada", "Saga 1.cbz");
+        Directory.CreateDirectory(_temp.Combine("Inbox"));
+        var first = _temp.Combine("Inbox", "Saga 1.cbz");
         File.WriteAllText(first, "one");
 
         Assert.True(trash.TryRecycle(first));

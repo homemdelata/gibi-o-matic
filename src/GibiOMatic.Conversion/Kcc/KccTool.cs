@@ -20,7 +20,7 @@ public sealed record KccOptions
     /// <summary>Cropping: 0 off, 1 margins, 2 margins and page numbers; null = KCC's default (2).</summary>
     public int? Cropping { get; init; }
 
-    /// <summary>More KCC options, typed by the user in "Avançado" (split like a command line).</summary>
+    /// <summary>More KCC options, typed by the user in "Advanced" (split like a command line).</summary>
     public string? ExtraArguments { get; init; }
 }
 

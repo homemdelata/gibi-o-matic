@@ -14,10 +14,10 @@ public static partial class OutputNames
 {
     public const string DefaultOneShotsFolder = "_oneshots";
 
-    /// <summary>Komga: <c>{Série}/{Série} v{Número:00} ({Ano})</c>, no publisher folder (SPEC §9.2).</summary>
+    /// <summary>Komga: <c>{Series}/{Series} v{Number:00} ({Year})</c>, no publisher folder (SPEC §9.2).</summary>
     public const string DefaultSeriesTemplate = "{series}/{series} {num} ({year})";
 
-    /// <summary>One-shots go to the one-shots folder: <c>{Pasta de one-shots}/{Título} ({Ano})</c>.</summary>
+    /// <summary>One-shots go to the one-shots folder: <c>{One-shots folder}/{Title} ({Year})</c>.</summary>
     public const string DefaultOneShotTemplate = "{oneshots}/{title} ({year})";
 
     /// <summary>
@@ -39,7 +39,7 @@ public static partial class OutputNames
         KomgaPath(book, oneShotsFolder) + ".cbz";
 
     /// <summary>
-    /// Kindle: <c>{Série} v{Número:00} ({Ano}).mobi</c>, or <c>{Título} ({Ano}).mobi</c>. The KCC writes a
+    /// Kindle: <c>{Series} v{Number:00} ({Year}).mobi</c>, or <c>{Title} ({Year}).mobi</c>. The KCC writes a
     /// MOBI that is also an AZW3 and keeps the <c>.mobi</c> extension for compatibility.
     /// </summary>
     public static string Kindle(BookMetadata book) =>

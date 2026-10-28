@@ -51,7 +51,7 @@ public sealed record MetadataRecord
     public string? CoverFullUrl { get; init; }
 }
 
-/// <summary>What made a candidate match; shown as "94% · título + número + editora".</summary>
+/// <summary>What made a candidate match; shown as "94% · title + number + publisher".</summary>
 public enum MatchReason
 {
     Isbn,

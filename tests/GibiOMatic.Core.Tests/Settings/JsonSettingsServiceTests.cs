@@ -35,7 +35,7 @@ public sealed class JsonSettingsServiceTests : IDisposable
     [Fact]
     public async Task Save_then_load_round_trips()
     {
-        var saved = new AppSettings { Language = "en", LibraryPath = @"D:\gibiomatic-teste\Arquivo", InboxPath = "/tmp/inbox" };
+        var saved = new AppSettings { Language = "en", LibraryPath = @"D:\gibiomatic-test\Library", InboxPath = "/tmp/inbox" };
 
         await _service.SaveAsync(saved, Ct);
         var reloaded = await new JsonSettingsService(_paths, NullLogger<JsonSettingsService>.Instance).LoadAsync(Ct);
@@ -49,13 +49,13 @@ public sealed class JsonSettingsServiceTests : IDisposable
     [Fact]
     public async Task Save_writes_readable_camel_case_json_and_leaves_no_temp_files()
     {
-        await _service.SaveAsync(new AppSettings { LibraryPath = @"G:\Meu Drive\Quadrinhos" }, Ct);
+        await _service.SaveAsync(new AppSettings { LibraryPath = @"G:\My Drive\Comics" }, Ct);
 
         var json = await File.ReadAllTextAsync(_paths.SettingsFile, Ct);
         using var doc = JsonDocument.Parse(json);
         Assert.Equal(1, doc.RootElement.GetProperty("schema").GetInt32());
         Assert.Equal("dark", doc.RootElement.GetProperty("theme").GetString());
-        Assert.Contains(@"G:\\Meu Drive\\Quadrinhos", json);
+        Assert.Contains(@"G:\\My Drive\\Comics", json);
         Assert.Equal([_paths.SettingsFile], Directory.GetFiles(_paths.ConfigDirectory));
     }
 

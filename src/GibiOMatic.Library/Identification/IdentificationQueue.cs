@@ -95,7 +95,7 @@ public sealed class IdentificationQueue : IAsyncDisposable
 
     /// <summary>
     /// Queues books for identification. Books already identified are queued again only with
-    /// <paramref name="force"/> ("Buscar metadados").
+    /// <paramref name="force"/> ("Fetch metadata").
     /// </summary>
     public async Task<int> EnqueueAsync(IEnumerable<string> bookIds, bool force, CancellationToken ct = default) =>
         await EnqueueAsync(bookIds, force, onlyNew: false, ct);
@@ -193,7 +193,7 @@ public sealed class IdentificationQueue : IAsyncDisposable
         OnChanged();
     }
 
-    /// <summary>"Buscar de novo" from the Review with other words (or an ISBN); runs now and stores the result.</summary>
+    /// <summary>"Search again" from the Review with other words (or an ISBN); runs now and stores the result.</summary>
     public async Task<IdentificationResult> SearchAgainAsync(string bookId, string? searchText, CancellationToken ct = default)
     {
         if (Core.Text.Isbn.IsValid(searchText))

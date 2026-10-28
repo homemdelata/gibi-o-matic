@@ -37,7 +37,7 @@ public sealed class ImportQueueTests : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        _library = await _libraries.CreateAsync(_temp.Combine("Arquivo"), Ct);
+        _library = await _libraries.CreateAsync(_temp.Combine("Library"), Ct);
         _queue = await StartQueueAsync();
     }
 

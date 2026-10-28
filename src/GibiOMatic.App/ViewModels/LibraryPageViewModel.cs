@@ -48,7 +48,7 @@ public sealed partial class FilterChipViewModel(LibraryFilter filter, string lab
     [NotifyPropertyChangedFor(nameof(IsShown))]
     public partial int Count { get; set; }
 
-    /// <summary>"Sem arquivo" only shows while some book lacks its original.</summary>
+    /// <summary>"No file" only shows while some book lacks its original.</summary>
     public bool IsShown => Filter != LibraryFilter.MissingFile || Count > 0;
 
     [ObservableProperty]
@@ -64,7 +64,7 @@ public sealed partial class FilterChipViewModel(LibraryFilter filter, string lab
 /// </summary>
 public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
 {
-    /// <summary>Books shown in "Continuar lendo", the most recent first.</summary>
+    /// <summary>Books shown in "Continue reading", the most recent first.</summary>
     public const int ContinueReadingCount = 8;
 
     /// <summary>Smallest card width; the grid fits as many columns as possible.</summary>
@@ -141,7 +141,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
 
     public string LibraryPath => _session.Current?.RootPath ?? string.Empty;
 
-    /// <summary>"Remover da biblioteca", asked from a card's menu or the detail panel.</summary>
+    /// <summary>"Remove from library", asked from a card's menu or the detail panel.</summary>
     public RemoveBookPromptViewModel RemovePrompt { get; }
 
     /// <summary>Selection mode: clicking a card checks it instead of showing it.</summary>
@@ -158,7 +158,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
     [ObservableProperty]
     public partial string? CheckedText { get; private set; }
 
-    /// <summary>"Buscar metadados" for the whole library waits for this confirmation.</summary>
+    /// <summary>"Fetch metadata" for the whole library waits for this confirmation.</summary>
     [ObservableProperty]
     public partial string? FetchConfirmation { get; private set; }
 
@@ -193,7 +193,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
     [RelayCommand]
     private void SetViewMode(LibraryViewMode mode) => ViewMode = mode;
 
-    /// <summary>The series opened from the Séries (or a universe's) view, whose books are listed.</summary>
+    /// <summary>The series opened from the Series (or a universe's) view, whose books are listed.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsInSeries), nameof(IsDrilledIn), nameof(DrillTitle), nameof(BackText))]
     public partial SeriesCardViewModel? OpenSeries { get; private set; }
@@ -478,7 +478,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
             }
             else if (seen.Add(name))
             {
-                // A series with a single book is just that book (no stack, no "1 livro").
+                // A series with a single book is just that book (no stack, no "1 book").
                 var inSeries = books.Where(b => string.Equals(b.Book.Metadata.Series?.Name, name, StringComparison.OrdinalIgnoreCase)).ToList();
                 cards.Add(inSeries.Count == 1 ? inSeries[0] : new SeriesCardViewModel(name, inSeries, OpenSeriesCard));
             }
@@ -563,7 +563,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
         UpdateChecked();
     }
 
-    /// <summary>"Livros que eu escolher" destinations, offered in the selection bar.</summary>
+    /// <summary>"Books I choose" destinations, offered in the selection bar.</summary>
     public ObservableCollection<DestinationChoiceViewModel> ChosenDestinations { get; } = [];
 
     private void LoadChosenDestinations()
@@ -620,7 +620,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
 
     /// <summary>
     /// Puts books in the list of the (first) Kindle destination, where they are prepared at once, or
-    /// takes them out. Nothing on the device changes. Without a Kindle destination, Destinos opens.
+    /// takes them out. Nothing on the device changes. Without a Kindle destination, Destinations opens.
     /// </summary>
     public async Task SetKindleAsync(IReadOnlyList<BookCardViewModel> cards, bool inList)
     {
@@ -663,7 +663,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
 
     public void AskRemove(BookCardViewModel card) => RemovePrompt.Ask(card.Id, card.Title);
 
-    /// <summary>"Pôr na lista do Kindle", or "Tirar da lista do Kindle" when the selected book is in it.</summary>
+    /// <summary>"Add to the Kindle list", or "Remove from the Kindle list" when the selected book is in it.</summary>
     [ObservableProperty]
     public partial string KindleButtonText { get; private set; } = Strings.Menu_AddKindle;
 
@@ -756,7 +756,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
             var kindles = destinations.Destinations.OfType<KindleDestination>().ToList();
             foreach (var (destination, state, path) in await destinations.CopiesOfAsync(details.Card.Book))
             {
-                // A Kindle copy is prepared, sent or still waiting, not "em dia".
+                // A Kindle copy is prepared, sent or still waiting, not "up to date".
                 if (kindles.FirstOrDefault(k => k.Config.Id == destination.Id) is { } kindle)
                 {
                     if ((await destinations.Kindle.StatusAsync(kindle, CancellationToken.None)).GetValueOrDefault(details.Card.Id) is { } status)
@@ -819,7 +819,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
 
     private void OnReadingChanged(object? sender, string bookId) => _reloadReading.Trigger();
 
-    /// <summary>Double click on a card, or a book in "Continuar lendo": the file where it was left, else the main one.</summary>
+    /// <summary>Double click on a card, or a book in "Continue reading": the file where it was left, else the main one.</summary>
     private void OpenCard(BookCardViewModel card)
     {
         if (IsSelecting || _session.Current is not { } library)
@@ -936,7 +936,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
     }
 }
 
-/// <summary>A "Livros que eu escolher" destination in the selection bar.</summary>
+/// <summary>A "Books I choose" destination in the selection bar.</summary>
 public sealed partial class DestinationChoiceViewModel(string id, string name, Func<string, bool, Task> set) : ViewModelBase
 {
     public string IncludeText { get; } = string.Format(CultureInfo.CurrentCulture, Strings.Library_IncludeInDestination, name);

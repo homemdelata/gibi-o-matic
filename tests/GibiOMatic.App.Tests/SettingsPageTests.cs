@@ -17,7 +17,7 @@ public sealed class SettingsPageTests : IDisposable
 
     private async Task<string> OpenLibraryAsync()
     {
-        var folder = _app.Folder("Arquivo");
+        var folder = _app.Folder("Library");
         await _app.Get<LibrarySession>().CreateAsync(folder, Ct);
         return folder;
     }
@@ -39,7 +39,7 @@ public sealed class SettingsPageTests : IDisposable
         var saved = await new JsonSettingsService(_app.Paths, Microsoft.Extensions.Logging.Abstractions.NullLogger<JsonSettingsService>.Instance).LoadAsync(Ct);
         Assert.Equal("en", saved.Language);
         Assert.Equal(_app.Folder("Downloads"), saved.InboxPath);
-        Assert.Equal(_app.Folder("Arquivo"), saved.LibraryPath);
+        Assert.Equal(_app.Folder("Library"), saved.LibraryPath);
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public sealed class SettingsPageTests : IDisposable
 
         Assert.Null(page.InboxPath);
         Assert.Equal("pt-BR", page.SelectedLanguage.Code);
-        Assert.Equal(_app.Folder("Arquivo"), _app.Get<ISettingsService>().Current.LibraryPath);
+        Assert.Equal(_app.Folder("Library"), _app.Get<ISettingsService>().Current.LibraryPath);
     }
 
     [Fact]

@@ -16,7 +16,7 @@ public sealed record AppSettings
     public string Language { get; init; } = DefaultLanguage;
     public AppTheme Theme { get; init; } = AppTheme.Dark;
 
-    /// <summary>Root folder of the library (the "Arquivo") last opened on this machine.</summary>
+    /// <summary>Root folder of the library (the "Archive") last opened on this machine.</summary>
     public string? LibraryPath { get; init; }
 
     /// <summary>Folder watched for new downloads (F5).</summary>

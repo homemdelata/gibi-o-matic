@@ -4,7 +4,7 @@ namespace GibiOMatic.App.Services;
 
 /// <summary>
 /// Reading positions and statuses of the open library, shared by the reader windows and the
-/// library page, which refreshes "Continuar lendo" when a book is read or marked.
+/// library page, which refreshes "Continue reading" when a book is read or marked.
 /// </summary>
 public sealed class ReadingTracker(LibrarySession session)
 {

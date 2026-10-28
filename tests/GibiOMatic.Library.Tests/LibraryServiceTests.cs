@@ -19,7 +19,7 @@ public sealed class LibraryServiceTests : IDisposable
     {
         _paths = new AppPaths(_temp.Combine("config"), _temp.Combine("data"));
         _service = new LibraryService(_paths, NullLogger<LibraryService>.Instance);
-        _root = _temp.Combine("Meu Arquivo");
+        _root = _temp.Combine("My Library");
     }
 
     public void Dispose() => _temp.Dispose();
@@ -185,7 +185,7 @@ public sealed class FolderContentTests : IDisposable
     [Fact]
     public void Only_visible_entries_count_as_content()
     {
-        var folder = _temp.Combine("pasta");
+        var folder = _temp.Combine("folder");
         Directory.CreateDirectory(folder);
         Assert.False(LibraryService.HasVisibleContent(folder));
 

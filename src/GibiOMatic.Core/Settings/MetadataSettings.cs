@@ -6,7 +6,7 @@ public sealed record MetadataSettings
     /// <summary>Sources in priority order, with on/off.</summary>
     public IReadOnlyList<SourceSetting> Sources { get; init; } = DefaultSources;
 
-    /// <summary>"Sempre revisar": never approve automatically.</summary>
+    /// <summary>"Always review": never approve automatically.</summary>
     public bool AlwaysReview { get; init; }
 
     public static IReadOnlyList<SourceSetting> DefaultSources { get; } =

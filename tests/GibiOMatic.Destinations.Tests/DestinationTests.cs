@@ -71,8 +71,8 @@ public sealed class DestinationFolderTests
 
     [Theory]
     [InlineData(@"Z:\", @"Saga/Saga v01.cbz", @"Z:\Saga\Saga v01.cbz")]
-    [InlineData(@"Z:\Quadrinhos\", @"_oneshots/Shrugged.cbz", @"Z:\Quadrinhos\_oneshots\Shrugged.cbz")]
-    [InlineData(@"Z:\Quadrinhos", @"Saga.cbz", @"Z:\Quadrinhos\Saga.cbz")]
+    [InlineData(@"Z:\Comics\", @"_oneshots/Shrugged.cbz", @"Z:\Comics\_oneshots\Shrugged.cbz")]
+    [InlineData(@"Z:\Comics", @"Saga.cbz", @"Z:\Comics\Saga.cbz")]
     public void Copies_go_inside_the_folder_even_at_a_drive_root(string folder, string relative, string expected)
     {
         Assert.SkipUnless(OperatingSystem.IsWindows(), "Windows paths");
@@ -80,8 +80,8 @@ public sealed class DestinationFolderTests
     }
 
     [Theory]
-    [InlineData(@"Z:\Quadrinhos", @"../outra/Saga.cbz")]
-    [InlineData(@"Z:\Quadrinhos", @"..\Quadrinhos2\Saga.cbz")]
+    [InlineData(@"Z:\Comics", @"../other/Saga.cbz")]
+    [InlineData(@"Z:\Comics", @"..\Comics2\Saga.cbz")]
     [InlineData(@"Z:\", @"")]
     public void Paths_leaving_the_folder_are_refused(string folder, string relative)
     {
@@ -111,7 +111,7 @@ public sealed class KomgaClientTests
         var http = new FakeHttp(r => r.Method == HttpMethod.Get
             ? new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent("""[{"id":"0A1","name":"Quadrinhos","root":"/data/comics","oneshotsDirectory":"_oneshots"}]""",
+                Content = new StringContent("""[{"id":"0A1","name":"Comics","root":"/data/comics","oneshotsDirectory":"_oneshots"}]""",
                     System.Text.Encoding.UTF8, "application/json"),
             }
             : new HttpResponseMessage(HttpStatusCode.Accepted));
@@ -120,7 +120,7 @@ public sealed class KomgaClientTests
         var library = Assert.Single(await client.GetLibrariesAsync("http://192.168.0.10:25600", "secret-key", Ct));
         await client.ScanAsync("http://192.168.0.10:25600/", "secret-key", library.Id, Ct);
 
-        Assert.Equal(new KomgaLibrary("0A1", "Quadrinhos", "/data/comics", "_oneshots"), library);
+        Assert.Equal(new KomgaLibrary("0A1", "Comics", "/data/comics", "_oneshots"), library);
         Assert.Equal("http://192.168.0.10:25600/api/v1/libraries", http.Requests[0].RequestUri!.ToString());
         Assert.Equal("http://192.168.0.10:25600/api/v1/libraries/0A1/scan", http.Requests[1].RequestUri!.ToString());
         Assert.Equal(HttpMethod.Post, http.Requests[1].Method);
@@ -203,7 +203,7 @@ public sealed class SyncTests : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        _library = await _libraries.CreateAsync(_temp.Combine("Arquivo"), Ct);
+        _library = await _libraries.CreateAsync(_temp.Combine("Library"), Ct);
         await ConfigureAsync(c => c);
         _service = new DestinationServiceFactory(_libraries, [_komga], _settings, NullLogger<DestinationService>.Instance)
         {

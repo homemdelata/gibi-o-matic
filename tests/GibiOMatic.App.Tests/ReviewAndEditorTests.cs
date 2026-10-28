@@ -24,7 +24,7 @@ public sealed class ReviewAndEditorTests : IDisposable
     /// <summary>Opens a library and imports synthetic PDFs; identification runs with the fake identifier.</summary>
     private async Task<IReadOnlyList<CatalogBook>> ImportAsync(params string[] fileNames)
     {
-        await Session.CreateAsync(_app.Folder("Arquivo"), Ct);
+        await Session.CreateAsync(_app.Folder("Library"), Ct);
         // Different page counts, so no two files are the same file.
         await Session.Queue!.AddAsync(fileNames.Select((n, i) => SyntheticBooks.Pdf(Downloads(n), new SyntheticBooks.PdfOptions { Pages = i + 1 })), Ct);
         await Session.Queue.WaitUntilIdleAsync(Ct);
@@ -412,7 +412,7 @@ public sealed class ReviewAndEditorTests : IDisposable
     [Fact]
     public async Task Metadata_settings_are_saved_and_the_key_is_kept_protected()
     {
-        await Session.CreateAsync(_app.Folder("Arquivo"), Ct);
+        await Session.CreateAsync(_app.Folder("Library"), Ct);
         var page = _app.Get<SettingsPageViewModel>();
         await page.OnNavigatedToAsync(Ct);
         Assert.Equal(["openlibrary", "comicvine", "googlebooks"], page.Sources.Select(s => s.Id));

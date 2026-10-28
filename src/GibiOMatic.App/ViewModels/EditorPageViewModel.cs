@@ -69,7 +69,7 @@ public sealed partial class HistoryRowViewModel(HistoryEntry entry, Func<History
 
 /// <summary>
 /// The Editor (SPEC §7): every field of one book, or the fields in common of a batch (empty fields
-/// change nothing; "Numerar em sequência" numbers the batch). Saving keeps the previous version in
+/// change nothing; "Number in sequence" numbers the batch). Saving keeps the previous version in
 /// the history, so it can be undone.
 /// </summary>
 public sealed partial class EditorPageViewModel : PageViewModel
@@ -148,7 +148,7 @@ public sealed partial class EditorPageViewModel : PageViewModel
 
     public string RevealText => BookFileText.Reveal;
 
-    /// <summary>"Remover da biblioteca" (one book only); afterwards the Library opens.</summary>
+    /// <summary>"Remove from library" (one book only); afterwards the Library opens.</summary>
     public RemoveBookPromptViewModel RemovePrompt { get; }
 
     [RelayCommand]
@@ -371,7 +371,7 @@ public sealed partial class EditorPageViewModel : PageViewModel
         }
     }
 
-    /// <summary>A batch starts with the values every book shares; the others stay empty ("vários").</summary>
+    /// <summary>A batch starts with the values every book shares; the others stay empty ("various").</summary>
     private void LoadBatch()
     {
         var first = _books[0].Metadata;
@@ -426,7 +426,7 @@ public sealed partial class EditorPageViewModel : PageViewModel
     partial void OnOneShotChanged(bool? value) => UpdatePreview();
 
 
-    /// <summary>Names the destinations will give the copy (SPEC §7, "prévia dos nomes").</summary>
+    /// <summary>Names the destinations will give the copy (SPEC §7, "preview of the names").</summary>
     private void UpdatePreview()
     {
         if (_loading)

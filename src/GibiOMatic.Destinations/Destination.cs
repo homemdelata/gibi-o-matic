@@ -39,7 +39,7 @@ public interface IDestination
 
     DestinationStatus GetStatus();
 
-    /// <summary>The "quais livros" rule plus what the type accepts.</summary>
+    /// <summary>The "which books" rule plus what the type accepts.</summary>
     bool Includes(BookMetadata book);
 
     /// <summary>Path of the book's copy relative to the destination folder, with extension.</summary>

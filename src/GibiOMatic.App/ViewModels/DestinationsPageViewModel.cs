@@ -24,7 +24,7 @@ public enum DestinationsMode
     Detail,
 }
 
-/// <summary>A destination card in the list (SPEC §12, Destinos).</summary>
+/// <summary>A destination card in the list (SPEC §12, Destinations).</summary>
 /// <summary>
 /// A destination in the list. It shows up as soon as the page opens ("Verificando…"); the summary
 /// arrives later, because checking a network folder that does not answer takes up to a minute.
@@ -102,7 +102,7 @@ public interface ISyncActivity
 {
     bool IsRunning { get; set; }
 
-    /// <summary>"Gerando Saga v01 (3 de 10)…" and the bar of copies done.</summary>
+    /// <summary>"Generating Saga v01 (3 of 10)…" and the bar of copies done.</summary>
     string? ProgressText { get; set; }
     double ProgressValue { get; set; }
 
@@ -148,7 +148,7 @@ public static class DestinationText
             : string.Format(CultureInfo.CurrentCulture, Strings.Destination_StatusUpToDate, s.UpToDate);
     }
 
-    /// <summary>"Gerando Saga v01 (3 de 10)…"; the last step is the server notice.</summary>
+    /// <summary>"Generating Saga v01 (3 of 10)…"; the last step is the server notice.</summary>
     public static void Report(ISyncActivity activity, SyncProgress progress)
     {
         activity.IsRunning = true;
@@ -420,7 +420,7 @@ public sealed partial class DestinationFormViewModel : ViewModelBase
     };
 }
 
-/// <summary>"Adicionar destino": type → details → name and rules (SPEC §12).</summary>
+/// <summary>"Add destination": type → details → name and rules (SPEC §12).</summary>
 public sealed partial class DestinationWizardViewModel : ViewModelBase
 {
     private readonly Func<DestinationConfig, string?, Task> _create;
@@ -708,7 +708,7 @@ public sealed partial class DestinationDetailViewModel : ViewModelBase, ISyncAct
 }
 
 /// <summary>
-/// Destinos (SPEC §9, §12): cards with status and rules, the "Adicionar destino" wizard and the
+/// Destinations (SPEC §9, §12): cards with status and rules, the "Add destination" wizard and the
 /// detail of each destination. Batch syncs always show their plan first (CLAUDE.md, rule 7).
 /// </summary>
 public sealed partial class DestinationsPageViewModel : PageViewModel
@@ -779,7 +779,7 @@ public sealed partial class DestinationsPageViewModel : PageViewModel
     [NotifyPropertyChangedFor(nameof(IsDetail), nameof(IsKindleDetail))]
     public partial DestinationDetailViewModel? Detail { get; private set; }
 
-    /// <summary>Coming back to Destinos shows the list, not the destination (or wizard) left open.</summary>
+    /// <summary>Coming back to Destinations shows the list, not the destination (or wizard) left open.</summary>
     public override void OnNavigatedFrom()
     {
         if (!IsList)

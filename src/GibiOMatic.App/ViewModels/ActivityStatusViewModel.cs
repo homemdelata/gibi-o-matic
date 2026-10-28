@@ -8,9 +8,9 @@ using GibiOMatic.Library.Import;
 namespace GibiOMatic.App.ViewModels;
 
 /// <summary>
-/// The background work in the sidebar status card, seen from every page: the inbox ("Entrada ·
-/// 3 na fila", with the progress of the file at hand) and the metadata search ("Metadados ·
-/// buscando · 37"). A click opens the page where it can be paused.
+/// The background work in the sidebar status card, seen from every page: the inbox ("Inbox · 3
+/// queued", with the progress of the file at hand) and the metadata search ("Metadata search:
+/// 37 queued"). A click opens the page where it can be paused.
 /// </summary>
 public sealed partial class ActivityStatusViewModel : ViewModelBase, IDisposable
 {

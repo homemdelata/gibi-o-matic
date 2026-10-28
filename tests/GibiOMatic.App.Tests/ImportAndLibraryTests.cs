@@ -21,7 +21,7 @@ public sealed class ImportAndLibraryTests : IDisposable
 
     private LibrarySession Session => _app.Get<LibrarySession>();
 
-    private async Task OpenLibraryAsync() => await Session.CreateAsync(_app.Folder("Arquivo"), Ct);
+    private async Task OpenLibraryAsync() => await Session.CreateAsync(_app.Folder("Library"), Ct);
 
     private static string Info(string series, string number, string? writer = "Brian K. Vaughan", int? year = 2012) =>
         SyntheticBooks.ComicInfo(series: series, number: number, year: year, month: 10, writer: writer, penciller: "Fiona Staples",
@@ -91,7 +91,7 @@ public sealed class ImportAndLibraryTests : IDisposable
         var page = _app.Get<LibraryPageViewModel>();
         await page.LoadAsync(Ct);
 
-        // Séries view (default): the two Saga volumes become one card, Plutona stays on its own.
+        // Series view (default): the two Saga volumes become one card, Plutona stays on its own.
         // A series with one book is shown as that book.
         Assert.Equal(LibraryViewMode.Series, page.ViewMode);
         Assert.Equal(2, page.VisibleCards.Count);
@@ -268,7 +268,7 @@ public sealed class ImportAndLibraryTests : IDisposable
         var main = _app.Get<MainWindowViewModel>();
         await _app.Get<ISettingsService>().LoadAsync(Ct);
         await main.InitializeAsync(Ct);
-        _app.Picker.WillReturn(_app.Folder("Arquivo"));
+        _app.Picker.WillReturn(_app.Folder("Library"));
         await ((WelcomeViewModel)main.Content!).CreateLibraryCommand.ExecuteAsync(null);
         var shell = Assert.IsType<ShellViewModel>(main.Content);
         await shell.CurrentNavigation;

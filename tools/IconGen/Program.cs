@@ -1,4 +1,4 @@
-// Generates the app icon from docs/design/revamp/icone.svg (the source of truth of the drawing):
+// Generates the app icon from docs/design/revamp/icon.svg (the source of truth of the drawing):
 // src/GibiOMatic.App/Assets/gibiomatic.ico (16–256 px) and Assets/logo.png (256 px, sidebar logo).
 // A glitch speech-balloon G over a navy tile with blue halftone; small sizes drop details.
 // Run from the repository root: dotnet run --project tools/IconGen

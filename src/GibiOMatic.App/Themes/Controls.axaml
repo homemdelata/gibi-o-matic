@@ -498,7 +498,7 @@
     <Setter Property="Background" Value="#99000000" />
     <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
   </Style>
-  <!-- "Continuar lendo": the bar sits under the title, not over a cover -->
+  <!-- "Continue reading": the bar sits under the title, not over a cover -->
   <Style Selector="ProgressBar.reading.inline">
     <Setter Property="VerticalAlignment" Value="Center" />
     <Setter Property="CornerRadius" Value="3" />
@@ -641,7 +641,7 @@
     <Setter Property="FontSize" Value="12.5" />
   </Style>
 
-  <!-- Text-like button ("← Biblioteca") and dashed "add" button -->
+  <!-- Text-like button ("← Library") and dashed "add" button -->
   <Style Selector="Button.link">
     <Setter Property="Background" Value="Transparent" />
     <Setter Property="BorderThickness" Value="0" />
@@ -678,7 +678,7 @@
     <Setter Property="BoxShadow" Value="{DynamicResource SelectionShadowSmall}" />
   </Style>
 
-  <!-- Sidebar counters that need the user: Entrada in cyan, Revisão in magenta -->
+  <!-- Sidebar counters that need the user: Inbox in cyan, Review in magenta -->
   <Style Selector="Border.nav-badge">
     <Setter Property="Background" Value="{DynamicResource OkBrush}" />
     <Setter Property="CornerRadius" Value="{StaticResource RadiusPill}" />
@@ -705,7 +705,7 @@
     <Setter Property="CornerRadius" Value="{StaticResource RadiusCard}" />
     <Setter Property="Padding" Value="{StaticResource CardPadding}" />
   </Style>
-  <!-- A summary card that asks for attention ("Precisa revisão"): a 3 px magenta rule replaces the top border -->
+  <!-- A summary card that asks for attention ("Needs review"): a 3 px magenta rule replaces the top border -->
   <Style Selector="Border.card.priority">
     <Setter Property="BorderThickness" Value="1.5,0,1.5,1.5" />
     <Setter Property="Padding" Value="18,17.5,18,16" />

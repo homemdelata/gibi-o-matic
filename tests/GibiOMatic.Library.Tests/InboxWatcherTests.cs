@@ -53,7 +53,7 @@ public sealed class InboxWatcherTests : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        _library = await _libraries.CreateAsync(_temp.Combine("Arquivo"), Ct);
+        _library = await _libraries.CreateAsync(_temp.Combine("Library"), Ct);
         Directory.CreateDirectory(Inbox());
         // Most tests follow the files to _imported; the recycle bin and deleting have their own.
         await _settings.SaveAsync(_settings.Current with { InboxPath = Inbox(), AfterImport = AfterImportAction.MoveToImported }, Ct);
@@ -69,7 +69,7 @@ public sealed class InboxWatcherTests : IAsyncLifetime
 
     private static CancellationToken Ct => TestContext.Current.CancellationToken;
 
-    private string Inbox(params string[] parts) => _temp.Combine(["Entrada", .. parts]);
+    private string Inbox(params string[] parts) => _temp.Combine(["Inbox", .. parts]);
 
     private string Imported(params string[] parts) => Inbox([InboxFolder.ImportedFolderName, .. parts]);
 

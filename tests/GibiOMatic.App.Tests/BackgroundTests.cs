@@ -23,7 +23,7 @@ public sealed class BackgroundTests : IDisposable
     private static string SagaInfo => SyntheticBooks.ComicInfo(series: "Saga", number: "1", year: 2012, writer: "Brian K. Vaughan",
         penciller: "Fiona Staples", publisher: "Image Comics", format: "TPB");
 
-    private string Inbox(params string[] parts) => _app.Folder(Path.Combine(["Entrada", .. parts]));
+    private string Inbox(params string[] parts) => _app.Folder(Path.Combine(["Inbox", .. parts]));
 
     private async Task OpenLibraryAsync(string? inbox = null)
     {
@@ -34,7 +34,7 @@ public sealed class BackgroundTests : IDisposable
             await settings.SaveAsync(settings.Current with { InboxPath = inbox }, Ct);
         }
 
-        await _app.Get<LibrarySession>().CreateAsync(_app.Folder("Arquivo"), Ct);
+        await _app.Get<LibrarySession>().CreateAsync(_app.Folder("Library"), Ct);
     }
 
     private static async Task WaitForAsync(Func<bool> condition)
@@ -141,7 +141,7 @@ public sealed class BackgroundTests : IDisposable
         Assert.Equal(string.Format(CultureInfo.CurrentCulture, Strings.Update_Available, "0.7.0"), shell.Update.BannerText);
         Assert.Null(_app.Updater.Applied);
 
-        // "Agora não" hides it until the next check finds it again.
+        // "Not now" hides it until the next check finds it again.
         shell.Update.DismissCommand.Execute(null);
         Assert.False(shell.Update.ShowBanner);
         await checker.CheckAsync(Ct);
@@ -301,7 +301,7 @@ public sealed class BackgroundTests : IDisposable
         await OpenLibraryAsync();
         var page = _app.Get<SettingsPageViewModel>();
 
-        foreach (var inbox in new[] { _app.Folder("Arquivo"), Path.Combine(_app.Folder("Arquivo"), "Entrada"), _app.Folder("") })
+        foreach (var inbox in new[] { _app.Folder("Library"), Path.Combine(_app.Folder("Library"), "Inbox"), _app.Folder("") })
         {
             page.InboxPath = inbox;
             await page.SaveCommand.ExecuteAsync(null);

@@ -9,7 +9,7 @@ using GibiOMatic.Destinations.Sync;
 
 namespace GibiOMatic.App.ViewModels;
 
-/// <summary>A destination's line in the sidebar status card: "Komga de casa · 15 de 30".</summary>
+/// <summary>A destination's line in the sidebar status card: "Home Komga · 15 of 30".</summary>
 public sealed partial class SidebarDestinationViewModel(string id, string name, Action<string> open) : ViewModelBase
 {
     public string Id { get; } = id;

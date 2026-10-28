@@ -76,7 +76,7 @@ public sealed class EditingAndIdentificationTests : IAsyncLifetime
             new BookImporter(reader, NullLogger<BookImporter>.Instance), thumbnails, _settings, new FakeRecycleBin(_temp.Combine("Lixeira")), NullLogger<ImportQueue>.Instance);
     }
 
-    public async ValueTask InitializeAsync() => _library = await _libraries.CreateAsync(_temp.Combine("Arquivo"), Ct);
+    public async ValueTask InitializeAsync() => _library = await _libraries.CreateAsync(_temp.Combine("Library"), Ct);
 
     public async ValueTask DisposeAsync()
     {
@@ -301,7 +301,7 @@ public sealed class EditingAndIdentificationTests : IAsyncLifetime
         // Not queued again on its own…
         Assert.Equal(0, await queue.EnqueueAsync([book.Metadata.Id], force: false, Ct));
 
-        // …but "Buscar metadados" does, and the result goes to the Review instead of being applied.
+        // …but "Fetch metadata" does, and the result goes to the Review instead of being applied.
         await _editor.UpdateAsync(_library, book.Metadata.Id, m => m with { Title = "Saga (my edition)" }, Ct);
         Assert.Equal(1, await queue.EnqueueAsync([book.Metadata.Id], force: true, Ct));
         await queue.WaitUntilIdleAsync(Ct);

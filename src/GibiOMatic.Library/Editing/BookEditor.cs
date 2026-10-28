@@ -182,7 +182,7 @@ public sealed class BookEditor(LibraryService libraries, IBookFileReader reader,
         return true;
     }
 
-    /// <summary>Originals are named "{Título}.{ext}" (SPEC §4.2): renaming is not changing their content.</summary>
+    /// <summary>Originals are named "{Title}.{ext}" (SPEC §4.2): renaming is not changing their content.</summary>
     private IReadOnlyList<BookFile> RenameFiles(string folderPath, IReadOnlyList<BookFile> files, string title)
     {
         var renamed = new List<BookFile>();

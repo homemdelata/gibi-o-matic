@@ -21,7 +21,7 @@ public sealed class KindlePageTests : IDisposable
 
     private async Task ImportSagaAsync()
     {
-        await Session.CreateAsync(_app.Folder("Arquivo"), Ct);
+        await Session.CreateAsync(_app.Folder("Library"), Ct);
         string Info(string number, int year) => SyntheticBooks.ComicInfo(series: "Saga", number: number, year: year, writer: "Brian K. Vaughan",
             publisher: "Image Comics", format: "TPB");
         await Session.Queue!.AddAsync(
@@ -58,7 +58,7 @@ public sealed class KindlePageTests : IDisposable
         return page;
     }
 
-    /// <summary>Right-click on a book in the Library → "Pôr na lista do Kindle".</summary>
+    /// <summary>Right-click on a book in the Library → "Add to the Kindle list".</summary>
     private async Task<LibraryPageViewModel> AddFromLibraryAsync(int index)
     {
         var library = _app.Get<LibraryPageViewModel>();

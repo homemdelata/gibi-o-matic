@@ -133,7 +133,7 @@
   </UserControl.DataTemplates>
 
   <UserControl.Styles>
-    <!-- A book's right-click menu, on the library cards and on "Continuar lendo" (the DataContext is the book card) -->
+    <!-- A book's right-click menu, on the library cards and on "Continue reading" (the DataContext is the book card) -->
     <Style Selector=":is(Control).book-menu" x:DataType="vm:BookCardViewModel">
       <Setter Property="ContextMenu">
         <Template>
@@ -226,7 +226,7 @@
         </Button>
       </Grid>
 
-      <!-- "Buscar metadados" asks first: safe matches are approved on their own -->
+      <!-- "Fetch metadata" asks first: safe matches are approved on their own -->
       <Border DockPanel.Dock="Top" Classes="card" BorderBrush="{DynamicResource WarnBrush}" Margin="0,0,0,16"
               IsVisible="{Binding FetchConfirmation, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
         <Grid ColumnDefinitions="*,Auto,Auto">
@@ -236,7 +236,7 @@
         </Grid>
       </Border>
 
-      <!-- "Remover da biblioteca" asks first -->
+      <!-- "Remove from library" asks first -->
       <ContentControl DockPanel.Dock="Top" Margin="0,0,0,16" Content="{Binding RemovePrompt}" IsVisible="{Binding RemovePrompt.IsOpen}" />
 
       <!-- Health of the library -->

@@ -139,7 +139,7 @@ public sealed class DestinationSync(LibraryInfo library, LibraryIndex index, ILo
         return new SyncPlan(destination.Config.Id, actions, upToDate);
     }
 
-    /// <summary>The state of each book's copy, for the book panel ("em dia", "desatualizado", "não gerado").</summary>
+    /// <summary>The state of each book's copy, for the book panel ("up to date", "outdated", "not generated").</summary>
     public async Task<Dictionary<string, OutputRecord>> RecordedAsync(string destinationId, CancellationToken ct) =>
         await _outputs.GetAsync(destinationId, ct);
 

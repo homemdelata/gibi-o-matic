@@ -1,6 +1,6 @@
 namespace GibiOMatic.Core.Libraries;
 
-/// <summary>Creates and opens libraries (the "Arquivo") and maintains their local index.</summary>
+/// <summary>Creates and opens libraries (the "Archive") and maintains their local index.</summary>
 public interface ILibraryService
 {
     /// <summary>Turns <paramref name="rootPath"/> into a new, empty library and opens it.</summary>

@@ -116,7 +116,7 @@ public sealed partial class SettingsPageViewModel : PageViewModel
     /// <summary>Metadata sources in priority order (SPEC §8.1).</summary>
     public ObservableCollection<SourceOptionViewModel> Sources { get; } = [];
 
-    /// <summary>"Sempre revisar": never approve automatically.</summary>
+    /// <summary>"Always review": never approve automatically.</summary>
     [ObservableProperty]
     public partial bool AlwaysReview { get; set; }
 

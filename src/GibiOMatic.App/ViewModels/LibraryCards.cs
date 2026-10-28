@@ -104,10 +104,10 @@ public static class QualityText
 /// <summary>Texts about a book's files on disk.</summary>
 public static class BookFileText
 {
-    /// <summary>"Mostrar no Explorer" on Windows, "Mostrar na pasta" elsewhere.</summary>
+    /// <summary>"Show in Explorer" on Windows, "Show in folder" elsewhere.</summary>
     public static string Reveal => OperatingSystem.IsWindows() ? Strings.Menu_RevealWindows : Strings.Menu_RevealOther;
 
-    /// <summary>"O arquivo X.pdf não está mais na pasta do livro…"</summary>
+    /// <summary>"The file X.pdf is no longer in the book folder…"</summary>
     public static string Missing(CatalogBook book) =>
         string.Format(CultureInfo.CurrentCulture, Strings.Missing_Help, book.MainFile?.Name ?? "—");
 }
@@ -235,7 +235,7 @@ public sealed partial class BookCardViewModel : ViewModelBase
     /// <summary>From 0 to 1, for the bar at the bottom of the cover.</summary>
     public double Progress => Reading?.Fraction ?? 0;
 
-    /// <summary>"42% lido".</summary>
+    /// <summary>"42% read".</summary>
     public string ProgressText => string.Format(CultureInfo.CurrentCulture, Strings.Reading_Percent, Progress.ToString("0%", CultureInfo.CurrentCulture));
 
     [RelayCommand]
@@ -311,7 +311,7 @@ public abstract partial class StackCardViewModel : ViewModelBase
     /// <summary>Shown in the cover's bottom-left corner.</summary>
     public string BookCount => Books.Count.ToString(CultureInfo.CurrentCulture);
 
-    /// <summary>"12 livros", for screen readers and the tooltip of the counter.</summary>
+    /// <summary>"12 books", for screen readers and the tooltip of the counter.</summary>
     public string BookCountText => Books.Count == 1 ? Strings.Library_SeriesBooksOne : string.Format(CultureInfo.CurrentCulture, Strings.Library_SeriesBooksMany, Books.Count);
 
     public abstract string MetaLine { get; }
@@ -322,7 +322,7 @@ public abstract partial class StackCardViewModel : ViewModelBase
     protected abstract void OnOpen();
 }
 
-/// <summary>A series in the grid (Séries view): opens to show its books.</summary>
+/// <summary>A series in the grid (Series view): opens to show its books.</summary>
 public sealed class SeriesCardViewModel : StackCardViewModel
 {
     private readonly Action<SeriesCardViewModel> _open;
@@ -336,7 +336,7 @@ public sealed class SeriesCardViewModel : StackCardViewModel
         MetaLine = string.Join(" · ", parts);
     }
 
-    /// <summary>"Série · 3 livros · Editora".</summary>
+    /// <summary>"Series · 3 books · Publisher".</summary>
     public override string MetaLine { get; }
 
     protected override void OnOpen() => _open(this);
@@ -356,7 +356,7 @@ public sealed class UniverseCardViewModel : StackCardViewModel
         MetaLine = string.Format(CultureInfo.CurrentCulture, Strings.Library_UniverseSummary, seriesText, BookCountText);
     }
 
-    /// <summary>"3 séries · 9 livros".</summary>
+    /// <summary>"3 series · 9 books".</summary>
     public override string MetaLine { get; }
 
     protected override void OnOpen() => _open(this);
@@ -469,7 +469,7 @@ public sealed partial class BookDetailsViewModel : ViewModelBase
     /// <summary>Universes the book belongs to (shown as pills under the credits).</summary>
     public IReadOnlyList<string> Universes { get; }
 
-    /// <summary>"Lendo · 34%", "Lido em 18/10/2026" or "Não lido".</summary>
+    /// <summary>"Reading · 34%", "Read on 10/18/2026" or "Not read".</summary>
     [ObservableProperty]
     public partial string ReadingText { get; private set; } = string.Empty;
 
@@ -546,7 +546,7 @@ public interface IBookActions : IReadingActions, IBookFileActions
     void Review(BookCardViewModel card);
 }
 
-/// <summary>A book in "Continuar lendo": opens the reader where it was left.</summary>
+/// <summary>A book in "Continue reading": opens the reader where it was left.</summary>
 public sealed partial class ContinueReadingViewModel(BookCardViewModel card, Action<BookCardViewModel> open) : ViewModelBase
 {
     public BookCardViewModel Card { get; } = card;
@@ -555,5 +555,5 @@ public sealed partial class ContinueReadingViewModel(BookCardViewModel card, Act
     private void Open() => open(Card);
 }
 
-/// <summary>A book's copy in one destination: "Komga de casa · Em dia".</summary>
+/// <summary>A book's copy in one destination: "Home Komga · Up to date".</summary>
 public sealed record CopyRow(string Destination, string State, StatusKind Kind, string? Path);

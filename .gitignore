@@ -485,7 +485,7 @@ $RECYCLE.BIN/
 # Vim temporary swap files
 *.swp
 
-# Gibiteca — nunca versionar segredos nem arquivos de quadrinhos
+# Gibi-o-matic — never commit secrets or comic files
 *.key
 comicvine_key.txt
 gibiteca.local.json

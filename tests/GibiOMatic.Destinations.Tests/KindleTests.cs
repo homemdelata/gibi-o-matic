@@ -116,7 +116,7 @@ public sealed class KindleTests : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        _library = await _libraries.CreateAsync(_temp.Combine("Arquivo"), Ct);
+        _library = await _libraries.CreateAsync(_temp.Combine("Library"), Ct);
         _service = new DestinationServiceFactory(_libraries, [_type], _settings, NullLogger<DestinationService>.Instance)
         {
             GatherDelay = TimeSpan.FromMilliseconds(20),

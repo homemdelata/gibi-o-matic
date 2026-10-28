@@ -296,7 +296,7 @@ public sealed class ImportQueue : IAsyncDisposable
     }
 
     /// <summary>
-    /// "Tentar de novo": failed items start over from the analysis (the library may have changed
+    /// "Try again": failed items start over from the analysis (the library may have changed
     /// since, and a full disk or a file in use may be fixed now). Returns how many went back in line.
     /// </summary>
     public async Task<int> RetryFailedAsync(CancellationToken ct = default)

@@ -7,8 +7,8 @@ using GibiOMatic.App.Services;
 namespace GibiOMatic.App.ViewModels;
 
 /// <summary>
-/// The app's version and its updates (F6): the banner at the top of the shell ("Versão 0.7.0
-/// disponível") and the card in Settings → Geral. Nothing is installed without the user asking.
+/// The app's version and its updates (F6): the banner at the top of the shell ("Version 0.7.0
+/// is available.") and the card in Settings → General. Nothing is installed without the user asking.
 /// </summary>
 public sealed partial class UpdateStatusViewModel : ViewModelBase, IDisposable
 {
@@ -87,7 +87,7 @@ public sealed partial class UpdateStatusViewModel : ViewModelBase, IDisposable
     [RelayCommand(CanExecute = nameof(CanInstall))]
     private Task InstallAsync() => _checker.InstallAsync();
 
-    /// <summary>"Agora não": the banner comes back with the next check that finds a version.</summary>
+    /// <summary>"Not now": the banner comes back with the next check that finds a version.</summary>
     [RelayCommand]
     private void Dismiss()
     {

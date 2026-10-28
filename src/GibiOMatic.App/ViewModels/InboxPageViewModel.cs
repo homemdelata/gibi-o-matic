@@ -355,7 +355,7 @@ public sealed partial class InboxPageViewModel : PageViewModel
     [NotifyCanExecuteChangedFor(nameof(ClearFinishedCommand))]
     public partial bool HasFinished { get; private set; }
 
-    /// <summary>"Tentar de novo (3)", shown while there are failed files.</summary>
+    /// <summary>"Retry failed (3)", shown while there are failed files.</summary>
     [ObservableProperty]
     public partial string? RetryFailedText { get; private set; }
 

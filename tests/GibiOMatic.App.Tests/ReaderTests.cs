@@ -46,7 +46,7 @@ public sealed class ReaderTests : IDisposable
 
     private async Task ImportAsync(params string[] files)
     {
-        await Session.CreateAsync(_app.Folder("Arquivo"), Ct);
+        await Session.CreateAsync(_app.Folder("Library"), Ct);
         await Session.Queue!.AddAsync(files, Ct);
         await Session.Queue.WaitUntilIdleAsync(Ct);
         await Session.Queue.ConfirmAsync(Ct);
@@ -80,7 +80,7 @@ public sealed class ReaderTests : IDisposable
         Assert.Equal(details.Card.Book.Metadata.Id, request.BookId);
         Assert.Equal(BookFormat.Cbz, request.Format);
         Assert.True(File.Exists(request.FilePath));
-        Assert.StartsWith(_app.Folder("Arquivo"), request.FilePath);
+        Assert.StartsWith(_app.Folder("Library"), request.FilePath);
     }
 
     [Fact]
@@ -108,7 +108,7 @@ public sealed class ReaderTests : IDisposable
     [Fact]
     public async Task Pages_turn_in_one_or_two_page_mode_and_the_book_reopens_where_it_was_left()
     {
-        await Session.CreateAsync(_app.Folder("Arquivo"), Ct);
+        await Session.CreateAsync(_app.Folder("Library"), Ct);
         var path = SyntheticBooks.Cbz(Downloads("saga.cbz"), pages: 12);
         var reader = Reader(path, BookFormat.Cbz);
 
@@ -167,7 +167,7 @@ public sealed class ReaderTests : IDisposable
     [Fact]
     public async Task The_pages_around_the_screen_are_rendered_ahead_and_the_strip_renders_the_rest()
     {
-        await Session.CreateAsync(_app.Folder("Arquivo"), Ct);
+        await Session.CreateAsync(_app.Folder("Library"), Ct);
         var reader = Reader(SyntheticBooks.Cbz(Downloads("saga.cbz"), pages: 20), BookFormat.Cbz);
         await reader.LoadAsync(Ct);
         reader.NextCommand.Execute(null);
@@ -192,7 +192,7 @@ public sealed class ReaderTests : IDisposable
     [Fact]
     public async Task Pages_rendered_ahead_before_the_sizes_are_read_are_sharp()
     {
-        await Session.CreateAsync(_app.Folder("Arquivo"), Ct);
+        await Session.CreateAsync(_app.Folder("Library"), Ct);
         var reader = Reader(SyntheticBooks.Cbz(Downloads("saga.cbz"), pages: 20), BookFormat.Cbz);
         await reader.LoadAsync(Ct);
 
@@ -207,7 +207,7 @@ public sealed class ReaderTests : IDisposable
     [Fact]
     public async Task A_pdf_opens_with_its_pages_rendered()
     {
-        await Session.CreateAsync(_app.Folder("Arquivo"), Ct);
+        await Session.CreateAsync(_app.Folder("Library"), Ct);
         var reader = Reader(SyntheticBooks.Pdf(Downloads("plutona.pdf"), new SyntheticBooks.PdfOptions { Pages = 3, TextOverPages = true }), BookFormat.Pdf);
 
         await reader.LoadAsync(Ct);
@@ -228,7 +228,7 @@ public sealed class ReaderTests : IDisposable
     [Fact]
     public async Task A_damaged_file_shows_a_message_instead_of_failing()
     {
-        await Session.CreateAsync(_app.Folder("Arquivo"), Ct);
+        await Session.CreateAsync(_app.Folder("Library"), Ct);
         var path = Downloads("broken.cbz");
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         await File.WriteAllTextAsync(path, "not a zip", Ct);
@@ -245,7 +245,7 @@ public sealed class ReaderTests : IDisposable
     [Fact]
     public async Task A_text_epub_shows_its_chapters_only_from_the_book()
     {
-        await Session.CreateAsync(_app.Folder("Arquivo"), Ct);
+        await Session.CreateAsync(_app.Folder("Library"), Ct);
         var path = SyntheticBooks.Epub(Downloads("novel.epub"),
             new SyntheticBooks.EpubOptions { TextOnly = true, FixedLayout = false, Pages = 3, Nav = true });
         var reader = Reader(path, BookFormat.Epub);
@@ -303,7 +303,7 @@ public sealed class ReaderTests : IDisposable
     [Fact]
     public async Task A_book_counts_as_started_after_five_pages_and_read_at_its_last_page()
     {
-        await Session.CreateAsync(_app.Folder("Arquivo"), Ct);
+        await Session.CreateAsync(_app.Folder("Library"), Ct);
         var path = SyntheticBooks.Cbz(Downloads("saga.cbz"), pages: 12);
 
         // Opened to look at the cover and the last page: neither started nor read.
@@ -351,7 +351,7 @@ public sealed class ReaderTests : IDisposable
         Assert.False(library.ShowContinueReading);
         Assert.Equal(3, library.Filters.Single(f => f.Filter == LibraryFilter.Unread).Count);
 
-        // Double click opens the book; reading it (in the reader) puts it in "Continuar lendo".
+        // Double click opens the book; reading it (in the reader) puts it in "Continue reading".
         var saga2 = cards.Single(c => c.Book.Metadata.Series?.Number == "2");
         saga2.OpenCommand.Execute(null);
         var request = Assert.Single(_app.Reader.Opened);

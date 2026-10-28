@@ -34,7 +34,7 @@ public sealed class FirstRunTests : IDisposable
     public async Task Creating_a_library_opens_the_shell_on_the_empty_library_and_is_remembered()
     {
         var main = await StartAsync(_app.CreateServices());
-        var folder = _app.Folder("Arquivo");
+        var folder = _app.Folder("Library");
         _app.Picker.WillReturn(folder);
 
         await ((WelcomeViewModel)main.Content!).CreateLibraryCommand.ExecuteAsync(null);
@@ -98,7 +98,7 @@ public sealed class FirstRunTests : IDisposable
         Assert.Contains(missing, opening.ErrorMessage);
         Assert.False(opening.IsSlow);
 
-        // The drive is back: "Tentar de novo" opens it.
+        // The drive is back: "Try again" opens it.
         await services.GetRequiredService<LibraryService>().CreateAsync(missing, Ct);
         await opening.RetryCommand.ExecuteAsync(null);
 

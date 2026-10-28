@@ -30,7 +30,7 @@ public sealed partial class ReviewItemViewModel(BookCardViewModel card, BookIden
     public string BookId => Card.Id;
     public string Title => Card.Title;
 
-    /// <summary>What is wrong, in a few words ("Título, autores e série").</summary>
+    /// <summary>What is wrong, in a few words ("Title, authors and series").</summary>
     public string Issue { get; } = issue;
 
     public int Score => Card.Report.Score;
@@ -95,7 +95,7 @@ public sealed partial class CandidateViewModel : ViewModelBase
 
     public string SourceText => string.Format(CultureInfo.CurrentCulture, Strings.Review_Source, IdentificationText.SourceName(Candidate.Record.Source));
 
-    /// <summary>"128 páginas" when the source knows (Open Library, Google Books; ComicVine does not have it).</summary>
+    /// <summary>"128 pages" when the source knows (Open Library, Google Books; ComicVine does not have it).</summary>
     public string? PagesText => Candidate.Record.PageCount is { } pages
         ? string.Format(CultureInfo.CurrentCulture, Strings.Review_Pages, pages)
         : null;
@@ -118,7 +118,7 @@ public sealed partial class CandidateViewModel : ViewModelBase
     private void Pick() => _pick(this);
 }
 
-/// <summary>A row of the "campo · atual · proposto" table, with its check box.</summary>
+/// <summary>A row of the "field · current · proposed" table, with its check box.</summary>
 public sealed partial class FieldRowViewModel(FieldChange change, Action changed) : ViewModelBase
 {
     public FieldChange Change { get; } = change;
@@ -130,6 +130,8 @@ public sealed partial class FieldRowViewModel(FieldChange change, Action changed
     {
         "cover:file" => Strings.Review_CoverFile,
         "cover:source" => Strings.Review_CoverSource,
+        "oneshot:yes" => Strings.Review_OneShotYes,
+        "oneshot:no" => Strings.Review_OneShotNo,
         _ => DisplayKind(value),
     };
 
@@ -160,7 +162,7 @@ public sealed partial class FieldRowViewModel(FieldChange change, Action changed
 
 /// <summary>
 /// The Review (SPEC §7): books whose identification needs the user, most serious first; for each,
-/// the candidates and a field-by-field comparison. "Aprovar e próximo" applies the checked fields.
+/// the candidates and a field-by-field comparison. "Approve and next" applies the checked fields.
 /// </summary>
 public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileActions
 {
@@ -216,7 +218,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
 
     public bool HasSelection => Selected is not null;
 
-    /// <summary>"Remover da biblioteca", asked from the queue's right-click menu or the missing-file warning.</summary>
+    /// <summary>"Remove from library", asked from the queue's right-click menu or the missing-file warning.</summary>
     public RemoveBookPromptViewModel RemovePrompt { get; }
 
     /// <summary>The selected book's main original is not on disk.</summary>
@@ -294,7 +296,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
 
     public bool IsEmpty => !HasItems;
 
-    /// <summary>"Buscar de novo todos (12)": after a ComicVine key was set, or a source was down.</summary>
+    /// <summary>"Search all again (12)": after a ComicVine key was set, or a source was down.</summary>
     [ObservableProperty]
     public partial string? SearchAllText { get; private set; }
 
@@ -342,7 +344,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
     [ObservableProperty]
     public partial string? LinkError { get; private set; }
 
-    /// <summary>"Arquivo: 132 páginas · PDF", to compare with the candidates.</summary>
+    /// <summary>"File: 132 pages · PDF", to compare with the candidates.</summary>
     [ObservableProperty]
     public partial string? FileInfoText { get; private set; }
 

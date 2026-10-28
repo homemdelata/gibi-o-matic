@@ -22,7 +22,7 @@ public sealed record BookReading(string BookId, string File, int Position, int T
 {
     public bool IsRead => ReadAt is not null;
 
-    /// <summary>Started and not finished: shown in "Continuar lendo".</summary>
+    /// <summary>Started and not finished: shown in "Continue reading".</summary>
     public bool IsReading => Started && !IsRead;
 
     /// <summary>From 0 to 1; 0 when the size of the book is not known.</summary>
@@ -111,7 +111,7 @@ public sealed class ReadingStateStore(LibraryIndex index)
             new { bookId, now = Now() }, cancellationToken: ct));
     }
 
-    /// <summary>Forgets that a book was started: it leaves "Continuar lendo" and opens at the first page.</summary>
+    /// <summary>Forgets that a book was started: it leaves "Continue reading" and opens at the first page.</summary>
     public async Task ClearProgressAsync(string bookId, CancellationToken ct = default)
     {
         await using var connection = await index.OpenAsync(ct);
