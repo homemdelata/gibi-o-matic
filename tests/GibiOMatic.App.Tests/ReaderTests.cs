@@ -181,9 +181,11 @@ public sealed class ReaderTests : IDisposable
         await WaitForAsync(() => new[] { 7, 8, 10, 11, 12, 13 }.All(p => reader.Thumbnails[p].HasImage));
         Assert.False(reader.Thumbnails[16].HasImage);
 
-        // Thumbnails of pages far away are rendered when the strip shows them.
-        Assert.Null(reader.Thumbnails[18].Image);
-        await WaitForAsync(() => reader.Thumbnails[18].Image is not null);
+        // Thumbnails of pages far away are rendered when the strip shows them (reading Image asks for
+        // the render, which may finish before the getter returns: HasImage only looks).
+        Assert.False(reader.Thumbnails[18].HasImage);
+        _ = reader.Thumbnails[18].Image;
+        await WaitForAsync(() => reader.Thumbnails[18].HasImage);
         await reader.DisposeAsync();
     }
 
