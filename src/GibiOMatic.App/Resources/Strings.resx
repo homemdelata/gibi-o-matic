@@ -319,6 +319,8 @@
   <data name="Field_Cover" xml:space="preserve"><value>Capa</value></data>
   <data name="Review_CoverFile" xml:space="preserve"><value>capa do arquivo</value></data>
   <data name="Review_CoverSource" xml:space="preserve"><value>capa da fonte (a do cartão escolhido)</value></data>
+  <data name="Review_OneShotYes" xml:space="preserve"><value>sim</value></data>
+  <data name="Review_OneShotNo" xml:space="preserve"><value>não</value></data>
   <data name="Review_DownloadingCover" xml:space="preserve"><value>Baixando a capa da fonte e aplicando…</value></data>
   <data name="Review_Pages" xml:space="preserve"><value>{0} páginas</value></data>
   <data name="Review_FilePages" xml:space="preserve"><value>Arquivo: {0} páginas · {1}</value></data>

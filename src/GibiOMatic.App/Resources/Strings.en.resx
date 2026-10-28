@@ -319,6 +319,8 @@
   <data name="Field_Cover" xml:space="preserve"><value>Cover</value></data>
   <data name="Review_CoverFile" xml:space="preserve"><value>the file's cover</value></data>
   <data name="Review_CoverSource" xml:space="preserve"><value>the source's cover (the one on the chosen card)</value></data>
+  <data name="Review_OneShotYes" xml:space="preserve"><value>yes</value></data>
+  <data name="Review_OneShotNo" xml:space="preserve"><value>no</value></data>
   <data name="Review_DownloadingCover" xml:space="preserve"><value>Downloading the source cover and applying…</value></data>
   <data name="Review_Pages" xml:space="preserve"><value>{0} pages</value></data>
   <data name="Review_FilePages" xml:space="preserve"><value>File: {0} pages · {1}</value></data>

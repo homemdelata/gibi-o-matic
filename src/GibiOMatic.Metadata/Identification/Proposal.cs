@@ -81,7 +81,7 @@ public static class Proposal
 
         if (record.IsOneShot && book.OneShot != true)
         {
-            rows.Add(new FieldChange(ProposalField.OneShot, book.OneShot == false ? "não" : null, "sim", Changed: true, Conflict: false));
+            rows.Add(new FieldChange(ProposalField.OneShot, book.OneShot == false ? "oneshot:no" : null, "oneshot:yes", Changed: true, Conflict: false));
         }
 
         return rows;
@@ -162,7 +162,7 @@ public static class Proposal
 
     /// <summary>
     /// Safe auto-approval (SPEC §8.2 item 3): strong evidence, no good field overwritten by a
-    /// different value, confidence ≥ 0.95, and "Sempre revisar" off.
+    /// different value, confidence ≥ 0.95, and "Always review" off.
     /// </summary>
     public static bool CanAutoApprove(BookMetadata book, IdentificationResult result, MetadataSettings settings, out string reason)
     {
