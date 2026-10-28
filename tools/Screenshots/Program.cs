@@ -32,12 +32,16 @@ internal static class Program
 
     private static readonly string Repository = FindRepository();
 
+    /// <summary>Whether the screens are in English: the fictional library then has English titles too.</summary>
+    internal static bool English { get; private set; }
+
     public static int Main(string[] args)
     {
         var output = Path.GetFullPath(args.Length > 0 ? args[0] : Path.Combine(Repository, "docs", "images"));
         var culture = CultureInfo.GetCultureInfo(args.Length > 1 ? args[1] : "pt-BR");
         CultureInfo.DefaultThreadCurrentCulture = CultureInfo.DefaultThreadCurrentUICulture = culture;
         CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = culture;
+        English = culture.TwoLetterISOLanguageName == "en";
         Directory.CreateDirectory(output);
 
         // The paths show on the screens: a neutral folder, not one under the user's profile.
@@ -115,20 +119,20 @@ internal static class Program
     {
         var settings = services.GetRequiredService<ISettingsService>();
         await settings.LoadAsync();
-        var inbox = Directory.CreateDirectory(Path.Combine(temp, "Entrada")).FullName;
+        var inbox = Directory.CreateDirectory(Path.Combine(temp, "Inbox")).FullName;
         var komga = Directory.CreateDirectory(Path.Combine(temp, "Komga")).FullName;
         await settings.SaveAsync(settings.Current with
         {
             InboxPath = inbox,
             Destinations =
             [
-                new DestinationConfig { Id = "komga", Type = "komga", Name = "Komga de casa", Folder = komga, IncludeUnreviewed = false },
+                new DestinationConfig { Id = "komga", Type = "komga", Name = English ? "Home Komga" : "Komga de casa", Folder = komga, IncludeUnreviewed = false },
             ],
         });
 
         // The library: books arrive through the inbox and are identified like in the app.
         var session = services.GetRequiredService<LibrarySession>();
-        await session.CreateAsync(Path.Combine(temp, "Arquivo"));
+        await session.CreateAsync(Path.Combine(temp, "Library"));
         var downloads = Path.Combine(temp, "Downloads");
         var files = FictionalBooks.All.Select(b => b.Write(downloads)).ToList();
         await session.Queue!.AddAsync(files);
@@ -139,12 +143,12 @@ internal static class Program
         await session.Identification!.WaitUntilIdleAsync();
 
         // What waits in the inbox: a new book, a better format of one in the library, a file already there.
-        var arriving = Path.Combine(temp, "Novos");
+        var arriving = Path.Combine(temp, "New");
         await session.Queue.AddAsync(
         [
             FictionalBooks.Arriving.Write(arriving),
             FictionalBooks.All[0].Write(arriving, "pdf"),
-            File.Exists(files[3]) ? Copy(files[3], Path.Combine(arriving, "noite_de_neon_v1.cbz")) : files[3],
+            File.Exists(files[3]) ? Copy(files[3], Path.Combine(arriving, Path.GetFileNameWithoutExtension(files[3]) + "_v1.cbz")) : files[3],
         ]);
         await session.Queue.WaitUntilIdleAsync();
 
@@ -178,7 +182,7 @@ internal static class Program
         await ShotAsync(NavPage.Library, "biblioteca-claro", theme: ThemeVariant.Light);
         await ShotAsync(NavPage.Inbox, "entrada");
         await ShotAsync(NavPage.Review, "revisao");
-        var editing = (await session.Index!.GetBooksAsync()).First(b => b.Metadata.Title.StartsWith("Capitã Cometa", StringComparison.Ordinal));
+        var editing = (await session.Index!.GetBooksAsync()).First(b => b.Metadata.Title.StartsWith(FictionalBooks.All[0].Series!, StringComparison.Ordinal));
         await ShotAsync(NavPage.Editor, "editor", [editing.Metadata.Id]);
         await ShotAsync(NavPage.Destinations, "destinos");
         window.Close();
@@ -278,7 +282,7 @@ internal sealed record FictionalBook(
         Add("Penciller", Artist);
         Add("Publisher", Publisher);
         Add("Format", Format);
-        Add("LanguageISO", "pt");
+        Add("LanguageISO", Program.English ? "en" : "pt");
         return sb.Append("</ComicInfo>\n").ToString();
     }
 
@@ -353,7 +357,12 @@ internal static class FictionalBooks
 {
     private static readonly SKColor Navy = new(0x1B, 0x26, 0x4F);
 
-    public static readonly IReadOnlyList<FictionalBook> All =
+    /// <summary>The library in the language of the screens; both lists hold the same books in the same order.</summary>
+    public static IReadOnlyList<FictionalBook> All => Program.English ? English : Portuguese;
+
+    public static FictionalBook Arriving => Program.English ? EnglishArriving : PortugueseArriving;
+
+    private static readonly IReadOnlyList<FictionalBook> Portuguese =
     [
         new("capita_cometa_v1.cbz", "Capitã Cometa", "1", "Capitã Cometa, Vol. 1: Órbita Baixa", 2019, "Ana Ribeiro", "Tomás Okafor", "Estrela Press",
             "CAPITÃ\nCOMETA", "VOL. 1 · ÓRBITA BAIXA", new SKColor(0xE6, 0x39, 0x46), Navy),
@@ -378,9 +387,37 @@ internal static class FictionalBooks
             "OS ÚLTIMOS\nFARÓIS", "VOL. 3", new SKColor(0x45, 0x7B, 0x9D), new SKColor(0xF1, 0xFA, 0xEE), null),
     ];
 
-    public static readonly FictionalBook Arriving =
+    private static readonly FictionalBook PortugueseArriving =
         new("rota_66_graus_v1.cbz", "Rota 66 Graus", "1", "Rota 66 Graus, Vol. 1", 2024, "Paula Freitas", "Ivo Prado", "Selo Rabisco",
             "ROTA 66\nGRAUS", "VOL. 1", new SKColor(0xFF, 0xB7, 0x03), new SKColor(0x02, 0x30, 0x47));
+
+    private static readonly IReadOnlyList<FictionalBook> English =
+    [
+        new("captain_comet_v1.cbz", "Captain Comet", "1", "Captain Comet, Vol. 1: Low Orbit", 2019, "Ana Ribeiro", "Tomás Okafor", "Star Press",
+            "CAPTAIN\nCOMET", "VOL. 1 · LOW ORBIT", new SKColor(0xE6, 0x39, 0x46), Navy),
+        new("captain_comet_v2.cbz", "Captain Comet", "2", "Captain Comet, Vol. 2: Fire Tail", 2020, "Ana Ribeiro", "Tomás Okafor", "Star Press",
+            "CAPTAIN\nCOMET", "VOL. 2 · FIRE TAIL", new SKColor(0xF4, 0xA2, 0x61), Navy),
+        new("captain_comet_v3.cbz", "Captain Comet", "3", "Captain Comet, Vol. 3: Eclipse", 2021, "Ana Ribeiro", "Tomás Okafor", "Star Press",
+            "CAPTAIN\nCOMET", "VOL. 3 · ECLIPSE", new SKColor(0x2A, 0x9D, 0x8F), Navy),
+        new("neon_night.cbz", "Neon Night", "1", "Neon Night, Vol. 1", 2022, "Lia Matsuda", "Lia Matsuda", "High Tide Comics",
+            "NEON\nNIGHT", "VOL. 1", new SKColor(0x7B, 0x2C, 0xBF), new SKColor(0x10, 0xE0, 0xD0)),
+        new("last_lighthouses_v1.cbz", "The Last Lighthouses", "1", "The Last Lighthouses, Vol. 1", 2018, "Bruno Carvalho", "Ines Duarte", "High Tide Comics",
+            "THE LAST\nLIGHTHOUSES", "VOL. 1", new SKColor(0x26, 0x46, 0x53), new SKColor(0xE9, 0xC4, 0x6A)),
+        new("last_lighthouses_v2.cbz", "The Last Lighthouses", "2", "The Last Lighthouses, Vol. 2", 2019, "Bruno Carvalho", "Ines Duarte", "High Tide Comics",
+            "THE LAST\nLIGHTHOUSES", "VOL. 2", new SKColor(0x1D, 0x35, 0x57), new SKColor(0xF1, 0xFA, 0xEE)),
+        new("boogeyman_inc.cbz", "Boogeyman Inc.", "1", "Boogeyman Inc.", 2023, "Rafa Monteiro", "Duda Lima", "Scribble Books",
+            "BOOGEYMAN\nINC.", "A COMPLETE STORY", new SKColor(0x6A, 0x99, 0x4E), new SKColor(0x1A, 0x1A, 0x1A), "One-Shot"),
+        new("iron_garden_v1.cbz", "The Iron Garden", "1", "The Iron Garden, Vol. 1", 2020, "Carla Nunes", "Kenji Arai", "Star Press",
+            "THE IRON\nGARDEN", "VOL. 1", new SKColor(0x58, 0x58, 0x5A), new SKColor(0xF7, 0x7F, 0x00)),
+        new("the_art_of_captain_comet.cbz", null, null, "The Art of Captain Comet", 2022, "Tomás Okafor", "Tomás Okafor", "Star Press",
+            "THE ART OF\nCAPTAIN COMET", "SKETCHES AND COVERS", new SKColor(0xF1, 0xFA, 0xEE), new SKColor(0xE6, 0x39, 0x46), "Artbook"),
+        new("last_lighthouses_v03_digital.cbz", null, null, null, null, null, null, null,
+            "THE LAST\nLIGHTHOUSES", "VOL. 3", new SKColor(0x45, 0x7B, 0x9D), new SKColor(0xF1, 0xFA, 0xEE), null),
+    ];
+
+    private static readonly FictionalBook EnglishArriving =
+        new("heat_wave_v1.cbz", "Heat Wave", "1", "Heat Wave, Vol. 1", 2024, "Paula Freitas", "Ivo Prado", "Scribble Books",
+            "HEAT\nWAVE", "VOL. 1", new SKColor(0xFF, 0xB7, 0x03), new SKColor(0x02, 0x30, 0x47));
 }
 
 /// <summary>Answers like ComicVine would, from the made-up books: safe matches for most, one uncertain.</summary>
@@ -388,9 +425,11 @@ internal sealed class FictionalIdentifier : IBookIdentifier
 {
     public Task<IdentificationResult> IdentifyAsync(BookMetadata book, MetadataSettings settings, string? searchText, CancellationToken ct)
     {
-        IReadOnlyList<MetadataCandidate> candidates = book.Title.Contains("farois v03", StringComparison.OrdinalIgnoreCase)
-            ? [Candidate("Os Últimos Faróis, Vol. 3", "Os Últimos Faróis", "3", 2021, "Bruno Carvalho", "Ines Duarte", 0.78, MatchReason.Title, MatchReason.Number),
-               Candidate("Os Últimos Faróis, Vol. 2", "Os Últimos Faróis", "2", 2019, "Bruno Carvalho", "Ines Duarte", 0.41, MatchReason.Title)]
+        // The book downloaded with no metadata is titled after its file ("... v03 digital").
+        var series = FictionalBooks.All[4].Series!;
+        IReadOnlyList<MetadataCandidate> candidates = book.Title.Contains("v03 digital", StringComparison.OrdinalIgnoreCase)
+            ? [Candidate($"{series}, Vol. 3", series, "3", 2021, "Bruno Carvalho", "Ines Duarte", 0.78, MatchReason.Title, MatchReason.Number),
+               Candidate($"{series}, Vol. 2", series, "2", 2019, "Bruno Carvalho", "Ines Duarte", 0.41, MatchReason.Title)]
             : [Same(book)];
         return Task.FromResult(new IdentificationResult(BookQuery.From(book, searchText), candidates, []));
     }
@@ -411,7 +450,7 @@ internal sealed class FictionalIdentifier : IBookIdentifier
         Date = book.Date,
         Publisher = book.Publisher,
         Credits = book.Credits,
-        Summary = "Uma história inventada para as capturas de tela do Gibi-o-matic.",
+        Summary = Program.English ? "A made-up story for the Gibi-o-matic screenshots." : "Uma história inventada para as capturas de tela do Gibi-o-matic.",
         ComicVineId = "4000-1",
     }, 0.99, [MatchReason.Isbn, MatchReason.SecondSource, MatchReason.Title, MatchReason.Number]);
 
@@ -424,9 +463,9 @@ internal sealed class FictionalIdentifier : IBookIdentifier
         Number = number,
         Kind = BookKind.Tpb,
         Date = new PartialDate(year, 3, null),
-        Publisher = "Maré Alta Comics",
+        Publisher = FictionalBooks.All[4].Publisher,
         Credits = [new Credit(CreditRole.Writer, writer), new Credit(CreditRole.Artist, artist)],
-        Summary = "O farol da ilha apaga, e só a guardiã sabe por quê.",
+        Summary = Program.English ? "The island's lighthouse goes dark, and only its keeper knows why." : "O farol da ilha apaga, e só a guardiã sabe por quê.",
         ComicVineId = "4000-3",
     }, confidence, reasons);
 }
