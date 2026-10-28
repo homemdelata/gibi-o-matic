@@ -1,0 +1,31 @@
+name: Feature request
+description: Suggest an idea or a change to the app.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea! English or Portuguese, both are fine.
+        If you'd like to implement it yourself, please wait for a go-ahead here before writing code (see CONTRIBUTING.md).
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would it solve?
+      description: Describe what you're trying to do and what gets in the way today.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would you like to happen?
+      description: How you imagine it working. Mockups or screenshots of other apps are welcome.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contributing
+      options:
+        - label: I'd like to implement this myself.

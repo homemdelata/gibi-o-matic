@@ -1,0 +1,20 @@
+version: 2
+updates:
+  # Package versions live in Directory.Packages.props (central package management).
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    groups:
+      avalonia:
+        patterns: ["Avalonia*"]
+      microsoft:
+        patterns: ["Microsoft.*", "System.*"]
+      testing:
+        patterns: ["xunit*", "Microsoft.Testing.*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

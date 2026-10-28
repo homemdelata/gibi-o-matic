@@ -1,0 +1,75 @@
+name: Bug report
+description: Something doesn't work as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this! English or Portuguese, both are fine.
+        **Security problems** go through private reporting instead (see SECURITY.md).
+        Please **never attach comic files**, not even to reproduce a bug: describe the file instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Import a CBZ with ...
+        2. Open the Review and ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: file
+    attributes:
+      label: About the file (if a book is involved)
+      description: Format (PDF, CBZ, CBR, EPUB), number of pages, size, where it came from (e.g. Humble Bundle), anything unusual about it.
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Shown in Settings → General.
+      placeholder: 0.6.0
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows 11
+        - Windows 10
+        - Linux (AppImage)
+        - Linux (built from source)
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - Import / Inbox
+        - Library
+        - Metadata / Review
+        - Editor
+        - Reader
+        - Komga destination
+        - Kindle destination
+        - Settings
+        - Installer / updates
+        - Other
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: |
+        The relevant part of the log, from `%LOCALAPPDATA%\GibiOMatic\logs` (Linux: `~/.local/share/gibiomatic/logs`).
+        Please remove anything personal (folder names, titles you'd rather not share) before pasting.
+      render: text
