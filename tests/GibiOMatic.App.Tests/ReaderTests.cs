@@ -188,6 +188,21 @@ public sealed class ReaderTests : IDisposable
     }
 
     [Fact]
+    public async Task Pages_rendered_ahead_before_the_sizes_are_read_are_sharp()
+    {
+        await Session.CreateAsync(_app.Folder("Arquivo"), Ct);
+        var reader = Reader(SyntheticBooks.Cbz(Downloads("saga.cbz"), pages: 20), BookFormat.Cbz);
+        await reader.LoadAsync(Ct);
+
+        // Page 2 is rendered ahead right away, while the real page sizes are still being read.
+        reader.NextCommand.Execute(null);
+        await WaitForAsync(() => reader.LeftImage is FakeImage { Center: var c } && SyntheticImages.Near(SyntheticBooks.PageColor, c));
+
+        Assert.Equal(300, reader.LeftImage!.Size.Height);
+        await reader.DisposeAsync();
+    }
+
+    [Fact]
     public async Task A_pdf_opens_with_its_pages_rendered()
     {
         await Session.CreateAsync(_app.Folder("Arquivo"), Ct);

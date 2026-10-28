@@ -507,10 +507,12 @@ public sealed partial class ReaderViewModel : ViewModelBase, IAsyncDisposable
     private int TargetHeight(int page)
     {
         var needed = NeededHeight > 0 ? NeededHeight : DefaultRenderHeight;
-        // An image is never rendered above its own size (a PDF page can be, for zooming in).
-        return _request.Format == BookFormat.Pdf
+        // An image is never rendered above its own size (a PDF page can be, for zooming in). Until the
+        // real sizes are read, a page's size is only a shape (2 × 3): no limit, or it renders 3 pixels tall.
+        var size = _sizes[page];
+        return _request.Format == BookFormat.Pdf || size == PageSize.Portrait
             ? needed
-            : Math.Min(needed, _sizes[page].Height);
+            : Math.Min(needed, size.Height);
     }
 
     private async Task ShowSpreadAsync()
