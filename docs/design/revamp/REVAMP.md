@@ -1,53 +1,53 @@
-# Revamp visual "Aranhaverso sutil"
+# "Subtle Spider-Verse" visual revamp
 
-Especificação para levar ao app o visual escolhido pelo usuário em 24/10/2026 (opção **B2** do canvas de revamp, com o ícone **3a**).
-Esta pasta tem as referências:
+Specification for bringing to the app the look the user chose on 2026-10-24 (option **B2** of the revamp canvas, with icon **3a**).
+This folder holds the references:
 
-| Arquivo | O que é |
+| File | What it is |
 |---|---|
-| `icone.svg` | Ícone novo. **Fonte da verdade** do desenho; abra no navegador. |
-| `Biblioteca.dc.html` | Tela da Biblioteca no visual novo. É referência visual, não código para reaproveitar: leia o markup (cores, medidas, ordem dos elementos). Aberto direto no navegador, pode não renderizar por inteiro, porque depende do runtime do Claude Design. |
+| `icon.svg` | The new icon. **Source of truth** for the drawing; open it in a browser. |
+| `Library.dc.html` | The Library screen in the new look. It is a visual reference, not code to reuse: read the markup (colors, sizes, order of elements). Opened straight in the browser, it may not render completely, because it depends on the Claude Design runtime. |
 
-Só a Biblioteca foi desenhada. As outras telas seguem as mesmas regras, sem mudar o layout que já têm.
+Only the Library was designed. The other screens follow the same rules, without changing the layout they already have.
 
-## Ideia
-O de antes era "gibi impresso no escuro"; agora é **"gibi impresso no escuro, com falha de registro"**.
-- O fundo é azul-noite, não mais cinza.
-- O amarelo-limão é o único destaque de ação.
-- O ciano e o magenta do ícone aparecem **só como deslocamento de impressão em coisas selecionadas** e em poucos enfeites.
-- O resto é sóbrio: nada inclinado, nada em itálico, títulos sem efeito.
+## Idea
+Before it was "a comic printed in the dark"; now it is **"a comic printed in the dark, with misregistration"**.
+- The background is night blue, no longer gray.
+- Lemon yellow is the only accent for actions.
+- The icon's cyan and magenta appear **only as a print offset on selected things** and in a few ornaments.
+- Everything else is sober: nothing slanted, nothing in italics, titles without effects.
 
-## 1. Ícone
-O ícone é um balão de fala em forma de G, amarelo, com falha de registro, sobre um quadrado azul-noite com retícula azul. A geometria e as cores estão em `icone.svg` (viewBox 64).
+## 1. Icon
+The icon is a speech balloon shaped like a G, yellow, with misregistration, on a night-blue square with a blue halftone. The geometry and colors are in `icon.svg` (viewBox 64).
 
-**Reescreva o `tools/IconGen`** para desenhar esse ícone com SkiaSharp. Ele hoje desenha o quadrado amarelo com o traço.
-- Desenhe, em ordem:
-  1. o quadrado `#0B1630` com raio 14/64;
-  2. a retícula `#1D7FC0`: grade de 3 unidades girada 30°, pontos de raio 0,85, com opacidade que some do canto superior direito até 65% da diagonal;
-  3. os "fantasmas" do G em `#19E3FF` (x −2,4) e `#FF2D87` (x +2,4), com `SKBlendMode.Screen`;
-  4. o G amarelo `#FFF27A` em 4 fatias horizontais: y 0–21 desloca 0; 21–28 desloca −3,5; 28–37 desloca +3; 37–64 desloca 0;
-  5. as barrinhas: magenta `x41 y23,5 13×2` e ciano `x7 y34 9×1,6`.
-- **Tamanhos pequenos precisam de simplificação.** Ainda assim, confira cada um:
+**Rewrite `tools/IconGen`** to draw this icon with SkiaSharp. Today it draws the yellow square with the stroke.
+- Draw, in order:
+  1. the `#0B1630` square with radius 14/64;
+  2. the `#1D7FC0` halftone: a 3-unit grid rotated 30°, dots of radius 0.85, with an opacity that fades from the top-right corner to 65% of the diagonal;
+  3. the G's "ghosts" in `#19E3FF` (x −2.4) and `#FF2D87` (x +2.4), with `SKBlendMode.Screen`;
+  4. the yellow `#FFF27A` G in 4 horizontal slices: y 0–21 offset 0; 21–28 offset −3.5; 28–37 offset +3; 37–64 offset 0;
+  5. the little bars: magenta `x41 y23.5 13×2` and cyan `x7 y34 9×1.6`.
+- **Small sizes need simplification.** Even so, check each one:
 
-  | Tamanho | Retícula | Fatias | Barrinhas | Fantasmas |
+  | Size | Halftone | Slices | Bars | Ghosts |
   |---|---|---|---|---|
-  | ≤ 24 px | não | não (G inteiro) | não | sim, com deslocamento de pelo menos 1 px |
-  | 32 px | sim | sim | não | sim |
-  | ≥ 48 px | sim | sim | sim | sim |
+  | ≤ 24 px | no | no (whole G) | no | yes, offset by at least 1 px |
+  | 32 px | yes | yes | no | yes |
+  | ≥ 48 px | yes | yes | yes | yes |
 
-- **Saídas:**
-  - `src/GibiOMatic.App/Assets/gibiomatic.ico` (16–256 px, como hoje);
-  - um PNG de 256 px para o logo da barra lateral, em `Assets/logo.png`, por exemplo.
-- **Barra lateral (`ShellView.axaml`):** troque o `Border` amarelo com o `StrokeIcon` (`Icon.Logo`) por uma `Image` de 40×40 com esse PNG, em interpolação de alta qualidade. Remova `Icon.Logo` se ficar sem uso.
-- O tray, o `.exe` e os instaladores Velopack já usam o `.ico`. Confira o tray em 16 px.
+- **Outputs:**
+  - `src/GibiOMatic.App/Assets/gibiomatic.ico` (16–256 px, as today);
+  - a 256 px PNG for the sidebar logo, for example in `Assets/logo.png`.
+- **Sidebar (`ShellView.axaml`):** replace the yellow `Border` with the `StrokeIcon` (`Icon.Logo`) by a 40×40 `Image` with that PNG, with high-quality interpolation. Remove `Icon.Logo` if it ends up unused.
+- The tray, the `.exe` and the Velopack installers already use the `.ico`. Check the tray at 16 px.
 
 ## 2. Tokens (`Themes/Tokens.axaml`)
 
-### Tema escuro (padrão)
-| Token | Novo valor | Antes |
+### Dark theme (default)
+| Token | New value | Before |
 |---|---|---|
 | `Bg` | `#060B1C` | `#121317` |
-| `Surface` (menu lateral, painel de detalhes) | `#0B1630` | `#17181D` |
+| `Surface` (side menu, details panel) | `#0B1630` | `#17181D` |
 | `Card` | `#0F1D3D` | `#1A1B21` |
 | `Input` | `#0B1630` | `#1D1F25` |
 | `Hover` | `#13244D` | `#262931` |
@@ -60,143 +60,143 @@ O ícone é um balão de fala em forma de G, amarelo, com falha de registro, sob
 | `Accent` / `AccentText` | `#FFF27A` | `#F5C542` |
 | `AccentHover` / `AccentTextHover` | `#FFF7A8` | |
 | `OnAccent` | `#0B1630` | |
-| `Ok` / `OkText` | `#19E3FF` (o ciano do ícone) | verde |
-| `Warn` / `WarnText` | `#FFA45C` / `#FFB074` (continua laranja) | |
-| `Bad` | `#FF2D87`; texto `#FF6FB0` (crie `BadText` se precisar) | |
-| **novo** `GlitchCyan` | `#19E3FF` | |
-| **novo** `GlitchMagenta` | `#FF2D87` | |
-| **novo** `HalftoneDot` | `#1D7FC0` | |
+| `Ok` / `OkText` | `#19E3FF` (the icon's cyan) | green |
+| `Warn` / `WarnText` | `#FFA45C` / `#FFB074` (still orange) | |
+| `Bad` | `#FF2D87`; text `#FF6FB0` (create `BadText` if needed) | |
+| **new** `GlitchCyan` | `#19E3FF` | |
+| **new** `GlitchMagenta` | `#FF2D87` | |
+| **new** `HalftoneDot` | `#1D7FC0` | |
 
-No mockup, o selo REVISAR aparece amarelo. **Não siga isso:** "Revisar" continua `Warn` (laranja), para o amarelo continuar significando ação e seleção.
+In the mockup, the REVIEW badge is yellow. **Don't follow that:** "Review" stays `Warn` (orange), so that yellow keeps meaning action and selection.
 
-### Tema claro: papel creme (decisão do usuário)
-O tema claro é papel de gibi creme, com tinta azul-noite.
-| Grupo | Valores |
+### Light theme: cream paper (user decision)
+The light theme is cream comic paper, with night-blue ink.
+| Group | Values |
 |---|---|
-| Superfícies | `Bg #F4EEDD` (o creme), `Surface #FBF6E9`, `Card #FFFBF0`, `Input #FFFBF0`, `Hover #EAE2CB` |
-| Bordas | `Border #D9CFB4`, `BorderStrong #B9AD8E` |
-| Texto (tinta azul-noite) | `Text #0B1630`, `TextSecondary #26314F`, `TextMuted #4A5470`, `TextFaint #5A6380` |
-| Destaque | `Accent #FFF27A`, o mesmo limão do ícone; `OnAccent #0B1630`; `AccentText #145E92`, azul, porque o amarelo não tem contraste como texto no creme |
-| **novo** `AccentBorder` | `#0B1630`: borda de 1,5 px dos botões primários e dos chips marcados, para o limão não sumir no creme. No tema escuro, `Transparent`. |
+| Surfaces | `Bg #F4EEDD` (the cream), `Surface #FBF6E9`, `Card #FFFBF0`, `Input #FFFBF0`, `Hover #EAE2CB` |
+| Borders | `Border #D9CFB4`, `BorderStrong #B9AD8E` |
+| Text (night-blue ink) | `Text #0B1630`, `TextSecondary #26314F`, `TextMuted #4A5470`, `TextFaint #5A6380` |
+| Accent | `Accent #FFF27A`, the icon's same lemon; `OnAccent #0B1630`; `AccentText #145E92`, blue, because the yellow has no contrast as text on cream |
+| **new** `AccentBorder` | `#0B1630`: a 1.5 px border on primary buttons and checked chips, so the lemon doesn't vanish on cream. In the dark theme, `Transparent`. |
 | Glitch | `GlitchCyan #0FB5D6`, `GlitchMagenta #E0186E`, `HalftoneDot #1D7FC0` |
-| Status | `Ok #0FB5D6` com `OkText #0B6E8A`; `Warn` e `WarnText` atuais; `Bad #C2185B` |
+| Status | `Ok #0FB5D6` with `OkText #0B6E8A`; the current `Warn` and `WarnText`; `Bad #C2185B` |
 
-### Regras para os tokens
-- Os dois temas precisam ter **as mesmas chaves**. Os testes de contraste (AA nos dois temas) e o de chaves iguais, em `GibiOMatic.App.Tests`, precisam continuar verdes. Ajuste algum tom se um par falhar, e diga qual.
-- Crie também, por tema, os `BoxShadows` da seleção (seção 4) como recursos, para usar com `DynamicResource`.
+### Rules for the tokens
+- Both themes need **the same keys**. The contrast tests (AA in both themes) and the same-keys test, in `GibiOMatic.App.Tests`, must stay green. Adjust a shade if a pair fails, and say which.
+- Also create, per theme, the selection `BoxShadows` (section 4) as resources, to use with `DynamicResource`.
 
-### Forma
-| Recurso | Valor |
+### Shape
+| Resource | Value |
 |---|---|
-| `RadiusControl` e `RadiusField` | 6 |
+| `RadiusControl` and `RadiusField` | 6 |
 | `RadiusCard` | 8 |
 | `RadiusCardLarge` | 10 |
 | `RadiusCover` | 4 |
-| Selos | 4 |
-| Chips | pílula de 99, como hoje |
-| Bordas de controles e cartões | 1,5 px |
+| Badges | 4 |
+| Chips | a 99 pill, as today |
+| Borders of controls and cards | 1.5 px |
 
-## 3. Tipografia
-- **Títulos e números grandes: Anybody** (Google Fonts, OFL), pesos 700 e 800, **sempre em pé**. Ela substitui a Bricolage Grotesque.
-  - Use **TTFs estáticos** (pasta `static/` do pacote do Google Fonts), conforme a decisão "Fontes estáticas, não variáveis".
-  - Acrescente `OFL-Anybody.txt` e registre em `docs/THIRD-PARTY.md`.
-  - Se a Bricolage ficar sem uso, remova os arquivos e a entrada.
-- O texto continua em IBM Plex Sans; caminhos e números pequenos continuam em IBM Plex Mono.
+## 3. Typography
+- **Titles and large numbers: Anybody** (Google Fonts, OFL), weights 700 and 800, **always upright**. It replaces Bricolage Grotesque.
+  - Use **static TTFs** (the `static/` folder of the Google Fonts package), following the "Static fonts, not variable" decision.
+  - Add `OFL-Anybody.txt` and record it in `docs/THIRD-PARTY.md`.
+  - If Bricolage ends up unused, remove its files and entry.
+- Text stays in IBM Plex Sans; paths and small numbers stay in IBM Plex Mono.
 
-| Papel | Estilo |
+| Role | Style |
 |---|---|
-| Título de página | Anybody 800, 38 px, letter-spacing −0,015em, **sem sombra nem deslocamento** |
-| Enfeite do título | Logo à direita do título, duas barrinhas empilhadas: magenta 30×4 e ciano 16×3, recuada 8 px. Use `GlitchMagenta` e `GlitchCyan`. |
-| Título de seção ou cartão | Anybody 800, 20–24 px |
-| Números dos cartões de resumo | Anybody 800, 36 px |
-| Rótulo de seção | Plex Sans 600, 12 px, maiúsculas, letter-spacing 0,1em, `TextMuted` |
-| Nome do app no menu | Anybody 800, 21 px |
+| Page title | Anybody 800, 38 px, letter-spacing −0.015em, **no shadow or offset** |
+| Title ornament | Right after the title, two stacked little bars: magenta 30×4 and cyan 16×3, indented 8 px. Use `GlitchMagenta` and `GlitchCyan`. |
+| Section or card title | Anybody 800, 20–24 px |
+| Summary card numbers | Anybody 800, 36 px |
+| Section label | Plex Sans 600, 12 px, uppercase, letter-spacing 0.1em, `TextMuted` |
+| App name in the menu | Anybody 800, 21 px |
 
-## 4. Seleção com deslocamento (a marca do visual)
-Tudo que está **selecionado, atual ou marcado** ganha amarelo e um filete ciano à esquerda e outro magenta à direita, como a falha de registro do ícone.
-**Nada mais usa esse efeito.** Ficam de fora o hover, o foco, os botões primários e os títulos.
+## 4. Offset selection (the look's signature)
+Everything **selected, current or checked** gets yellow plus a cyan sliver on the left and a magenta one on the right, like the icon's misregistration.
+**Nothing else uses this effect.** Hover, focus, primary buttons and titles are left out.
 
-| Elemento | Como fica |
+| Element | How it looks |
 |---|---|
-| Capa selecionada (`cover-card` selecionado e capa do painel de detalhes) | `BoxShadow`: `0 0 0 3 Accent, -6 0 0 3 GlitchCyan, 6 0 0 3 GlitchMagenta` |
-| Item ativo do menu | Fundo `Accent`, texto `OnAccent` peso 700, ícone `OnAccent`. Sombras `-3 0 0 0 GlitchCyan, 3 0 0 0 GlitchMagenta`. Margem lateral de 4 px para não cortar. |
-| Chip marcado e segmento selecionado | Fundo `Accent` com sombras `-2 0 0 0` / `2 0 0 0` |
-| Outros estados de seleção (`queue-item.selected`, `candidate.selected`, `thumb.current`, `toc.current`, `tool.on`…) | A mesma regra, proporcional ao tamanho: filetes de 2–3 px nos controles, 6 px nas capas |
+| Selected cover (selected `cover-card` and the details panel cover) | `BoxShadow`: `0 0 0 3 Accent, -6 0 0 3 GlitchCyan, 6 0 0 3 GlitchMagenta` |
+| Active menu item | `Accent` background, `OnAccent` text at weight 700, `OnAccent` icon. Shadows `-3 0 0 0 GlitchCyan, 3 0 0 0 GlitchMagenta`. 4 px side margin so they aren't clipped. |
+| Checked chip and selected segment | `Accent` background with `-2 0 0 0` / `2 0 0 0` shadows |
+| Other selection states (`queue-item.selected`, `candidate.selected`, `thumb.current`, `toc.current`, `tool.on`…) | The same rule, proportional to the size: 2–3 px slivers on controls, 6 px on covers |
 
-- O foco do teclado continua sendo o contorno `AccentText` de sempre. Não pode depender do deslocamento.
-- **Capas não selecionadas:** sombra dura `5 5 0 0 #8C000000` no lugar da sombra difusa. No tema claro, use uma sombra dura mais clara.
+- Keyboard focus stays the usual `AccentText` outline. It must not depend on the offset.
+- **Unselected covers:** a hard `5 5 0 0 #8C000000` shadow instead of the soft one. In the light theme, use a lighter hard shadow.
 
-## 5. Séries e universos na Biblioteca (pilha de capas)
-Hoje o cartão de série é uma capa com um cartão cinza genérico atrás. Passa a ser **uma pilha com as capas dos próximos volumes**:
-- **Camadas de trás.**
-  - Com 2 livros, há 1 camada atrás; com 3 ou mais, 2.
-  - Deslocamentos: (6, −6) para a 1ª camada e (12, −12) para a 2ª.
-  - Cada camada mostra a miniatura do volume (ou a cor de placeholder com retícula), escurecida: uma sobreposição preta de ~15% na 1ª e ~30% na 2ª.
-  - As camadas têm raio `RadiusCover` e borda de 1,5 px na cor `Bg`, para separar uma da outra.
-- **Alinhamento:** **todo** cartão da grade, avulso ou série, reserva 12 px no topo e à direita, para as capas ficarem alinhadas.
-- **Selo de quantidade:** canto inferior esquerdo da capa da frente, 28 px de altura, fundo `Accent`, raio 6, ícone de pilha mais o número em Plex Mono 700 14 px, sombra suave. Mantenha o `ToolTip` e o `AutomationProperties.Name` que já existem ("3 livros na série").
-- **Linha de baixo:** "Série · 3 livros · Editora". Os textos vão em `Strings.resx` (pt-BR) e `Strings.en.resx`.
+## 5. Series and universes in the Library (cover stack)
+Today the series card is a cover with a generic gray card behind it. It becomes **a stack with the covers of the next volumes**:
+- **Back layers.**
+  - With 2 books, there is 1 layer behind; with 3 or more, 2.
+  - Offsets: (6, −6) for the 1st layer and (12, −12) for the 2nd.
+  - Each layer shows the volume's thumbnail (or the placeholder color with halftone), darkened: a black overlay of ~15% on the 1st and ~30% on the 2nd.
+  - The layers have radius `RadiusCover` and a 1.5 px border in the `Bg` color, to set them apart.
+- **Alignment:** **every** grid card, single book or series, reserves 12 px at the top and on the right, so the covers line up.
+- **Count badge:** bottom-left corner of the front cover, 28 px tall, `Accent` background, radius 6, a stack icon plus the number in Plex Mono 700 14 px, soft shadow. Keep the existing `ToolTip` and `AutomationProperties.Name` ("3 books in the series").
+- **Bottom line:** "Series · 3 books · Publisher". The texts go in `Strings.resx` (pt-BR) and `Strings.en.resx`.
 - **ViewModel:**
-  - `SeriesCardViewModel`, e o equivalente de universo, ganham até 2 capas de trás, dos volumes seguintes na ordem de leitura.
-  - Reaproveite o `CoverViewModel` (miniatura ou cor de placeholder).
-  - Escreva testes de unidade da escolha das capas: 1 livro, 2 livros, 3 ou mais, e volumes sem número.
-- O cartão de universo usa a mesma pilha.
+  - `SeriesCardViewModel`, and the universe equivalent, get up to 2 back covers, from the next volumes in reading order.
+  - Reuse `CoverViewModel` (thumbnail or placeholder color).
+  - Write unit tests for the choice of covers: 1 book, 2 books, 3 or more, and unnumbered volumes.
+- The universe card uses the same stack.
 
-## 6. Componentes (`Themes/Controls.axaml` e telas)
+## 6. Components (`Themes/Controls.axaml` and screens)
 
-### Menu e cartões
-- **Menu lateral:**
-  - fundo `Surface`;
-  - itens com 44 px de altura e raio 6;
-  - contador de Entrada numa pílula `Ok` (ciano) e de Revisão numa pílula `Bad` em tom de texto (`#FF6FB0`), as duas com texto `OnAccent`;
-  - o quadro de status embaixo fica com fundo `Bg`, borda 1,5 `Border` e raio 8.
-- **Cartões de resumo:** fundo `Card`, borda 1,5 `Border`, raio 8, sem sombra. "Precisa revisão" leva uma borda superior de 3 px em `GlitchMagenta` e o texto "prioridade" em `BadText`.
+### Menu and cards
+- **Side menu:**
+  - `Surface` background;
+  - items 44 px tall with radius 6;
+  - the Inbox counter in an `Ok` (cyan) pill and the Review counter in a `Bad` pill in a text shade (`#FF6FB0`), both with `OnAccent` text;
+  - the status box at the bottom gets a `Bg` background, a 1.5 `Border` border and radius 8.
+- **Summary cards:** `Card` background, 1.5 `Border` border, radius 8, no shadow. "Needs review" gets a 3 px top border in `GlitchMagenta` and the "priority" text in `BadText`.
 
-### Botões e campos
-| Controle | Visual |
+### Buttons and fields
+| Control | Look |
 |---|---|
-| Primário | Fundo `Accent`, texto `OnAccent` 700, raio 6, borda 1,5 `AccentBorder`, **sem sombra** |
-| Secundário | Fundo `Input`, borda 1,5 `BorderStrong`, raio 6 |
-| Busca e campos | Fundo `Input`, borda 1,5 `BorderStrong`, raio 6, ícone de lupa em `TextMuted` |
-| Chips inativos | Fundo `Surface`, borda 1,5 `BorderStrong`, contador em mono `TextMuted` |
+| Primary | `Accent` background, `OnAccent` 700 text, radius 6, 1.5 `AccentBorder` border, **no shadow** |
+| Secondary | `Input` background, 1.5 `BorderStrong` border, radius 6 |
+| Search and fields | `Input` background, 1.5 `BorderStrong` border, radius 6, magnifier icon in `TextMuted` |
+| Inactive chips | `Surface` background, 1.5 `BorderStrong` border, counter in mono `TextMuted` |
 
-### Selos e painel de detalhes
-- **Selos das capas:** fundo na cor do status, texto `OnAccent`, Plex Mono 600 10,5 px, raio 4. OK = `Ok` (ciano), RUIM = `Bad`, REVISAR = `Warn`.
-- **Painel de detalhes:**
-  - fundo `Surface`;
-  - checks dos campos em `Ok` (ciano), com traço de 2,4;
-  - linha do arquivo como cartão com fundo `Card` e raio 8;
-  - etiqueta de formato (CBZ) com fundo `Border`.
+### Badges and details panel
+- **Cover badges:** background in the status color, `OnAccent` text, Plex Mono 600 10.5 px, radius 4. OK = `Ok` (cyan), POOR = `Bad`, REVIEW = `Warn`.
+- **Details panel:**
+  - `Surface` background;
+  - field checks in `Ok` (cyan), with a 2.4 stroke;
+  - the file row as a card with a `Card` background and radius 8;
+  - the format label (CBZ) with a `Border` background.
 
-## 7. Retícula decorativa
-São três manchas de pontos que somem num degradê radial, todas com `IsHitTestVisible="False"` e atrás do conteúdo.
-- Use um `DrawingBrush` em mosaico, como o `HalftoneBrush`, com `OpacityMask` de `RadialGradientBrush`.
+## 7. Decorative halftone
+Three patches of dots that fade out in a radial gradient, all with `IsHitTestVisible="False"` and behind the content.
+- Use a tiled `DrawingBrush`, like `HalftoneBrush`, with a `RadialGradientBrush` `OpacityMask`.
 
-| Onde | Pontos | Opacidade |
+| Where | Dots | Opacity |
 |---|---|---|
-| Topo direito da área principal, atrás do título (~520×360) | `HalftoneDot`, grade 9, raio 1,5 | 0,7 |
-| Canto inferior esquerdo do menu lateral (~300×300) | `GlitchMagenta`, grade 8 | 0,22 |
-| Topo direito do painel de detalhes (~260×260) | `GlitchCyan`, grade 8 | 0,2 |
+| Top right of the main area, behind the title (~520×360) | `HalftoneDot`, grid 9, radius 1.5 | 0.7 |
+| Bottom-left corner of the side menu (~300×300) | `GlitchMagenta`, grid 8 | 0.22 |
+| Top right of the details panel (~260×260) | `GlitchCyan`, grid 8 | 0.2 |
 
-- No tema claro, use mais ou menos metade dessas opacidades.
-- A retícula das capas de placeholder continua como está.
+- In the light theme, use roughly half those opacities.
+- The halftone of the placeholder covers stays as it is.
 
-## 8. Escopo e ordem sugerida
-Trate o trabalho como uma fase nova no `ROADMAP.md` ("F7 · Revamp visual") e siga o fluxo do `CLAUDE.md`: build e testes verdes, commits pequenos em pt-BR e parada no fim para o usuário testar.
+## 8. Scope and suggested order
+Treat the work as a new phase in `ROADMAP.md` ("F7 · Visual revamp") and follow the `CLAUDE.md` flow: green build and tests, small commits, and a stop at the end for the user to test.
 
-1. Ícone: `IconGen`, `.ico`, logo da barra lateral.
-2. Fontes e tokens dos dois temas, mais os testes de contraste.
-3. Forma e controles (`Controls.axaml`), incluindo a seleção com deslocamento.
-4. Pilha de séries e universos, com os testes do ViewModel.
-5. Retícula decorativa e enfeite do título.
-6. Passada em **todas** as telas: Entrada, Revisão, Editor, Destinos, Configurações, leitor, boas-vindas e diálogos. Procure cores fixas no XAML, raios antigos e sombras difusas.
-7. Regere as capturas (`dotnet run --project tools/Screenshots`) e atualize o `README.md` se precisar.
-8. Atualize o `docs/DESIGN.md`: identidade, tokens, tipografia, forma e componentes, apontando para esta pasta. Registre no `docs/DECISIONS.md`:
-   - a fonte Anybody;
-   - a regra da seleção com deslocamento;
-   - o OK em ciano e o Ruim em magenta;
-   - a paleta do tema claro.
+1. Icon: `IconGen`, `.ico`, sidebar logo.
+2. Fonts and tokens for both themes, plus the contrast tests.
+3. Shape and controls (`Controls.axaml`), including the offset selection.
+4. Series and universe stack, with the ViewModel tests.
+5. Decorative halftone and title ornament.
+6. A pass over **every** screen: Inbox, Review, Editor, Destinations, Settings, reader, welcome and dialogs. Look for hard-coded colors in the XAML, old radii and soft shadows.
+7. Regenerate the screenshots (`dotnet run --project tools/Screenshots`) and update `README.md` if needed.
+8. Update `docs/DESIGN.md`: identity, tokens, typography, shape and components, pointing to this folder. Record in `docs/DECISIONS.md`:
+   - the Anybody font;
+   - the offset selection rule;
+   - OK in cyan and Poor in magenta;
+   - the light theme palette.
 
-## O que perguntar ao usuário (não decida sozinho)
-- O tema claro: mostre uma captura dele pronto antes do commit final.
-- Qualquer mudança de layout ou de texto além do descrito aqui.
+## What to ask the user (don't decide alone)
+- The light theme: show a screenshot of it finished before the final commit.
+- Any change to layout or text beyond what is described here.

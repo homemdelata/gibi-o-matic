@@ -1,96 +1,96 @@
-# Pesquisa e descobertas
+# Research and findings
 
-Tudo aqui foi verificado em 2026-10-16/17, numa sessão de análise da antiga biblioteca Calibre do usuário. Revalide o que depender de serviços externos antes de confiar cegamente.
+Everything here was verified on 2026-10-16/17, in a session analyzing the user's old Calibre library. Revalidate whatever depends on external services before trusting it blindly.
 
-## Metadados
+## Metadata
 
-### Por que o Calibre não servia
-- Plugin ComicVine 0.14.2 do Calibre: conecta e a chave funciona, mas busca só **edições avulsas** ("issues"). Para encadernados ele erra:
+### Why Calibre didn't do the job
+- Calibre's ComicVine plugin 0.14.2: it connects and the key works, but it only searches **single issues**. For collected editions it gets things wrong:
   - "Saga, Vol. 01" → *Cable #73*;
-  - "Deadly Class, Vol. 11" → a edição avulsa #11 (2015) em vez do TPB (2022);
-  - "House of Slaughter #1" → a edição **alemã** da Splitter.
-- O plugin também lista editores e letristas como "autores".
-- A fonte Google do Calibre recebe **HTTP 500**. A fonte Amazon falha porque depende de busca no Google (bloqueada) ou no Bing (resultados brasileiros irrelevantes).
+  - "Deadly Class, Vol. 11" → single issue #11 (2015) instead of the TPB (2022);
+  - "House of Slaughter #1" → Splitter's **German** edition.
+- The plugin also lists editors and letterers as "authors".
+- Calibre's Google source gets **HTTP 500**. The Amazon source fails because it depends on a Google search (blocked) or a Bing search (irrelevant Brazilian results).
 
-### Amazon e Goodreads (2026-10-25)
-- **Amazon:** não há API utilizável. A Product Advertising API exige conta de afiliado com vendas, e ler as páginas vai contra os termos e é bloqueado. Mas o link já ajuda: na edição **impressa**, o ASIN do link (`/dp/1607066017`, `/gp/product/…`) é o próprio **ISBN-10**. Na edição Kindle, o ASIN começa com `B0` e não é ISBN.
-- **Goodreads:** a API pública fechou em dezembro de 2020. O link (`/book/show/15704307-saga-volume-1`) só tem o número interno do Goodreads, e ler a página vai contra os termos. O ISBN aparece na página, em "Detalhes da edição".
-- Por isso a Revisão usa dos dois só o ISBN: o do link da Amazon, ou um ISBN colado pelo usuário. A busca é feita pelo Open Library e pelo Google Books.
+### Amazon and Goodreads (2026-10-25)
+- **Amazon:** there is no usable API. The Product Advertising API requires an affiliate account with sales, and scraping the pages goes against the terms and gets blocked. But the link already helps: for the **print** edition, the link's ASIN (`/dp/1607066017`, `/gp/product/…`) is the **ISBN-10** itself. For the Kindle edition, the ASIN starts with `B0` and is not an ISBN.
+- **Goodreads:** the public API closed in December 2020. The link (`/book/show/15704307-saga-volume-1`) only has Goodreads' internal number, and scraping the page goes against the terms. The ISBN appears on the page, under "Edition details".
+- That's why the Review uses only the ISBN from either: the one in the Amazon link, or an ISBN pasted by the user. The lookup goes through Open Library and Google Books.
 
 ### ComicVine API
-- Base: `https://comicvine.gamespot.com/api/`. Parâmetros: `api_key`, `format=json`, `field_list` para reduzir a resposta. Exige User-Agent próprio.
-- Busca: `search/?resources=volume&query=...` funcionou. Exemplo para "Deadly Class":
-  - a série de avulsas é "Deadly Class" (Image, 2014, 56 edições);
-  - **os encadernados aparecem como volumes próprios**: "Deadly Class: Reagan Youth" (2014, 1 edição), "Deadly Class: The Snake Pit", "Deadly Class: Carousel" etc.;
-  - edições estrangeiras também aparecem (Urban Comics, Cross Cult), e é preciso filtrar por editora e idioma.
-- Limites de uso: há limite por recurso por hora (documentação oficial; confirmar o número atual). Use cache, limite de requisições e espera entre tentativas.
-- Termos: a chave é pessoal; cada usuário do app usa a sua.
-- **Verificado em 2026-10-17 com chamadas reais** (F2):
-  - Limite documentado: 200 requisições por recurso (`search`, `issues`, `issue`…) por hora, mais detecção de velocidade. O app espaça 1,2 s entre chamadas e para em 190 por recurso por hora.
-  - O encadernado é um volume próprio com 1 edição, e o **nome da edição** traz o número do TPB: "Deadly Class: A Fond Farewell Part One" → edição "Volume 11"; "Deadly Class: Reagan Youth" → "Vol. 1". A descrição do volume diz "Trade paperback collecting …".
-  - `issues/?filter=volume:A|B|C` traz as edições de vários volumes numa chamada; `filter=volume:A|B,issue_number:11` combina os dois filtros (funcionou).
-  - Detalhe da edição (`issue/4000-ID`): `person_credits` com `role` por pessoa, às vezes várias separadas por vírgula ("letterer, designer"); `store_date` (data de venda) e `cover_date` (meses à frente). O app usa `store_date`.
-  - Respostas de erro vêm com HTTP 200 e `status_code`: 100 = chave inválida, 107 = limite excedido, 101 = não encontrado.
-  - Não há busca por ISBN no ComicVine; o ISBN vai para a Open Library, e o título dela orienta a busca no ComicVine.
-  - Custo por livro: 1 busca + 1 ou 2 listagens de edições + 1 detalhe ≈ 200 livros por hora.
+- Base: `https://comicvine.gamespot.com/api/`. Parameters: `api_key`, `format=json`, `field_list` to trim the response. Requires a custom User-Agent.
+- Search: `search/?resources=volume&query=...` worked. Example for "Deadly Class":
+  - the single-issue series is "Deadly Class" (Image, 2014, 56 issues);
+  - **collected editions show up as volumes of their own**: "Deadly Class: Reagan Youth" (2014, 1 issue), "Deadly Class: The Snake Pit", "Deadly Class: Carousel", etc.;
+  - foreign editions show up too (Urban Comics, Cross Cult), so filtering by publisher and language is needed.
+- Usage limits: there is a limit per resource per hour (official documentation; confirm the current number). Use a cache, rate limiting and backoff between retries.
+- Terms: the key is personal; each user of the app uses their own.
+- **Verified on 2026-10-17 with real calls** (F2):
+  - Documented limit: 200 requests per resource (`search`, `issues`, `issue`…) per hour, plus velocity detection. The app spaces calls 1.2 s apart and stops at 190 per resource per hour.
+  - A collected edition is a volume of its own with 1 issue, and the **issue name** carries the TPB number: "Deadly Class: A Fond Farewell Part One" → issue "Volume 11"; "Deadly Class: Reagan Youth" → "Vol. 1". The volume description says "Trade paperback collecting …".
+  - `issues/?filter=volume:A|B|C` brings the issues of several volumes in one call; `filter=volume:A|B,issue_number:11` combines both filters (it worked).
+  - Issue detail (`issue/4000-ID`): `person_credits` with a `role` per person, sometimes several separated by commas ("letterer, designer"); `store_date` (on-sale date) and `cover_date` (months ahead). The app uses `store_date`.
+  - Error responses come with HTTP 200 and a `status_code`: 100 = invalid key, 107 = rate limit exceeded, 101 = not found.
+  - ComicVine has no ISBN search; the ISBN goes to Open Library, and its title guides the ComicVine search.
+  - Cost per book: 1 search + 1 or 2 issue listings + 1 detail ≈ 200 books per hour.
 
 ### Open Library
-- `https://openlibrary.org/api/books?bibkeys=ISBN:<isbn>&format=json&jscmd=data` acertou de primeira:
+- `https://openlibrary.org/api/books?bibkeys=ISBN:<isbn>&format=json&jscmd=data` got it right the first time:
   - `9781534321236` → *Deadly Class, Vol. 11* (Rick Remender, Wes Craig, 2022);
   - `9781607067238` → *Saga* (Brian K. Vaughan, Fiona Staples, 2012).
-- Sem chave. Bom primeiro passo quando há ISBN.
-- Os autores vêm **sem função** (`9781534321236` lista o roteirista Rick Remender e o desenhista Wes Craig como autores), por isso o app não usa esses nomes como créditos; os créditos vêm do ComicVine.
+- No key. A good first step when there is an ISBN.
+- Authors come **without a role** (`9781534321236` lists writer Rick Remender and artist Wes Craig as authors), so the app doesn't use those names as credits; credits come from ComicVine.
 
 ### Google Books
-- `https://www.googleapis.com/books/v1/volumes?q=isbn:...` respondeu **429** (muitas requisições) sem chave. Por isso fica opcional e desligado por padrão.
+- `https://www.googleapis.com/books/v1/volumes?q=isbn:...` answered **429** (too many requests) without a key. That's why it is optional and off by default.
 
-### Problemas típicos de metadados (da análise de 661 livros)
-- Títulos que são nomes de arquivo (`somethingiskillingthechildren vol3`, `wyndbookone flightoftheprince`) com autor "Desconhecido".
-- Vários autores grudados num só (o Calibre troca vírgula por `|`): `James Tynion IV| Chris O\'Halloran| Gavin Fullerton`.
-- A data do Humble Bundle (10–14/12/2015) usada como data de publicação.
-- Séries vazias em títulos com "Vol. N".
-- Autores com 5 a 12 nomes, misturando roteiristas com coloristas e letristas.
-- ISBNs falsos (`hum-irredeemable_vol3`, códigos Diamond como `MAY160548`).
-- A regra de pontuação está em `reference/python/analyze.py`.
+### Typical metadata problems (from the analysis of 661 books)
+- Titles that are file names (`somethingiskillingthechildren vol3`, `wyndbookone flightoftheprince`) with the author "Unknown".
+- Several authors glued into one (Calibre swaps commas for `|`): `James Tynion IV| Chris O\'Halloran| Gavin Fullerton`.
+- The Humble Bundle date (Dec 10–14, 2015) used as the publication date.
+- Empty series on titles with "Vol. N".
+- Authors with 5 to 12 names, mixing writers with colorists and letterers.
+- Fake ISBNs (`hum-irredeemable_vol3`, Diamond codes such as `MAY160548`).
+- The scoring rule is in `reference/python/analyze.py`.
 
-## Arquivos dos quadrinhos
+## Comic files
 
-### PDFs do Humble
-Observado em 3 livros:
-- **CLOSET Vol. 1** (114 p.) e **Dead Lucky Vol. 2** (87 p.): cada página é **um único JPEG** cobrindo a página inteira (cerca de 1988×3056), sem texto nem vetores. Dá para extrair os bytes originais sem perda.
-- **Radiant Black Vol. 5** (170 p.): só 17 páginas são assim. As demais têm várias imagens sobrepostas (PNG com máscara) e **letreiramento vetorial** por cima, então precisam ser **renderizadas**: na resolução da maior imagem (cerca de 2000×3060), JPEG qualidade 92.
-- Heurística validada (`reference/python/pdf2epub.py`): imagem única + cobre a página (tolerância de 2 pt) + sem rotação + sem texto + sem desenhos vetoriais + JPEG RGB/cinza sem máscara → copiar os bytes. Senão → renderizar.
-- Tamanhos: PDF de 104 MB → saída de 105 MB (cópia sem perda); 381 MB → 255 MB (renderizado).
-- O script usa PyMuPDF (**AGPL — não usar no app**). Em C#, o próprio PDFium faz as duas coisas: `FPDFPage_CountObjects`/`FPDFPage_GetObject`, `FPDFPageObj_GetBounds`/`GetMatrix`, `FPDFImageObj_GetImageFilter` e `GetImageDataRaw` (bytes do JPEG sem decodificar) para inspecionar e extrair, e `FPDF_RenderPageBitmap` para renderizar.
+### Humble PDFs
+Observed in 3 books:
+- **CLOSET Vol. 1** (114 pp.) and **Dead Lucky Vol. 2** (87 pp.): each page is **a single JPEG** covering the whole page (about 1988×3056), with no text or vectors. The original bytes can be extracted losslessly.
+- **Radiant Black Vol. 5** (170 pp.): only 17 pages are like that. The others have several overlapping images (PNG with a mask) and **vector lettering** on top, so they have to be **rendered**: at the resolution of the largest image (about 2000×3060), JPEG quality 92.
+- Validated heuristic (`reference/python/pdf2epub.py`): single image + covers the page (2 pt tolerance) + no rotation + no text + no vector drawings + RGB/gray JPEG without a mask → copy the bytes. Otherwise → render.
+- Sizes: a 104 MB PDF → 105 MB output (lossless copy); 381 MB → 255 MB (rendered).
+- The script uses PyMuPDF (**AGPL — do not use in the app**). In C#, PDFium itself does both: `FPDFPage_CountObjects`/`FPDFPage_GetObject`, `FPDFPageObj_GetBounds`/`GetMatrix`, `FPDFImageObj_GetImageFilter` and `GetImageDataRaw` (undecoded JPEG bytes) to inspect and extract, and `FPDF_RenderPageBitmap` to render.
 
 ### EPUBs
-- A conversão PDF→EPUB do Calibre gera EPUB reflow com PNGs de até 50 MB por página e arquivos 2–3× maiores que o PDF. Evitar.
-- EPUBs de editora/Humble geralmente têm uma imagem por página (BOOM usa `hum-<livro>-0001.xhtml`; Image usa `OPS/fb.opf`; IDW inclui `com.apple.ibooks.display-options.xml`). Para extrair páginas, siga a ordem do *spine* do OPF.
-- EPUB de layout fixo tem `rendition:layout = pre-paginated` no OPF.
+- Calibre's PDF→EPUB conversion produces reflowable EPUB with PNGs of up to 50 MB per page and files 2–3× larger than the PDF. Avoid.
+- Publisher/Humble EPUBs usually have one image per page (BOOM uses `hum-<book>-0001.xhtml`; Image uses `OPS/fb.opf`; IDW includes `com.apple.ibooks.display-options.xml`). To extract pages, follow the OPF *spine* order.
+- A fixed-layout EPUB has `rendition:layout = pre-paginated` in the OPF.
 
 ## Kindle Colorsoft
-- Os Kindles de 2024 em diante usam **MTP** em vez de armazenamento USB. No Windows, o MTP é nativo: o Kindle aparece como dispositivo portátil, e é preciso escolher "Transferir arquivos" na notificação de USB do Kindle e usar cabo de dados.
-- O **KCC (Kindle Comic Converter)** tem o perfil **`KCS` = Kindle Colorsoft (1272×1696)** e recomenda **MOBI** (dual MOBI/AZW3) para Kindles modernos. Linha de comando: `kcc-c2e [opções] [entrada]`, com `-p` (perfil), `-f` (formato) e `-o` (saída).
-- **Visualização de painéis**: em arquivos do KCC, liga-se no Kindle (menu **Aa**) e funciona com dois toques. Navega por regiões da página, não pelos quadros reais.
-- O **Send to Kindle** comprime as imagens e não aceita MOBI/AZW3. O Colorsoft não lê CBZ.
-- **Licença do KCC: ISC** (permissiva; manter o aviso de copyright). O KCC usa o KindleGen, que vem no Kindle Previewer (só Windows e macOS), para gerar MOBI.
+- Kindles from 2024 on use **MTP** instead of USB mass storage. On Windows, MTP is native: the Kindle shows up as a portable device, and you have to choose "Transfer files" in the Kindle's USB notification and use a data cable.
+- **KCC (Kindle Comic Converter)** has the **`KCS` = Kindle Colorsoft (1272×1696)** profile and recommends **MOBI** (dual MOBI/AZW3) for modern Kindles. Command line: `kcc-c2e [options] [input]`, with `-p` (profile), `-f` (format) and `-o` (output).
+- **Panel View**: on KCC files, it is turned on in the Kindle (**Aa** menu) and works with a double tap. It moves through regions of the page, not through the real panels.
+- **Send to Kindle** compresses the images and doesn't accept MOBI/AZW3. The Colorsoft doesn't read CBZ.
+- **KCC license: ISC** (permissive; keep the copyright notice). KCC uses KindleGen, which comes with Kindle Previewer (Windows and macOS only), to produce MOBI.
 
 ## Komga
-- Cria uma **série para cada subpasta que contém livros**, em qualquer profundidade. Cada arquivo vira um livro da série da sua pasta.
-  - Não confirmado: se pastas sem arquivos, como `Editora/`, são ignoradas. Testar.
-- **One-Shots directory** (opção da biblioteca): qualquer pasta cujo caminho contenha o texto configurado (ex.: `_oneshots`) gera uma série de um livro só por arquivo. Prefixar com `/` faz casar só pelo início do nome da pasta.
-  - Para one-shots, o título e a sinopse da série vêm do livro, o status fica "Ended" e a contagem fica em 1.
-- Formatos: CBZ, CBR, PDF, EPUB. Importa metadados do `ComicInfo.xml` (CBZ/CBR) e do OPF (EPUB).
-- EPUB: suportado desde a 1.8.0, com leitor web próprio para reflow. Desde a 1.9.0, EPUBs pré-paginados só de imagens usam o leitor de quadrinhos.
-- API REST (conferida no código-fonte, `LibraryController.kt` do gotson/komga):
-  - autenticação por chave de API no cabeçalho `X-API-Key` (a chave é criada na conta do usuário, no Komga);
-  - `GET /api/v1/libraries` → lista com `id`, `name`, `root` e `oneshotsDirectory` (entre outros);
-  - `POST /api/v1/libraries/{id}/scan` (parâmetro opcional `deep`) → 202; exige papel ADMIN, senão 403.
-- Sincronização com o KOReader: OPDS v1 e o papel `KOREADER_SYNC`.
+- Creates **a series for every subfolder that contains books**, at any depth. Each file becomes a book of the series of its folder.
+  - Not confirmed: whether folders without files, such as `Publisher/`, are ignored. Test it.
+- **One-Shots directory** (a library option): any folder whose path contains the configured text (e.g. `_oneshots`) produces a one-book series per file. Prefixing it with `/` makes it match only the start of the folder name.
+  - For one-shots, the series title and summary come from the book, the status is "Ended" and the count is 1.
+- Formats: CBZ, CBR, PDF, EPUB. Imports metadata from `ComicInfo.xml` (CBZ/CBR) and from the OPF (EPUB).
+- EPUB: supported since 1.8.0, with its own web reader for reflowable books. Since 1.9.0, image-only pre-paginated EPUBs use the comic reader.
+- REST API (checked in the source code, gotson/komga's `LibraryController.kt`):
+  - authentication by an API key in the `X-API-Key` header (the key is created in the user's account, in Komga);
+  - `GET /api/v1/libraries` → a list with `id`, `name`, `root` and `oneshotsDirectory` (among others);
+  - `POST /api/v1/libraries/{id}/scan` (optional `deep` parameter) → 202; requires the ADMIN role, otherwise 403.
+- Sync with KOReader: OPDS v1 and the `KOREADER_SYNC` role.
 
-## Fontes
-- KCC: https://github.com/ciromattia/kcc · licença: https://github.com/ciromattia/kcc/blob/master/LICENSE.txt
+## Sources
+- KCC: https://github.com/ciromattia/kcc · license: https://github.com/ciromattia/kcc/blob/master/LICENSE.txt
 - Komga: https://github.com/gotson/komga/blob/master/komga/src/main/kotlin/org/gotson/komga/interfaces/api/rest/LibraryController.kt · https://komga.org/docs/guides/scan-analysis-refresh · https://komga.org/docs/guides/oneshots · https://komga.org/docs/introduction · https://komga.org/blog/ebook-support · https://komga.org/docs/guides/koreader
-- MTP nos Kindles novos: https://goodereader.com/blog/kindle/new-kindle-e-readers-no-longer-appear-on-computers
+- MTP on the new Kindles: https://goodereader.com/blog/kindle/new-kindle-e-readers-no-longer-appear-on-computers
 - Calibre FAQ: https://manual.calibre-ebook.com/faq.html
 - MobileRead (Colorsoft + KCC): https://www.mobileread.com/forums/showthread.php?p=4461987

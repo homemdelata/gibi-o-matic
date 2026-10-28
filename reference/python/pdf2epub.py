@@ -1,24 +1,24 @@
-"""Converte PDF de HQ em EPUB3 de layout fixo (uma página por tela).
+"""Converts a comic PDF into a fixed-layout EPUB3 (one page per screen).
 
-Uso: python pdf2epub.py <entrada.pdf> <saida.epub> [--title T] [--author A]
+Usage: python pdf2epub.py <input.pdf> <output.epub> [--title T] [--author A]
 
-Por página:
-- se a página é só uma imagem JPEG RGB/cinza cobrindo a página toda, a imagem
-  original é copiada byte a byte (sem perda nem recompressão);
-- senão (várias imagens, texto, vetores, CMYK...), a página é renderizada
-  na resolução da maior imagem dela e salva como JPEG de alta qualidade.
+Per page:
+- if the page is only an RGB/gray JPEG image covering the whole page, the
+  original image is copied byte for byte (lossless, no recompression);
+- otherwise (several images, text, vectors, CMYK...), the page is rendered
+  at the resolution of its largest image and saved as a high-quality JPEG.
 """
 import argparse, html, io, uuid, zipfile, datetime
 import pymupdf
 from PIL import Image
 
 JPEG_QUALITY = 92
-MAX_HEIGHT = 3200          # limite ao renderizar páginas compostas
-DEFAULT_HEIGHT = 2400      # páginas sem imagens (só vetor/texto)
+MAX_HEIGHT = 3200          # limit when rendering composite pages
+DEFAULT_HEIGHT = 2400      # pages without images (vectors/text only)
 
 
 def page_image(doc, page):
-    """Retorna (bytes_jpeg, largura, altura, modo) para a página."""
+    """Returns (jpeg_bytes, width, height, mode) for the page."""
     infos = page.get_image_info(xrefs=True)
     r = page.rect
     has_text = bool(page.get_text().strip())
@@ -34,7 +34,7 @@ def page_image(doc, page):
             if raw['ext'] in ('jpeg', 'jpg') and raw.get('cs-name', '') not in ('DeviceCMYK',) and raw['colorspace'] in (1, 3) \
                     and not raw.get('smask'):
                 return raw['image'], raw['width'], raw['height'], 'original'
-    # renderiza: altura alvo = maior imagem da página (sem upscaling exagerado)
+    # render: target height = the page's largest image (without excessive upscaling)
     target_h = DEFAULT_HEIGHT
     sizes = [doc.extract_image(i['xref'])['height'] * r.height / max(1, pymupdf.Rect(i['bbox']).height)
              for i in infos if i['xref']]
@@ -46,14 +46,14 @@ def page_image(doc, page):
     img = Image.frombytes('RGB', (pix.width, pix.height), pix.samples)
     buf = io.BytesIO()
     img.save(buf, 'JPEG', quality=JPEG_QUALITY, optimize=True, subsampling=0)
-    return buf.getvalue(), pix.width, pix.height, 'renderizada'
+    return buf.getvalue(), pix.width, pix.height, 'rendered'
 
 
 def build_epub(pdf_path, out_path, title, author):
     doc = pymupdf.open(pdf_path)
     book_id = f'urn:uuid:{uuid.uuid4()}'
     now = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
-    stats = {'original': 0, 'renderizada': 0}
+    stats = {'original': 0, 'rendered': 0}
     pages = []
     with zipfile.ZipFile(out_path, 'w') as z:
         z.writestr(zipfile.ZipInfo('mimetype'), 'application/epub+zip', compress_type=zipfile.ZIP_STORED)
@@ -68,7 +68,7 @@ def build_epub(pdf_path, out_path, title, author):
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
 <head><title>{n}</title><meta name="viewport" content="width={w}, height={h}"/>
 <style>html,body{{margin:0;padding:0;width:{w}px;height:{h}px;overflow:hidden}}img{{display:block;width:{w}px;height:{h}px}}</style></head>
-<body><img src="img/{name}.jpg" alt="Página {n}"/></body></html>''', compress_type=zipfile.ZIP_DEFLATED)
+<body><img src="img/{name}.jpg" alt="Page {n}"/></body></html>''', compress_type=zipfile.ZIP_DEFLATED)
             pages.append((name, w, h))
         first_w, first_h = pages[0][1], pages[0][2]
         t, a = html.escape(title), html.escape(author)
@@ -103,7 +103,7 @@ def build_epub(pdf_path, out_path, title, author):
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('pdf'); ap.add_argument('epub')
-    ap.add_argument('--title', default='Sem título'); ap.add_argument('--author', default='Desconhecido')
+    ap.add_argument('--title', default='Untitled'); ap.add_argument('--author', default='Unknown')
     a = ap.parse_args()
     n, stats = build_epub(a.pdf, a.epub, a.title, a.author)
-    print(f'{n} páginas: {stats["original"]} originais, {stats["renderizada"]} renderizadas')
+    print(f'{n} pages: {stats["original"]} original, {stats["rendered"]} rendered')

@@ -1,96 +1,96 @@
-# Gibi-o-matic — Especificação
+# Gibi-o-matic — Specification
 
-> Versão 0.2 · 2026-10-17 · status: rascunho para revisão
-> Protótipo de interface: Claude Design (link privado do autor)
+> Version 0.2 · 2026-10-17 · status: draft for review
+> Interface prototype: Claude Design (the author's private link)
 
-## 1. Visão
+## 1. Vision
 
-Gibi-o-matic é um app desktop para quem compra quadrinhos digitais (Humble Bundle, lojas DRM-free etc.) e quer:
+Gibi-o-matic is a desktop app for people who buy digital comics (Humble Bundle, DRM-free stores, etc.) and want to:
 
-1. **guardar os originais** em segurança, com metadados corretos;
-2. **ler com conforto** no tablet (via servidor como o Komga) e em e-readers (Kindle);
-3. **sem trabalho manual repetitivo**: metadados buscados automaticamente, revisados em poucos cliques, e cópias de leitura geradas sozinhas.
+1. **keep the originals** safe, with correct metadata;
+2. **read comfortably** on a tablet (through a server such as Komga) and on e-readers (Kindle);
+3. **without repetitive manual work**: metadata fetched automatically, reviewed in a few clicks, and reading copies generated on their own.
 
-### 1.1 Objetivos
-- Substituir o Calibre no fluxo de quadrinhos, com uma interface focada só nisso.
-- Nunca alterar os arquivos originais.
-- Funcionar em Windows desde a primeira versão; Linux depois (macOS se sair de graça).
-- Ser utilizável por pessoas não técnicas: padrões bons, opções avançadas escondidas.
-- Poder ser distribuído publicamente no futuro (licenças de dependências permissivas, chaves de API do próprio usuário, interface em pt-BR e inglês).
+### 1.1 Goals
+- Replace Calibre in the comics workflow, with an interface focused only on that.
+- Never modify the original files.
+- Work on Windows from the first version; Linux later (macOS if it comes for free).
+- Be usable by non-technical people: good defaults, advanced options tucked away.
+- Be publicly distributable in the future (permissive dependency licenses, the user's own API keys, interface in pt-BR and English).
 
-### 1.2 Fora do escopo (por enquanto)
-- Leitor completo de quadrinhos (o Komga e o Kindle fazem isso). Existe um leitor simples, só para conferir qual edição é um livro (F3.5, decisão do usuário de 2026-10-18): páginas, zoom, miniaturas e EPUB de texto, sem anotações nem sincronização de progresso.
-- Loja, download automático de compras, remoção de DRM.
-- Livros de texto "reflow" como foco. Eles podem ser guardados no arquivo e enviados a destinos que os aceitem (seção 9.1), mas sem conversões especiais na primeira versão.
-- Modo servidor/web.
-- Migração do Calibre: a coleção será reconstruída a partir dos originais baixados de novo (seção 10).
+### 1.2 Out of scope (for now)
+- A full comic reader (Komga and the Kindle do that). There is a simple reader, only to check which edition a book is (F3.5, user decision of 2026-10-18): pages, zoom, thumbnails and text EPUB, without annotations or progress sync.
+- A store, automatic download of purchases, DRM removal.
+- Reflowable text books as a focus. They can be kept in the archive and sent to destinations that accept them (section 9.1), but with no special conversions in the first version.
+- Server/web mode.
+- Migration from Calibre: the collection will be rebuilt from freshly downloaded originals (section 10).
 
-## 2. Conceitos
+## 2. Concepts
 
-| Termo | Significado |
+| Term | Meaning |
 |---|---|
-| **Arquivo** (biblioteca) | Pasta raiz onde ficam os originais e os metadados. No caso do autor, no Google Drive. |
-| **Livro** | Uma unidade da coleção: edição avulsa (#1), encadernado (Vol. 1/TPB), omnibus, artbook. Tem 1 original principal e, opcionalmente, formatos extras. |
-| **Original** | O arquivo como foi baixado (PDF, CBZ, CBR, EPUB). Somente leitura após a importação. |
-| **Entrada** | Pasta observada onde chegam downloads novos. |
-| **Revisão** | Fila de livros cujos metadados precisam de confirmação humana. |
-| **Destino** | Lugar para onde cópias de leitura são geradas: um servidor Komga, um Kindle etc. Cada destino tem tipo, configurações e regras próprias. |
-| **Fonte de metadados** | Serviço consultado para preencher metadados (Open Library, ComicVine…). |
+| **Archive** (library) | Root folder holding the originals and the metadata. In the author's case, on Google Drive. |
+| **Book** | One unit of the collection: single issue (#1), collected edition (Vol. 1/TPB), omnibus, artbook. It has 1 main original and, optionally, extra formats. |
+| **Original** | The file as downloaded (PDF, CBZ, CBR, EPUB). Read-only after import. |
+| **Inbox** | Watched folder where new downloads arrive. |
+| **Review** | Queue of books whose metadata needs human confirmation. |
+| **Destination** | A place reading copies are generated for: a Komga server, a Kindle, etc. Each destination has its own type, settings and rules. |
+| **Metadata source** | A service queried to fill in metadata (Open Library, ComicVine…). |
 
-## 3. Fluxo geral
-
-```
-ENTRADA ──importar──► ARQUIVO (original + metadata.json) ──gerar──► DESTINOS
-   │                        ▲         │                              ├─ Komga (CBZ + ComicInfo.xml)
-   └─ busca automática ─────┘         └─ Revisão / Editor            └─ Kindle (AZW3 via KCC)
-```
-
-1. Um arquivo chega na Entrada.
-2. O app identifica o livro (metadados embutidos + fontes online) e calcula uma confiança.
-3. Confiança alta: o livro entra direto na biblioteca. Confiança baixa: vai para a Revisão.
-4. Aprovar ou editar metadados marca as cópias dos destinos como desatualizadas.
-5. Destinos automáticos regeneram sozinhos; destinos manuais esperam o usuário.
-
-## 4. O Arquivo (formato em disco)
-
-### 4.1 Princípios
-- **Fonte da verdade = arquivos no disco**, não o banco. Cada livro tem um `metadata.json` ao lado do original. O índice SQLite é só cache e pode ser reconstruído a qualquer momento varrendo as pastas.
-- **O índice fica fora do Drive**, em `%LOCALAPPDATA%\GibiOMatic\` (Linux: `~/.local/share/gibiomatic/`). SQLite dentro de pasta sincronizada é fonte clássica de corrupção.
-- **Escritas atômicas**: grava em `*.tmp` e renomeia.
-- **Originais imutáveis**: o hash SHA-256 é gravado na importação e verificado sob demanda.
-
-### 4.2 Estrutura
+## 3. Overall flow
 
 ```
-<Arquivo>/
-  gibiomatic-library.json            # id da biblioteca, versão do formato
+INBOX ──import──► ARCHIVE (original + metadata.json) ──generate──► DESTINATIONS
+  │                     ▲          │                                ├─ Komga (CBZ + ComicInfo.xml)
+  └── automatic lookup ─┘          └── Review / Editor              └─ Kindle (AZW3 via KCC)
+```
+
+1. A file arrives in the Inbox.
+2. The app identifies the book (embedded metadata + online sources) and computes a confidence.
+3. High confidence: the book goes straight into the library. Low confidence: it goes to the Review.
+4. Approving or editing metadata marks the destination copies as outdated.
+5. Automatic destinations regenerate on their own; manual destinations wait for the user.
+
+## 4. The Archive (on-disk format)
+
+### 4.1 Principles
+- **Source of truth = files on disk**, not the database. Each book has a `metadata.json` next to the original. The SQLite index is only a cache and can be rebuilt at any time by scanning the folders.
+- **The index lives outside the Drive**, in `%LOCALAPPDATA%\GibiOMatic\` (Linux: `~/.local/share/gibiomatic/`). SQLite inside a synced folder is a classic source of corruption.
+- **Atomic writes**: write to `*.tmp` and rename.
+- **Immutable originals**: the SHA-256 hash is recorded on import and verified on demand.
+
+### 4.2 Layout
+
+```
+<Archive>/
+  gibiomatic-library.json            # library id, format version
   Books/
     Image/
       Saga/
         Saga, Vol. 1 [k3f9a2]/
-          Saga, Vol. 1.pdf         # original (conteúdo intocado; só o nome é limpo)
+          Saga, Vol. 1.pdf         # original (content untouched; only the name is cleaned)
           cover.jpg
           metadata.json
     BOOM! Studios/
       House of Slaughter/
         House of Slaughter, Vol. 1 [p81xq0]/
           ...
-    _No publisher/              # aprovados sem editora
+    _No publisher/              # approved without a publisher
       ...
-    _To review/                 # ainda não revisados: {Título} [id]/, sem editora e série
+    _To review/                 # not reviewed yet: {Title} [id]/, without publisher and series
       ...
   .gibiomatic/
-    history/<id>/<timestamp>.json  # versões anteriores do metadata.json (últimas 20)
+    history/<id>/<timestamp>.json  # previous versions of metadata.json (last 20)
 ```
 
-- `[k3f9a2]` = id curto e estável do livro (6 caracteres de um ULID). Garante nomes únicos e permite achar o livro mesmo depois de renomear.
-- Enquanto o livro não foi revisado, ele fica em `Books/_To review/{Título} [id]/`, porque editora e série ainda são palpites. Ao ser aprovado (automaticamente, na Revisão ou no Editor), vai para `{Editora}/{Série}/`; aprovado sem editora, para `_No publisher/`.
-- A pasta é **renomeada** quando editora, série, título ou o status de revisão mudam. No Drive isso é um "mover", barato.
-- O nome do original vira `{Título}.{ext}`. O conteúdo nunca é alterado; o nome de download fica registrado em `metadata.json`.
+- `[k3f9a2]` = the book's short, stable id (6 characters of a ULID). It keeps names unique and lets the book be found even after a rename.
+- While the book has not been reviewed, it stays in `Books/_To review/{Title} [id]/`, because publisher and series are still guesses. Once approved (automatically, in the Review or in the Editor), it moves to `{Publisher}/{Series}/`; approved without a publisher, to `_No publisher/`.
+- The folder is **renamed** when the publisher, series, title or review status change. On the Drive this is a cheap "move".
+- The original's name becomes `{Title}.{ext}`. The content is never modified; the download name is recorded in `metadata.json`.
 
 ### 4.3 `metadata.json`
 
-(Os comentários `//` abaixo são só explicativos; o arquivo real é JSON puro.)
+(The `//` comments below are only explanatory; the real file is plain JSON.)
 
 ```json
 {
@@ -134,85 +134,85 @@ ENTRADA ──importar──► ARQUIVO (original + metadata.json) ──gerar�
 }
 ```
 
-**Funções de crédito** (`role`): `author` (autor da obra inteira, como num livro que não é quadrinho), `writer`, `artist` (lápis), `inker`, `colorist`, `letterer`, `cover`, `editor`, `translator`, `other`. "Autores", nos lugares que só aceitam um campo, significa os `author` e os `writer` (no ComicInfo, ambos vão em `Writer`).
+**Credit roles** (`role`): `author` (author of the whole work, as in a book that is not a comic), `writer`, `artist` (pencils), `inker`, `colorist`, `letterer`, `cover`, `editor`, `translator`, `other`. "Authors", in places that only take one field, means the `author`s and the `writer`s (in ComicInfo, both go into `Writer`).
 
-## 5. Qualidade dos metadados
+## 5. Metadata quality
 
-Usada na Biblioteca (selos e filtros) e para ordenar a Revisão. Pontuação de 0 a 100, com pesos na ordem de prioridade do autor:
+Used in the Library (badges and filters) and to sort the Review. A score from 0 to 100, weighted in the author's order of priority:
 
-| Campo | Problemas detectados |
+| Field | Problems detected |
 |---|---|
-| Título (peso 1,0) | só minúsculas, palavras coladas, "_" ou extensão, "Untitled", lixo como "(prop)", tudo maiúsculo |
-| Autores (0,9) | ausente, "Desconhecido"/"Various", vários nomes grudados num só, duplicados, nome de uma palavra só |
-| Data (0,7) | ausente, suspeita (igual à data de compra no Humble, repetida em muitos livros) |
-| Série (0,7) | o título indica série mas o campo está vazio; número diferente do título |
-| Secundários (0,3) | ISBN inválido, sem editora |
+| Title (weight 1.0) | lowercase only, words run together, "_" or an extension, "Untitled", junk such as "(prop)", all caps |
+| Authors (0.9) | missing, "Unknown"/"Various", several names glued into one, duplicates, single-word name |
+| Date (0.7) | missing, suspicious (same as the Humble purchase date, repeated across many books) |
+| Series (0.7) | the title implies a series but the field is empty; number differs from the title |
+| Secondary (0.3) | invalid ISBN, no publisher |
 
-Faixas: **Ruim** (< 60), **Revisar** (60–84), **OK** (≥ 85). A regra já existe em Python (`calibre-metadados/scripts/analyze.py`) e será portada.
+Bands: **Poor** (< 60), **Review** (60–84), **OK** (≥ 85). The rule already exists in Python (`reference/python/analyze.py`) and is ported to C#.
 
-## 6. Entrada (importação)
+## 6. Inbox (import)
 
-1. Observa a pasta de entrada (FileSystemWatcher) e também aceita arrastar e soltar.
-2. Para cada arquivo: espera a escrita terminar, calcula o SHA-256 e detecta o formato pelo conteúdo.
-3. **Duplicados**:
-   - mesmo hash de um original existente: avisa e ignora;
-   - mesmo livro identificado com arquivo diferente: pergunta *Substituir o atual* / *Manter os dois* (formato extra) / *Ignorar*. Sugere "Substituir" quando o novo arquivo é de um formato preferido (ver seção 10).
-4. Lê metadados embutidos: `ComicInfo.xml` (CBZ/CBR), OPF (EPUB), Info/XMP (PDF), ISBN na página de créditos (opcional, fase posterior).
-5. Roda a identificação (seção 8) e mostra o resultado na tela Entrada.
-6. Ao confirmar: copia o original para o Arquivo, extrai a capa e grava o `metadata.json`. Depois de a cópia ser conferida pelo hash, o arquivo da pasta observada sai da Entrada conforme a configuração "Depois de importar": **Lixeira do sistema** (padrão), mover para `Entrada/_imported/` (mantendo as subpastas) ou apagar. Numa unidade sem Lixeira (rede, pendrive, Google Drive), a opção Lixeira move para `_imported`; o app nunca apaga de vez sem o usuário ter escolhido "Apagar". Os arquivos que chegam na pasta observada são confirmados sozinhos, com a decisão sugerida para duplicados; os adicionados à mão continuam esperando "Importar" e ficam onde estão.
-7. **Segundo plano**: para observar a pasta sem a janela aberta, o app fica na bandeja do sistema e pode iniciar com o sistema. Só roda uma instância; abrir de novo traz a janela existente.
-   - **Fechar a janela** manda o app para a bandeja (padrão). Na primeira vez, um aviso explica que o app continua rodando na bandeja e deixa escolher: *Continuar na bandeja* ou *Fechar o app*. A escolha fica salva e pode ser mudada nas Configurações. Sair de verdade: menu da bandeja → *Sair*.
-   - **Iniciar com o sistema**: desligado por padrão. Ao ligar, o usuário escolhe se o app abre a janela ou só o ícone na bandeja (padrão: só a bandeja).
-   - **Avisos**: um resumo por notificação do sistema quando um lote de arquivos termina de ser processado (ex.: "5 livros novos: 3 na biblioteca, 2 aguardando aprovação"), não um aviso por livro. Clicar abre a Revisão quando há livros para revisar, a Entrada quando algum arquivo deu erro, e a Biblioteca nos outros casos (os importados saem da lista da Entrada).
+1. Watches the inbox folder (FileSystemWatcher) and also accepts drag and drop.
+2. For each file: waits for the write to finish, computes the SHA-256 and detects the format from the content.
+3. **Duplicates**:
+   - same hash as an existing original: warns and skips;
+   - same book identified with a different file: asks *Replace the current one* / *Keep both* (extra format) / *Skip*. It suggests "Replace" when the new file is in a preferred format (see section 10).
+4. Reads embedded metadata: `ComicInfo.xml` (CBZ/CBR), OPF (EPUB), Info/XMP (PDF), ISBN on the credits page (optional, later phase).
+5. Runs the identification (section 8) and shows the result in the Inbox screen.
+6. On confirmation: copies the original into the Archive, extracts the cover and writes the `metadata.json`. Once the copy has been verified by hash, the file in the watched folder leaves the Inbox according to the "After importing" setting: **system Recycle Bin** (default), move to `Inbox/_imported/` (keeping subfolders) or delete. On a drive without a Recycle Bin (network, USB stick, Google Drive), the Recycle Bin option moves to `_imported`; the app never deletes for good unless the user chose "Delete". Files arriving in the watched folder are confirmed on their own, with the suggested decision for duplicates; those added by hand keep waiting for "Import" and stay where they are.
+7. **Background**: to watch the folder without the window open, the app lives in the system tray and can start with the system. Only one instance runs; opening it again brings up the existing window.
+   - **Closing the window** sends the app to the tray (default). The first time, a notice explains that the app keeps running in the tray and lets the user choose: *Keep in the tray* or *Close the app*. The choice is saved and can be changed in Settings. To really quit: tray menu → *Exit*.
+   - **Start with the system**: off by default. When turned on, the user chooses whether the app opens the window or only the tray icon (default: only the tray).
+   - **Notifications**: one summary system notification when a batch of files finishes processing (e.g. "5 new books: 3 in the library, 2 awaiting approval"), not one per book. Clicking opens the Review when there are books to review, the Inbox when a file failed, and the Library otherwise (imported files leave the Inbox list).
 
-## 7. Revisão e Editor
+## 7. Review and Editor
 
-- **Revisão**: fila ordenada pela nota de qualidade. Para cada livro: candidatos com % de confiança e tabela *campo · atual · proposto*, com uma caixa de seleção por campo. Ações: Aprovar e próximo, Pular, Editar à mão.
-- **Editor**: todos os campos da seção 4.3, créditos com função, capa (trocar ou usar a página 1), prévia dos nomes que cada destino vai gerar.
-- **Edição em lote**: selecionar N livros e editar os campos em comum. Campos vazios não alteram nada. "Numerar em sequência" serve para o número da série.
-- Toda gravação gera uma entrada em `.gibiomatic/history` e pode ser desfeita.
-- **Remover da biblioteca** (menu do botão direito na Biblioteca, em "Continuar lendo" e na fila da Revisão; Editor de um livro): pede confirmação, com duas saídas. "Remover" leva a pasta do livro (original, capa, `metadata.json`) para `.gibiomatic/trash/<data>-<id6>/`, com um `.trash.json`; "Remover e apagar os arquivos" apaga a pasta e o histórico de vez. O livro sai do índice, da identificação, do status de leitura e das listas dos destinos; as cópias dos destinos são apagadas, mas nunca a que já está no Kindle.
-- **Mostrar no Explorer** ("Mostrar na pasta" fora do Windows), nos mesmos lugares e ao lado do caminho do livro: abre o gerenciador de arquivos com o original selecionado.
-- **Arquivo não encontrado**: ao abrir a biblioteca, o app confere se o original de cada livro ainda está no disco. Os que sumiram ganham um selo na capa e o filtro "Sem arquivo"; a Revisão, o Editor e o painel do livro avisam e oferecem a remoção. Se a pasta inteira de um livro sumiu (apagada ou movida à mão), o índice é reconstruído a partir dos `metadata.json`.
+- **Review**: queue sorted by quality score. For each book: candidates with a confidence % and a *field · current · proposed* table, with one checkbox per field. Actions: Approve and next, Skip, Edit by hand.
+- **Editor**: every field from section 4.3, credits with roles, cover (replace or use page 1), preview of the names each destination will generate.
+- **Batch editing**: select N books and edit the fields they share. Empty fields change nothing. "Number in sequence" is for the series number.
+- Every save creates an entry in `.gibiomatic/history` and can be undone.
+- **Remove from library** (right-click menu in the Library, in "Continue reading" and in the Review queue; Editor for a single book): asks for confirmation, with two ways out. "Remove" moves the book's folder (original, cover, `metadata.json`) to `.gibiomatic/trash/<date>-<id6>/`, with a `.trash.json`; "Remove and delete the files" deletes the folder and the history for good. The book leaves the index, the identification, the reading status and the destination lists; destination copies are deleted, but never the one already on the Kindle.
+- **Show in Explorer** ("Show in folder" outside Windows), in the same places and next to the book's path: opens the file manager with the original selected.
+- **File not found**: when the library opens, the app checks whether each book's original is still on disk. Missing ones get a badge on the cover and the "No file" filter; the Review, the Editor and the book panel warn about it and offer removal. If a book's whole folder is gone (deleted or moved by hand), the index is rebuilt from the `metadata.json` files.
 
-## 8. Fontes de metadados e identificação
+## 8. Metadata sources and identification
 
-### 8.1 Fontes (ordem configurável)
-| Fonte | Uso | Observações |
+### 8.1 Sources (configurable order)
+| Source | Use | Notes |
 |---|---|---|
-| **Open Library** | por ISBN | sem chave; testada com sucesso (Deadly Class Vol. 11, Saga) |
-| **ComicVine** | encadernados e avulsas, créditos por função | chave pessoal do usuário; respeitar limites de uso e manter cache local das respostas |
-| **Google Books** | por ISBN, opcional | API v1 com limite agressivo sem chave; desligada por padrão |
+| **Open Library** | by ISBN | no key; tested successfully (Deadly Class Vol. 11, Saga) |
+| **ComicVine** | collected editions and single issues, credits by role | the user's personal key; respect the usage limits and keep a local cache of responses |
+| **Google Books** | by ISBN, optional | API v1 with an aggressive limit without a key; off by default |
 
-### 8.2 Algoritmo
-1. **ISBN válido** (embutido ou existente): Open Library (e Google Books, se ligado). O ComicVine não busca por ISBN; o título encontrado pelo ISBN orienta a busca no ComicVine, e o candidato do ComicVine que concordar com ele recebe a evidência do ISBN. Se bater, a confiança fica ≥ 0,95.
-2. **Título e série**: normaliza o título (separa a série do número: "Deadly Class, Vol. 11: A Fond Farewell" → série "Deadly Class", nº 11, tipo TPB) e busca *volumes* no ComicVine.
-   - No ComicVine, encadernados costumam ser volumes próprios ("Deadly Class: Reagan Youth"). É preciso considerar os volumes da série e também os volumes "Série: Subtítulo".
-   - Filtra por editora conhecida, idioma (descarta edições estrangeiras, como a *House of Slaughter* alemã da Splitter) e ano.
-   - Pontua cada candidato por similaridade de título, número, editora, ano e número de páginas.
-3. **Aprovação automática segura**: ligada por padrão, mas só quando **todas** as condições abaixo valem. Qualquer outro caso vai para a Revisão, com os candidatos.
-   - **Evidência forte**, de um destes tipos:
-     - o ISBN do arquivo bate com o resultado;
-     - **duas fontes independentes concordam** em título, número e editora;
-     - ou, só no ComicVine: série, número, editora e ano batem exatamente e existe **um único** candidato acima de 0,5.
-   - **Nenhum campo existente "bom" seria sobrescrito por um diferente.** Por exemplo, uma data já preenchida que discorda vai para a Revisão.
-   - **A confiança calculada é ≥ 0,95.**
-   - **Garantias:**
-     - todo livro aprovado automaticamente fica marcado como `matchedBy: auto` e aparece no filtro "Aprovados automaticamente", para conferência por amostragem;
-     - tudo pode ser desfeito pelo histórico;
-     - a configuração "Sempre revisar" desliga a aprovação automática.
+### 8.2 Algorithm
+1. **Valid ISBN** (embedded or already present): Open Library (and Google Books, if on). ComicVine does not search by ISBN; the title found through the ISBN guides the ComicVine search, and the ComicVine candidate that agrees with it gets the ISBN evidence. If it matches, confidence is ≥ 0.95.
+2. **Title and series**: normalizes the title (splits the series from the number: "Deadly Class, Vol. 11: A Fond Farewell" → series "Deadly Class", no. 11, kind TPB) and searches ComicVine *volumes*.
+   - On ComicVine, collected editions are often volumes of their own ("Deadly Class: Reagan Youth"). Both the series' volumes and the "Series: Subtitle" volumes have to be considered.
+   - Filters by known publisher, language (drops foreign editions, such as Splitter's German *House of Slaughter*) and year.
+   - Scores each candidate by title similarity, number, publisher, year and page count.
+3. **Safe automatic approval**: on by default, but only when **all** the conditions below hold. Any other case goes to the Review, with the candidates.
+   - **Strong evidence**, of one of these kinds:
+     - the file's ISBN matches the result;
+     - **two independent sources agree** on title, number and publisher;
+     - or, on ComicVine alone: series, number, publisher and year match exactly and there is **a single** candidate above 0.5.
+   - **No existing "good" field would be overwritten by a different one.** For example, a date already filled in that disagrees goes to the Review.
+   - **The computed confidence is ≥ 0.95.**
+   - **Safeguards:**
+     - every automatically approved book is marked `matchedBy: auto` and shows up in the "Approved automatically" filter, for spot checks;
+     - everything can be undone through the history;
+     - the "Always review" setting turns automatic approval off.
 
-   Entre 0,50 e 0,95, o livro vai para a Revisão com candidatos; abaixo de 0,50, vai para a Revisão sem sugestão.
-4. **Créditos**: só as funções criativas (roteiro, arte, arte-final, cores, letras, capa). Editores ficam fora por padrão; o plugin do Calibre os misturava com os autores.
+   Between 0.50 and 0.95, the book goes to the Review with candidates; below 0.50, it goes to the Review with no suggestion.
+4. **Credits**: only the creative roles (writer, art, inks, colors, letters, cover). Editors are left out by default; the Calibre plugin mixed them in with the authors.
 
-### 8.3 Lições do diagnóstico do Calibre (2026-10-17)
-- O plugin do ComicVine 0.14.2 conecta, mas busca só *edições avulsas*, e por isso erra os encadernados ("Saga, Vol. 01" → *Cable #73*).
-- A fonte Google do Calibre recebe HTTP 500; a Amazon falha por bloqueio de busca.
-- Conclusão: a identificação de encadernados precisa de lógica própria, que é o diferencial do app.
+### 8.3 Lessons from the Calibre diagnosis (2026-10-17)
+- The ComicVine plugin 0.14.2 connects, but only searches *single issues*, and so it gets collected editions wrong ("Saga, Vol. 01" → *Cable #73*).
+- Calibre's Google source gets HTTP 500; Amazon fails because searches are blocked.
+- Conclusion: identifying collected editions needs logic of its own, which is what sets the app apart.
 
-## 9. Destinos
+## 9. Destinations
 
-### 9.1 Modelo comum
+### 9.1 Common model
 ```csharp
 public interface IDestinationType {
     string Id { get; }                        // "komga", "kindle"
@@ -221,159 +221,159 @@ public interface IDestinationType {
 }
 public interface IDestination {
     Task<DestinationStatus> GetStatusAsync(CancellationToken ct);
-    bool Includes(Book book);                 // regra "quais livros"
+    bool Includes(Book book);                 // "which books" rule
     Task<OutputState> GenerateAsync(Book book, IProgress<double> p, CancellationToken ct);
-    Task DeliverAsync(IEnumerable<Book> books, CancellationToken ct); // Kindle: copiar via USB
+    Task DeliverAsync(IEnumerable<Book> books, CancellationToken ct); // Kindle: copy over USB
 }
 ```
-- **Regras de todo destino**: *Quais livros* (toda a biblioteca / escolhidos / séries) e *Quando* (automático ao aprovar / manual).
-- **Capacidades por tipo**: cada tipo declara que tipos de livro aceita (`issue`, `tpb`, `omnibus`, `artbook`, `book`). Se o tipo aceita livros que não são HQ (`book`), a opção "Incluir livros que não são quadrinhos" aparece no destino, **desligada por padrão**. Se não aceita, a opção nem aparece.
-  - **Komga**: aceita, porque lê EPUB reflow desde a versão 1.8, com leitor próprio. Livros de texto vão como EPUB, sem conversão.
-  - **Kindle**: o KCC só converte imagens. Livros de texto exigiriam outro conversor ou o Send to Kindle, por isso ficam **a fazer** (backlog). Até lá, a opção não aparece.
-- **Estado por livro e destino** (tabela no índice): hash dos metadados mais hash do original usados na última geração. Se mudar, o livro fica "desatualizado".
-- As configurações de destino são **por máquina** (`%APPDATA%\GibiOMatic\settings.json`), porque caminhos como `Z:\` e o Kindle conectado são locais.
+- **Rules of every destination**: *Which books* (the whole library / chosen ones / series) and *When* (automatically on approval / manually).
+- **Capabilities per type**: each type declares which kinds of book it accepts (`issue`, `tpb`, `omnibus`, `artbook`, `book`). If the type accepts books that are not comics (`book`), the "Include books that aren't comics" option shows up in the destination, **off by default**. If it doesn't, the option doesn't even appear.
+  - **Komga**: accepts them, since it reads reflowable EPUB since version 1.8, with its own reader. Text books go as EPUB, unconverted.
+  - **Kindle**: KCC only converts images. Text books would need another converter or Send to Kindle, so they are **to do** (backlog). Until then, the option doesn't appear.
+- **State per book and destination** (a table in the index): the hash of the metadata plus the hash of the original used in the last generation. If either changes, the book is "outdated".
+- Destination settings are **per machine** (`%APPDATA%\GibiOMatic\settings.json`), because paths like `Z:\` and the connected Kindle are local.
 
-### 9.2 Destino Komga
-- **Como o Komga monta as séries**: cada subpasta que contém livros vira uma série, em qualquer profundidade, e cada arquivo vira um livro da série da pasta onde está. Os livros de uma pasta de one-shots viram, cada um, uma série de um livro só. O nome dessa pasta é a opção "One-Shots directory" da biblioteca no Komga.
-- **Saída padrão** (modelo editável em Avançado):
-  - livros com série: `{Pasta}/{Série}/{Série} v{Número:00} ({Ano}).cbz`;
-  - one-shots: `{Pasta}/{Pasta de one-shots}/{Título} ({Ano}).cbz`.
-- **Por que não `Editora/Série/`**: a pasta da editora não contém arquivos, então em tese o Komga a ignora, mas isso **não foi testado**. A editora já vai no `ComicInfo.xml` e o Komga permite filtrar por ela. Fica como modelo opcional, a validar na F3.
-- **One-shot**: um livro sem série, ou cuja série tem um livro só (graphic novel independente, como *Plutona*). Vem da identificação (ComicVine com 1 edição) e pode ser marcado à mão no Editor ("É one-shot").
-- **Configuração "Pasta de one-shots"** do destino, espelhando a opção *One-Shots directory* do Komga:
-  - padrão `_oneshots`;
-  - vazia = sem tratamento especial, e os one-shots ficam cada um na sua própria pasta de série;
-  - o assistente e a tela do destino lembram de configurar o mesmo nome no Komga;
-  - se o endereço e a chave do Komga estiverem configurados, o app lê a opção da biblioteca e avisa se os nomes forem diferentes.
-- **Geração do CBZ**:
-  - original CBZ: copia e injeta ou substitui o `ComicInfo.xml`;
-  - original CBR: extrai e reempacota como CBZ;
-  - original PDF: por página, se ela for uma única imagem JPEG cobrindo a página toda, extrai os bytes originais sem recompressão; senão (texto ou vetores por cima, como os balões do Radiant Black), renderiza na resolução da maior imagem e salva em JPEG de qualidade 92. Validado no protótipo em Python com CLOSET, Dead Lucky e Radiant Black;
-  - original EPUB: extrai as imagens na ordem do *spine*.
-- **ComicInfo.xml**: `Title, Series, Number, Volume, Count, Summary, Year, Month, Day, Writer, Penciller, Inker, Colorist, Letterer, CoverArtist, Editor, Publisher, Imprint, Genre, Tags, SeriesGroup (universos, separados por vírgula; o Komga cria coleções), Web, PageCount, LanguageISO, Format (TPB/Issue), GTIN`.
-- **Atualização do servidor (opcional)**: com URL e chave de API do Komga, chama o scan da biblioteca ao terminar. Os endpoints ainda vão ser confirmados na documentação do Komga.
-- **Padrão**: toda a biblioteca, automático.
+### 9.2 Komga destination
+- **How Komga builds series**: every subfolder that contains books becomes a series, at any depth, and every file becomes a book of the series of the folder it is in. The books in a one-shots folder each become a series of a single book. That folder's name is the library's "One-Shots directory" option in Komga.
+- **Default output** (template editable under Advanced):
+  - books with a series: `{Folder}/{Series}/{Series} v{Number:00} ({Year}).cbz`;
+  - one-shots: `{Folder}/{One-shots folder}/{Title} ({Year}).cbz`.
+- **Why not `Publisher/Series/`**: the publisher folder contains no files, so in theory Komga ignores it, but this **has not been tested**. The publisher already goes in `ComicInfo.xml` and Komga can filter by it. It stays as an optional template, to validate in F3.
+- **One-shot**: a book without a series, or whose series has a single book (a stand-alone graphic novel, such as *Plutona*). It comes from the identification (ComicVine with 1 issue) and can be marked by hand in the Editor ("It is a one-shot").
+- **"One-shots folder" setting** of the destination, mirroring Komga's *One-Shots directory* option:
+  - default `_oneshots`;
+  - empty = no special handling, and each one-shot stays in its own series folder;
+  - the wizard and the destination screen remind the user to set the same name in Komga;
+  - if Komga's address and key are configured, the app reads the library's option and warns if the names differ.
+- **Building the CBZ**:
+  - CBZ original: copy and inject or replace `ComicInfo.xml`;
+  - CBR original: extract and repack as CBZ;
+  - PDF original: per page, if it is a single JPEG image covering the whole page, extract the original bytes without recompression; otherwise (text or vectors on top, such as the balloons in Radiant Black), render at the resolution of the largest image and save as JPEG at quality 92. Validated in the Python prototype with CLOSET, Dead Lucky and Radiant Black;
+  - EPUB original: extract the images in *spine* order.
+- **ComicInfo.xml**: `Title, Series, Number, Volume, Count, Summary, Year, Month, Day, Writer, Penciller, Inker, Colorist, Letterer, CoverArtist, Editor, Publisher, Imprint, Genre, Tags, SeriesGroup (universes, comma-separated; Komga creates collections), Web, PageCount, LanguageISO, Format (TPB/Issue), GTIN`.
+- **Server refresh (optional)**: with Komga's URL and API key, it triggers the library scan when done. The endpoints are yet to be confirmed in Komga's documentation.
+- **Default**: the whole library, automatic.
 
-### 9.3 Destino Kindle
-- **Conversão**: Kindle Comic Converter (KCC, `kcc-c2e`) com o perfil do aparelho (Colorsoft = `KCS`, 1272×1696, cor com `--forcecolor`). Entrada: um CBZ temporário gerado do original (com o `ComicInfo.xml`).
-- **Formato**: MOBI do KCC, que também é AZW3 ("dual"); a extensão `.mobi` é a que o KCC usa. EPUB para o Send to Kindle fica no backlog.
-- **Preparar e enviar** (decisão do usuário, 2026-10-18): os livros escolhidos são convertidos numa pasta local enquanto o Kindle está longe; o envio acontece quando ele é conectado e o usuário confirma. O app nunca apaga do Kindle sozinho; há um gerenciador para apagar à mão.
-- **Entrega**:
-  - Windows: o Kindle 2024+ usa **MTP**; cópia para `documents/` via Windows Portable Devices (por exemplo, o NuGet `MediaDevices`).
-  - Linux: **a fazer**. Até lá, o botão "Abrir pasta" permite arrastar à mão, e esse botão existe em todos os sistemas.
-- **Quadro a quadro**: o Kindle oferece "Visualização de painéis" (menu Aa, dois toques) em arquivos do KCC. Detecção real de quadros fica no backlog.
-- **Padrão**: livros escolhidos, preparados assim que escolhidos; envio só com confirmação.
-- **Riscos**: o KCC precisa do KindleGen para gerar MOBI/AZW3. O KindleGen vem no Kindle Previewer, que só existe para Windows e macOS, então no Linux a saída pode ficar limitada a EPUB.
-- **Licença do KCC**: ISC. Mas o executável publicado inclui PyMuPDF (AGPL), então o app **não** o distribui: o usuário instala, ou o app baixa o release oficial quando o usuário pede. Chamado como processo externo, não impõe nada à licença do GibiOMatic.
+### 9.3 Kindle destination
+- **Conversion**: Kindle Comic Converter (KCC, `kcc-c2e`) with the device profile (Colorsoft = `KCS`, 1272×1696, color with `--forcecolor`). Input: a temporary CBZ generated from the original (with `ComicInfo.xml`).
+- **Format**: KCC's MOBI, which is also AZW3 ("dual"); `.mobi` is the extension KCC uses. EPUB for Send to Kindle stays in the backlog.
+- **Prepare and send** (user decision, 2026-10-18): the chosen books are converted into a local folder while the Kindle is away; sending happens when it is plugged in and the user confirms. The app never deletes anything from the Kindle on its own; there is a manager for deleting by hand.
+- **Delivery**:
+  - Windows: Kindles from 2024 on use **MTP**; copy to `documents/` through Windows Portable Devices (for example, the `MediaDevices` NuGet package).
+  - Linux: **to do**. Until then, the "Open folder" button lets the user drag files by hand, and that button exists on every system.
+- **Panel by panel**: the Kindle offers "Panel View" (Aa menu, double tap) on KCC files. Real panel detection stays in the backlog.
+- **Default**: chosen books, prepared as soon as they are chosen; sending only with confirmation.
+- **Risks**: KCC needs KindleGen to produce MOBI/AZW3. KindleGen comes with Kindle Previewer, which only exists for Windows and macOS, so on Linux the output may be limited to EPUB.
+- **KCC license**: ISC. But the published executable bundles PyMuPDF (AGPL), so the app does **not** distribute it: the user installs it, or the app downloads the official release when the user asks. Called as an external process, it imposes nothing on GibiOMatic's license.
 
-### 9.4 Backlog de tipos
-Kavita, Kobo (KEPUB via KCC), Pasta simples (copiar em CBZ/PDF/EPUB), servidor OPDS, Calibre-Web.
+### 9.4 Backlog of types
+Kavita, Kobo (KEPUB via KCC), plain folder (copy as CBZ/PDF/EPUB), OPDS server, Calibre-Web.
 
-## 10. Carga inicial (importação em massa)
+## 10. Initial load (bulk import)
 
-Não há migração do Calibre. A coleção é reconstruída a partir dos originais baixados de novo do Humble Bundle, e os metadados de todos os livros são refeitos.
+There is no migration from Calibre. The collection is rebuilt from originals downloaded again from Humble Bundle, and every book's metadata is redone.
 
-1. O usuário aponta a Entrada para a pasta com os downloads, que podem ser centenas de arquivos.
-2. A importação roda **em lotes**, em segundo plano, com progresso e possibilidade de pausar e retomar. O estado fica no índice, então fechar o app não perde nada.
-3. A identificação respeita os limites das APIs, com fila, cache e reintentos. A carga inicial pode levar horas, e isso é esperado.
-4. Ao terminar, mostra um resumo:
-   - quantos foram aprovados automaticamente;
-   - quantos estão na Revisão;
-   - quantos são duplicados, por exemplo o mesmo livro em PDF e em CBZ.
-5. **Duplicados de formato**: quando o mesmo livro chega em mais de um formato, o melhor vira o original principal e os outros ficam como formatos extras. A ordem de preferência é CBZ > PDF > EPUB > CBR, configurável.
-6. A biblioteca do Calibre não é lida nem alterada. Ela continua como backup até o usuário decidir apagá-la.
+1. The user points the Inbox at the folder with the downloads, which can be hundreds of files.
+2. The import runs **in batches**, in the background, with progress and the ability to pause and resume. The state lives in the index, so closing the app loses nothing.
+3. The identification respects the APIs' limits, with a queue, cache and retries. The initial load may take hours, and that is expected.
+4. When it ends, it shows a summary:
+   - how many were approved automatically;
+   - how many are in the Review;
+   - how many are duplicates, for example the same book as PDF and as CBZ.
+5. **Format duplicates**: when the same book arrives in more than one format, the best one becomes the main original and the others are kept as extra formats. The order of preference is CBZ > PDF > EPUB > CBR, configurable.
+6. The Calibre library is neither read nor modified. It stays as a backup until the user decides to delete it.
 
-## 11. Configurações
+## 11. Settings
 
-- **Gerais** (`%APPDATA%\GibiOMatic\settings.json`): idioma (pt-BR, en), tema (escuro, claro, sistema), pasta do Arquivo, pasta de Entrada, o que fazer com o arquivo depois de importar (Lixeira, `_imported` ou apagar), fechar a janela (bandeja ou sair), iniciar com o sistema (desligado, só a bandeja, com a janela), fontes de metadados (ordem e liga/desliga), limiar de aprovação automática, destinos.
-- **Segredos** (chaves de API) **não vão para arquivos de texto**: Windows DPAPI (`ProtectedData`) e, no Linux, libsecret.
-- **Da biblioteca** (`gibiomatic-library.json`, no Drive): só o que é da coleção, independente da máquina (versão do formato, id).
+- **General** (`%APPDATA%\GibiOMatic\settings.json`): language (pt-BR, en), theme (dark, light, system), Archive folder, Inbox folder, what to do with the file after importing (Recycle Bin, `_imported` or delete), closing the window (tray or quit), start with the system (off, tray only, with the window), metadata sources (order and on/off), automatic approval threshold, destinations.
+- **Secrets** (API keys) **never go to text files**: Windows DPAPI (`ProtectedData`) and, on Linux, libsecret.
+- **Library settings** (`gibiomatic-library.json`, on the Drive): only what belongs to the collection, independent of the machine (format version, id).
 
 ## 12. Interface
 
-Baseada no protótipo do Claude Design. Telas:
+Based on the Claude Design prototype. Screens:
 
-| Tela | Conteúdo |
+| Screen | Contents |
 |---|---|
-| Biblioteca | Grade de capas (séries ou livros), selos de qualidade, filtros (Precisa revisão, Sem data, Sem série, Autor desconhecido, Completos), busca, painel do livro selecionado |
-| Entrada | Arquivos novos com o resultado da identificação, tratamento de duplicados, importar |
-| Revisão | Fila, candidatos, comparação campo a campo |
-| Editor | Um livro ou lote, créditos por função, prévia dos nomes de saída |
-| Destinos | Cartões com status e regras; "Adicionar destino" |
-| Detalhe do destino | Ação principal (Kindle: escolher e enviar) e configurações com "Avançado" recolhido |
-| Assistente de destino | 3 passos: tipo → detalhes → nome e regras |
-| Configurações | Pastas, Metadados, Geral |
+| Library | Cover grid (series or books), quality badges, filters (Needs review, No date, No series, Unknown author, Complete), search, panel for the selected book |
+| Inbox | New files with the identification result, duplicate handling, import |
+| Review | Queue, candidates, field-by-field comparison |
+| Editor | One book or a batch, credits by role, preview of the output names |
+| Destinations | Cards with status and rules; "Add destination" |
+| Destination detail | Main action (Kindle: choose and send) and settings with "Advanced" collapsed |
+| Destination wizard | 3 steps: type → details → name and rules |
+| Settings | Folders, Metadata, General |
 
-- **Visual**: tema escuro azul-noite por padrão e tema claro em papel creme, amarelo-limão (`#FFF27A`) como destaque, ciano e magenta só no deslocamento da seleção, Anybody para títulos, IBM Plex Sans/Mono para o resto (revamp da F7; detalhes em `docs/DESIGN.md`).
-- **Acessibilidade**: navegação por teclado, contraste AA, áreas de toque ≥ 44 px.
-- **Idiomas**: `resx`, com pt-BR e en desde o início.
+- **Look**: a night-blue dark theme by default and a cream-paper light theme, lemon yellow (`#FFF27A`) as the accent, cyan and magenta only in the selection's offset, Anybody for titles, IBM Plex Sans/Mono for everything else (F7 revamp; details in `docs/DESIGN.md`).
+- **Accessibility**: keyboard navigation, AA contrast, touch targets ≥ 44 px.
+- **Languages**: `resx`, with pt-BR and en from the start.
 
-## 13. Arquitetura técnica
+## 13. Technical architecture
 
-- **.NET 10 (LTS)**. O suporte ao .NET 8 termina em nov/2026; é preciso instalar o SDK 10.
-- **Avalonia 12** com MVVM (CommunityToolkit.Mvvm).
+- **.NET 10 (LTS)**. .NET 8 support ends in Nov 2026; the SDK 10 has to be installed.
+- **Avalonia 12** with MVVM (CommunityToolkit.Mvvm).
 
 ```
 GibiOMatic.sln
   src/
-    GibiOMatic.App/              # Avalonia: Views, ViewModels, temas, recursos (resx)
-    GibiOMatic.Core/             # domínio (Book, Credit, Destination…), regras de qualidade, serviços
-    GibiOMatic.Library/          # formato em disco, metadata.json, índice SQLite, importação (entrada e carga em massa)
-    GibiOMatic.Metadata/         # IMetadataSource: OpenLibrary, ComicVine, GoogleBooks; identificação
-    GibiOMatic.Conversion/       # leitura de PDF/EPUB/CBZ/CBR, montagem de CBZ, ComicInfo.xml, execução do KCC
+    GibiOMatic.App/              # Avalonia: Views, ViewModels, themes, resources (resx)
+    GibiOMatic.Core/             # domain (Book, Credit, Destination…), quality rules, services
+    GibiOMatic.Library/          # on-disk format, metadata.json, SQLite index, import (inbox and bulk load)
+    GibiOMatic.Metadata/         # IMetadataSource: OpenLibrary, ComicVine, GoogleBooks; identification
+    GibiOMatic.Conversion/       # reading PDF/EPUB/CBZ/CBR, building CBZ, ComicInfo.xml, running KCC
     GibiOMatic.Destinations/     # IDestinationType + Komga + Kindle (MTP)
   tests/
-    GibiOMatic.Core.Tests/ …     # xUnit; amostras sintéticas, nunca HQs reais no repositório
+    GibiOMatic.Core.Tests/ …     # xUnit; synthetic samples, never real comics in the repository
 ```
 
-| Necessidade | Biblioteca | Licença |
+| Need | Library | License |
 |---|---|---|
 | UI | Avalonia, CommunityToolkit.Mvvm | MIT |
-| Banco/índice | Microsoft.Data.Sqlite + Dapper | MIT / Apache-2.0 |
-| Renderizar PDF | PDFium (binários bblanchon/pdfium-binaries, P/Invoke próprio) | BSD/Apache |
-| Extrair imagens do PDF sem perda | PDFium (objetos da página, bytes crus do JPEG) | BSD/Apache |
+| Database/index | Microsoft.Data.Sqlite + Dapper | MIT / Apache-2.0 |
+| Render PDF | PDFium (bblanchon/pdfium-binaries binaries, our own P/Invoke) | BSD/Apache |
+| Extract PDF images losslessly | PDFium (page objects, raw JPEG bytes) | BSD/Apache |
 | CBR (RAR) | SharpCompress | MIT |
-| Imagens | SkiaSharp (já vem com o Avalonia) | MIT |
-| Log | Serilog | Apache-2.0 |
-| MTP (Windows) | MediaDevices | MIT (a confirmar) |
+| Images | SkiaSharp (already comes with Avalonia) | MIT |
+| Logging | Serilog | Apache-2.0 |
+| MTP (Windows) | MediaDevices | MIT (to be confirmed) |
 
-**Evitar** MuPDF/PyMuPDF (AGPL), que obrigaria o app inteiro a ser AGPL.
+**Avoid** MuPDF/PyMuPDF (AGPL), which would force the whole app to be AGPL.
 
-**Processos externos**: o KCC é chamado como linha de comando, com caminho configurável e timeout, e o progresso é lido da saída.
+**External processes**: KCC is called on the command line, with a configurable path and a timeout, and progress is read from its output.
 
-## 14. Integridade e segurança
+## 14. Integrity and security
 
-- Originais imutáveis, com hash conferido e verificação opcional ("verificar arquivo").
-- Toda operação em lote tem simulação, confirmação e log em `%LOCALAPPDATA%\GibiOMatic\logs`.
-- Nenhum segredo no repositório, nem nos arquivos do Drive.
-- O app não envia dados para lugar nenhum além das fontes de metadados escolhidas.
+- Immutable originals, with the hash checked and an optional verification ("verify file").
+- Every batch operation has a dry run, confirmation and a log in `%LOCALAPPDATA%\GibiOMatic\logs`.
+- No secrets in the repository, nor in the files on the Drive.
+- The app sends data nowhere except the chosen metadata sources.
 
-## 15. Fases de entrega
+## 15. Delivery phases
 
-| Fase | Entrega | Pronto quando |
+| Phase | Delivery | Done when |
 |---|---|---|
-| **F0 · Fundação** | Solução .NET, CI no GitHub Actions (build e testes), configurações, formato do Arquivo e índice | o app abre, aponta para uma pasta e cria a biblioteca vazia |
-| **F1 · Importação + Biblioteca** | Importação manual e em massa (seção 10), cópia para o Arquivo, capa, metadados embutidos, grade, filtros e nota de qualidade, painel | os originais baixados aparecem na biblioteca com nota de qualidade |
-| **F2 · Metadados** | Open Library + ComicVine, identificação, aprovação automática segura, Revisão, Editor (um livro e lote), histórico e desfazer | a coleção inteira passa pela identificação e a fila de Revisão é tratável |
-| **F3 · Destino Komga** | Montagem de CBZ (PDF/EPUB/CBZ/CBR), ComicInfo.xml, modelo de nomes, estado de sincronização, scan opcional | a biblioteca aparece no Komga com séries e metadados corretos |
-| **F4 · Destino Kindle** | Integração com o KCC, perfis, envio via MTP no Windows | um livro escolhido chega ao Colorsoft e abre com a visualização de painéis |
-| **F5 · Entrada automática** | Pasta observada, identificação na chegada, duplicados e substituição | um download novo do Humble vai do download ao Komga sem passos manuais, ou só com a aprovação |
-| **F6 · Polimento** | Inglês, tema claro, instalador Windows, build Linux, documentação de usuário | pronto para outra pessoa instalar sozinha |
+| **F0 · Foundation** | .NET solution, CI on GitHub Actions (build and tests), settings, Archive format and index | the app opens, points at a folder and creates the empty library |
+| **F1 · Import + Library** | Manual and bulk import (section 10), copy to the Archive, cover, embedded metadata, grid, filters and quality score, panel | the downloaded originals show up in the library with a quality score |
+| **F2 · Metadata** | Open Library + ComicVine, identification, safe automatic approval, Review, Editor (single book and batch), history and undo | the whole collection goes through identification and the Review queue is manageable |
+| **F3 · Komga destination** | CBZ building (PDF/EPUB/CBZ/CBR), ComicInfo.xml, naming template, sync state, optional scan | the library shows up in Komga with correct series and metadata |
+| **F4 · Kindle destination** | KCC integration, profiles, sending over MTP on Windows | a chosen book reaches the Colorsoft and opens with Panel View |
+| **F5 · Automatic inbox** | Watched folder, identification on arrival, duplicates and replacement | a new Humble download goes from download to Komga with no manual steps, or only the approval |
+| **F6 · Polish** | English, light theme, Windows installer, Linux build, user documentation | ready for someone else to install on their own |
 
 ### Backlog
-Detecção real de quadros (Panel View com regiões por quadro), outros destinos (seção 9.4), leitura de ISBN por OCR da página de créditos, sugestão de séries faltantes, atualização automática do app, modo servidor/Docker.
+Real panel detection (Panel View with per-panel regions), other destinations (section 9.4), reading the ISBN by OCR from the credits page, suggesting missing series, automatic app updates, server/Docker mode.
 
-## 16. Questões em aberto
+## 16. Open questions
 
-1. Comportamento do KCC sem KindleGen no Linux.
-2. Pastas de editora no Komga (`Editora/Série/`): o modelo de nome permite `{publisher}/{series}/…`; falta testar no Komga do usuário.
+1. KCC's behavior without KindleGen on Linux.
+2. Publisher folders in Komga (`Publisher/Series/`): the naming template allows `{publisher}/{series}/…`; still to be tested on the user's Komga.
 
-**Decididas (2026-10-17)**:
-- Nome: **Gibi-o-matic** (repositório `gibi-o-matic`, namespace `GibiOMatic`).
-- Licença MIT (arquivo `LICENSE`).
-- Sem migração do Calibre; carga inicial a partir dos originais.
-- Aprovação automática ligada, com as regras de segurança da seção 8.2.
-- Livros que não são HQ: opção por destino, conforme a capacidade do tipo.
-- Cópia para o Kindle no Linux: a fazer.
-- Segundo plano (2026-10-23): fechar a janela vai para a bandeja por padrão, com aviso e escolha na primeira vez; iniciar com o sistema tem a opção de abrir a janela ou só a bandeja; avisos em resumo (seção 6, item 7).
-- API do Komga: `GET /api/v1/libraries` e `POST /api/v1/libraries/{id}/scan`, com o cabeçalho `X-API-Key` (ver `RESEARCH.md`).
+**Decided (2026-10-17)**:
+- Name: **Gibi-o-matic** (repository `gibi-o-matic`, namespace `GibiOMatic`).
+- MIT license (`LICENSE` file).
+- No migration from Calibre; initial load from the originals.
+- Automatic approval on, with the safety rules of section 8.2.
+- Books that are not comics: an option per destination, according to the type's capabilities.
+- Copying to the Kindle on Linux: to do.
+- Background (2026-10-23): closing the window goes to the tray by default, with a notice and a choice the first time; start with the system can open the window or only the tray; summary notifications (section 6, item 7).
+- Komga API: `GET /api/v1/libraries` and `POST /api/v1/libraries/{id}/scan`, with the `X-API-Key` header (see `RESEARCH.md`).
