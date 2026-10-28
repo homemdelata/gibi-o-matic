@@ -1,87 +1,183 @@
-# Gibi-o-matic
+<p align="center">
+  <img src="src/GibiOMatic.App/Assets/logo.png" alt="Gibi-o-matic logo" width="96">
+</p>
 
-Organizador de quadrinhos digitais comprados (Humble Bundle e afins), para Windows e Linux. Ele guarda os
-originais intocados, acerta os metadados e gera as cópias de leitura para onde você lê: um servidor
-[Komga](https://komga.org) ou um Kindle.
+<h1 align="center">Gibi-o-matic</h1>
 
-![A Biblioteca](docs/images/biblioteca.png)
+<p align="center">
+  <strong>Your digital comics, organized: pristine originals, correct metadata, reading copies for Komga and Kindle.</strong>
+</p>
 
-## O que ele faz
+<p align="center">
+  <a href="https://github.com/homemdelata/gibi-o-matic/actions/workflows/ci.yml"><img src="https://github.com/homemdelata/gibi-o-matic/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/homemdelata/gibi-o-matic/releases/latest"><img src="https://img.shields.io/github/v/release/homemdelata/gibi-o-matic?include_prereleases&sort=semver" alt="Latest release"></a>
+  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux-blue" alt="Windows | Linux">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/homemdelata/gibi-o-matic" alt="MIT license"></a>
+</p>
 
-- **Arquivo dos originais.** Cada livro ganha uma pasta com o original como foi baixado (PDF, CBZ, CBR ou
-  EPUB), a capa e um `metadata.json`. O original nunca é alterado; o mesmo livro em vários formatos vira um
-  livro só, com o formato preferido como principal.
-- **Entrada automática.** Aponte a pasta de downloads e cada arquivo novo entra sozinho na biblioteca. Depois
-  ele vai para a Lixeira (ou para `_imported`, dentro dela, se preferir). Os livros esperam em `_To review`
-  até os metadados serem aprovados. O app pode ficar na bandeja do sistema e iniciar com ele.
-- **Metadados.** Busca no ComicVine e na Open Library. As identificações seguras são aprovadas sozinhas, e
-  as outras esperam na **Revisão**, com a comparação campo a campo. O **Editor** cuida do resto, inclusive
-  em lote. Uma nota de qualidade aponta o que falta em cada livro.
-- **Destinos.** O **Komga** recebe CBZ com `ComicInfo.xml`, organizados por série. O **Kindle** recebe as
-  cópias convertidas pelo Kindle Comic Converter, preparadas antes e enviadas por USB quando você conecta o
-  aparelho. Editar um livro atualiza as cópias.
-- **Leitor** próprio para CBZ, CBR, PDF e EPUB, com página dupla, leitura da direita para a esquerda e
-  progresso de leitura.
-- Interface em português e em inglês, tema escuro e tema claro.
+<p align="center">
+  English · <a href="README.pt-BR.md">Português (Brasil)</a>
+</p>
 
-| Entrada | Revisão |
+![The Library](docs/images/biblioteca-en.png)
+
+Gibi-o-matic is a desktop app (Windows and Linux) for people who **buy DRM-free digital comics** (Humble Bundle
+and similar stores) and want to keep them well organized and read them comfortably. *Gibi* is Brazilian
+Portuguese for "comic book".
+
+## Why it exists
+
+Buy a few comics bundles and you end up with hundreds of files named `house_of_slaughter_v01_digital.pdf`, in a
+mix of PDF, CBZ and EPUB, with metadata that is missing, wrong or glued together. Then each place you read wants
+something different:
+
+- a server like [Komga](https://komga.org) wants CBZ files with a `ComicInfo.xml` inside and a sensible folder layout;
+- a Kindle wants each book converted by [Kindle Comic Converter](https://github.com/ciromattia/kcc) and copied over USB;
+- and your backup should keep the files **exactly as you bought them**.
+
+General ebook managers such as Calibre are built for prose: they rewrite your files in place and know little
+about series, volumes, collected editions or creator credits. Gibi-o-matic does only comics, and treats the
+archive of originals as sacred: metadata lives next to each original in a `metadata.json`, and every reading copy
+is generated from it.
+
+```
+INBOX ──import──► ARCHIVE (original + metadata.json) ──generate──► DESTINATIONS
+  │                     ▲          │                                ├─ Komga  (CBZ + ComicInfo.xml)
+  └── metadata lookup ──┘          └── Review / Editor              └─ Kindle (via KCC, over USB)
+```
+
+## Features
+
+- **An archive of untouched originals.** Each book gets a folder with the original exactly as downloaded (PDF,
+  CBZ, CBR or EPUB), its cover and a `metadata.json`. Originals are never modified. The same book in several
+  formats becomes one book, with your preferred format as the main original.
+- **Automatic inbox.** Point it at your downloads folder and new files are imported on their own, then sent to
+  the Recycle Bin (or moved to an `_imported` folder inside the inbox, if you prefer). Books wait in `_To review`
+  until their metadata is approved.
+  The app can live in the system tray and start with your computer.
+- **Metadata from ComicVine and Open Library.** Confident matches are approved automatically; the rest wait in
+  the **Review** screen with a field-by-field comparison. The **Editor** handles everything else, including batch
+  edits, credits by role and *universes* (series from the same line, which become collections in Komga). A
+  quality score points out what each book is missing.
+- **Destinations.** **Komga** gets CBZ files with `ComicInfo.xml`, organized by series. **Kindle** gets copies
+  converted ahead of time, sent over USB when you plug the device in. Editing a book updates its copies.
+- **A built-in reader** for CBZ, CBR, PDF and EPUB, with two-page spreads, right-to-left reading and reading
+  progress, so you can check which edition a file really is.
+- English and Brazilian Portuguese interface, dark and light themes, and update notifications (nothing is
+  installed until you say so).
+
+| Inbox | Review |
 |---|---|
-| ![Entrada](docs/images/entrada.png) | ![Revisão](docs/images/revisao.png) |
-| **Editor** | **Tema claro** |
-| ![Editor](docs/images/editor.png) | ![Biblioteca no tema claro](docs/images/biblioteca-claro.png) |
+| ![Inbox](docs/images/entrada-en.png) | ![Review](docs/images/revisao-en.png) |
+| **Editor** | **Light theme** |
+| ![Editor](docs/images/editor-en.png) | ![The Library in the light theme](docs/images/biblioteca-claro-en.png) |
 
-As capturas usam uma biblioteca inventada (títulos, autores e capas fictícios), gerada por `tools/Screenshots`.
+The screenshots use a made-up library (titles, creators and covers are fictional), generated by
+[`tools/Screenshots`](tools/Screenshots).
 
-## Instalação
+### What it is not
 
-Baixe a última versão em **Releases**:
+- Not a store and not a downloader: you bring the files you bought.
+- **It does not remove DRM**, and never will. It is meant for DRM-free purchases.
+- Not a full comic reader or a server: Komga, your tablet and your Kindle do that well. The built-in reader is
+  for checking books, not for replacing them.
 
-- **Windows 10 ou 11:** `Gibi-o-matic-win-Setup.exe`. Ele instala só para o seu usuário, sem pedir
-  administrador, e cria atalhos na área de trabalho e no menu Iniciar. Na primeira vez, o Windows pode avisar
-  "editor desconhecido" (o instalador ainda não é assinado): clique em *Mais informações* → *Executar assim mesmo*.
-- **Linux:** `Gibi-o-matic.AppImage`. Dê permissão de execução (`chmod +x Gibi-o-matic.AppImage`) e abra.
+## Installation
 
-O app já traz o .NET; não é preciso instalar mais nada. A versão instalada procura atualizações sozinha e
-avisa quando há uma nova; nada é instalado sem você pedir.
+Download the latest version from [**Releases**](https://github.com/homemdelata/gibi-o-matic/releases/latest):
 
-## Primeiros passos
+- **Windows 10 or 11:** `Gibi-o-matic-win-Setup.exe`. It installs for your user only, without administrator
+  rights, and adds shortcuts to the desktop and the Start menu. The installer is not signed yet, so the first
+  time Windows may warn about an "unknown publisher": click *More info* → *Run anyway*.
+- **Linux (x64):** `Gibi-o-matic.AppImage`. Make it executable (`chmod +x Gibi-o-matic.AppImage`) and run it.
 
-1. **Crie a biblioteca** numa pasta vazia (pode ser no Google Drive, por exemplo). É lá que ficam os originais
-   e os metadados. O índice e o cache ficam fora dela, na sua máquina.
-2. **Chave do ComicVine** (recomendada): crie uma conta em
-   [comicvine.gamespot.com/api](https://comicvine.gamespot.com/api/), copie a chave e cole em
-   *Configurações → Metadados*. Ela fica guardada protegida pelo Windows e nunca vai para arquivos de texto.
-   No Linux, onde isso ainda não existe, use a variável de ambiente `GIBIOMATIC_COMICVINE_KEY`.
-3. **Importe** arrastando arquivos para a *Entrada*, ou escolha uma pasta de Entrada em
-   *Configurações → Pastas* para os downloads entrarem sozinhos.
-4. **Revise** o que a identificação não aprovou sozinha.
-5. **Adicione um destino** em *Destinos*:
-   - **Komga:** a pasta da biblioteca do Komga. O endereço e a chave do servidor são opcionais e servem para
-     pedir uma nova leitura da pasta depois das mudanças.
-   - **Kindle:** o app baixa o Kindle Comic Converter quando você pede. Para gerar os arquivos, ele usa o
-     KindleGen que vem com o Kindle Previewer, da Amazon (instale-o antes). No Linux, o envio por USB ainda não é suportado.
+The app ships with its own .NET runtime; there is nothing else to install. It checks GitHub for new versions and
+tells you when one is available; nothing is installed until you say so.
 
-## Onde ficam as coisas
+macOS is not supported for now.
 
-| O quê | Onde |
+## Getting started
+
+1. **Create a library** in an empty folder (a synced folder such as Google Drive works fine). That is where the
+   originals and metadata live. The index and caches stay outside it, on your machine.
+2. **Add a ComicVine API key** (recommended): create a free account at
+   [comicvine.gamespot.com/api](https://comicvine.gamespot.com/api/) and paste the key in *Settings → Metadata*.
+   On Windows it is stored encrypted with your user account (DPAPI) and never written to a text file. On Linux,
+   where that is not available yet, set the `GIBIOMATIC_COMICVINE_KEY` environment variable instead.
+3. **Import** by dragging files onto the *Inbox*, or pick an Inbox folder in *Settings → Folders* so downloads
+   come in by themselves.
+4. **Review** whatever the identification did not approve on its own.
+5. **Add a destination** under *Destinations*:
+   - **Komga:** the folder of a Komga library. The server address and API key are optional; with them the app
+     asks Komga to rescan after each change.
+   - **Kindle:** the app downloads Kindle Comic Converter when you ask (it is not bundled). To build Kindle
+     files, KCC needs KindleGen, which comes with Amazon's Kindle Previewer: install that first. Sending over USB
+     is Windows-only for now.
+
+## Where things live
+
+| What | Where |
 |---|---|
-| Originais, capas e `metadata.json` | na pasta da biblioteca que você escolheu |
-| Configurações | `%APPDATA%\GibiOMatic` (Linux: `~/.config/gibiomatic`) |
-| Índice, miniaturas, cache e logs | `%LOCALAPPDATA%\GibiOMatic` (Linux: `~/.local/share/gibiomatic`) |
-| Programa instalado | `%LOCALAPPDATA%\Gibi-o-matic` |
+| Originals, covers and `metadata.json` | the library folder you chose |
+| Settings | `%APPDATA%\GibiOMatic` (Linux: `~/.config/gibiomatic`) |
+| Index, thumbnails, cache and logs | `%LOCALAPPDATA%\GibiOMatic` (Linux: `~/.local/share/gibiomatic`) |
+| Installed program | `%LOCALAPPDATA%\Gibi-o-matic` |
 
-Desinstalar remove só o programa: a biblioteca, as configurações e o índice continuam onde estão.
+Uninstalling removes only the program: your library, settings and index stay where they are. The library is
+plain folders and JSON, readable without the app, and the index can always be rebuilt from it.
 
-**O que vai para a internet:** as buscas de metadados (ComicVine, Open Library e, se você ligar, Google
-Books), o download do Kindle Comic Converter (GitHub, quando você pede) e a procura de atualizações (GitHub).
-O conteúdo dos seus arquivos não sai da sua máquina.
+### Privacy
 
-## Desenvolvimento
+No telemetry, no accounts. The app only goes online for metadata lookups (ComicVine, Open Library and, if you
+turn it on, Google Books), to download Kindle Comic Converter (from GitHub, when you ask) and to check for updates
+(GitHub). The contents of your files never leave your machine.
 
-Veja [`CONTRIBUTING.md`](CONTRIBUTING.md). A especificação está em [`docs/SPEC.md`](docs/SPEC.md), as fases
-em [`docs/ROADMAP.md`](docs/ROADMAP.md) e as decisões em [`docs/DECISIONS.md`](docs/DECISIONS.md).
+## Building from source
 
-## Licença
+You need the [.NET 10 SDK](https://dotnet.microsoft.com/download) (the exact version is pinned in
+[`global.json`](global.json)).
 
-MIT. Veja [`LICENSE`](LICENSE). As dependências e as licenças delas estão em
-[`docs/THIRD-PARTY.md`](docs/THIRD-PARTY.md).
+```
+git clone https://github.com/homemdelata/gibi-o-matic.git
+cd gibi-o-matic
+dotnet build GibiOMatic.sln
+dotnet test --solution GibiOMatic.sln
+dotnet run --project src/GibiOMatic.App
+```
+
+To build the installers locally: `powershell -ExecutionPolicy Bypass -File tools\publish.ps1 [-Runtime linux-x64]`.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the project layout, the rules and how to send changes.
+
+## Contributing
+
+Bug reports, ideas and pull requests are welcome. This is a personal project maintained in spare time, so
+please read [`CONTRIBUTING.md`](CONTRIBUTING.md) first: bug fixes can go straight to a pull request, while new
+features and screen changes should start with an issue so we can agree on them before you write code.
+
+Please follow the [Code of Conduct](CODE_OF_CONDUCT.md), and report security issues privately as described in
+[`SECURITY.md`](SECURITY.md).
+
+### About the documentation and AI assistance
+
+The design documents in [`docs/`](docs/) (specification, roadmap, decisions, research) are written in Brazilian
+Portuguese, the maintainer's language. Code, comments and the contributor-facing files are in English.
+
+Gibi-o-matic is developed with the help of [Claude Code](https://claude.com/claude-code). The instructions it
+follows are in [`CLAUDE.md`](CLAUDE.md), which doubles as a compact guide to the project's rules.
+
+## Acknowledgements
+
+Gibi-o-matic stands on the shoulders of [Avalonia](https://avaloniaui.net), [PDFium](https://pdfium.googlesource.com/pdfium/),
+[SharpCompress](https://github.com/adamhathcock/sharpcompress), [SkiaSharp](https://github.com/mono/SkiaSharp),
+[Velopack](https://velopack.io) and others listed in [`docs/THIRD-PARTY.md`](docs/THIRD-PARTY.md); of
+[Kindle Comic Converter](https://github.com/ciromattia/kcc) and [Komga](https://komga.org); and of the
+[ComicVine](https://comicvine.gamespot.com) and [Open Library](https://openlibrary.org) communities that
+catalogue comics. The fonts are [Anybody](https://github.com/Etcetera-Type-Co/Anybody) and
+[IBM Plex](https://github.com/IBM/plex), under the SIL Open Font License.
+
+Gibi-o-matic is an independent project, not affiliated with or endorsed by Humble Bundle, Amazon, Komga,
+ComicVine, Open Library or any publisher. Product names are trademarks of their owners.
+
+## License
+
+[MIT](LICENSE). Third-party components and their licenses are listed in [`docs/THIRD-PARTY.md`](docs/THIRD-PARTY.md).

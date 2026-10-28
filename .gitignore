@@ -496,5 +496,6 @@ gibiteca.local.json
 *.azw3
 *.mobi
 
-# Claude Code (configurações locais do usuário)
+# Claude Code (local user settings and personal context)
 .claude/settings.local.json
+CLAUDE.local.md

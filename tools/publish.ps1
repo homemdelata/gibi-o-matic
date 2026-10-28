@@ -61,7 +61,7 @@ $releases = Join-Path $artifacts "releases/$Runtime"
 Invoke-Dotnet tool restore
 Invoke-Dotnet vpk $(if ($forWindows) { '[win]' } else { '[linux]' }) pack --packId $packId --packVersion $version --packDir $publish `
     --mainExe $(if ($forWindows) { 'GibiOMatic.exe' } else { 'GibiOMatic' }) `
-    --packTitle 'Gibi-o-matic' --packAuthors 'Gustavo Ayres' `
+    --packTitle 'Gibi-o-matic' --packAuthors 'Gustavo Ayres (homemdelata)' `
     --icon (Join-Path $root 'src/GibiOMatic.App/Assets/gibiomatic.ico') `
     --channel $(if ($forWindows) { 'win' } else { 'linux' }) `
     --outputDir $releases
