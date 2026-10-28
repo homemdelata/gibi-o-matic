@@ -19,7 +19,7 @@
   <a href="README.md">English</a> · Português (Brasil)
 </p>
 
-![A Biblioteca](docs/images/biblioteca.png)
+![A Biblioteca](docs/images/library-pt-BR.png)
 
 O Gibi-o-matic é um app desktop (Windows e Linux) para quem **compra quadrinhos digitais sem DRM** (Humble
 Bundle e lojas parecidas) e quer guardá-los bem organizados e lê-los com conforto.
@@ -65,9 +65,9 @@ ENTRADA ──importar──► ARQUIVO (original + metadata.json) ──gerar�
 
 | Entrada | Revisão |
 |---|---|
-| ![Entrada](docs/images/entrada.png) | ![Revisão](docs/images/revisao.png) |
+| ![Entrada](docs/images/inbox-pt-BR.png) | ![Revisão](docs/images/review-pt-BR.png) |
 | **Editor** | **Tema claro** |
-| ![Editor](docs/images/editor.png) | ![Biblioteca no tema claro](docs/images/biblioteca-claro.png) |
+| ![Editor](docs/images/editor-pt-BR.png) | ![Biblioteca no tema claro](docs/images/library-light-pt-BR.png) |
 
 As capturas usam uma biblioteca inventada (títulos, autores e capas fictícios), gerada por
 [`tools/Screenshots`](tools/Screenshots).
@@ -142,7 +142,7 @@ dotnet run --project src/GibiOMatic.App
 ```
 
 Para gerar os instaladores na sua máquina: `powershell -ExecutionPolicy Bypass -File tools\publish.ps1 [-Runtime linux-x64]`.
-Veja o [`CONTRIBUTING.md`](CONTRIBUTING.md) (em inglês) para a estrutura do projeto, as regras e como mandar mudanças.
+Veja o [`CONTRIBUTING.md`](CONTRIBUTING.md) (em inglês, como toda a documentação do projeto) para a estrutura do projeto, as regras e como mandar mudanças.
 
 ## Contribuindo
 
@@ -156,8 +156,8 @@ Siga o [Código de Conduta](CODE_OF_CONDUCT.md) e informe problemas de seguranç
 
 ### Documentação e uso de IA
 
-Os documentos de projeto em [`docs/`](docs/) (especificação, roadmap, decisões e pesquisa) estão em português.
-O código, os comentários e os arquivos para quem contribui estão em inglês.
+Os documentos de projeto ficam em [`docs/`](docs/), em inglês: a especificação, o roadmap, o design, a pesquisa e o
+registro das decisões por trás do app.
 
 O Gibi-o-matic é desenvolvido com a ajuda do [Claude Code](https://claude.com/claude-code). As instruções que ele
 segue estão no [`CLAUDE.md`](CLAUDE.md), que também serve como um resumo das regras do projeto.

@@ -64,12 +64,10 @@ and use one of these (never put the key in code or in the repository):
 | `src/GibiOMatic.Destinations` | Komga and Kindle destinations and synchronization |
 | `tests/` | one test project per project; `GibiOMatic.Testing` generates the synthetic files |
 | `tools/` | `publish.ps1` (installers), `Screenshots` (documentation screenshots), `IconGen` (icon) |
-| `docs/` | specification, roadmap, design, research and decisions (in Brazilian Portuguese) |
+| `docs/` | specification, roadmap, design, research and decisions |
 
 When in doubt about how something should behave, [`docs/SPEC.md`](docs/SPEC.md) is the source of truth, and
-[`docs/DECISIONS.md`](docs/DECISIONS.md) explains why things are the way they are. Those documents are in
-Portuguese; a machine translation is fine for reading them, and you don't need to write in Portuguese to
-contribute.
+[`docs/DECISIONS.md`](docs/DECISIONS.md) explains why things are the way they are.
 
 ## Ground rules
 
@@ -110,15 +108,15 @@ These are not up for negotiation in a pull request; if you think one is wrong, o
 1. Fork the repository and create a branch from `main`.
 2. Keep the change focused: one fix or feature per pull request.
 3. Make sure `dotnet build` and `dotnet test --solution GibiOMatic.sln` pass. The CI runs both on Windows and Linux.
-4. If you changed a screen, regenerate the screenshots with `dotnet run --project tools/Screenshots` (Portuguese)
-   and `dotnet run --project tools/Screenshots -- docs/images en` (English). They use a fictional library in a
-   neutral folder.
+4. If you changed a screen, regenerate the screenshots with `dotnet run --project tools/Screenshots` (English)
+   and `dotnet run --project tools/Screenshots -- docs/images pt-BR` (Portuguese). They use a fictional library in
+   a neutral folder.
 5. A new technical decision goes in [`docs/DECISIONS.md`](docs/DECISIONS.md) and a new dependency in
-   [`docs/THIRD-PARTY.md`](docs/THIRD-PARTY.md). Writing those entries in English is fine.
+   [`docs/THIRD-PARTY.md`](docs/THIRD-PARTY.md).
 6. Open the pull request and fill in the template. Link the issue it closes.
 
-Commits should be small and have a clear message saying what changed and why. The existing history is in
-Portuguese; English messages are just as welcome.
+Commits should be small and have a clear message, in English, saying what changed and why. (The oldest commits
+are in Portuguese, from before the project was opened.)
 
 Using AI coding assistants is fine (the project itself is developed with Claude Code, following
 [`CLAUDE.md`](CLAUDE.md)). You are still responsible for the change: read it, understand it, and test it before

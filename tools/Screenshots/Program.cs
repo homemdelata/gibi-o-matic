@@ -24,7 +24,7 @@ namespace GibiOMatic.Screenshots;
 /// <summary>
 /// Renders the main screens of the app, headless, over a fictional library (made-up titles, people
 /// and covers drawn here: nothing real, nothing copyrighted). Usage, from the repository root:
-/// <c>dotnet run --project tools/Screenshots -- docs/images [pt-BR|en]</c>.
+/// <c>dotnet run --project tools/Screenshots -- docs/images [en|pt-BR]</c>.
 /// </summary>
 internal static class Program
 {
@@ -38,7 +38,7 @@ internal static class Program
     public static int Main(string[] args)
     {
         var output = Path.GetFullPath(args.Length > 0 ? args[0] : Path.Combine(Repository, "docs", "images"));
-        var culture = CultureInfo.GetCultureInfo(args.Length > 1 ? args[1] : "pt-BR");
+        var culture = CultureInfo.GetCultureInfo(args.Length > 1 ? args[1] : "en");
         CultureInfo.DefaultThreadCurrentCulture = CultureInfo.DefaultThreadCurrentUICulture = culture;
         CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = culture;
         English = culture.TwoLetterISOLanguageName == "en";
@@ -82,7 +82,7 @@ internal static class Program
             {
                 try
                 {
-                    await RunAsync(services, temp, output, culture.Name == "en" ? "-en" : string.Empty);
+                    await RunAsync(services, temp, output, English ? string.Empty : "-" + culture.Name);
                 }
                 catch (Exception ex)
                 {
@@ -177,14 +177,14 @@ internal static class Program
         }
 
         var library = (LibraryPageViewModel)shell.NavItems.First(n => n.Page == NavPage.Library).Content;
-        await ShotAsync(NavPage.Library, "biblioteca");
+        await ShotAsync(NavPage.Library, "library");
         library.ViewMode = LibraryViewMode.Books;
-        await ShotAsync(NavPage.Library, "biblioteca-claro", theme: ThemeVariant.Light);
-        await ShotAsync(NavPage.Inbox, "entrada");
-        await ShotAsync(NavPage.Review, "revisao");
+        await ShotAsync(NavPage.Library, "library-light", theme: ThemeVariant.Light);
+        await ShotAsync(NavPage.Inbox, "inbox");
+        await ShotAsync(NavPage.Review, "review");
         var editing = (await session.Index!.GetBooksAsync()).First(b => b.Metadata.Title.StartsWith(FictionalBooks.All[0].Series!, StringComparison.Ordinal));
         await ShotAsync(NavPage.Editor, "editor", [editing.Metadata.Id]);
-        await ShotAsync(NavPage.Destinations, "destinos");
+        await ShotAsync(NavPage.Destinations, "destinations");
         window.Close();
     }
 
