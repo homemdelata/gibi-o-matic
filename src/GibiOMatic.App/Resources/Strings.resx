@@ -275,7 +275,7 @@
   <data name="Review_ColField" xml:space="preserve"><value>CAMPO</value></data>
   <data name="Review_ColProposed" xml:space="preserve"><value>PROPOSTO</value></data>
   <data name="Review_Confidence" xml:space="preserve"><value>{0:0%} de confiança</value></data>
-  <data name="Review_Conflict" xml:space="preserve"><value>O valor atual parece bom; marque só se tiver certeza.</value></data>
+  <data name="Review_Conflict" xml:space="preserve"><value>O valor atual parece bom; desmarque para mantê-lo.</value></data>
   <data name="Review_EditByHand" xml:space="preserve"><value>Editar à mão</value></data>
   <data name="Review_Empty" xml:space="preserve"><value>Nada esperando por você. Aprovados automaticamente: {0} · aprovados por você: {1}.</value></data>
   <data name="Review_EmptyTitle" xml:space="preserve"><value>Nada para revisar</value></data>

@@ -148,9 +148,12 @@ public sealed partial class FieldRowViewModel(FieldChange change, Action changed
     /// <summary>Only rows that change something can be applied.</summary>
     public bool CanApply => Change.Changed;
 
-    /// <summary>Changes are checked by default, except conflicts and the cover (the file's is kept unless chosen).</summary>
+    /// <summary>
+    /// Changes are checked by default, conflicts included (they only get a warning), except the cover:
+    /// the file's is kept unless chosen.
+    /// </summary>
     [ObservableProperty]
-    public partial bool IsApplied { get; set; } = change.Changed && !change.Conflict && change.Field != ProposalField.Cover;
+    public partial bool IsApplied { get; set; } = change.Changed && change.Field != ProposalField.Cover;
 
     partial void OnIsAppliedChanged(bool value) => changed();
 }

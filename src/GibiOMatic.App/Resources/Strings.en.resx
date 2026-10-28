@@ -275,7 +275,7 @@
   <data name="Review_ColField" xml:space="preserve"><value>FIELD</value></data>
   <data name="Review_ColProposed" xml:space="preserve"><value>PROPOSED</value></data>
   <data name="Review_Confidence" xml:space="preserve"><value>{0:0%} confidence</value></data>
-  <data name="Review_Conflict" xml:space="preserve"><value>The current value looks good; check only if you are sure.</value></data>
+  <data name="Review_Conflict" xml:space="preserve"><value>The current value looks good; uncheck to keep it.</value></data>
   <data name="Review_EditByHand" xml:space="preserve"><value>Edit by hand</value></data>
   <data name="Review_Empty" xml:space="preserve"><value>Nothing waiting for you. Approved automatically: {0} · approved by you: {1}.</value></data>
   <data name="Review_EmptyTitle" xml:space="preserve"><value>Nothing to review</value></data>
