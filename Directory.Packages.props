@@ -17,7 +17,7 @@
     <PackageVersion Include="Velopack" Version="1.2.161" />
   </ItemGroup>
   <ItemGroup Label="Files">
-    <PackageVersion Include="SkiaSharp" Version="3.119.4" />
+    <PackageVersion Include="SkiaSharp" Version="4.154.0" />
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux" Version="3.119.4" />
     <PackageVersion Include="SharpCompress" Version="1.0.0" />
     <PackageVersion Include="bblanchon.PDFium.Win32" Version="158.0.8125" />
