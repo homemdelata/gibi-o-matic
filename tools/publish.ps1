@@ -53,7 +53,7 @@ if ($LASTEXITCODE -ne 0 -or -not $version) { throw 'Could not read the version (
 $publish = Join-Path $artifacts "publish/$Runtime"
 if (Test-Path $publish) { Remove-Item -Recurse -Force $publish }
 Invoke-Dotnet publish $project --configuration Release --runtime $Runtime --self-contained `
-    --output $publish -p:DebugType=none
+    --output $publish '-p:DebugType=none'  # quoted: unquoted, $args splits it into "-p:" "DebugType=none"
 
 # The release left in the folder by the previous run becomes a delta update.
 # "[win]" / "[linux]" lets vpk package for the other system too.
