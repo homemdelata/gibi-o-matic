@@ -115,6 +115,9 @@ These are not up for negotiation in a pull request; if you think one is wrong, o
    [`docs/THIRD-PARTY.md`](docs/THIRD-PARTY.md).
 6. Open the pull request and fill in the template. Link the issue it closes.
 
+`main` only takes pull requests with a green CI, and they are squash-merged: the pull request's title becomes the
+commit's title on `main`, so make it a clear sentence.
+
 Commits should be small and have a clear message, in English, saying what changed and why. (The oldest commits
 are in Portuguese, from before the project was opened.)
 

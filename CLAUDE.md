@@ -22,13 +22,14 @@ If there is a `CLAUDE.local.md` (outside git), it holds the context of the curre
 - **One phase at a time**, in `ROADMAP.md` order. When a phase is done:
   1. green build and tests;
   2. tick the tasks and the status in `ROADMAP.md`;
-  3. commit and push;
+  3. commit on a branch, push it and open a pull request; squash-merge it once the CI is green;
   4. **stop** and explain to the user how to test what was delivered (concrete steps).
 
   Only move on to the next phase after their OK.
 - **Product decisions** (behavior, screens, text): ask the user. **Small technical decisions**: decide and record them in `docs/DECISIONS.md`.
 - If something in the SPEC is wrong or unfeasible, say so and propose the change; don't deviate silently.
 - **Commits**: small, message in English, with the attribution lines the environment indicates.
+- **`main` is protected**: changes reach it through a pull request with a green CI (Windows and Linux), squash-merged. Never push straight to `main` or force-push it; the admin bypass is the user's, for emergencies.
 
 ## Language and style
 - **Everything in the repository is in English**: code, identifiers, comments, documentation (`docs/`), `README.md`, `CONTRIBUTING.md` and commit messages.
