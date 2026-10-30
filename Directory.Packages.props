@@ -21,7 +21,7 @@
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux" Version="3.119.4" />
     <PackageVersion Include="SharpCompress" Version="1.0.0" />
     <PackageVersion Include="bblanchon.PDFium.Win32" Version="158.0.8125" />
-    <PackageVersion Include="bblanchon.PDFium.Linux" Version="157.0.8100" />
+    <PackageVersion Include="bblanchon.PDFium.Linux" Version="158.0.8125" />
   </ItemGroup>
   <ItemGroup Label="Infrastructure">
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="$(MicrosoftExtensionsVersion)" />

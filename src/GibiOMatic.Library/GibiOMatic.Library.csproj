@@ -5,6 +5,7 @@
     <ProjectReference Include="..\GibiOMatic.Metadata\GibiOMatic.Metadata.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="bblanchon.PDFium.Linux" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="Dapper" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
