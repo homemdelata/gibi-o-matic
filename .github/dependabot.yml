@@ -11,6 +11,9 @@ updates:
         patterns: ["Avalonia*"]
       microsoft:
         patterns: ["Microsoft.*", "System.*"]
+      # The Windows and Linux binaries must stay on the same version.
+      pdfium:
+        patterns: ["bblanchon.PDFium.*"]
       testing:
         patterns: ["xunit*", "Microsoft.Testing.*"]
 
