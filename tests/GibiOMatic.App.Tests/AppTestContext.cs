@@ -9,7 +9,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GibiOMatic.App.Tests;
 
-/// <summary>The real composition root over a temp folder, with a scripted folder picker.</summary>
+/// <summary>
+/// The real composition root over a temp folder, with a scripted folder picker. Tests that use view
+/// models start with <see cref="EnterUiThreadAsync"/>, like the app runs them on the UI thread.
+/// </summary>
 public sealed class AppTestContext : IDisposable
 {
     private readonly TempDirectory _temp = new();
@@ -28,6 +31,12 @@ public sealed class AppTestContext : IDisposable
     public AppPaths Paths { get; }
 
     public FakeFolderPicker Picker { get; } = new();
+
+    /// <summary>This test's UI thread, shared by every <see cref="CreateServices"/>.</summary>
+    public TestUiThread Ui { get; } = new();
+
+    /// <summary>Moves the rest of the test to <see cref="Ui"/>.</summary>
+    public TestUiThread.Awaitable EnterUiThreadAsync() => Ui.EnterAsync();
 
     public FakeFilePicker FilePicker { get; } = new();
 
@@ -73,7 +82,7 @@ public sealed class AppTestContext : IDisposable
             .AddGibiOMatic(Paths, new ConfigurationBuilder().Build())
             .AddSingleton<IFolderPicker>(Picker)
             .AddSingleton<IFilePicker>(FilePicker)
-            .AddSingleton<IUiThread>(new InlineUiThread())
+            .AddSingleton<IUiThread>(Ui)
             .AddSingleton<IBookIdentifier>(Identifier)
             .AddSingleton<IUrlOpener>(Urls)
             .AddSingleton<IReaderLauncher>(Reader)
@@ -99,8 +108,11 @@ public sealed class AppTestContext : IDisposable
 
     public void Dispose()
     {
+        // The UI thread stops first: nothing it runs afterwards would find the services alive.
+        Ui.Dispose();
         _services.Dispose();
         _temp.Dispose();
+        Ui.ThrowIfFailed();
     }
 }
 
@@ -132,7 +144,6 @@ public sealed class FakeFilePicker : IFilePicker
     public Task<string?> PickExecutableAsync(string title, CancellationToken ct = default) => Task.FromResult(NextExecutable);
 }
 
-/// <summary>No UI thread in tests: updates run right away.</summary>
 public sealed class FakeKccRunner : GibiOMatic.Conversion.Kcc.IKccRunner
 {
     public int Runs { get; private set; }
@@ -242,11 +253,6 @@ public sealed class FakeStartupRegistration : IStartupRegistration
         Applied.Add(mode);
         return true;
     }
-}
-
-public sealed class InlineUiThread : IUiThread
-{
-    public void Post(Action action) => action();
 }
 
 public sealed class FakeIdentifier : IBookIdentifier

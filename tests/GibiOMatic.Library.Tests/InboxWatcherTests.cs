@@ -87,7 +87,8 @@ public sealed class InboxWatcherTests : IAsyncLifetime
 
     private static async Task WaitForAsync(Func<Task<bool>> condition)
     {
-        var deadline = DateTime.UtcNow.AddSeconds(15);
+        // Generous: a slow CI runner once took 2m42s for this project's tests, against about 20 s locally.
+        var deadline = DateTime.UtcNow.AddSeconds(60);
         while (!await condition())
         {
             Assert.True(DateTime.UtcNow < deadline, "Timed out waiting for the condition.");

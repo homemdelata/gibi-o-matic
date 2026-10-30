@@ -67,6 +67,7 @@ public sealed class ReaderTests : IDisposable
     [Fact]
     public async Task The_library_panel_opens_the_book_and_each_file_in_the_reader()
     {
+        await _app.EnterUiThreadAsync();
         await ImportAsync(SyntheticBooks.Cbz(Downloads("saga.cbz"), comicInfoXml: SyntheticBooks.ComicInfo(series: "Saga", number: "1")));
         var library = _app.Get<LibraryPageViewModel>();
         await library.LoadAsync(Ct);
@@ -86,6 +87,7 @@ public sealed class ReaderTests : IDisposable
     [Fact]
     public async Task The_review_opens_the_book_under_review()
     {
+        await _app.EnterUiThreadAsync();
         _app.Identifier.Respond = (_, _) => [FakeIdentifier.Candidate("Saga, Vol. 1", "Saga", "1", 0.6)];
         await ImportAsync(SyntheticBooks.Pdf(Downloads("saga_vol1.pdf")));
         var review = _app.Get<ReviewPageViewModel>();
@@ -108,6 +110,7 @@ public sealed class ReaderTests : IDisposable
     [Fact]
     public async Task Pages_turn_in_one_or_two_page_mode_and_the_book_reopens_where_it_was_left()
     {
+        await _app.EnterUiThreadAsync();
         await Session.CreateAsync(_app.Folder("Library"), Ct);
         var path = SyntheticBooks.Cbz(Downloads("saga.cbz"), pages: 12);
         var reader = Reader(path, BookFormat.Cbz);
@@ -167,6 +170,7 @@ public sealed class ReaderTests : IDisposable
     [Fact]
     public async Task The_pages_around_the_screen_are_rendered_ahead_and_the_strip_renders_the_rest()
     {
+        await _app.EnterUiThreadAsync();
         await Session.CreateAsync(_app.Folder("Library"), Ct);
         var reader = Reader(SyntheticBooks.Cbz(Downloads("saga.cbz"), pages: 20), BookFormat.Cbz);
         await reader.LoadAsync(Ct);
@@ -192,6 +196,7 @@ public sealed class ReaderTests : IDisposable
     [Fact]
     public async Task Pages_rendered_ahead_before_the_sizes_are_read_are_sharp()
     {
+        await _app.EnterUiThreadAsync();
         await Session.CreateAsync(_app.Folder("Library"), Ct);
         var reader = Reader(SyntheticBooks.Cbz(Downloads("saga.cbz"), pages: 20), BookFormat.Cbz);
         await reader.LoadAsync(Ct);
@@ -207,6 +212,7 @@ public sealed class ReaderTests : IDisposable
     [Fact]
     public async Task A_pdf_opens_with_its_pages_rendered()
     {
+        await _app.EnterUiThreadAsync();
         await Session.CreateAsync(_app.Folder("Library"), Ct);
         var reader = Reader(SyntheticBooks.Pdf(Downloads("plutona.pdf"), new SyntheticBooks.PdfOptions { Pages = 3, TextOverPages = true }), BookFormat.Pdf);
 
@@ -228,6 +234,7 @@ public sealed class ReaderTests : IDisposable
     [Fact]
     public async Task A_damaged_file_shows_a_message_instead_of_failing()
     {
+        await _app.EnterUiThreadAsync();
         await Session.CreateAsync(_app.Folder("Library"), Ct);
         var path = Downloads("broken.cbz");
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
@@ -245,6 +252,7 @@ public sealed class ReaderTests : IDisposable
     [Fact]
     public async Task A_text_epub_shows_its_chapters_only_from_the_book()
     {
+        await _app.EnterUiThreadAsync();
         await Session.CreateAsync(_app.Folder("Library"), Ct);
         var path = SyntheticBooks.Epub(Downloads("novel.epub"),
             new SyntheticBooks.EpubOptions { TextOnly = true, FixedLayout = false, Pages = 3, Nav = true });
@@ -303,6 +311,7 @@ public sealed class ReaderTests : IDisposable
     [Fact]
     public async Task A_book_counts_as_started_after_five_pages_and_read_at_its_last_page()
     {
+        await _app.EnterUiThreadAsync();
         await Session.CreateAsync(_app.Folder("Library"), Ct);
         var path = SyntheticBooks.Cbz(Downloads("saga.cbz"), pages: 12);
 
@@ -339,6 +348,7 @@ public sealed class ReaderTests : IDisposable
     [Fact]
     public async Task The_library_shows_continue_reading_filters_by_status_and_marks_books()
     {
+        await _app.EnterUiThreadAsync();
         await ImportAsync(
             SyntheticBooks.Cbz(Downloads("saga1.cbz"), pages: 12, comicInfoXml: SyntheticBooks.ComicInfo(series: "Saga", number: "1")),
             SyntheticBooks.Cbz(Downloads("saga2.cbz"), pages: 12, comicInfoXml: SyntheticBooks.ComicInfo(series: "Saga", number: "2")),
@@ -405,6 +415,7 @@ public sealed class ReaderTests : IDisposable
     [Fact]
     public async Task Clearing_the_progress_takes_the_book_out_of_continue_reading()
     {
+        await _app.EnterUiThreadAsync();
         await ImportAsync(SyntheticBooks.Cbz(Downloads("saga.cbz"), pages: 12, comicInfoXml: SyntheticBooks.ComicInfo(series: "Saga", number: "1")));
         var library = _app.Get<LibraryPageViewModel>();
         await library.LoadAsync(Ct);

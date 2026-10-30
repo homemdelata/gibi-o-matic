@@ -76,6 +76,7 @@ public sealed class KindlePageTests : IDisposable
     [Fact]
     public async Task A_kindle_is_created_in_the_wizard_and_prepares_the_books_chosen_in_its_list()
     {
+        await _app.EnterUiThreadAsync();
         _app.InstallFakeKcc();
         await ImportSagaAsync();
         var page = await CreateKindleAsync();
@@ -116,6 +117,7 @@ public sealed class KindlePageTests : IDisposable
     [Fact]
     public async Task The_library_puts_a_book_in_the_list_and_the_banner_offers_to_send_it_when_the_kindle_is_connected()
     {
+        await _app.EnterUiThreadAsync();
         _app.InstallFakeKcc();
         await ImportSagaAsync();
         await CreateKindleAsync();
@@ -161,12 +163,13 @@ public sealed class KindlePageTests : IDisposable
         // Unplugged: nothing more to offer, and the next connection asks again.
         _app.Kindle.Connected = false;
         _app.Get<KindleWatcher>().Poll();
-        Assert.False(detail.IsConnected);
+        await WaitForAsync(() => Task.FromResult(!detail.IsConnected));
     }
 
     [Fact]
     public async Task The_manager_lists_the_device_and_deletes_only_what_is_ticked_after_confirming()
     {
+        await _app.EnterUiThreadAsync();
         _app.InstallFakeKcc();
         await ImportSagaAsync();
         var page = await CreateKindleAsync();
@@ -208,6 +211,7 @@ public sealed class KindlePageTests : IDisposable
     [Fact]
     public async Task The_right_click_menu_marks_read_clears_progress_and_opens_the_editor()
     {
+        await _app.EnterUiThreadAsync();
         await ImportSagaAsync();
         var library = _app.Get<LibraryPageViewModel>();
         await library.LoadAsync(Ct);
@@ -232,6 +236,7 @@ public sealed class KindlePageTests : IDisposable
     [Fact]
     public async Task Without_a_kindle_destination_the_library_button_goes_to_destinos()
     {
+        await _app.EnterUiThreadAsync();
         await ImportSagaAsync();
         var library = _app.Get<LibraryPageViewModel>();
         await library.LoadAsync(Ct);
@@ -246,6 +251,7 @@ public sealed class KindlePageTests : IDisposable
     [Fact]
     public async Task Without_the_kcc_the_wizard_offers_to_get_it_and_the_kindle_says_what_is_missing()
     {
+        await _app.EnterUiThreadAsync();
         await ImportSagaAsync();
         var page = _app.Get<DestinationsPageViewModel>();
         await page.OnNavigatedToAsync(Ct);

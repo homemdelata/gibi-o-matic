@@ -63,6 +63,7 @@ public sealed class BackgroundTests : IDisposable
     [Fact]
     public async Task A_download_goes_from_the_watched_folder_to_the_library_and_the_tray_tells_once()
     {
+        await _app.EnterUiThreadAsync();
         _app.Identifier.Respond = (book, _) => book.Title.Contains("Saga", StringComparison.Ordinal)
             ? [FakeIdentifier.Candidate("Saga, Vol. 1", "Saga", "1", 0.98, MatchReason.Isbn, MatchReason.SecondSource)]
             : [];
@@ -94,6 +95,7 @@ public sealed class BackgroundTests : IDisposable
     [Fact]
     public async Task The_sidebar_shows_the_inbox_and_the_metadata_search_from_every_page()
     {
+        await _app.EnterUiThreadAsync();
         var gate = new TaskCompletionSource();
         _app.Identifier.Gate = gate;
         await OpenLibraryAsync(Inbox());
@@ -123,6 +125,7 @@ public sealed class BackgroundTests : IDisposable
     [Fact]
     public async Task A_new_version_shows_a_banner_and_installs_only_when_asked()
     {
+        await _app.EnterUiThreadAsync();
         await OpenLibraryAsync();
         var main = _app.Get<MainWindowViewModel>();
         await main.InitializeAsync(Ct);
@@ -155,6 +158,7 @@ public sealed class BackgroundTests : IDisposable
     [Fact]
     public async Task The_settings_show_the_version_and_an_unreachable_source_is_an_error_not_a_crash()
     {
+        await _app.EnterUiThreadAsync();
         await OpenLibraryAsync();
         var settings = _app.Get<SettingsPageViewModel>();
         Assert.Equal(string.Format(CultureInfo.CurrentCulture, Strings.Update_Version, "0.6.0"), settings.Update.VersionText);
@@ -180,6 +184,7 @@ public sealed class BackgroundTests : IDisposable
     [Fact]
     public async Task The_tray_menu_opens_pauses_the_inbox_and_exits()
     {
+        await _app.EnterUiThreadAsync();
         await OpenLibraryAsync(Inbox());
         var host = new FakeHost();
         using var tray = _app.Get<TrayController>();
@@ -205,6 +210,7 @@ public sealed class BackgroundTests : IDisposable
     [Fact]
     public async Task Without_an_inbox_folder_the_tray_and_the_inbox_page_say_so()
     {
+        await _app.EnterUiThreadAsync();
         await OpenLibraryAsync();
         using var tray = _app.Get<TrayController>();
         tray.Start(new FakeHost());
@@ -240,6 +246,7 @@ public sealed class BackgroundTests : IDisposable
     [Fact]
     public async Task The_first_close_asks_and_the_answer_is_remembered()
     {
+        await _app.EnterUiThreadAsync();
         var window = _app.Get<MainWindowViewModel>();
         bool? chosen = null;
         window.CloseChosen += (_, keep) => chosen = keep;
@@ -270,6 +277,7 @@ public sealed class BackgroundTests : IDisposable
     [Fact]
     public async Task Settings_turn_the_start_with_the_system_on_in_the_tray_or_with_the_window()
     {
+        await _app.EnterUiThreadAsync();
         await OpenLibraryAsync();
         var page = _app.Get<SettingsPageViewModel>();
         Assert.True(page.CloseToTray);
@@ -298,6 +306,7 @@ public sealed class BackgroundTests : IDisposable
     [Fact]
     public async Task The_inbox_cannot_be_inside_the_library_or_around_it()
     {
+        await _app.EnterUiThreadAsync();
         await OpenLibraryAsync();
         var page = _app.Get<SettingsPageViewModel>();
 
@@ -369,6 +378,7 @@ public sealed class BackgroundTests : IDisposable
     [Fact]
     public async Task A_second_start_hands_its_command_line_to_the_first()
     {
+        await _app.EnterUiThreadAsync();
         var name = $"GibiOMatic.Tests.{Guid.NewGuid():N}";
         using var first = SingleInstance.Acquire(name);
         Assert.True(first.IsFirst);

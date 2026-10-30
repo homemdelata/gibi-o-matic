@@ -24,6 +24,7 @@ public sealed class FirstRunTests : IDisposable
     [Fact]
     public async Task Without_a_remembered_library_the_welcome_screen_is_shown()
     {
+        await _app.EnterUiThreadAsync();
         var main = await StartAsync(_app.CreateServices());
 
         var welcome = Assert.IsType<WelcomeViewModel>(main.Content);
@@ -33,6 +34,7 @@ public sealed class FirstRunTests : IDisposable
     [Fact]
     public async Task Creating_a_library_opens_the_shell_on_the_empty_library_and_is_remembered()
     {
+        await _app.EnterUiThreadAsync();
         var main = await StartAsync(_app.CreateServices());
         var folder = _app.Folder("Library");
         _app.Picker.WillReturn(folder);
@@ -57,6 +59,7 @@ public sealed class FirstRunTests : IDisposable
     [Fact]
     public async Task Cancelling_the_folder_picker_changes_nothing()
     {
+        await _app.EnterUiThreadAsync();
         var main = await StartAsync(_app.CreateServices());
         _app.Picker.WillReturn(null);
 
@@ -69,6 +72,7 @@ public sealed class FirstRunTests : IDisposable
     [Fact]
     public async Task Opening_a_folder_that_is_not_a_library_shows_an_error()
     {
+        await _app.EnterUiThreadAsync();
         var main = await StartAsync(_app.CreateServices());
         var folder = _app.Folder("Downloads");
         Directory.CreateDirectory(folder);
@@ -88,6 +92,7 @@ public sealed class FirstRunTests : IDisposable
     [Fact]
     public async Task A_remembered_library_that_disappeared_shows_the_error_and_waits_for_a_retry()
     {
+        await _app.EnterUiThreadAsync();
         var missing = _app.Folder("Sumiu");
         await RememberAsync(missing);
 
@@ -109,6 +114,7 @@ public sealed class FirstRunTests : IDisposable
     [Fact]
     public async Task Choosing_another_library_from_the_error_shows_the_welcome_screen()
     {
+        await _app.EnterUiThreadAsync();
         await RememberAsync(_app.Folder("Sumiu"));
         var main = await StartAsync(_app.CreateServices());
 
@@ -120,6 +126,7 @@ public sealed class FirstRunTests : IDisposable
     [Fact]
     public async Task A_slow_library_offers_to_keep_waiting_or_choose_another()
     {
+        await _app.EnterUiThreadAsync();
         var folder = _app.Folder("Lenta");
         using var services = _app.CreateServices();
         await services.GetRequiredService<LibraryService>().CreateAsync(folder, Ct);
@@ -163,6 +170,7 @@ public sealed class FirstRunTests : IDisposable
     [Fact]
     public async Task Creating_a_library_in_a_folder_with_files_asks_first()
     {
+        await _app.EnterUiThreadAsync();
         var main = await StartAsync(_app.CreateServices());
         var folder = _app.Folder("Fotos");
         Directory.CreateDirectory(folder);

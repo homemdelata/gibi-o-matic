@@ -64,6 +64,7 @@ public sealed class DestinationsPageTests : IDisposable
     [Fact]
     public async Task A_new_destination_shows_its_plan_and_writes_only_after_confirmation()
     {
+        await _app.EnterUiThreadAsync();
         await ImportSagaAsync();
         var page = await CreateKomgaAsync();
 
@@ -99,6 +100,7 @@ public sealed class DestinationsPageTests : IDisposable
     [Fact]
     public async Task The_cards_show_up_before_their_status_is_checked()
     {
+        await _app.EnterUiThreadAsync();
         await ImportSagaAsync();
         await CreateKomgaAsync();
         var page = _app.Get<DestinationsPageViewModel>();
@@ -128,6 +130,7 @@ public sealed class DestinationsPageTests : IDisposable
     [Fact]
     public async Task The_sidebar_shows_each_destination_status()
     {
+        await _app.EnterUiThreadAsync();
         await ImportSagaAsync();
         var shell = _app.Get<ShellViewModel>();
         var page = await CreateKomgaAsync();
@@ -146,6 +149,7 @@ public sealed class DestinationsPageTests : IDisposable
     [Fact]
     public async Task Coming_back_to_destinations_shows_the_list_and_the_sidebar_opens_a_destination()
     {
+        await _app.EnterUiThreadAsync();
         await ImportSagaAsync();
         var main = _app.Get<MainWindowViewModel>();
         await main.InitializeAsync(Ct);
@@ -180,6 +184,7 @@ public sealed class DestinationsPageTests : IDisposable
     [Fact]
     public async Task A_copy_that_fails_shows_up_in_the_history_and_on_the_card()
     {
+        await _app.EnterUiThreadAsync();
         await ImportSagaAsync();
         var page = await CreateKomgaAsync();
         var book = (await Session.Index!.GetBooksAsync(Ct)).Single(b => b.Metadata.Series?.Number == "2");
@@ -199,6 +204,7 @@ public sealed class DestinationsPageTests : IDisposable
     [Fact]
     public async Task Unreviewed_books_stay_out_unless_the_option_is_on()
     {
+        await _app.EnterUiThreadAsync();
         await ImportSagaAsync();
         var page = await CreateKomgaAsync(includeUnreviewed: false);
 
@@ -209,6 +215,7 @@ public sealed class DestinationsPageTests : IDisposable
     [Fact]
     public async Task After_the_first_sync_edits_update_the_copy_on_their_own()
     {
+        await _app.EnterUiThreadAsync();
         await ImportSagaAsync();
         var page = await CreateKomgaAsync();
         page.Detail!.SyncCommand.Execute(null);
@@ -225,6 +232,7 @@ public sealed class DestinationsPageTests : IDisposable
     [Fact]
     public async Task A_change_the_destination_missed_is_applied_when_the_library_opens_again()
     {
+        await _app.EnterUiThreadAsync();
         await ImportSagaAsync();
         var page = await CreateKomgaAsync();
         page.Detail!.SyncCommand.Execute(null);
@@ -248,6 +256,7 @@ public sealed class DestinationsPageTests : IDisposable
     [Fact]
     public async Task Chosen_books_are_added_from_the_library_selection()
     {
+        await _app.EnterUiThreadAsync();
         await ImportSagaAsync();
         var page = await CreateKomgaAsync(chosenBooks: true);
         Assert.False(page.Detail!.CanSync);
@@ -267,6 +276,7 @@ public sealed class DestinationsPageTests : IDisposable
     [Fact]
     public async Task Removing_a_destination_keeps_its_files()
     {
+        await _app.EnterUiThreadAsync();
         await ImportSagaAsync();
         var shell = _app.Get<ShellViewModel>();
         var page = await CreateKomgaAsync();

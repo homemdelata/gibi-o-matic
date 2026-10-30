@@ -52,6 +52,7 @@ public sealed class ReviewAndEditorTests : IDisposable
     [Fact]
     public async Task The_review_shows_candidates_and_approves_the_checked_fields()
     {
+        await _app.EnterUiThreadAsync();
         _app.Identifier.Respond = (_, _) => [FakeIdentifier.Candidate("Saga, Vol. 1", "Saga", "1", 0.72, MatchReason.Title, MatchReason.Number)];
         var book = (await ImportAsync("saga_vol1.pdf")).Single();
         var review = _app.Get<ReviewPageViewModel>();
@@ -81,6 +82,7 @@ public sealed class ReviewAndEditorTests : IDisposable
     [Fact]
     public async Task Skip_moves_on_and_search_again_uses_the_typed_words()
     {
+        await _app.EnterUiThreadAsync();
         _app.Identifier.Respond = (_, text) => text is "Saga"
             ? [FakeIdentifier.Candidate("Saga, Vol. 1", "Saga", "1", 0.6)]
             : [];
@@ -103,6 +105,7 @@ public sealed class ReviewAndEditorTests : IDisposable
     [Fact]
     public async Task Amazon_links_and_isbns_search_by_isbn_and_kindle_or_goodreads_links_say_what_to_do()
     {
+        await _app.EnterUiThreadAsync();
         _app.Identifier.Respond = (book, _) => book.Identifiers.Isbn == "9781607066019"
             ? [FakeIdentifier.Candidate("Saga, Vol. 1", "Saga", "1", 0.96, MatchReason.Isbn)]
             : [];
@@ -144,6 +147,7 @@ public sealed class ReviewAndEditorTests : IDisposable
     [Fact]
     public async Task Search_all_again_asks_first_and_then_searches_every_book_of_the_review()
     {
+        await _app.EnterUiThreadAsync();
         // No ComicVine key at first: nothing is found.
         _app.Identifier.Respond = (_, _) => [];
         await ImportAsync("saga_vol1.pdf", "saga_vol2.pdf");
@@ -172,6 +176,7 @@ public sealed class ReviewAndEditorTests : IDisposable
     [Fact]
     public async Task Searching_again_shows_that_it_is_searching_and_then_what_was_not_found()
     {
+        await _app.EnterUiThreadAsync();
         _app.Identifier.Respond = (_, text) => text is null ? [FakeIdentifier.Candidate("Saga, Vol. 1", "Saga", "1", 0.6)] : [];
         await ImportAsync("a.pdf");
         var review = _app.Get<ReviewPageViewModel>();
@@ -200,6 +205,7 @@ public sealed class ReviewAndEditorTests : IDisposable
     [Fact]
     public async Task The_right_comicvine_page_can_be_pasted_and_the_file_pages_are_shown()
     {
+        await _app.EnterUiThreadAsync();
         await ImportAsync("houseofslaughter_vol1.pdf");
         var review = _app.Get<ReviewPageViewModel>();
         await review.OnNavigatedToAsync(Ct);
@@ -226,6 +232,7 @@ public sealed class ReviewAndEditorTests : IDisposable
     [Fact]
     public async Task Safe_matches_are_approved_automatically_and_listed_by_the_library_filter()
     {
+        await _app.EnterUiThreadAsync();
         _app.Identifier.Respond = (_, _) => [FakeIdentifier.Candidate("Saga, Vol. 1", "Saga", "1", 0.98, MatchReason.Isbn, MatchReason.SecondSource)];
         var book = (await ImportAsync("saga_vol1.pdf")).Single();
 
@@ -240,6 +247,7 @@ public sealed class ReviewAndEditorTests : IDisposable
     [Fact]
     public async Task The_editor_saves_one_book_renames_its_folder_and_can_undo()
     {
+        await _app.EnterUiThreadAsync();
         var book = (await ImportAsync("saga_vol1.pdf")).Single();
         var editor = _app.Get<EditorPageViewModel>();
         editor.SetBooks([book.Metadata.Id]);
@@ -279,6 +287,7 @@ public sealed class ReviewAndEditorTests : IDisposable
     [Fact]
     public async Task Leaving_the_editor_does_not_lose_roles_or_block_the_next_book()
     {
+        await _app.EnterUiThreadAsync();
         var books = await ImportAsync("first.pdf", "second.pdf");
         var editor = _app.Get<EditorPageViewModel>();
         editor.SetBooks([books[0].Metadata.Id]);
@@ -304,6 +313,7 @@ public sealed class ReviewAndEditorTests : IDisposable
     [Fact]
     public async Task The_batch_editor_changes_only_filled_fields_and_numbers_in_sequence()
     {
+        await _app.EnterUiThreadAsync();
         var books = await ImportAsync("deadly_a.pdf", "deadly_b.pdf", "deadly_c.pdf");
         var editor = _app.Get<EditorPageViewModel>();
         editor.SetBooks(books.Select(b => b.Metadata.Id).ToList());
@@ -326,6 +336,7 @@ public sealed class ReviewAndEditorTests : IDisposable
     [Fact]
     public async Task Universes_are_added_to_a_batch_removed_from_one_book_and_suggested()
     {
+        await _app.EnterUiThreadAsync();
         var books = await ImportAsync("radiant_black.pdf", "radiant_red.pdf", "radiant_pink.pdf");
         var ids = books.Select(b => b.Metadata.Id).ToList();
         var editor = _app.Get<EditorPageViewModel>();
@@ -368,6 +379,7 @@ public sealed class ReviewAndEditorTests : IDisposable
     [Fact]
     public async Task Library_selection_opens_the_batch_editor_through_the_shell()
     {
+        await _app.EnterUiThreadAsync();
         await ImportAsync("a.pdf", "b.pdf");
         var main = _app.Get<MainWindowViewModel>();
         await main.InitializeAsync(Ct);
@@ -389,6 +401,7 @@ public sealed class ReviewAndEditorTests : IDisposable
     [Fact]
     public async Task Fetch_metadata_asks_before_queueing_the_books()
     {
+        await _app.EnterUiThreadAsync();
         await ImportAsync("a.pdf");
         var library = _app.Get<LibraryPageViewModel>();
         await library.LoadAsync(Ct);
@@ -412,6 +425,7 @@ public sealed class ReviewAndEditorTests : IDisposable
     [Fact]
     public async Task Metadata_settings_are_saved_and_the_key_is_kept_protected()
     {
+        await _app.EnterUiThreadAsync();
         await Session.CreateAsync(_app.Folder("Library"), Ct);
         var page = _app.Get<SettingsPageViewModel>();
         await page.OnNavigatedToAsync(Ct);

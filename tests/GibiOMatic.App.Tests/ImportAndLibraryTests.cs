@@ -44,6 +44,7 @@ public sealed class ImportAndLibraryTests : IDisposable
     [Fact]
     public async Task Files_go_through_the_inbox_and_appear_in_the_library_with_their_quality()
     {
+        await _app.EnterUiThreadAsync();
         await OpenLibraryAsync();
         var inbox = _app.Get<InboxPageViewModel>();
         _app.FilePicker.WillReturn(
@@ -83,6 +84,7 @@ public sealed class ImportAndLibraryTests : IDisposable
     [Fact]
     public async Task Filters_search_and_series_view()
     {
+        await _app.EnterUiThreadAsync();
         await OpenLibraryAsync();
         await ImportThroughInboxAsync(
             SyntheticBooks.Cbz(Downloads("saga1.cbz"), comicInfoXml: Info("Saga", "1")),
@@ -136,6 +138,7 @@ public sealed class ImportAndLibraryTests : IDisposable
     [Fact]
     public async Task The_universes_view_groups_series_of_the_same_universe()
     {
+        await _app.EnterUiThreadAsync();
         await OpenLibraryAsync();
         static string Grouped(string series, string number, string? group) =>
             SyntheticBooks.ComicInfo(series: series, number: number, writer: "Kyle Higgins", publisher: "Image Comics", seriesGroup: group);
@@ -182,6 +185,7 @@ public sealed class ImportAndLibraryTests : IDisposable
     [Fact]
     public async Task The_universes_view_explains_how_to_make_one_when_there_is_none()
     {
+        await _app.EnterUiThreadAsync();
         await OpenLibraryAsync();
         await ImportThroughInboxAsync(SyntheticBooks.Cbz(Downloads("saga1.cbz"), comicInfoXml: Info("Saga", "1")));
         var page = _app.Get<LibraryPageViewModel>();
@@ -196,6 +200,7 @@ public sealed class ImportAndLibraryTests : IDisposable
     [Fact]
     public async Task The_grid_fits_as_many_columns_as_the_width_allows()
     {
+        await _app.EnterUiThreadAsync();
         await OpenLibraryAsync();
         await ImportThroughInboxAsync(Enumerable.Range(1, 7)
             .Select(i => SyntheticBooks.Cbz(Downloads($"b{i}.cbz"), comicInfoXml: Info($"Series {i}", "1"))).ToArray());
@@ -211,6 +216,7 @@ public sealed class ImportAndLibraryTests : IDisposable
     [Fact]
     public async Task Duplicates_offer_a_choice_and_the_choice_is_applied()
     {
+        await _app.EnterUiThreadAsync();
         await OpenLibraryAsync();
         await ImportThroughInboxAsync(SyntheticBooks.Pdf(Downloads("saga.pdf"), new SyntheticBooks.PdfOptions { Title = "Saga, Vol. 1" }));
         var inbox = _app.Get<InboxPageViewModel>();
@@ -242,6 +248,7 @@ public sealed class ImportAndLibraryTests : IDisposable
     [Fact]
     public async Task Pause_and_resume_from_the_inbox_page()
     {
+        await _app.EnterUiThreadAsync();
         await OpenLibraryAsync();
         var inbox = _app.Get<InboxPageViewModel>();
 
@@ -265,6 +272,7 @@ public sealed class ImportAndLibraryTests : IDisposable
     [Fact]
     public async Task The_shell_counts_files_waiting_in_the_inbox()
     {
+        await _app.EnterUiThreadAsync();
         var main = _app.Get<MainWindowViewModel>();
         await _app.Get<ISettingsService>().LoadAsync(Ct);
         await main.InitializeAsync(Ct);

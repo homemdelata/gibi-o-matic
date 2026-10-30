@@ -25,6 +25,7 @@ public sealed class SettingsPageTests : IDisposable
     [Fact]
     public async Task Save_persists_inbox_and_language_and_flags_the_restart()
     {
+        await _app.EnterUiThreadAsync();
         await OpenLibraryAsync();
         var page = _app.Get<SettingsPageViewModel>();
         Assert.False(page.RestartRequired);
@@ -45,6 +46,7 @@ public sealed class SettingsPageTests : IDisposable
     [Fact]
     public async Task Restore_defaults_keeps_the_library()
     {
+        await _app.EnterUiThreadAsync();
         await OpenLibraryAsync();
         var page = _app.Get<SettingsPageViewModel>();
         page.InboxPath = "somewhere";
@@ -61,6 +63,7 @@ public sealed class SettingsPageTests : IDisposable
     [Fact]
     public async Task Rebuild_index_reports_how_many_books_were_found()
     {
+        await _app.EnterUiThreadAsync();
         var root = await OpenLibraryAsync();
         var bookFolder = Path.Combine(root, LibraryLayout.BooksFolderName, "_No publisher", "Plutona [abcdef]");
         Directory.CreateDirectory(bookFolder);
@@ -77,6 +80,7 @@ public sealed class SettingsPageTests : IDisposable
     [Fact]
     public async Task Opening_another_library_switches_the_session()
     {
+        await _app.EnterUiThreadAsync();
         await OpenLibraryAsync();
         var other = _app.Folder("Outra");
         await _app.Get<GibiOMatic.Core.Libraries.ILibraryService>().CreateAsync(other, Ct);
@@ -92,6 +96,7 @@ public sealed class SettingsPageTests : IDisposable
     [Fact]
     public async Task The_preferred_format_order_can_be_changed_and_restored()
     {
+        await _app.EnterUiThreadAsync();
         await OpenLibraryAsync();
         var page = _app.Get<SettingsPageViewModel>();
         Assert.Equal([BookFormat.Cbz, BookFormat.Pdf, BookFormat.Epub, BookFormat.Cbr], page.Formats.Select(f => f.Format));
