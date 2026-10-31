@@ -56,6 +56,9 @@ public enum MatchReason
 {
     Isbn,
     Title,
+
+    /// <summary>The subtitle in the title matches the volume's subtitle or the issue's name.</summary>
+    Subtitle,
     Number,
     Publisher,
     Year,

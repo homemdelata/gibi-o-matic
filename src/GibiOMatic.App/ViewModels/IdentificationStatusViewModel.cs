@@ -119,6 +119,7 @@ public static class IdentificationText
             MatchReason.Number => Strings.Reason_Number,
             MatchReason.Publisher => Strings.Reason_Publisher,
             MatchReason.Year => Strings.Reason_Year,
+            MatchReason.Subtitle => Strings.Reason_Subtitle,
             MatchReason.Kind => Strings.Reason_Kind,
             MatchReason.SecondSource => Strings.Reason_SecondSource,
             MatchReason.ChosenByUser => Strings.Reason_ChosenByUser,
