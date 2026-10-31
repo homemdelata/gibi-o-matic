@@ -140,9 +140,13 @@ By contributing, you agree that your contributions are licensed under the projec
 The version comes from the latest `vX.Y.Z` git tag (MinVer). To release:
 
 ```
-git tag v0.6.0
+git tag -a v0.6.0 -m "Gibi-o-matic 0.6.0"
 git push origin v0.6.0
 ```
+
+In Claude Code, `/release` does it for you (`.claude/skills/release`): it bumps the patch of the latest tag, or the
+minor or major with `/release minor` and `/release major`, after checking that `main` is clean, up to date and
+green in the CI, and asking for confirmation. Tags can't be moved or deleted once pushed.
 
 The `release.yml` workflow runs the tests, builds the Windows installer and the Linux AppImage (Velopack) and
 creates a **draft** GitHub release. Publishing the draft is what makes installed apps see the update. Tags with a
