@@ -34,9 +34,9 @@ internal static class Program
     public static async Task<int> Main(string[] args)
     {
         Console.OutputEncoding = Encoding.UTF8;
-        if (args.Length != 2 || args[0] is not ("report" or "apply"))
+        if (args.Length < 2 || args[0] is not ("report" or "apply" or "review") || (args[0] != "review" && args.Length != 2))
         {
-            Console.Error.WriteLine("Usage: report <folder> | apply <plan.json>");
+            Console.Error.WriteLine("Usage: report <folder> | apply <plan.json> | review <plan.json> <title prefix>...");
             return 2;
         }
 
@@ -51,9 +51,34 @@ internal static class Program
         var libraries = services.GetRequiredService<LibraryService>();
         var library = await libraries.OpenAsync(root);
         var editor = services.GetRequiredService<BookEditor>();
-        return args[0] == "report"
-            ? await ReportAsync(services, settings, library, editor, Path.GetFullPath(args[1]))
-            : await ApplyAsync(library, editor, Path.GetFullPath(args[1]));
+        return args[0] switch
+        {
+            "report" => await ReportAsync(services, settings, library, editor, Path.GetFullPath(args[1])),
+            "apply" => await ApplyAsync(library, editor, Path.GetFullPath(args[1])),
+            _ => await ReviewAsync(services, library, editor, Path.GetFullPath(args[1]), args[2..]),
+        };
+    }
+
+    /// <summary>
+    /// Books of the plan whose title starts with one of <paramref name="titles"/> go back to the Review:
+    /// pending again, searched again with the current identification, for the user to decide.
+    /// </summary>
+    private static async Task<int> ReviewAsync(IServiceProvider services, Core.Libraries.LibraryInfo library, BookEditor editor, string planPath, string[] titles)
+    {
+        var plan = JsonSerializer.Deserialize<List<PlanEntry>>(await File.ReadAllTextAsync(planPath), GibiJson.Options) ?? [];
+        var queue = services.GetRequiredService<IdentificationQueueFactory>().Create(library);
+        var log = new StringBuilder();
+        foreach (var entry in plan.Where(p => titles.Any(t => p.Title.StartsWith(t, StringComparison.OrdinalIgnoreCase))))
+        {
+            await editor.UpdateAsync(library, entry.BookId, book => book with { Review = book.Review with { Status = ReviewStatus.Pending, ApprovedAt = null } });
+            var result = await queue.SearchAgainAsync(entry.BookId, null);
+            var line = $"{DateTimeOffset.Now:u} {entry.BookId} {entry.Title} → Review ({result.Candidates.Count} candidates)";
+            Console.WriteLine(line);
+            log.AppendLine(line);
+        }
+
+        await File.AppendAllTextAsync(Path.Combine(Path.GetDirectoryName(planPath)!, "applied.log"), log.ToString());
+        return 0;
     }
 
     private static async Task<int> ReportAsync(IServiceProvider services, AppSettings settings, Core.Libraries.LibraryInfo library, BookEditor editor, string folder)

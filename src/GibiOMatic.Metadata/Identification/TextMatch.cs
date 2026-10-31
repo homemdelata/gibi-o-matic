@@ -15,7 +15,7 @@ public static partial class TextMatch
          "egmont", "mythos editora", "devir", "pipoca nanquim", "saldapress", "salda press", "bao publishing", "j-pop", "hachette",
          "les humanoides associes", "editorial televisa", "levoir", "g floy", "akileos", "dupuis", "le lombard", "casterman",
          "fibra", "egmont polska", "egmont ehapa", "egmont ehapa verlag", "egmont comics", "extrem erfolgreich enterprises",
-         "de vliegende hollander", "moztros producciones", "juniorpress bv", "soleil", "editions glenat", "glenat spain",
+         "de vliegende hollander", "daewon c i", "moztros producciones", "juniorpress bv", "soleil", "editions glenat", "glenat spain",
          "carlsen verlag", "carlsen comics dk", "tokyopop gmbh", "milky way ediciones", "atlantic forlags ab", "meriberica liber",
          "editorial ivrea", "ankama", "abril", "play press", "taifu comics", "pika edition", "magic press", "ediperiodici",
          "sergio bonelli editore", "hjemmet", "semic s a", "tm semic", "catalan communications", "verlag thomas tilsner",
