@@ -74,7 +74,7 @@ if ($forWindows) {
         '--instConclusion', (Join-Path $texts 'conclusion.txt'))
 }
 Invoke-Dotnet tool restore
-Invoke-Dotnet vpk $(if ($forWindows) { '[win]' } else { '[linux]' }) pack --packId $packId --packVersion $version --packDir $publish `
+Invoke-Dotnet vpk $(if ($forWindows) { '[win]' } else { '[linux]' }) pack --packId $packId --packVersion $version --packDir $publish --runtime $Runtime `
     --mainExe $(if ($forWindows) { 'GibiOMatic.exe' } else { 'GibiOMatic' }) `
     --packTitle 'Gibi-o-matic' --packAuthors 'Gustavo Ayres (homemdelata)' `
     --icon (Join-Path $root 'src/GibiOMatic.App/Assets/gibiomatic.ico') `
