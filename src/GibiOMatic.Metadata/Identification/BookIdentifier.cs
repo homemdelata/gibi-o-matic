@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using GibiOMatic.Core.Domain;
 using GibiOMatic.Core.Settings;
 using GibiOMatic.Core.Text;
@@ -33,7 +34,7 @@ public interface IBookIdentifier
 /// SPEC §8.2: ISBN first (Open Library, Google Books), then ComicVine volumes (collected editions
 /// are volumes of their own), each candidate scored by title, number, publisher, year and kind.
 /// </summary>
-public sealed class BookIdentifier(
+public sealed partial class BookIdentifier(
     IEnumerable<IIsbnSource> isbnSources,
     IComicVineApi comicVine,
     ILogger<BookIdentifier> logger) : IBookIdentifier
@@ -254,18 +255,37 @@ public sealed class BookIdentifier(
             return null;
         }
 
-        var m = System.Text.RegularExpressions.Regex.Match(link, @"\b(4000|4050)-(\d+)\b");
+        var m = Regex.Match(link, @"\b(4000|4050)-(\d+)\b");
         return m.Success && int.TryParse(m.Groups[2].Value, out var id) ? (m.Groups[1].Value == "4000", id) : null;
     }
 
     private async Task<List<MetadataCandidate>> SearchComicVineAsync(BookQuery query, CancellationToken ct)
     {
-        var volumes = await comicVine.SearchVolumesAsync(query.SearchText, ct);
-        var target = query.Series ?? query.SearchText;
+        // Most specific search first ("The Boys Over the Hill…"), then broader ones ("The Boys"),
+        // stopping as soon as the book's own volume shows up; the volumes found are pooled.
+        var volumes = new List<CvVolume>();
+        var texts = query.SearchTexts;
+        for (var i = 0; i < texts.Count; i++)
+        {
+            var isFallback = i == texts.Count - 1 && texts.Count > 1 && query.SearchText.Contains(':');
+            if (isFallback && volumes.Any(v => NameScore(v, query) >= 0.6))
+            {
+                break; // the part before a colon is only tried when nothing else came close
+            }
+
+            var found = await comicVine.SearchVolumesAsync(texts[i], ct);
+            volumes.AddRange(found.Where(v => volumes.All(x => x.Id != v.Id)));
+            if (found.Any(v => TextMatch.Similarity(v.Name, query.FullName) >= 0.9))
+            {
+                break;
+            }
+        }
+
         var relevant = volumes
-            .Select(v => (Volume: v, Score: NameScore(v.Name, target, query.SearchText)))
+            .Select(v => (Volume: v, Score: NameScore(v, query)))
             .Where(x => x.Score >= 0.6)
             .OrderByDescending(x => x.Score)
+            .ThenByDescending(x => TextMatch.Similarity(x.Volume.Name, query.FullName))
             .ThenByDescending(x => TextMatch.SamePublisher(x.Volume.Publisher, query.Publisher))
             .Take(15)
             .Select(x => x.Volume)
@@ -290,55 +310,99 @@ public sealed class BookIdentifier(
             issues.AddRange(await comicVine.GetIssuesAsync(big, ct, query.Number));
         }
 
+        // "Book One: The Flight of the Prince" on issues #1 to #5 of Wynd names a story arc, not a
+        // collected edition: a collected-edition number repeated in a volume is ignored.
+        var arcIssues = issues
+            .GroupBy(i => (i.VolumeId, Number: TextMatch.CollectedNumber(i.Name)))
+            .Where(g => g.Key.Number is not null && g.Count() > 1)
+            .SelectMany(g => g.Select(i => i.Id))
+            .ToHashSet();
+
         var byId = relevant.ToDictionary(v => v.Id);
         return issues
             .Where(i => byId.ContainsKey(i.VolumeId))
             .DistinctBy(i => i.Id)
-            .Select(i => Score(i, byId[i.VolumeId], query))
+            .Select(i => Score(i, byId[i.VolumeId], query, arcIssues.Contains(i.Id)))
             .Where(c => c.Confidence > 0.25)
             .OrderByDescending(c => c.Confidence)
             .Take(MaxCandidates)
             .ToList();
     }
 
-    /// <summary>How well a volume name matches: "Deadly Class: Reagan Youth" matches "Deadly Class".</summary>
-    private static double NameScore(string volumeName, string series, string searchText)
+    /// <summary>
+    /// How well a volume name matches: "Deadly Class: Reagan Youth" matches "Deadly Class", and
+    /// "Robocop: Last Stand" matches "RoboCop: Last Stand" and "Hellboy: Krampusnacht" its full name.
+    /// </summary>
+    private static double NameScore(CvVolume volume, BookQuery query)
     {
-        var prefix = PrefixOf(volumeName);
-        return Math.Max(TextMatch.Similarity(prefix, series), TextMatch.Similarity(volumeName, searchText));
+        var series = query.Series ?? query.SearchText;
+        return new[] { volume.Name, WithoutCreator(volume.Name) }.Distinct().Max(name =>
+            Math.Max(TextMatch.Similarity(PrefixOf(name), series),
+                Math.Max(TextMatch.Similarity(name, query.SearchText), TextMatch.Similarity(name, query.FullName))));
     }
 
-    internal static MetadataCandidate Score(CvIssueSummary issue, CvVolume volume, BookQuery query)
+    /// <param name="nameIsArc">The issue's name is a story arc shared with other issues ("Book One: …"), not a collected edition.</param>
+    internal static MetadataCandidate Score(CvIssueSummary issue, CvVolume volume, BookQuery query, bool nameIsArc = false)
     {
         var prefix = PrefixOf(volume.Name);
         var suffix = SuffixOf(volume.Name);
-        var collected = TextMatch.CollectedNumber(issue.Name);
+        var collected = nameIsArc ? null : TextMatch.CollectedNumber(issue.Name);
         var shortVolume = volume.IssueCount <= 12;
         var series = query.Series ?? query.SearchText;
-        var exactSeriesVolume = TextMatch.Normalize(volume.Name) == TextMatch.Normalize(series);
+        var exactSeriesVolume = SameName(volume.Name, series) || SameName(WithoutCreator(volume.Name), series);
+        var wantsCollected = query.Kind is BookKind.Tpb or BookKind.Omnibus;
 
         // A deluxe/hardcover series named like the series numbers its volumes by issue number.
-        collected ??= shortVolume && volume.IssueCount > 1 && exactSeriesVolume && query.Kind != BookKind.Issue ? issue.IssueNumber : null;
+        collected ??= !nameIsArc && shortVolume && volume.IssueCount > 1 && exactSeriesVolume && query.Kind != BookKind.Issue ? issue.IssueNumber : null;
+
+        // A series that only ever had one collected edition: "Scotch McTiernan… Vol. 1" is the single
+        // issue of the volume of that name.
+        collected ??= volume.IssueCount == 1 && exactSeriesVolume && wantsCollected
+                      && TextMatch.SameNumber(query.Number, "1") && TextMatch.SameNumber(issue.IssueNumber, "1") ? "1" : null;
         var kind = KindOf(volume, collected, shortVolume);
         var number = query.Kind == BookKind.Issue ? issue.IssueNumber : collected ?? (shortVolume ? null : issue.IssueNumber);
         var oneShot = volume.IssueCount == 1 && collected is null && suffix is null;
 
         var reasons = new List<MatchReason>();
-        var titleSim = Math.Max(TextMatch.Similarity(prefix, series), TextMatch.Similarity(volume.Name, query.SearchText));
+        var titleSim = NameScore(volume, query);
         var confidence = 0.30 * titleSim;
         if (titleSim >= 0.85)
         {
             reasons.Add(MatchReason.Title);
         }
 
-        if (TextMatch.Normalize(prefix) == TextMatch.Normalize(series))
+        if (SameName(PrefixOf(volume.Name), series) || SameName(PrefixOf(WithoutCreator(volume.Name)), series) || exactSeriesVolume)
         {
             confidence += 0.05;
         }
 
-        if (query.Subtitle is not null && suffix is not null && TextMatch.Similarity(suffix, query.Subtitle) >= 0.7)
+        // The subtitle says which book of the series this is: ComicVine writes it in the volume's
+        // name ("Hellboy: Krampusnacht") or in the issue's ("Over the Hill with the Swords…").
+        if (query.Subtitle is { } subtitle)
         {
-            confidence += 0.05;
+            var issueNameSim = TextMatch.Similarity(IssueTitleOf(issue.Name), subtitle);
+            var subtitleSim = Math.Max(TextMatch.Similarity(suffix, subtitle), issueNameSim);
+            if (subtitleSim >= 0.7 || TextMatch.Similarity(volume.Name, query.FullName) >= 0.9)
+            {
+                confidence += 0.1;
+                reasons.Add(MatchReason.Subtitle);
+
+                // Without a number, the issue's name is what tells the books of the series apart
+                // ("Parker - The Hunter" is the issue "The Hunter" of Richard Stark's Parker).
+                if (query.Number is null && issueNameSim >= 0.7 && volume.IssueCount > 1)
+                {
+                    confidence += 0.25;
+                }
+            }
+            else if (suffix is not null && TextMatch.Similarity(suffix, subtitle) < 0.4)
+            {
+                confidence -= 0.1; // another mini-series of the same series ("RoboCop: Roulette")
+            }
+        }
+
+        if (query.SeriesYear is { } seriesYear && volume.StartYear is { } startYear)
+        {
+            confidence += startYear == seriesYear ? 0.1 : Math.Abs(startYear - seriesYear) > 1 ? -0.1 : 0;
         }
 
         if (query.Number is not null)
@@ -481,6 +545,32 @@ public sealed class BookIdentifier(
             ? isbnRecord.Number is null && cv.Number is null
             : TextMatch.SameNumber(isbnRecord.Number, cv.Number);
         return sameSeries && sameNumber;
+    }
+
+    /// <summary>An issue name without its collected-edition number: "Volume 11: Over the Hill…" → "Over the Hill…".</summary>
+    private static string? IssueTitleOf(string? name) => name is null ? null : CollectedNumberPrefix().Replace(name, string.Empty);
+
+    /// <summary>
+    /// "Richard Stark's Parker" → "Parker", "Frank Miller's RoboCop" → "RoboCop": a creator's full
+    /// name is often left out of the book's title. One word ("Crogan's March") is part of the name.
+    /// </summary>
+    private static string WithoutCreator(string volumeName)
+    {
+        var m = CreatorPrefix().Match(volumeName);
+        return m.Success ? volumeName[m.Length..] : volumeName;
+    }
+
+    [GeneratedRegex(@"^\s*(?:vol(?:ume)?|book|tpb|part)\.?\s*(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b\s*[:,-]?\s*", RegexOptions.IgnoreCase)]
+    private static partial Regex CollectedNumberPrefix();
+
+    [GeneratedRegex(@"^(?:[\p{L}.\-]+\s+){1,2}[\p{L}.\-]+['’]s\s+(?=\S)")]
+    private static partial Regex CreatorPrefix();
+
+    /// <summary>Same name, ignoring case, punctuation and a leading "The" ("The Transformers" = "Transformers").</summary>
+    private static bool SameName(string a, string b)
+    {
+        static string Key(string s) => TextMatch.Normalize(s) is var n && n.StartsWith("the ", StringComparison.Ordinal) ? n[4..] : TextMatch.Normalize(s);
+        return Key(a).Length > 0 && Key(a) == Key(b);
     }
 
     private static string PrefixOf(string volumeName)

@@ -33,6 +33,12 @@ Everything here was verified on 2026-10-16/17, in a session analyzing the user's
   - Error responses come with HTTP 200 and a `status_code`: 100 = invalid key, 107 = rate limit exceeded, 101 = not found.
   - ComicVine has no ISBN search; the ISBN goes to Open Library, and its title guides the ComicVine search.
   - Cost per book: 1 search + 1 or 2 issue listings + 1 detail ≈ 200 books per hour.
+- **Seen on 2026-10-30 in the app's cache** (titles of the maintainer's 636 books in the Review):
+  - Between 2026-10-23 and 2026-10-26, 470 `search` answers came with `status_code` 1 but `publisher: null` and `count_of_issues: 0` for **every** volume; the same searches, before and after, were complete. Read as true, a 72-issue series looks like a one-shot. The app now refuses such an answer (an error, the book can be searched again later) and doesn't keep it in the cache.
+  - The search ranks by words: "RoboCop last stand" brings *Robocop: Last Stand* (Boom!, 2013) first, "RoboCop" alone doesn't bring it at all. Likewise, "The Boys" brings the single issues and the German and French editions, not Dynamite's trade paperbacks.
+  - Collected editions are also issues of a volume named like the series, with the subtitle as the **issue name**: *The Boys* (Dynamite, 2007, 12 issues), issue #11 "Over the Hill with the Swords of a Thousand Men"; *Richard Stark's Parker* (IDW), issue #1 "The Hunter".
+  - Issue names also carry story arcs that look like book numbers: issues #1-#5 of *Wynd* (Boom!, 2020) are all named "Book One: The Flight of the Prince"; the trade paperback is issue #1 of another *Wynd* volume (2021).
+  - Some volumes start with the creator's name: "Richard Stark's Parker", "Frank Miller's RoboCop", "Michael Turner's Fathom".
 
 ### Open Library
 - `https://openlibrary.org/api/books?bibkeys=ISBN:<isbn>&format=json&jscmd=data` got it right the first time:

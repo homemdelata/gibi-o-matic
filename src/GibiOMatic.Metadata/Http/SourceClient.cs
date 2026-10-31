@@ -51,7 +51,9 @@ public sealed class SourceClient(
     public async Task<string> GetAsync(string resource, string publicUrl, string? secretQuery, CancellationToken ct,
         Func<string, bool>? isRateLimited = null, Func<string, bool>? isCacheable = null)
     {
-        if (await cache.GetAsync(source, publicUrl, cacheMaxAge, ct) is { } cached)
+        // A cached answer is checked again: rules about what is worth keeping may have changed
+        // since it was stored (ComicVine's incomplete search results of October 2026).
+        if (await cache.GetAsync(source, publicUrl, cacheMaxAge, ct) is { } cached && (isCacheable?.Invoke(cached) ?? true))
         {
             return cached;
         }

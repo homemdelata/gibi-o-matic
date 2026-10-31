@@ -186,10 +186,14 @@ Bands: **Poor** (< 60), **Review** (60–84), **OK** (≥ 85). The rule already 
 
 ### 8.2 Algorithm
 1. **Valid ISBN** (embedded or already present): Open Library (and Google Books, if on). ComicVine does not search by ISBN; the title found through the ISBN guides the ComicVine search, and the ComicVine candidate that agrees with it gets the ISBN evidence. If it matches, confidence is ≥ 0.95.
-2. **Title and series**: normalizes the title (splits the series from the number: "Deadly Class, Vol. 11: A Fond Farewell" → series "Deadly Class", no. 11, kind TPB) and searches ComicVine *volumes*.
+2. **Title and series**: splits the title into parts (`TitleParser.Parse`) and searches ComicVine *volumes*. Nothing in the title that names the book is dropped:
+   - the title is cut at " - " and ":" (Humble Bundle writes "The Boys Vol. 11 - Over the Hill…" where ComicVine writes ":"); the text before the number is the series, the text after it is the subtitle: "Deadly Class, Vol. 11: A Fond Farewell" → series "Deadly Class", no. 11, kind TPB, subtitle "A Fond Farewell"; "Hellboy - Krampusnacht" → "Hellboy", subtitle "Krampusnacht";
+   - numbers: "Vol. 3", "vol3", "v3", "Book One", "Omnibus 1", "TPB 2" (volume) and "#5", "Issue 5" (issue). A volume number followed by an issue number names a mini-series: "RoboCop Vol. 3 - Last Stand #5" → series "RoboCop: Last Stand", issue 5;
+   - format tags ("TP", "HC", "OGN", "One-Shot") and download leftovers ("(v2)", "[Digital]", "(Free Issue)") are removed; "(2003)" is the series' start year;
+   - searches, most specific first, stopping when the book's own volume shows up: series and subtitle ("The Boys Over the Hill…"), the series ("The Boys"), and the part of the series before a colon.
    - On ComicVine, collected editions are often volumes of their own ("Deadly Class: Reagan Youth"). Both the series' volumes and the "Series: Subtitle" volumes have to be considered.
    - Filters by known publisher, language (drops foreign editions, such as Splitter's German *House of Slaughter*) and year.
-   - Scores each candidate by title similarity, number, publisher, year and page count.
+   - Scores each candidate by title similarity, number, publisher, year and kind. The subtitle counts when it matches the volume's subtitle or the issue's name (where ComicVine writes the title of a collected edition); without a number, the issue's name is what picks the book. A creator's name at the start of the volume ("Richard Stark's Parker") is ignored in the comparison; an issue name repeated by several issues of a volume ("Book One: …") is a story arc, not a collected edition.
 3. **Safe automatic approval**: on by default, but only when **all** the conditions below hold. Any other case goes to the Review, with the candidates.
    - **Strong evidence**, of one of these kinds:
      - the file's ISBN matches the result;

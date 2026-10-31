@@ -17,10 +17,13 @@ internal sealed class FakeComicVine : IComicVineApi
 
     public Task<bool> HasKeyAsync(CancellationToken ct) => Task.FromResult(HasKey);
 
+    /// <summary>Answers for specific search texts; any other text gets <see cref="Volumes"/>.</summary>
+    public Dictionary<string, List<CvVolume>> Searches { get; } = [];
+
     public Task<IReadOnlyList<CvVolume>> SearchVolumesAsync(string query, CancellationToken ct, int limit = 30)
     {
         Calls.Add($"search:{query}");
-        return Task.FromResult<IReadOnlyList<CvVolume>>(Volumes);
+        return Task.FromResult<IReadOnlyList<CvVolume>>(Searches.GetValueOrDefault(query) ?? Volumes);
     }
 
     public Task<IReadOnlyList<CvIssueSummary>> GetIssuesAsync(IReadOnlyCollection<int> volumeIds, CancellationToken ct, string? issueNumber = null)
@@ -238,13 +241,181 @@ public sealed class IdentifierTests
     [InlineData("Deadly Class, Vol. 11: A Fond Farewell", "Deadly Class vol 11: A Fond Farewell")]
     [InlineData("Lumberjanes #18", "Lumberjanes #18")]
     [InlineData("Shrugged", "Shrugged")]
+    [InlineData("RoboCop Vol. 3 - Last Stand #5", "RoboCop: Last Stand #5")]
+    [InlineData("The Boys Vol. 11 - Over the Hill with the Swords of a Thousand Men", "The Boys vol 11: Over the Hill with the Swords of a Thousand Men")]
+    [InlineData("Something Epic Vol. 1 (v2)", "Something Epic vol 1")]
+    [InlineData("Hellboy - Krampusnacht", "Hellboy: Krampusnacht")]
+    [InlineData("Wynd - Book One - Flight of the Prince", "Wynd vol 1: Flight of the Prince")]
+    [InlineData("Pathfinder #1 - Map", "Pathfinder #1: Map")]
+    [InlineData("Fathom - Kiani - Omnibus 1", "Fathom: Kiani Omnibus vol 1")]
+    [InlineData("RoboCop (2003) Vol. 1", "RoboCop (2003) vol 1")]
     public void The_search_box_keeps_the_number_and_searching_it_again_gives_the_same_query(string title, string expected)
     {
         var query = BookQuery.From(Book(title));
         Assert.Equal(expected, query.EditableText);
 
         var again = BookQuery.From(Book(title), query.EditableText);
-        Assert.Equal((query.SearchText, query.Number, query.Kind, query.Subtitle), (again.SearchText, again.Number, again.Kind, again.Subtitle));
+        Assert.Equal((query.SearchText, query.Number, query.Kind, query.Subtitle, query.SeriesYear),
+            (again.SearchText, again.Number, again.Kind, again.Subtitle, again.SeriesYear));
+    }
+
+    [Theory]
+    [InlineData("RoboCop Vol. 3 - Last Stand #5", new[] { "RoboCop Last Stand", "RoboCop" })]
+    [InlineData("The Boys Vol. 11 - Over the Hill with the Swords of a Thousand Men", new[] { "The Boys Over the Hill with the Swords of a Thousand Men", "The Boys" })]
+    [InlineData("Hellboy - Krampusnacht", new[] { "Hellboy Krampusnacht", "Hellboy" })]
+    [InlineData("Saga, Vol. 1", new[] { "Saga" })]
+    public void Searches_go_from_the_most_specific_text_to_the_series(string title, string[] expected) =>
+        Assert.Equal(expected, BookQuery.From(Book(title)).SearchTexts);
+
+    [Fact]
+    public async Task A_mini_series_named_between_the_volume_and_the_issue_is_searched_for()
+    {
+        var cv = new FakeComicVine();
+        cv.Volumes.AddRange(
+        [
+            new(66073, "Robocop: Last Stand", 2013, "Boom! Studios", 8),
+            new(71995, "Robocop: Last Stand", 2014, "Boom! Studios", 2),
+            new(4418, "RoboCop", 1990, "Marvel", 23),
+            new(21144, "RoboCop: Roulette", 1993, "Dark Horse Comics", 4),
+        ]);
+        cv.Issues.AddRange(
+        [
+            new(5005, 66073, "Robocop: Last Stand", "5", null, new PartialDate(2013, 12, 11)),
+            new(5001, 66073, "Robocop: Last Stand", "1", null, new PartialDate(2013, 8, 14)),
+            new(7101, 71995, "Robocop: Last Stand", "1", "Volume 1", new PartialDate(2014, 3, 1)),
+            new(4405, 4418, "RoboCop", "5", null, new PartialDate(1990, 7, 1)),
+            new(2104, 21144, "RoboCop: Roulette", "4", null, new PartialDate(1994, 3, 1)),
+        ]);
+
+        var result = await Identifier(cv).IdentifyAsync(Book("RoboCop Vol. 3 - Last Stand #5"), Settings, null, Ct);
+
+        var best = result.Best!;
+        Assert.Equal("4000-5005", best.Record.ComicVineId);
+        Assert.Equal(("Robocop: Last Stand #5", "Robocop: Last Stand", "5", BookKind.Issue),
+            (best.Record.Title, best.Record.SeriesName, best.Record.Number, best.Record.Kind));
+        Assert.DoesNotContain(result.Candidates, c => c.Record.ComicVineId == "4000-4405" && c.Confidence >= best.Confidence);
+        Assert.Equal("search:RoboCop Last Stand", Assert.Single(cv.Calls, c => c.StartsWith("search:", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public async Task The_subtitle_picks_the_collected_edition_by_its_issue_name()
+    {
+        var cv = new FakeComicVine();
+        cv.Searches["The Boys Over the Hill with the Swords of a Thousand Men"] = [];
+        cv.Volumes.AddRange(
+        [
+            new(18033, "The Boys", 2006, "Dynamite Entertainment", 72),
+            new(62088, "The Boys", 2007, "Panini Verlag", 13),
+            new(900, "The Boys", 2007, "Dynamite Entertainment", 12),
+        ]);
+        cv.Issues.AddRange(
+        [
+            new(115525, 18033, "The Boys", "11", "Glorious Five Year Plan, Part One", new PartialDate(2007, 10, 1)),
+            new(406047, 62088, "The Boys", "11", "Butcher", new PartialDate(2012, 11, 1)),
+            new(9011, 900, "The Boys", "11", "Over the Hill with the Swords of a Thousand Men", new PartialDate(2012, 6, 1)),
+            new(9010, 900, "The Boys", "10", "Butcher, Baker, Candlestickmaker", new PartialDate(2011, 11, 1)),
+        ]);
+
+        var result = await Identifier(cv).IdentifyAsync(Book("The Boys Vol. 11 - Over the Hill with the Swords of a Thousand Men"), Settings, null, Ct);
+
+        var best = result.Best!;
+        Assert.Equal("4000-9011", best.Record.ComicVineId);
+        Assert.Equal(("The Boys", "11", BookKind.Tpb), (best.Record.SeriesName, best.Record.Number, best.Record.Kind));
+        Assert.Contains(MatchReason.Subtitle, best.Reasons);
+        Assert.Equal(["search:The Boys Over the Hill with the Swords of a Thousand Men", "search:The Boys"],
+            cv.Calls.Where(c => c.StartsWith("search:", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public async Task A_title_with_a_dash_finds_the_volume_named_with_a_colon()
+    {
+        var cv = new FakeComicVine();
+        cv.Volumes.AddRange(
+        [
+            new(1, "Hellboy: Into the Silent Sea", 2017, "Dark Horse Comics", 1),
+            new(2, "Hellboy: Krampusnacht", 2017, "Dark Horse Comics", 1),
+            new(3, "Hellboy", 1994, "Dark Horse Comics", 5),
+        ]);
+        cv.Issues.AddRange(
+        [
+            new(11, 1, "Hellboy: Into the Silent Sea", "1", null, new PartialDate(2017, 4, 5)),
+            new(21, 2, "Hellboy: Krampusnacht", "1", null, new PartialDate(2017, 12, 6)),
+            new(31, 3, "Hellboy", "1", "Seed of Destruction", new PartialDate(1994, 3, 1)),
+        ]);
+
+        var result = await Identifier(cv).IdentifyAsync(Book("Hellboy - Krampusnacht"), Settings, null, Ct);
+
+        Assert.Equal("4000-21", result.Best?.Record.ComicVineId);
+        Assert.Equal("search:Hellboy Krampusnacht", Assert.Single(cv.Calls, c => c.StartsWith("search:", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public async Task A_story_arc_named_like_a_book_is_not_a_collected_edition()
+    {
+        // Real ComicVine data: issues #1-#5 of Wynd are all named "Book One: The Flight of the Prince".
+        var cv = new FakeComicVine();
+        cv.Volumes.AddRange([new(127982, "Wynd", 2020, "Boom! Studios", 10), new(135402, "Wynd", 2021, "Boom! Studios", 3)]);
+        for (var n = 1; n <= 5; n++)
+        {
+            cv.Issues.Add(new(768550 + n, 127982, "Wynd", n.ToString(System.Globalization.CultureInfo.InvariantCulture), "Book One: The Flight of the Prince", new PartialDate(2020, n + 5)));
+        }
+
+        cv.Issues.AddRange(
+        [
+            new(843108, 135402, "Wynd", "1", "Book One: The Flight of the Prince", new PartialDate(2021, 4, 17)),
+            new(953034, 135402, "Wynd", "2", "Book Two: The Secret of the Wings", new PartialDate(2022, 3, 1)),
+        ]);
+
+        var result = await Identifier(cv).IdentifyAsync(Book("Wynd - Book One - Flight of the Prince"), Settings, null, Ct);
+
+        Assert.Equal("4000-843108", result.Best?.Record.ComicVineId);
+        Assert.Single(result.Candidates, c => c.Confidence >= 0.6);
+    }
+
+    [Fact]
+    public async Task A_series_named_after_its_creator_and_numbered_by_the_issue_name()
+    {
+        var cv = new FakeComicVine();
+        cv.Volumes.AddRange([new(27642, "Richard Stark's Parker", 2009, "IDW Publishing", 4), new(82260, "The Hunter", 2015, "Nobrow", 1)]);
+        cv.Issues.AddRange(
+        [
+            new(1, 27642, "Richard Stark's Parker", "1", "The Hunter", new PartialDate(2009, 7, 1)),
+            new(2, 27642, "Richard Stark's Parker", "2", "The Outfit", new PartialDate(2010, 10, 1)),
+            new(3, 82260, "The Hunter", "1", null, new PartialDate(2015, 5, 1)),
+        ]);
+
+        var result = await Identifier(cv).IdentifyAsync(Book("Parker - The Hunter"), Settings, null, Ct);
+
+        Assert.Equal("4000-1", result.Best?.Record.ComicVineId);
+        Assert.Contains(MatchReason.Subtitle, result.Best!.Reasons);
+    }
+
+    [Fact]
+    public async Task The_only_book_of_a_volume_is_its_volume_one()
+    {
+        var cv = new FakeComicVine();
+        cv.Volumes.Add(new(152084, "Scotch McTiernan Versus the Forces of Evil", 2023, "Image", 1));
+        cv.Issues.Add(new(1, 152084, "Scotch McTiernan Versus the Forces of Evil", "1", null, new PartialDate(2023, 8, 1)));
+
+        var result = await Identifier(cv).IdentifyAsync(Book("Scotch McTiernan Versus the Forces of Evil Vol. 1"), Settings, null, Ct);
+
+        var best = result.Best!;
+        Assert.Equal(("Scotch McTiernan Versus the Forces of Evil, Vol. 1", "1", BookKind.Tpb, false),
+            (best.Record.Title, best.Record.Number, best.Record.Kind, best.Record.IsOneShot));
+        Assert.Contains(MatchReason.Number, best.Reasons);
+    }
+
+    [Fact]
+    public async Task The_year_in_parentheses_picks_the_series_of_that_year()
+    {
+        var cv = new FakeComicVine();
+        cv.Volumes.AddRange([new(1, "Ghost", 1995, "Dark Horse Comics", 36), new(2, "Ghost", 2012, "Dark Horse Comics", 4)]);
+        cv.Issues.AddRange([new(11, 1, "Ghost", "1", null, new PartialDate(1995, 4, 1)), new(21, 2, "Ghost", "1", null, new PartialDate(2012, 9, 1))]);
+
+        var result = await Identifier(cv).IdentifyAsync(Book("Ghost (2012) #1"), Settings, null, Ct);
+
+        Assert.Equal("4000-21", result.Best?.Record.ComicVineId);
+        Assert.Equal("search:Ghost", cv.Calls[0]);
     }
 
     [Theory]
@@ -300,9 +471,12 @@ public sealed class IdentifierTests
     {
         var cv = FakeComicVine.DeadlyClass();
 
-        await Identifier(cv).IdentifyAsync(Book("whatever_file_name"), Settings, "Deadly Class: Reagan Youth", Ct);
+        var result = await Identifier(cv).IdentifyAsync(Book("whatever_file_name"), Settings, "Deadly Class: Reagan Youth", Ct);
 
-        Assert.Equal("search:Deadly Class", cv.Calls[0]);
+        // Series and subtitle together; the volume is found, so the broad search is not needed.
+        Assert.Equal("search:Deadly Class Reagan Youth", cv.Calls[0]);
+        Assert.DoesNotContain("search:Deadly Class", cv.Calls);
+        Assert.Equal("4000-459636", result.Best?.Record.ComicVineId);
     }
 }
 

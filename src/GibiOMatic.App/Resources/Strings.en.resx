@@ -266,6 +266,7 @@
   <data name="Reason_Publisher" xml:space="preserve"><value>publisher</value></data>
   <data name="Reason_SecondSource" xml:space="preserve"><value>2 sources</value></data>
   <data name="Reason_Title" xml:space="preserve"><value>title</value></data>
+  <data name="Reason_Subtitle" xml:space="preserve"><value>subtitle</value></data>
   <data name="Reason_Year" xml:space="preserve"><value>year</value></data>
   <data name="Review_AppliedSummary" xml:space="preserve"><value>{0} of {1} fields will be applied · the original file is not changed</value></data>
   <data name="Review_Approve" xml:space="preserve"><value>Approve and next</value></data>
