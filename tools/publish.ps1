@@ -67,8 +67,12 @@ if ($forWindows) {
     # vpk only takes .txt, .md or .rtf.
     $license = Join-Path $artifacts 'LICENSE.txt'
     Copy-Item (Join-Path $root 'LICENSE') $license -Force
+    # The welcome page starts with the version being installed (the MSI's own dialogs don't show it).
+    $welcome = Join-Path $artifacts 'welcome.txt'
+    $welcomeText = "Gibi-o-matic $version`r`n`r`n" + (Get-Content (Join-Path $texts 'welcome.txt') -Raw -Encoding UTF8)
+    [IO.File]::WriteAllText($welcome, $welcomeText, (New-Object Text.UTF8Encoding $false))
     $installer = @('--msi', '--instLocation', 'PerUser',
-        '--instWelcome', (Join-Path $texts 'welcome.txt'),
+        '--instWelcome', $welcome,
         '--instLicense', $license,
         '--instReadme', (Join-Path $texts 'privacy.md'),
         '--instConclusion', (Join-Path $texts 'conclusion.txt'))
