@@ -67,6 +67,7 @@ internal static class Program
             using var services = new ServiceCollection()
                 .AddGibiOMatic(paths, new ConfigurationBuilder().Build())
                 .AddSingleton<IBookIdentifier>(new FictionalIdentifier())
+                .AddSingleton<IComicVineApi>(new FictionalComicVine())
                 .AddSingleton<IAppUpdater>(new NoUpdates())
                 .BuildServiceProvider();
 
@@ -182,6 +183,10 @@ internal static class Program
         await ShotAsync(NavPage.Library, "library-light", theme: ThemeVariant.Light);
         await ShotAsync(NavPage.Inbox, "inbox");
         await ShotAsync(NavPage.Review, "review");
+        var review = (ReviewPageViewModel)shell.NavItems.First(n => n.Page == NavPage.Review).Content;
+        await review.ShowBySeriesCommand.ExecuteAsync(null);
+        await ShotAsync(NavPage.Review, "review-series");
+        await review.ShowByBookCommand.ExecuteAsync(null);
         var editing = (await session.Index!.GetBooksAsync()).First(b => b.Metadata.Title.StartsWith(FictionalBooks.All[0].Series!, StringComparison.Ordinal));
         await ShotAsync(NavPage.Editor, "editor", [editing.Metadata.Id]);
         await ShotAsync(NavPage.Destinations, "destinations");
@@ -385,6 +390,8 @@ internal static class FictionalBooks
         // Downloaded with no metadata at all: the identification proposes a match, which waits in the Review.
         new("ultimos_farois_v03_digital.cbz", null, null, null, null, null, null, null,
             "OS ÚLTIMOS\nFARÓIS", "VOL. 3", new SKColor(0x45, 0x7B, 0x9D), new SKColor(0xF1, 0xFA, 0xEE), null),
+        new("ultimos_farois_v04_digital.cbz", null, null, null, null, null, null, null,
+            "OS ÚLTIMOS\nFARÓIS", "VOL. 4", new SKColor(0x6D, 0x59, 0x7A), new SKColor(0xF1, 0xFA, 0xEE), null),
     ];
 
     private static readonly FictionalBook PortugueseArriving =
@@ -413,6 +420,8 @@ internal static class FictionalBooks
             "THE ART OF\nCAPTAIN COMET", "SKETCHES AND COVERS", new SKColor(0xF1, 0xFA, 0xEE), new SKColor(0xE6, 0x39, 0x46), "Artbook"),
         new("last_lighthouses_v03_digital.cbz", null, null, null, null, null, null, null,
             "THE LAST\nLIGHTHOUSES", "VOL. 3", new SKColor(0x45, 0x7B, 0x9D), new SKColor(0xF1, 0xFA, 0xEE), null),
+        new("last_lighthouses_v04_digital.cbz", null, null, null, null, null, null, null,
+            "THE LAST\nLIGHTHOUSES", "VOL. 4", new SKColor(0x6D, 0x59, 0x7A), new SKColor(0xF1, 0xFA, 0xEE), null),
     ];
 
     private static readonly FictionalBook EnglishArriving =
@@ -425,12 +434,19 @@ internal sealed class FictionalIdentifier : IBookIdentifier
 {
     public Task<IdentificationResult> IdentifyAsync(BookMetadata book, MetadataSettings settings, string? searchText, CancellationToken ct)
     {
-        // The book downloaded with no metadata is titled after its file ("... v03 digital").
+        // The books downloaded with no metadata are titled after their files ("... v03 digital"); the
+        // second one matched a mini-series of the series, so the Review by series has something to settle.
         var series = FictionalBooks.All[4].Series!;
-        IReadOnlyList<MetadataCandidate> candidates = book.Title.Contains("v03 digital", StringComparison.OrdinalIgnoreCase)
-            ? [Candidate($"{series}, Vol. 3", series, "3", 2021, "Bruno Carvalho", "Ines Duarte", 0.78, MatchReason.Title, MatchReason.Number),
-               Candidate($"{series}, Vol. 2", series, "2", 2019, "Bruno Carvalho", "Ines Duarte", 0.41, MatchReason.Title)]
-            : [Same(book)];
+        var other = FictionalComicVine.MiniSeries;
+        IReadOnlyList<MetadataCandidate> candidates =
+            book.Title.Contains("v03 digital", StringComparison.OrdinalIgnoreCase)
+                ? [Candidate($"{series}, Vol. 3", series, "3", 2021, "Bruno Carvalho", "Ines Duarte", 0.78, FictionalComicVine.VolumeId, series,
+                       MatchReason.Title, MatchReason.Number),
+                   Candidate($"{series}, Vol. 2", series, "2", 2019, "Bruno Carvalho", "Ines Duarte", 0.41, FictionalComicVine.VolumeId, series, MatchReason.Title)]
+            : book.Title.Contains("v04 digital", StringComparison.OrdinalIgnoreCase)
+                ? [Candidate($"{other}, Vol. 4", series, "4", 2022, "Bruno Carvalho", "Ines Duarte", 0.62, FictionalComicVine.VolumeId + 1, other,
+                       MatchReason.Title, MatchReason.Number)]
+                : [Same(book)];
         return Task.FromResult(new IdentificationResult(BookQuery.From(book, searchText), candidates, []));
     }
 
@@ -455,7 +471,7 @@ internal sealed class FictionalIdentifier : IBookIdentifier
     }, 0.99, [MatchReason.Isbn, MatchReason.SecondSource, MatchReason.Title, MatchReason.Number]);
 
     private static MetadataCandidate Candidate(string title, string series, string number, int year, string writer, string artist,
-        double confidence, params MatchReason[] reasons) => new(new MetadataRecord
+        double confidence, int volumeId, string volumeName, params MatchReason[] reasons) => new(new MetadataRecord
     {
         Source = SourceIds.ComicVine,
         Title = title,
@@ -466,8 +482,46 @@ internal sealed class FictionalIdentifier : IBookIdentifier
         Publisher = FictionalBooks.All[4].Publisher,
         Credits = [new Credit(CreditRole.Writer, writer), new Credit(CreditRole.Artist, artist)],
         Summary = Program.English ? "The island's lighthouse goes dark, and only its keeper knows why." : "O farol da ilha apaga, e só a guardiã sabe por quê.",
-        ComicVineId = "4000-3",
+        ComicVineId = $"4000-{volumeId}{number}",
+        ComicVineVolumeId = volumeId,
+        VolumeName = volumeName,
+        VolumeStartYear = 2018,
+        VolumeIssueCount = volumeName == series ? 4 : 1,
+        SourceName = $"{volumeName} #{(volumeName == series ? number : "1")}",
     }, confidence, reasons);
+}
+
+/// <summary>The made-up series on ComicVine, for the Review by series.</summary>
+internal sealed class FictionalComicVine : IComicVineApi
+{
+    public const int VolumeId = 901;
+
+    public static string MiniSeries => $"{FictionalBooks.All[4].Series}: {(Program.English ? "Dark Water" : "Água Escura")}";
+
+    private static readonly string[] English = ["The Island", "Low Tide", "Lights Out", "Dark Water"];
+    private static readonly string[] Portuguese = ["A Ilha", "Maré Baixa", "Luz Apagada", "Água Escura"];
+
+    public Task<bool> HasKeyAsync(CancellationToken ct) => Task.FromResult(true);
+
+    public Task<IReadOnlyList<GibiOMatic.Metadata.Sources.CvVolume>> SearchVolumesAsync(string query, CancellationToken ct, int limit = 30) =>
+        Task.FromResult<IReadOnlyList<GibiOMatic.Metadata.Sources.CvVolume>>([]);
+
+    public Task<IReadOnlyList<GibiOMatic.Metadata.Sources.CvIssueSummary>> GetIssuesAsync(IReadOnlyCollection<int> volumeIds, CancellationToken ct,
+        string? issueNumber = null)
+    {
+        var names = Program.English ? English : Portuguese;
+        IReadOnlyList<GibiOMatic.Metadata.Sources.CvIssueSummary> issues = volumeIds.Contains(VolumeId)
+            ? names.Select((name, i) => new GibiOMatic.Metadata.Sources.CvIssueSummary(VolumeId * 10 + i + 1, VolumeId, FictionalBooks.All[4].Series!,
+                (i + 1).ToString(CultureInfo.InvariantCulture), name, new PartialDate(2018 + i, 3))).ToList()
+            : [];
+        return Task.FromResult(issues);
+    }
+
+    public Task<GibiOMatic.Metadata.Sources.CvIssue?> GetIssueAsync(int id, CancellationToken ct) =>
+        Task.FromResult<GibiOMatic.Metadata.Sources.CvIssue?>(null);
+
+    public Task<GibiOMatic.Metadata.Sources.CvVolume?> GetVolumeAsync(int id, CancellationToken ct) =>
+        Task.FromResult<GibiOMatic.Metadata.Sources.CvVolume?>(null);
 }
 
 /// <summary>A one-page PDF whose page is the cover (a JPEG drawn over the whole page).</summary>

@@ -84,7 +84,7 @@ public sealed class ReviewBySeriesTests : IDisposable
         Assert.True(_app.Get<ISettingsService>().Current.Review.BySeries);
         var series = review.Series;
         Assert.Equal(["Deadly Class", null], series.GroupItems.Select(g => g.Group?.Name));
-        Assert.Equal(string.Format(CultureInfo.CurrentCulture, Strings.Series_Books, 1), series.GroupItems[1].CountText);
+        Assert.Equal(Strings.Series_OneBook, series.GroupItems[1].CountText);
         Assert.True(series.IsGroupOpen);
         Assert.NotNull(series.GroupItems[0].WarningText);
 

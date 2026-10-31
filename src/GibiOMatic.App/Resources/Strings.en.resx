@@ -749,7 +749,6 @@
   <data name="Series_StepBooks" xml:space="preserve"><value>3 · BOOKS</value></data>
   <data name="Series_SeriesHelp" xml:space="preserve"><value>The series every book of the group will get. ComicVine volumes found by the books, most used first:</value></data>
   <data name="Series_Issues" xml:space="preserve"><value>{0} issues</value></data>
-  <data name="Series_UsedBy" xml:space="preserve"><value>{0} books</value></data>
   <data name="Series_LinkPlaceholder" xml:space="preserve"><value>Or paste a ComicVine link (volume or issue)</value></data>
   <data name="Series_Name" xml:space="preserve"><value>Series name</value></data>
   <data name="Series_Publisher" xml:space="preserve"><value>Publisher</value></data>
@@ -784,4 +783,5 @@
   <data name="Editor_UndoBatchHelp" xml:space="preserve"><value>Brings every book approved together in "{0}" back to how it was before.</value></data>
   <data name="Editor_BatchUndone" xml:space="preserve"><value>Undone: {0} books are back in the Review.</value></data>
   <data name="Series_Dismiss" xml:space="preserve"><value>Close the notice</value></data>
+  <data name="Series_OneBook" xml:space="preserve"><value>1 book</value></data>
 </root>

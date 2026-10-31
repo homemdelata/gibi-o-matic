@@ -160,6 +160,13 @@ public static class SeriesGrouping
             .Select(g => g.Key)
             .FirstOrDefault() ?? books[0].Title;
 
+        // Read from file names ("last lighthouses"): the series as a candidate spells it, when it is the same series.
+        if (!name.Any(char.IsUpper) && books.Select(b => b.Best?.Record.SeriesName)
+                .FirstOrDefault(s => s is not null && SeriesKey(name) is { } key && SeriesKey(s)?.Contains(key, StringComparison.Ordinal) == true) is { } spelled)
+        {
+            name = spelled;
+        }
+
         var mainVolume = books.Where(b => b.VolumeId is not null).GroupBy(b => b.VolumeId).OrderByDescending(g => g.Count()).FirstOrDefault()?.Key;
         var diverging = books.Count(b => b.VolumeId is null || b.VolumeId != mainVolume);
         var numbers = books.Where(b => b.Number is not null).Select(b => b.Number!).ToList();

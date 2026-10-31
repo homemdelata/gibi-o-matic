@@ -26,7 +26,7 @@ public sealed partial class SeriesGroupItemViewModel(ReviewGroup? group, int cou
 
     public string Name => Group?.Name ?? Strings.Series_NoGroup;
 
-    public string CountText => string.Format(CultureInfo.CurrentCulture, Strings.Series_Books, count);
+    public string CountText => SeriesReviewViewModel.Books(count);
 
     public string? WarningText => Group is not { HasWarnings: true } g
         ? null
@@ -79,7 +79,7 @@ public sealed partial class VolumeOptionViewModel : ViewModelBase
         Volume.IssueCount > 0 ? string.Format(CultureInfo.CurrentCulture, Strings.Series_Issues, Volume.IssueCount) : null,
     }.Where(p => !string.IsNullOrEmpty(p)));
 
-    public string UsedByText => string.Format(CultureInfo.CurrentCulture, Strings.Series_UsedBy, UsedBy);
+    public string UsedByText => SeriesReviewViewModel.Books(UsedBy);
 
     [ObservableProperty]
     public partial Bitmap? Cover { get; private set; }
@@ -240,6 +240,10 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
         _editBook = editBook;
         Template = settings.Current.Review.TitleTemplate;
     }
+
+    /// <summary>"1 book", "6 books".</summary>
+    public static string Books(int count) =>
+        count == 1 ? Strings.Series_OneBook : string.Format(CultureInfo.CurrentCulture, Strings.Series_Books, count);
 
     private ReviewGroups? Groups => _session.Index is { } index && _session.Identification is { } queue ? new ReviewGroups(index, queue) : null;
 
