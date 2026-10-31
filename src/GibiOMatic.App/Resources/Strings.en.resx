@@ -693,7 +693,8 @@
   <data name="Status_MetadataSearching" xml:space="preserve"><value>searching · {0}</value></data>
   <data name="Status_Paused" xml:space="preserve"><value>paused · {0}</value></data>
   <data name="Update_Label" xml:space="preserve"><value>Version and updates</value></data>
-  <data name="Update_Help" xml:space="preserve"><value>The app looks for new versions on GitHub when it starts and once a day. Nothing is installed unless you ask.</value></data>
+  <data name="Update_Help" xml:space="preserve"><value>The app looks for new versions on GitHub when it starts and once a day, if the option below is on. Nothing is installed unless you ask.</value></data>
+  <data name="Update_Automatic" xml:space="preserve"><value>Look for updates automatically</value></data>
   <data name="Update_Version" xml:space="preserve"><value>Gibi-o-matic {0}</value></data>
   <data name="Update_Check" xml:space="preserve"><value>Check for updates</value></data>
   <data name="Update_Install" xml:space="preserve"><value>Update and restart</value></data>

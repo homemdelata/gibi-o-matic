@@ -39,6 +39,12 @@ public sealed record AppSettings
     /// <summary>Komga, Kindle… (SPEC §9). Per machine.</summary>
     public IReadOnlyList<DestinationConfig> Destinations { get; init; } = [];
 
+    /// <summary>
+    /// Look for a new version on GitHub after the start and once a day. Off: only when the user asks
+    /// (SignPath's rule for data sent to a server the user did not choose).
+    /// </summary>
+    public bool CheckForUpdates { get; init; } = true;
+
     /// <summary>How the reader shows pages (F3.5).</summary>
     public ReaderSettings Reader { get; init; } = new();
 

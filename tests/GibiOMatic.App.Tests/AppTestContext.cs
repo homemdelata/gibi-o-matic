@@ -229,9 +229,15 @@ public sealed class FakeAppUpdater : IAppUpdater
 
     public AppUpdate? Applied { get; private set; }
 
-    public Task<AppUpdate?> CheckAsync(CancellationToken ct) => Unreachable
-        ? throw new HttpRequestException("404")
-        : Task.FromResult(Offered is null ? null : new AppUpdate(Offered, Offered));
+    public int Checks { get; private set; }
+
+    public Task<AppUpdate?> CheckAsync(CancellationToken ct)
+    {
+        Checks++;
+        return Unreachable
+            ? throw new HttpRequestException("404")
+            : Task.FromResult(Offered is null ? null : new AppUpdate(Offered, Offered));
+    }
 
     public Task DownloadAsync(AppUpdate update, IProgress<int>? progress, CancellationToken ct)
     {

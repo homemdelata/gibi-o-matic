@@ -172,6 +172,28 @@ public sealed class BackgroundTests : IDisposable
     }
 
     [Fact]
+    public async Task With_automatic_checks_off_only_the_button_looks_for_updates()
+    {
+        await _app.EnterUiThreadAsync();
+        await OpenLibraryAsync();
+        var checker = _app.Get<UpdateChecker>();
+        var settings = _app.Get<SettingsPageViewModel>();
+        Assert.True(settings.CheckForUpdates);
+
+        await checker.CheckOnScheduleAsync(Ct);
+        Assert.Equal(1, _app.Updater.Checks);
+
+        settings.CheckForUpdates = false;
+        await settings.SaveCommand.ExecuteAsync(null);
+        Assert.False(_app.Get<ISettingsService>().Current.CheckForUpdates);
+        await checker.CheckOnScheduleAsync(Ct);
+        Assert.Equal(1, _app.Updater.Checks);
+
+        await settings.Update.CheckCommand.ExecuteAsync(null);
+        Assert.Equal(2, _app.Updater.Checks);
+    }
+
+    [Fact]
     public void Without_the_installer_there_is_nothing_to_check()
     {
         _app.Updater.IsSupported = false;

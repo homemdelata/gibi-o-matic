@@ -235,6 +235,8 @@
                            Foreground="{DynamicResource TextSecondaryBrush}" />
                 <TextBlock Classes="error" Text="{Binding Update.StatusText}" IsVisible="{Binding Update.StatusIsError}" />
                 <ProgressBar Height="4" Minimum="0" Maximum="1" Value="{Binding Update.Progress}" IsVisible="{Binding Update.IsDownloading}" />
+                <CheckBox Content="{x:Static r:Strings.Update_Automatic}" IsChecked="{Binding CheckForUpdates}" FontWeight="SemiBold"
+                          IsVisible="{Binding Update.IsSupported}" />
                 <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding Update.IsSupported}">
                   <Button Classes="secondary" Content="{x:Static r:Strings.Update_Check}" Command="{Binding Update.CheckCommand}" />
                   <Button Classes="primary" Content="{x:Static r:Strings.Update_Install}" Command="{Binding Update.InstallCommand}"

@@ -86,13 +86,14 @@ The screenshots use a made-up library (titles, creators and covers are fictional
 
 Download the latest version from [**Releases**](https://github.com/homemdelata/gibi-o-matic/releases/latest):
 
-- **Windows 10 or 11:** `Gibi-o-matic-win-Setup.exe`. It installs for your user only, without administrator
-  rights, and adds shortcuts to the desktop and the Start menu. The installer is not signed yet, so the first
-  time Windows may warn about an "unknown publisher": click *More info* → *Run anyway*.
+- **Windows 10 or 11:** `Gibi-o-matic-win.msi`. It installs for your user only, without administrator rights,
+  and adds shortcuts to the desktop and the Start menu. The installer is not signed yet (see the
+  [code signing policy](docs/CODE-SIGNING.md)), so Windows may warn about an "unknown publisher": click
+  *More info* → *Run anyway*.
 - **Linux (x64):** `Gibi-o-matic.AppImage`. Make it executable (`chmod +x Gibi-o-matic.AppImage`) and run it.
 
 The app ships with its own .NET runtime; there is nothing else to install. It checks GitHub for new versions and
-tells you when one is available; nothing is installed until you say so.
+tells you when one is available (you can turn that off in the Settings); nothing is installed until you say so.
 
 macOS is not supported for now.
 
@@ -130,7 +131,15 @@ plain folders and JSON, readable without the app, and the index can always be re
 
 No telemetry, no accounts. The app only goes online for metadata lookups (ComicVine, Open Library and, if you
 turn it on, Google Books), to download Kindle Comic Converter (from GitHub, when you ask) and to check for updates
-(GitHub). The contents of your files never leave your machine.
+(GitHub; *Settings → General → Look for updates automatically* turns it off). The contents of your files never
+leave your machine. The [code signing policy](docs/CODE-SIGNING.md#privacy-policy) has the details, with the
+services' own policies.
+
+### Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by
+[SignPath Foundation](https://signpath.org) (application pending). [`docs/CODE-SIGNING.md`](docs/CODE-SIGNING.md)
+says what is signed, who approves it, and what the privacy policy is.
 
 ## Building from source
 

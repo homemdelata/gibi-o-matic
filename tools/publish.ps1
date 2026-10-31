@@ -6,8 +6,8 @@
     The version comes from the latest "v*" git tag (MinVer). Run from any folder:
         powershell -ExecutionPolicy Bypass -File tools\publish.ps1
         powershell -ExecutionPolicy Bypass -File tools\publish.ps1 -Runtime linux-x64
-    Windows output: Gibi-o-matic-win-Setup.exe (installs per user, no administrator),
-    Gibi-o-matic-win-Portable.zip and the update packages. Linux output: Gibi-o-matic.AppImage and
+    Windows output: Gibi-o-matic-win.msi (installs per user, no administrator, shows the license
+    and the privacy notice) and the update packages. Linux output: Gibi-o-matic.AppImage and
     its update packages. Either can be built on Windows or on Linux.
 
 .PARAMETER Runtime
@@ -58,13 +58,39 @@ Invoke-Dotnet publish $project --configuration Release --runtime $Runtime --self
 # The release left in the folder by the previous run becomes a delta update.
 # "[win]" / "[linux]" lets vpk package for the other system too.
 $releases = Join-Path $artifacts "releases/$Runtime"
+
+# Windows: an MSI with pages, so the privacy notice is shown while installing (SignPath requires it).
+# Per user, like the Setup.exe it replaced: no administrator, same folder, the same updates.
+$installer = @()
+if ($forWindows) {
+    $texts = Join-Path $PSScriptRoot 'installer'
+    # vpk only takes .txt, .md or .rtf.
+    $license = Join-Path $artifacts 'LICENSE.txt'
+    Copy-Item (Join-Path $root 'LICENSE') $license -Force
+    $installer = @('--msi', '--instLocation', 'PerUser',
+        '--instWelcome', (Join-Path $texts 'welcome.txt'),
+        '--instLicense', $license,
+        '--instReadme', (Join-Path $texts 'privacy.md'),
+        '--instConclusion', (Join-Path $texts 'conclusion.txt'))
+}
 Invoke-Dotnet tool restore
-Invoke-Dotnet vpk $(if ($forWindows) { '[win]' } else { '[linux]' }) pack --packId $packId --packVersion $version --packDir $publish `
+Invoke-Dotnet vpk $(if ($forWindows) { '[win]' } else { '[linux]' }) pack --packId $packId --packVersion $version --packDir $publish --runtime $Runtime `
     --mainExe $(if ($forWindows) { 'GibiOMatic.exe' } else { 'GibiOMatic' }) `
     --packTitle 'Gibi-o-matic' --packAuthors 'Gustavo Ayres (homemdelata)' `
     --icon (Join-Path $root 'src/GibiOMatic.App/Assets/gibiomatic.ico') `
     --channel $(if ($forWindows) { 'win' } else { 'linux' }) `
-    --outputDir $releases
+    --releaseNotes (Join-Path $PSScriptRoot 'installer/release-notes.md') `
+    --outputDir $releases @installer
+
+# Windows: only the MSI is offered, so every install shows the privacy notice. vpk always makes
+# Setup.exe and a portable zip; dropping them from assets.win.json keeps "vpk upload" from sending them.
+if ($forWindows) {
+    $assetsFile = Join-Path $releases 'assets.win.json'
+    $dropped = @('Installer', 'Portable')
+    $assets = (Get-Content $assetsFile -Raw | ConvertFrom-Json) | Where-Object { $_.Type -notin $dropped }
+    [IO.File]::WriteAllText($assetsFile, (ConvertTo-Json -InputObject @($assets) -Compress))
+    Get-ChildItem $releases -Include "$packId-win-Setup.exe", "$packId-win-Portable.zip" -Recurse | Remove-Item -Force
+}
 
 # Only the newest release is needed: its full package makes the next delta, and installed apps
 # update from GitHub. Older packages would pile up (about 60 MB each).

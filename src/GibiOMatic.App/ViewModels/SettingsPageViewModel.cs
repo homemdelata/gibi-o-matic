@@ -154,6 +154,10 @@ public sealed partial class SettingsPageViewModel : PageViewModel
     /// <summary>Version and updates (F6).</summary>
     public UpdateStatusViewModel Update { get; }
 
+    /// <summary>Look for new versions after the start and once a day; off, only with the button.</summary>
+    [ObservableProperty]
+    public partial bool CheckForUpdates { get; set; }
+
     // ---- Background (F5) ----
 
     public bool TraySupported { get; }
@@ -410,6 +414,7 @@ public sealed partial class SettingsPageViewModel : PageViewModel
             },
             Language = SelectedLanguage.Code,
             Theme = SelectedTheme.Theme,
+            CheckForUpdates = CheckForUpdates,
             FormatPreference = Formats.Select(f => f.Format).ToList(),
             Metadata = new MetadataSettings
             {
@@ -446,6 +451,7 @@ public sealed partial class SettingsPageViewModel : PageViewModel
         SetFormats(settings.FormatPreference);
         SetSources(settings.Metadata);
         AlwaysReview = settings.Metadata.AlwaysReview;
+        CheckForUpdates = settings.CheckForUpdates;
         CloseToTray = settings.Background.CloseToTray ?? true;
         StartWithSystem = settings.Background.StartWithSystem != StartupMode.Off;
         StartInTray = settings.Background.StartWithSystem != StartupMode.Window;

@@ -61,7 +61,7 @@ If there is a `CLAUDE.local.md` (outside git), it holds the context of the curre
   - `dotnet build GibiOMatic.sln`
   - `dotnet test --solution GibiOMatic.sln` (Microsoft.Testing.Platform, see `global.json`)
   - `dotnet run --project src/GibiOMatic.App`
-  - `powershell -ExecutionPolicy Bypass -File tools\publish.ps1 [-Runtime linux-x64]` → Velopack installer in `artifacts\releases\<rid>\` (`Gibi-o-matic-win-Setup.exe`, `Gibi-o-matic.AppImage`)
+  - `powershell -ExecutionPolicy Bypass -File tools\publish.ps1 [-Runtime linux-x64]` → Velopack installer in `artifacts\releases\<rid>\` (`Gibi-o-matic-win.msi`, `Gibi-o-matic.AppImage`)
   - `dotnet run --project tools/Screenshots` → regenerates the English screenshots in `docs/images` (fictional library); with `-- docs/images pt-BR`, the `-pt-BR` set used by `README.pt-BR.md`
 - **Version**: comes from the latest `vX.Y.Z` git tag (MinVer). To release a version: `git tag v0.6.0` and `git push origin v0.6.0`; the `release.yml` workflow builds the installers and creates a **draft** GitHub release, which has to be published by hand for installed apps to see the update.
 
