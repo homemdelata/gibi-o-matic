@@ -265,7 +265,7 @@ public sealed class FakeIdentifier : IBookIdentifier
 {
     public Func<BookMetadata, string?, IReadOnlyList<MetadataCandidate>> Respond { get; set; } = (_, _) => [];
 
-    /// <summary>When set, gives the query stored with the result (a result from an older version, say).</summary>
+    /// <summary>When it gives a query, the result is one stored by an older version, with that query.</summary>
     public Func<BookMetadata, string?, BookQuery?>? QueryOf { get; set; }
 
     /// <summary>When set, searches wait for it (to see what the screen shows meanwhile).</summary>
@@ -278,7 +278,11 @@ public sealed class FakeIdentifier : IBookIdentifier
             await gate.Task;
         }
 
-        return new IdentificationResult(QueryOf?.Invoke(book, searchText) ?? BookQuery.From(book, searchText), Respond(book, searchText), []);
+        var old = QueryOf?.Invoke(book, searchText);
+        return new IdentificationResult(old ?? BookQuery.From(book, searchText), Respond(book, searchText), [])
+        {
+            Algorithm = old is null ? BookIdentifier.Algorithm : 0,
+        };
     }
 
     public Task<MetadataCandidate> CompleteAsync(MetadataCandidate candidate, CancellationToken ct) =>
