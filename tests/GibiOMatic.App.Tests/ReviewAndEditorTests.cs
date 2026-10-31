@@ -103,6 +103,34 @@ public sealed class ReviewAndEditorTests : IDisposable
     }
 
     [Fact]
+    public async Task The_search_box_reads_the_book_again_and_searching_it_unchanged_searches_the_book()
+    {
+        await _app.EnterUiThreadAsync();
+        // A result stored by an older version, which read this title as "RoboCop #3".
+        _app.Identifier.QueryOf = (_, text) => text is null
+            ? new BookQuery { SearchText = "RoboCop", Series = "RoboCop", Number = "3", Kind = BookKind.Issue }
+            : null;
+        var searched = new List<string?>();
+        _app.Identifier.Respond = (_, text) =>
+        {
+            searched.Add(text);
+            return [];
+        };
+        await ImportAsync("RoboCop Vol. 3 - Last Stand #5.pdf");
+        var review = _app.Get<ReviewPageViewModel>();
+        await review.OnNavigatedToAsync(Ct);
+
+        Assert.Equal("RoboCop: Last Stand #5", review.SearchText);
+
+        searched.Clear();
+        await review.SearchAgainCommand.ExecuteAsync(null);
+        review.SearchText = "Robocop Last Stand #5";
+        await review.SearchAgainCommand.ExecuteAsync(null);
+
+        Assert.Equal([null, "Robocop Last Stand #5"], searched);
+    }
+
+    [Fact]
     public async Task Amazon_links_and_isbns_search_by_isbn_and_kindle_or_goodreads_links_say_what_to_do()
     {
         await _app.EnterUiThreadAsync();
