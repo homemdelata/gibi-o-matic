@@ -257,7 +257,15 @@ A "subtle Spider-Verse" look, specified in `docs/design/revamp/REVAMP.md`.
 ## Open source
 
 - [x] English documentation and project files, contributor guide, Code of Conduct, security policy, issue and PR templates, Dependabot, English screenshots (2026-10-28).
-- [ ] First public release and the repository made public.
+- [x] First public release (v0.1.0) and the repository made public (2026-10-30).
+- [x] Prepare code signing through SignPath Foundation (2026-10-30): MSI installer with a privacy notice, "Look for updates automatically" setting, [`CODE-SIGNING.md`](CODE-SIGNING.md). Application sent on 2026-10-30.
+- [ ] **When SignPath answers** (waiting for them):
+  - Accepted:
+    1. Set up the SignPath project. Its artifact configuration signs `GibiOMatic.exe`, `Gibi-o-matic.exe`, `Update.exe` and the MSI. Its metadata restrictions set the product name to "Gibi-o-matic" and the product version to the same value in each build (SignPath rule).
+    2. Store the SignPath API token as a repository secret. Then call SignPath's GitHub Action from `release.yml`: `vpk pack` signs during packaging (`--signTemplate`), so the release job either signs through it or uploads the unsigned build to SignPath, waits for the approval and repacks. Read the current SignPath and Velopack docs before choosing.
+    3. Approve the first signing request by hand. Then check the signature of the MSI and of the installed `GibiOMatic.exe` (`Get-AuthenticodeSignature`).
+    4. Remove "application pending" from `CODE-SIGNING.md` and both READMEs, and the "not signed yet" notice from the installation sections and `tools/installer/release-notes.md`.
+  - Rejected (for example, not enough reputation yet): note the reason here and apply again once the project has more users. Otherwise, the alternative is a Certum Open Source certificate (about €69, issued in the maintainer's name).
 
 ---
 
@@ -269,5 +277,4 @@ A "subtle Spider-Verse" look, specified in `docs/design/revamp/REVAMP.md`.
 - OCR of the ISBN on the credits page.
 - Suggest a series' missing volumes.
 - Server/Docker mode.
-- Sign the installer (code signing certificate), so Windows doesn't warn about an "unknown publisher".
 - Associate the file types (CBZ, CBR, PDF, EPUB; optional, per type) with the app, so it becomes the default reader: opening a file from Explorer opens it in the reader, whether or not it is in the library (outside it, the app offers to import it). Windows: per-user registration (or through the installer); Linux: a `.desktop` with `MimeType`.
