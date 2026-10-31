@@ -22,15 +22,18 @@ public static class MetadataFile
     /// <summary>
     /// Saves a new version, first copying the current file to
     /// <c>.gibiomatic/history/&lt;id&gt;/&lt;timestamp&gt;.json</c> (the newest versions are kept).
+    /// Returns the name of that history file; null for a new book.
     /// </summary>
-    public static async Task WriteWithHistoryAsync(string libraryRoot, string path, BookMetadata metadata, CancellationToken ct = default)
+    public static async Task<string?> WriteWithHistoryAsync(string libraryRoot, string path, BookMetadata metadata, CancellationToken ct = default)
     {
+        string? saved = null;
         if (File.Exists(path))
         {
             var historyFolder = Path.Combine(LibraryLayout.HistoryPath(libraryRoot), metadata.Id);
             Directory.CreateDirectory(historyFolder);
             var stamp = DateTimeOffset.UtcNow.ToString("yyyyMMdd'T'HHmmssfff'Z'", CultureInfo.InvariantCulture);
-            await AtomicFile.WriteAllBytesAsync(Path.Combine(historyFolder, stamp + ".json"), await File.ReadAllBytesAsync(path, ct), ct);
+            saved = stamp + ".json";
+            await AtomicFile.WriteAllBytesAsync(Path.Combine(historyFolder, saved), await File.ReadAllBytesAsync(path, ct), ct);
 
             foreach (var old in Directory.GetFiles(historyFolder, "*.json").Order(StringComparer.Ordinal).SkipLast(LibraryLayout.HistoryLimit))
             {
@@ -39,6 +42,7 @@ public static class MetadataFile
         }
 
         await WriteAsync(path, metadata, ct);
+        return saved;
     }
 
     public static string Serialize(BookMetadata metadata) => JsonSerializer.Serialize(metadata, GibiJson.Options);

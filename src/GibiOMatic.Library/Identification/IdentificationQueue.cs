@@ -176,6 +176,80 @@ public sealed class IdentificationQueue : IAsyncDisposable
         return saved;
     }
 
+    /// <summary>
+    /// Approves the books of a group of the Review by series that have a record (SPEC §7.1), as the
+    /// Review does: the fields it would tick, plus the group's series and the title. Every book gets
+    /// its own history entry, all in one batch that can be undone at once. Returns the batch, or
+    /// null when nothing was saved.
+    /// </summary>
+    public async Task<HistoryBatch?> ApproveGroupAsync(string label, GroupSeries series, IReadOnlyList<SeriesPlanRow> rows, IProgress<int>? progress = null,
+        CancellationToken ct = default)
+    {
+        var entries = new List<HistoryBatchEntry>();
+        var batch = new HistoryBatch { Id = Core.Ids.Ulid.NewUlid(), Label = label, CreatedAt = DateTimeOffset.UtcNow };
+        var done = 0;
+        try
+        {
+            foreach (var row in rows.Where(r => r.Candidate is not null))
+            {
+                var candidate = row.Candidate!;
+                if (!candidate.Record.IsDetailed)
+                {
+                    try
+                    {
+                        candidate = await _identifier.CompleteAsync(candidate, ct);
+                    }
+                    catch (Exception ex) when (ex is MetadataSourceException or HttpRequestException)
+                    {
+                        // The summary has the title, number, date and cover; credits wait for another search.
+                        _logger.LogWarning(ex, "Could not load the details of {ComicVineId} for book {BookId}", candidate.Record.ComicVineId, row.BookId);
+                    }
+                }
+
+                var record = SeriesPlan.Shape(candidate.Record, series, row.NewTitle);
+                await _editor.UpdateAsync(_library, row.BookId, book => Proposal.Apply(book, record, Proposal.DefaultSelection(Proposal.Compare(book, record))) with
+                {
+                    Review = new ReviewInfo
+                    {
+                        Status = ReviewStatus.Approved, ApprovedAt = DateTimeOffset.UtcNow, MatchedBy = MatchedBy.ComicVineVolume, Confidence = candidate.Confidence,
+                    },
+                }, entries, ct);
+                await SetStateAsync(row.BookId, IdentificationState.Approved, null, null, ct);
+                BookUpdated?.Invoke(this, row.BookId);
+                progress?.Report(++done);
+            }
+        }
+        finally
+        {
+            if (entries.Count > 0)
+            {
+                batch = batch with { Entries = entries };
+                await _editor.SaveBatchAsync(_library, batch, CancellationToken.None);
+            }
+
+            _logger.LogInformation("Review by series: {Count} books of '{Label}' approved", done, label);
+            OnChanged();
+        }
+
+        return entries.Count > 0 ? batch : null;
+    }
+
+    /// <summary>"Undo the batch": the books get back their metadata from before it and return to the Review.</summary>
+    public async Task<IReadOnlyList<string>> UndoBatchAsync(string batchId, CancellationToken ct = default)
+    {
+        var restored = await _editor.UndoBatchAsync(_library, batchId, ct);
+        foreach (var bookId in restored)
+        {
+            var identification = await GetAsync(bookId, ct);
+            var state = identification?.Result?.Candidates.Count > 0 ? IdentificationState.NeedsReview : IdentificationState.NoMatch;
+            await SetStateAsync(bookId, state, null, null, ct);
+            BookUpdated?.Invoke(this, bookId);
+        }
+
+        OnChanged();
+        return restored;
+    }
+
     /// <summary>The user approved the book in the Editor (matched by hand).</summary>
     public async Task MarkApprovedAsync(string bookId, CancellationToken ct = default)
     {

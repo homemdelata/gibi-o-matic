@@ -1,8 +1,10 @@
 using System.Globalization;
+using System.Text.Json;
 using GibiOMatic.Conversion;
 using GibiOMatic.Conversion.Images;
 using GibiOMatic.Core.Domain;
 using GibiOMatic.Core.IO;
+using GibiOMatic.Core.Json;
 using GibiOMatic.Core.Libraries;
 using GibiOMatic.Library.Index;
 using Microsoft.Extensions.Logging;
@@ -10,7 +12,8 @@ using Microsoft.Extensions.Logging;
 namespace GibiOMatic.Library.Editing;
 
 /// <summary>A saved version of a book's metadata in <c>.gibiomatic/history</c>.</summary>
-public sealed record HistoryEntry(string Path, DateTimeOffset SavedAt, BookMetadata Metadata);
+/// <param name="Batch">The batch that replaced this version (not undone yet), if any.</param>
+public sealed record HistoryEntry(string Path, DateTimeOffset SavedAt, BookMetadata Metadata, HistoryBatch? Batch = null);
 
 /// <summary>
 /// Every change to a book goes through here (SPEC §7): the previous <c>metadata.json</c> goes to the
@@ -28,7 +31,12 @@ public sealed class BookEditor(LibraryService libraries, IBookFileReader reader,
     public event EventHandler<BookSavedEventArgs>? BookRemoved;
 
     /// <summary>Applies <paramref name="change"/> to the book as it is on disk and saves it. Returns the saved book.</summary>
-    public async Task<CatalogBook> UpdateAsync(LibraryInfo library, string bookId, Func<BookMetadata, BookMetadata> change, CancellationToken ct = default)
+    public Task<CatalogBook> UpdateAsync(LibraryInfo library, string bookId, Func<BookMetadata, BookMetadata> change, CancellationToken ct = default) =>
+        UpdateAsync(library, bookId, change, null, ct);
+
+    /// <summary>Saves a change whose history entry joins <paramref name="batch"/>, to be undone with it.</summary>
+    public async Task<CatalogBook> UpdateAsync(LibraryInfo library, string bookId, Func<BookMetadata, BookMetadata> change,
+        ICollection<HistoryBatchEntry>? batch, CancellationToken ct = default)
     {
         await _gate.WaitAsync(ct);
         try
@@ -51,7 +59,11 @@ public sealed class BookEditor(LibraryService libraries, IBookFileReader reader,
                 updated = updated with { Files = RenameFiles(folderPath, updated.Files, updated.Title) };
             }
 
-            await MetadataFile.WriteWithHistoryAsync(library.RootPath, metadataPath, updated, ct);
+            if (await MetadataFile.WriteWithHistoryAsync(library.RootPath, metadataPath, updated, ct) is { } history)
+            {
+                batch?.Add(new HistoryBatchEntry(bookId, history));
+            }
+
             var folder = BookFolders.MoveIfNeeded(library.RootPath, entry.Folder, LibraryNaming.BookFolder(updated), logger);
             var saved = new IndexedBook(updated, folder, File.GetLastWriteTimeUtc(Path.Combine(library.RootPath, folder, LibraryLayout.MetadataFileName)));
             await index.UpsertBookAsync(saved, ct);
@@ -123,6 +135,11 @@ public sealed class BookEditor(LibraryService libraries, IBookFileReader reader,
             return [];
         }
 
+        var batches = (await GetBatchesAsync(library, ct))
+            .Where(b => b.UndoneAt is null)
+            .SelectMany(b => b.Entries.Where(e => e.BookId == bookId).Select(e => (e.HistoryFile, Batch: b)))
+            .DistinctBy(x => x.HistoryFile)
+            .ToDictionary(x => x.HistoryFile, x => x.Batch, StringComparer.Ordinal);
         var entries = new List<HistoryEntry>();
         foreach (var file in Directory.GetFiles(folder, "*.json").OrderDescending(StringComparer.Ordinal))
         {
@@ -130,7 +147,7 @@ public sealed class BookEditor(LibraryService libraries, IBookFileReader reader,
             {
                 var stamp = DateTimeOffset.ParseExact(Path.GetFileNameWithoutExtension(file), "yyyyMMdd'T'HHmmssfff'Z'",
                     CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
-                entries.Add(new HistoryEntry(file, stamp, await MetadataFile.ReadAsync(file, ct)));
+                entries.Add(new HistoryEntry(file, stamp, await MetadataFile.ReadAsync(file, ct), batches.GetValueOrDefault(Path.GetFileName(file))));
             }
             catch (Exception ex) when (ex is FormatException or System.Text.Json.JsonException)
             {
@@ -147,6 +164,84 @@ public sealed class BookEditor(LibraryService libraries, IBookFileReader reader,
     /// </summary>
     public Task<CatalogBook> RestoreAsync(LibraryInfo library, string bookId, HistoryEntry version, CancellationToken ct = default) =>
         UpdateAsync(library, bookId, current => version.Metadata with { Files = current.Files }, ct);
+
+    /// <summary>Records a batch of saves, so it can be undone at once.</summary>
+    public async Task SaveBatchAsync(LibraryInfo library, HistoryBatch batch, CancellationToken ct = default)
+    {
+        var folder = LibraryLayout.BatchesPath(library.RootPath);
+        Directory.CreateDirectory(folder);
+        await AtomicFile.WriteAllTextAsync(Path.Combine(folder, batch.Id + ".json"), JsonSerializer.Serialize(batch, GibiJson.Options), ct);
+
+        // Only recent batches can still be undone: the history keeps the last versions of each book.
+        foreach (var old in Directory.GetFiles(folder, "*.json").Order(StringComparer.Ordinal).SkipLast(BatchLimit))
+        {
+            File.Delete(old);
+        }
+    }
+
+    private const int BatchLimit = 50;
+
+    /// <summary>The recorded batches, newest first.</summary>
+    public async Task<IReadOnlyList<HistoryBatch>> GetBatchesAsync(LibraryInfo library, CancellationToken ct = default)
+    {
+        var folder = LibraryLayout.BatchesPath(library.RootPath);
+        if (!Directory.Exists(folder))
+        {
+            return [];
+        }
+
+        var batches = new List<HistoryBatch>();
+        foreach (var file in Directory.GetFiles(folder, "*.json").OrderDescending(StringComparer.Ordinal))
+        {
+            try
+            {
+                if (JsonSerializer.Deserialize<HistoryBatch>(await File.ReadAllTextAsync(file, ct), GibiJson.Options) is { } batch)
+                {
+                    batches.Add(batch);
+                }
+            }
+            catch (JsonException ex)
+            {
+                logger.LogWarning(ex, "Ignoring unreadable batch file {File}", file);
+            }
+        }
+
+        return batches;
+    }
+
+    /// <summary>
+    /// Undoes a batch: every book gets back its version from before it (the current one goes to the
+    /// history too). Books removed since, or whose version left the history, are skipped. Returns the
+    /// books restored.
+    /// </summary>
+    public async Task<IReadOnlyList<string>> UndoBatchAsync(LibraryInfo library, string batchId, CancellationToken ct = default)
+    {
+        var batch = (await GetBatchesAsync(library, ct)).FirstOrDefault(b => b.Id == batchId);
+        if (batch is null || batch.UndoneAt is not null)
+        {
+            return [];
+        }
+
+        var index = libraries.GetIndex(library);
+        var restored = new List<string>();
+        foreach (var entry in batch.Entries)
+        {
+            var file = Path.Combine(LibraryLayout.HistoryPath(library.RootPath), entry.BookId, entry.HistoryFile);
+            if (!File.Exists(file) || await index.GetBookAsync(entry.BookId, ct) is null)
+            {
+                logger.LogWarning("Batch {BatchId}: book {BookId} can no longer be undone", batchId, entry.BookId);
+                continue;
+            }
+
+            var version = await MetadataFile.ReadAsync(file, ct);
+            await UpdateAsync(library, entry.BookId, current => version with { Files = current.Files }, ct);
+            restored.Add(entry.BookId);
+        }
+
+        await SaveBatchAsync(library, batch with { UndoneAt = DateTimeOffset.UtcNow }, ct);
+        logger.LogInformation("Undid batch {BatchId} ({Label}): {Count} books", batchId, batch.Label, restored.Count);
+        return restored;
+    }
 
     /// <summary>Replaces <c>cover.jpg</c> with an image file chosen by the user.</summary>
     public async Task<bool> SetCoverAsync(LibraryInfo library, string bookId, string imagePath, CancellationToken ct = default)

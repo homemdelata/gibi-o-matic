@@ -503,6 +503,9 @@ public sealed partial class BookIdentifier(
             Publisher = volume.Publisher,
             ComicVineId = $"4000-{issue.Id}",
             ComicVineVolumeId = volume.Id,
+            VolumeName = volume.Name,
+            VolumeStartYear = volume.StartYear,
+            IssueName = string.IsNullOrWhiteSpace(issue.Name) ? null : issue.Name,
             SourceName = string.IsNullOrWhiteSpace(issue.Name) ? $"{volume.Name} #{issue.IssueNumber}" : $"{volume.Name} #{issue.IssueNumber} · {issue.Name}",
             VolumeIssueCount = volume.IssueCount,
             IsOneShot = oneShot,
@@ -573,7 +576,7 @@ public sealed partial class BookIdentifier(
     }
 
     /// <summary>An issue name without its collected-edition number: "Volume 11: Over the Hill…" → "Over the Hill…".</summary>
-    private static string? IssueTitleOf(string? name) => name is null ? null : CollectedNumberPrefix().Replace(name, string.Empty);
+    internal static string? IssueTitleOf(string? name) => name is null ? null : CollectedNumberPrefix().Replace(name, string.Empty);
 
     /// <summary>
     /// "Richard Stark's Parker" → "Parker", "Frank Miller's RoboCop" → "RoboCop": a creator's full
@@ -609,13 +612,13 @@ public sealed partial class BookIdentifier(
         return Key(a).Length > 0 && Key(a) == Key(b);
     }
 
-    private static string PrefixOf(string volumeName)
+    internal static string PrefixOf(string volumeName)
     {
         var colon = volumeName.IndexOf(':');
         return colon > 0 ? volumeName[..colon].Trim() : volumeName.Trim();
     }
 
-    private static string? SuffixOf(string volumeName)
+    internal static string? SuffixOf(string volumeName)
     {
         var colon = volumeName.IndexOf(':');
         return colon > 0 && colon < volumeName.Length - 1 ? volumeName[(colon + 1)..].Trim() : null;
@@ -630,6 +633,9 @@ public interface IComicVineApi
     Task<IReadOnlyList<CvVolume>> SearchVolumesAsync(string query, CancellationToken ct, int limit = 30);
 
     Task<IReadOnlyList<CvIssueSummary>> GetIssuesAsync(IReadOnlyCollection<int> volumeIds, CancellationToken ct, string? issueNumber = null);
+
+    /// <summary>Every issue of one volume (the first 100 unless the source pages further).</summary>
+    Task<IReadOnlyList<CvIssueSummary>> GetVolumeIssuesAsync(int volumeId, int issueCount, CancellationToken ct) => GetIssuesAsync([volumeId], ct);
 
     Task<CvIssue?> GetIssueAsync(int id, CancellationToken ct);
 

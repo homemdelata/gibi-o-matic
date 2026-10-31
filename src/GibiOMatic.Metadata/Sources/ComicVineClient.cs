@@ -65,7 +65,31 @@ public sealed class ComicVineClient(SourceClient client, IComicVineKeyProvider k
             filter += ",issue_number:" + Uri.EscapeDataString(issueNumber);
         }
 
-        var url = $"{Base}/issues/?format=json&limit=100&sort=cover_date:asc&field_list=id,name,issue_number,cover_date,store_date,volume,image&filter={filter}";
+        return await GetIssuesPageAsync(filter, 0, ct);
+    }
+
+    /// <summary>Every issue of one volume, oldest first: one request per 100 issues (each cached), at most 1000.</summary>
+    public async Task<IReadOnlyList<CvIssueSummary>> GetVolumeIssuesAsync(int volumeId, int issueCount, CancellationToken ct)
+    {
+        var all = new List<CvIssueSummary>();
+        var filter = "volume:" + volumeId.ToString(CultureInfo.InvariantCulture);
+        for (var offset = 0; offset == 0 || offset < Math.Min(issueCount, 1000); offset += 100)
+        {
+            var page = await GetIssuesPageAsync(filter, offset, ct);
+            all.AddRange(page);
+            if (page.Count < 100)
+            {
+                break;
+            }
+        }
+
+        return all;
+    }
+
+    private async Task<IReadOnlyList<CvIssueSummary>> GetIssuesPageAsync(string filter, int offset, CancellationToken ct)
+    {
+        var url = $"{Base}/issues/?format=json&limit=100&sort=cover_date:asc&field_list=id,name,issue_number,cover_date,store_date,volume,image&filter={filter}"
+                  + (offset > 0 ? $"&offset={offset.ToString(CultureInfo.InvariantCulture)}" : string.Empty);
         using var doc = await GetAsync("issues", url, ct);
         return doc.RootElement.Items("results")
             .Select(i => new CvIssueSummary(i.Int("id") ?? 0, i.Prop("volume")?.Int("id") ?? 0, i.Prop("volume")?.Str("name") ?? string.Empty,

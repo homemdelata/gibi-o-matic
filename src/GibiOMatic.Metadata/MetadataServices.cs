@@ -59,6 +59,7 @@ public static class MetadataServices
         services.AddSingleton<IIsbnSource>(sp => sp.GetRequiredService<GoogleBooksClient>());
         services.AddSingleton<IComicVineApi>(sp => sp.GetRequiredService<ComicVineClient>());
         services.AddSingleton<IBookIdentifier, BookIdentifier>();
+        services.AddSingleton<VolumeMatcher>();
         services.AddSingleton(sp => new CoverImageCache(http, Path.Combine(paths.DataDirectory, "cache", "covers"),
             sp.GetRequiredService<ILoggerFactory>().CreateLogger<CoverImageCache>()));
         return services;

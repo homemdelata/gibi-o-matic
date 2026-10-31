@@ -8,6 +8,7 @@ public static class LibraryLayout
     public const string InternalFolderName = ".gibiomatic";
     public const string HistoryFolderName = "history";
     public const string TrashFolderName = "trash";
+    public const string BatchesFolderName = "batches";
     public const string MetadataFileName = "metadata.json";
     public const string CoverFileName = "cover.jpg";
 
@@ -24,5 +25,6 @@ public static class LibraryLayout
     public static string BooksPath(string root) => Path.Combine(root, BooksFolderName);
     public static string InternalPath(string root) => Path.Combine(root, InternalFolderName);
     public static string HistoryPath(string root) => Path.Combine(root, InternalFolderName, HistoryFolderName);
+    public static string BatchesPath(string root) => Path.Combine(root, InternalFolderName, BatchesFolderName);
     public static string TrashPath(string root) => Path.Combine(root, InternalFolderName, TrashFolderName);
 }
