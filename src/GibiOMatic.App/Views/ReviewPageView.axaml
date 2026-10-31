@@ -4,6 +4,7 @@
              xmlns:c="using:GibiOMatic.App.Controls"
              xmlns:conv="using:GibiOMatic.App.Converters"
              xmlns:r="using:GibiOMatic.App.Resources"
+             xmlns:v="using:GibiOMatic.App.Views"
              x:Class="GibiOMatic.App.Views.ReviewPageView"
              x:DataType="vm:ReviewPageViewModel">
   <Grid ColumnDefinitions="320,*">
@@ -16,6 +17,15 @@
             <c:TitleMark />
           </StackPanel>
           <TextBlock Classes="muted" Text="{Binding Subtitle}" />
+          <!-- By book | By series (SPEC §7.1): the same queue, one book or one series at a time -->
+          <Border Classes="segments" HorizontalAlignment="Left" Margin="0,8,0,0" AutomationProperties.Name="{x:Static r:Strings.Review_Mode}">
+            <StackPanel>
+              <Button Classes="segment" Classes.selected="{Binding IsByBook}" Content="{x:Static r:Strings.Review_ByBook}"
+                      Command="{Binding ShowByBookCommand}" />
+              <Button Classes="segment" Classes.selected="{Binding IsBySeries}" Content="{x:Static r:Strings.Review_BySeries}"
+                      Command="{Binding ShowBySeriesCommand}" />
+            </StackPanel>
+          </Border>
           <Button Classes="secondary" MinHeight="32" Padding="12,0" Margin="0,8,0,0" HorizontalAlignment="Left" FontSize="13"
                   Content="{Binding SearchAllText}" Command="{Binding AskSearchAllCommand}"
                   ToolTip.Tip="{x:Static r:Strings.Review_SearchAllHelp}"
@@ -41,7 +51,39 @@
                     Content="{Binding Status.PauseLabel}" Command="{Binding Status.TogglePauseCommand}" />
           </StackPanel>
         </Border>
-        <ListBox ItemsSource="{Binding Items}" Background="Transparent" AutomationProperties.Name="{x:Static r:Strings.Review_Queue}">
+        <Panel>
+        <!-- By series: the groups, then "No group"; a book dragged from the table onto one moves there -->
+        <DockPanel IsVisible="{Binding IsBySeries}">
+          <TextBlock DockPanel.Dock="Bottom" Classes="help" Margin="8,10,8,0" TextWrapping="Wrap" Text="{x:Static r:Strings.Series_DropHint}" />
+          <ListBox ItemsSource="{Binding Series.GroupItems}" Background="Transparent" AutomationProperties.Name="{x:Static r:Strings.Series_Groups}">
+            <ListBox.Styles>
+              <Style Selector="ListBoxItem">
+                <Setter Property="Padding" Value="4,2" />
+                <Setter Property="Margin" Value="0,0,0,4" />
+              </Style>
+              <Style Selector="ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+                <Setter Property="Background" Value="Transparent" />
+              </Style>
+            </ListBox.Styles>
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:SeriesGroupItemViewModel">
+                <Button Classes="queue-item" Classes.selected="{Binding IsSelected}" Command="{Binding SelectCommand}"
+                        c:BookDrag.DropCommand="{Binding DropCommand}">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel VerticalAlignment="Center" Spacing="3">
+                      <TextBlock FontWeight="SemiBold" Text="{Binding Name}" TextTrimming="CharacterEllipsis" Classes.muted="{Binding IsNoGroup}" />
+                      <TextBlock Classes="help" FontSize="12" Foreground="{DynamicResource WarnTextBrush}" Text="{Binding WarningText}"
+                                 TextTrimming="CharacterEllipsis" IsVisible="{Binding HasWarnings}" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Classes="mono muted" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" Text="{Binding CountText}" />
+                  </Grid>
+                </Button>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+        <ListBox ItemsSource="{Binding Items}" Background="Transparent" AutomationProperties.Name="{x:Static r:Strings.Review_Queue}"
+                 IsVisible="{Binding IsByBook}">
           <ListBox.Styles>
             <!-- Room for the selection ring, which reaches 6px past the item's sides; the list clips what goes beyond it -->
             <Style Selector="ListBoxItem">
@@ -90,11 +132,12 @@
             </DataTemplate>
           </ListBox.ItemTemplate>
         </ListBox>
+        </Panel>
       </DockPanel>
     </Border>
 
     <!-- Nothing to review -->
-    <StackPanel Grid.Column="1" IsVisible="{Binding IsEmpty}" MaxWidth="520" Spacing="12"
+    <StackPanel Grid.Column="1" IsVisible="{Binding ShowBookEmpty}" MaxWidth="520" Spacing="12"
                 HorizontalAlignment="Center" VerticalAlignment="Center">
       <Border Classes="empty-icon">
         <c:StrokeIcon Data="{StaticResource Icon.Review}" Width="32" Height="32" Foreground="{DynamicResource OkBrush}" />
@@ -104,7 +147,12 @@
     </StackPanel>
 
     <!-- Comparison -->
-    <DockPanel Grid.Column="1" Margin="{StaticResource PagePadding}" IsVisible="{Binding HasSelection}">
+    <!-- By series: the open group -->
+    <Panel Grid.Column="1" IsVisible="{Binding IsBySeries}">
+      <v:SeriesReviewView DataContext="{Binding Series}" />
+    </Panel>
+
+    <DockPanel Grid.Column="1" Margin="{StaticResource PagePadding}" IsVisible="{Binding ShowComparison}">
       <Grid DockPanel.Dock="Top" ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,18">
         <!-- The book's own cover, to compare with the candidates' -->
         <!-- Hovering shows it bigger, which is quicker than opening a large PDF just to see which book it is -->

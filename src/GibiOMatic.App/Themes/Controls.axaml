@@ -560,6 +560,18 @@
     <Setter Property="Stroke" Value="{DynamicResource AccentTextBrush}" />
   </Style>
 
+  <!-- Review by series: rows of the open group; a row that changes something is highlighted -->
+  <Style Selector="Border.series-row">
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+    <Setter Property="BorderThickness" Value="0,1,0,0" />
+  </Style>
+  <Style Selector="Border.series-row.changed">
+    <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
+  </Style>
+  <Style Selector="Border.series-row TextBlock.no-match">
+    <Setter Property="Foreground" Value="{DynamicResource WarnTextBrush}" />
+  </Style>
+
   <!-- Review: queue items and candidate cards; the selected one gets the accent ring with slivers -->
   <Style Selector="Button.queue-item">
     <Setter Property="Background" Value="Transparent" />
@@ -577,6 +589,11 @@
     <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
   </Style>
   <Style Selector="Button.queue-item.selected /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
+    <Setter Property="BoxShadow" Value="{DynamicResource SelectionShadowRing}" />
+  </Style>
+  <!-- Review by series: a group under a dragged book (BookDrag adds the "dragover" class) -->
+  <Style Selector="Button.queue-item.dragover /template/ ContentPresenter#PART_ContentPresenter">
     <Setter Property="Background" Value="{DynamicResource HoverBrush}" />
     <Setter Property="BoxShadow" Value="{DynamicResource SelectionShadowRing}" />
   </Style>

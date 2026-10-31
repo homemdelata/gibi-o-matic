@@ -1,0 +1,284 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GibiOMatic.App.ViewModels"
+             xmlns:c="using:GibiOMatic.App.Controls"
+             xmlns:r="using:GibiOMatic.App.Resources"
+             x:Class="GibiOMatic.App.Views.SeriesReviewView"
+             x:DataType="vm:SeriesReviewViewModel">
+  <Panel>
+    <!-- Nothing in the queue -->
+    <StackPanel IsVisible="{Binding !HasGroups}" MaxWidth="520" Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+      <Border Classes="empty-icon">
+        <c:StrokeIcon Data="{StaticResource Icon.Review}" Width="32" Height="32" Foreground="{DynamicResource OkBrush}" />
+      </Border>
+      <TextBlock Classes="h2" HorizontalAlignment="Center" Text="{x:Static r:Strings.Series_Empty}" />
+    </StackPanel>
+
+    <!-- No group: books reviewed one by one, or gathered into a new group -->
+    <DockPanel Margin="{StaticResource PagePadding}" IsVisible="{Binding IsNoGroupOpen}">
+      <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,16">
+        <TextBlock FontFamily="{StaticResource FontDisplay}" FontSize="26" FontWeight="ExtraBold" Text="{x:Static r:Strings.Series_NoGroup}" />
+        <TextBlock Classes="muted" TextWrapping="Wrap" Text="{x:Static r:Strings.Series_NoGroupHelp}" />
+      </StackPanel>
+      <Button DockPanel.Dock="Bottom" Classes="secondary" HorizontalAlignment="Right" Margin="0,16,0,0"
+              Content="{x:Static r:Strings.Series_CreateGroup}" Command="{Binding CreateGroupCommand}" />
+      <ScrollViewer>
+        <ItemsControl ItemsSource="{Binding UngroupedBooks}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:SeriesBookViewModel">
+              <Border Background="{DynamicResource CardBrush}" CornerRadius="{StaticResource RadiusCard}" Padding="12,6" Margin="0,0,0,6"
+                      c:BookDrag.BookId="{Binding Book.BookId}">
+                <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+                  <c:StrokeIcon Data="{StaticResource Icon.Grip}" Width="16" Height="16" Margin="0,0,8,0" Foreground="{DynamicResource TextFaintBrush}"
+                                Cursor="SizeAll" />
+                  <CheckBox Grid.Column="1" IsChecked="{Binding IsChecked}" AutomationProperties.Name="{Binding Title}" />
+                  <TextBlock Grid.Column="2" Margin="8,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="{Binding Title}" />
+                  <Button Grid.Column="3" Classes="secondary" MinHeight="32" Padding="12,0" FontSize="13"
+                          Content="{x:Static r:Strings.Series_ReviewBook}" Command="{Binding ReviewCommand}" />
+                </Grid>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </DockPanel>
+
+    <!-- The open group -->
+    <DockPanel Margin="{StaticResource PagePadding}" IsVisible="{Binding IsGroupOpen}">
+      <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,14">
+        <StackPanel Spacing="4" Margin="0,0,16,0">
+          <TextBlock FontFamily="{StaticResource FontDisplay}" FontSize="26" FontWeight="ExtraBold" TextWrapping="Wrap"
+                     Text="{Binding Selected.Name, FallbackValue={x:Null}}" />
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <TextBlock Classes="mono muted" FontSize="12.5" Text="{Binding Selected.CountText, FallbackValue={x:Null}}" />
+            <TextBlock Classes="help" FontSize="12.5" Foreground="{DynamicResource WarnTextBrush}" Text="{Binding Selected.WarningText, FallbackValue={x:Null}}" />
+          </StackPanel>
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Top">
+          <Button Classes="secondary" MinHeight="32" Padding="12,0" FontSize="13" Content="{x:Static r:Strings.Series_AddBooks}"
+                  Classes.selected="{Binding IsAdding}" Command="{Binding ToggleAddingCommand}" />
+          <ComboBox MinWidth="180" ItemsSource="{Binding OtherGroups}" SelectedItem="{Binding MergeTarget}"
+                    PlaceholderText="{x:Static r:Strings.Series_MergeWith}" AutomationProperties.Name="{x:Static r:Strings.Series_MergeWith}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:SeriesGroupItemViewModel">
+                <TextBlock Text="{Binding Name}" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+          <Button Classes="secondary" MinHeight="32" Padding="12,0" FontSize="13" Content="{x:Static r:Strings.Series_Merge}"
+                  Command="{Binding MergeCommand}" />
+          <Button Classes="secondary" MinHeight="32" Padding="12,0" FontSize="13" Content="{x:Static r:Strings.Series_Ungroup}"
+                  Command="{Binding UngroupCommand}" />
+        </StackPanel>
+      </Grid>
+
+      <!-- The group just approved, which can still be undone -->
+      <Border DockPanel.Dock="Top" Classes="card" Padding="14,10" Margin="0,0,0,14"
+              IsVisible="{Binding ApprovedText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+        <Grid ColumnDefinitions="*,Auto,Auto">
+          <TextBlock Classes="success" VerticalAlignment="Center" TextWrapping="Wrap" Text="{Binding ApprovedText}" />
+          <Button Grid.Column="1" Classes="secondary" MinHeight="32" Padding="12,0" Margin="12,0,8,0" FontSize="13"
+                  Content="{x:Static r:Strings.Series_Undo}" Command="{Binding UndoCommand}" />
+          <Button Grid.Column="2" Classes="icon" Command="{Binding DismissApprovedCommand}" AutomationProperties.Name="{x:Static r:Strings.Series_Dismiss}">
+            <c:StrokeIcon Data="{StaticResource Icon.Close}" Width="16" Height="16" />
+          </Button>
+        </Grid>
+      </Border>
+
+      <!-- Add to group: the other books of the queue -->
+      <Border DockPanel.Dock="Top" Classes="card" Padding="14,12" Margin="0,0,0,14" IsVisible="{Binding IsAdding}">
+        <StackPanel Spacing="8">
+          <TextBox Text="{Binding AddSearch}" PlaceholderText="{x:Static r:Strings.Series_AddSearch}"
+                   AutomationProperties.Name="{x:Static r:Strings.Series_AddSearch}">
+            <TextBox.InnerLeftContent>
+              <c:StrokeIcon Data="{StaticResource Icon.Search}" Width="17" Height="17" Margin="12,0,0,0" Foreground="{DynamicResource TextMutedBrush}" />
+            </TextBox.InnerLeftContent>
+          </TextBox>
+          <ScrollViewer MaxHeight="220">
+            <ItemsControl ItemsSource="{Binding AddCandidates}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:SeriesBookViewModel">
+                  <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,0,0,4">
+                    <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="{Binding Title}" />
+                    <TextBlock Grid.Column="1" Classes="muted" FontSize="12" Margin="12,0" VerticalAlignment="Center" Text="{Binding Where}" />
+                    <Button Grid.Column="2" Classes="secondary" MinHeight="28" Padding="10,0" FontSize="12.5"
+                            Content="{x:Static r:Strings.Series_Add}" Command="{Binding AddCommand}" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </StackPanel>
+      </Border>
+
+      <!-- Footer: the table is the dry run; approving asks once -->
+      <StackPanel DockPanel.Dock="Bottom" Spacing="10" Margin="0,16,0,0">
+        <Border Classes="card" Padding="14,10" IsVisible="{Binding ConfirmText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+          <Grid ColumnDefinitions="*,Auto,Auto">
+            <TextBlock FontWeight="SemiBold" VerticalAlignment="Center" TextWrapping="Wrap" Text="{Binding ConfirmText}" />
+            <Button Grid.Column="1" Classes="secondary" Margin="12,0,8,0" Content="{x:Static r:Strings.Common_Cancel}" Command="{Binding CancelApproveCommand}" />
+            <Button Grid.Column="2" Classes="primary" Content="{x:Static r:Strings.Series_ConfirmGo}" Command="{Binding ApproveCommand}" />
+          </Grid>
+        </Border>
+        <Grid ColumnDefinitions="*,Auto">
+          <TextBlock Classes="muted" VerticalAlignment="Center" Text="{Binding SummaryText}" />
+          <Button Grid.Column="1" Classes="primary" Padding="22,0" Content="{x:Static r:Strings.Series_Approve}" Command="{Binding AskApproveCommand}" />
+        </Grid>
+      </StackPanel>
+
+      <ScrollViewer>
+        <StackPanel Spacing="14">
+          <Border Classes="card" IsVisible="{Binding !IsIdle}">
+            <StackPanel Spacing="10">
+              <TextBlock FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding BusyText}" />
+              <ProgressBar IsIndeterminate="True" Height="4" Foreground="{DynamicResource AccentTextBrush}" Background="{DynamicResource HoverBrush}" />
+            </StackPanel>
+          </Border>
+
+          <!-- 1. Series -->
+          <TextBlock Classes="section-label" Text="{x:Static r:Strings.Series_StepSeries}" />
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{x:Static r:Strings.Series_SeriesHelp}" />
+          <ItemsControl ItemsSource="{Binding Volumes}" Padding="3,0,0,0">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <UniformGrid Columns="3" />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:VolumeOptionViewModel">
+                <Button Classes="candidate" Classes.selected="{Binding IsSelected}" Command="{Binding PickCommand}" Margin="0,0,12,12">
+                  <Grid ColumnDefinitions="Auto,*">
+                    <Border Width="44" Height="66" CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True" VerticalAlignment="Top" Margin="0,0,10,0"
+                            Background="{DynamicResource HoverBrush}">
+                      <Panel>
+                        <Border Background="{StaticResource HalftoneBrush}" />
+                        <Image Source="{Binding Cover}" Stretch="UniformToFill" />
+                      </Panel>
+                    </Border>
+                    <StackPanel Grid.Column="1" Spacing="3">
+                      <TextBlock FontWeight="SemiBold" Text="{Binding Name}" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" />
+                      <TextBlock Classes="muted" FontSize="12" Text="{Binding MetaLine}" TextWrapping="Wrap" />
+                      <TextBlock Classes="mono" FontSize="12" Foreground="{DynamicResource AccentTextBrush}" Text="{Binding UsedByText}" />
+                    </StackPanel>
+                  </Grid>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+          <Grid ColumnDefinitions="*,Auto,Auto">
+            <TextBox Classes="mono" FontSize="12.5" Text="{Binding SeriesLink}" PlaceholderText="{x:Static r:Strings.Series_LinkPlaceholder}"
+                     AutomationProperties.Name="{x:Static r:Strings.Series_LinkPlaceholder}">
+              <TextBox.KeyBindings>
+                <KeyBinding Gesture="Enter" Command="{Binding UseLinkCommand}" />
+              </TextBox.KeyBindings>
+            </TextBox>
+            <Button Grid.Column="1" Classes="secondary" Margin="10,0,0,0" Content="{x:Static r:Strings.Review_UseLink}" Command="{Binding UseLinkCommand}" />
+            <Button Grid.Column="2" Classes="secondary" Margin="10,0,0,0" Content="ComicVine" Command="{Binding OpenComicVineCommand}"
+                    ToolTip.Tip="{x:Static r:Strings.Review_OpenComicVineHelp}" />
+          </Grid>
+          <Grid ColumnDefinitions="2*,*,100,Auto" RowDefinitions="Auto,Auto">
+            <TextBlock Classes="field-label" Text="{x:Static r:Strings.Series_Name}" />
+            <TextBlock Grid.Column="1" Classes="field-label" Margin="10,0,0,0" Text="{x:Static r:Strings.Series_Publisher}" />
+            <TextBlock Grid.Column="2" Classes="field-label" Margin="10,0,0,0" Text="{x:Static r:Strings.Series_Year}" />
+            <TextBox Grid.Row="1" Text="{Binding SeriesName}" AutomationProperties.Name="{x:Static r:Strings.Series_Name}" />
+            <TextBox Grid.Row="1" Grid.Column="1" Margin="10,0,0,0" Text="{Binding SeriesPublisher}" AutomationProperties.Name="{x:Static r:Strings.Series_Publisher}" />
+            <TextBox Grid.Row="1" Grid.Column="2" Margin="10,0,0,0" Text="{Binding SeriesYear}" AutomationProperties.Name="{x:Static r:Strings.Series_Year}" />
+            <Button Grid.Row="1" Grid.Column="3" Classes="secondary" Margin="10,0,0,0" Content="{x:Static r:Strings.Series_ByHand}"
+                    Command="{Binding TypeByHandCommand}" />
+          </Grid>
+          <TextBlock Classes="help" TextWrapping="Wrap" Text="{x:Static r:Strings.Series_NoVolume}" IsVisible="{Binding !HasVolume}" />
+          <TextBlock Classes="error" TextWrapping="Wrap" Text="{Binding SeriesError}"
+                     IsVisible="{Binding SeriesError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+          <!-- 2. Title format -->
+          <TextBlock Classes="section-label" Margin="0,8,0,0" Text="{x:Static r:Strings.Series_StepTitle}" />
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBox Classes="mono" Text="{Binding Template}" IsEnabled="{Binding !KeepTitles}"
+                     AutomationProperties.Name="{x:Static r:Strings.Series_StepTitle}" />
+            <CheckBox Grid.Column="1" Margin="14,0,0,0" Content="{x:Static r:Strings.Series_KeepTitles}" IsChecked="{Binding KeepTitles}" />
+          </Grid>
+          <TextBlock Classes="help" TextWrapping="Wrap" Text="{x:Static r:Strings.Series_TemplateHelp}" />
+          <TextBlock FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding PreviewText}"
+                     IsVisible="{Binding PreviewText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          <TextBlock Classes="error" Text="{Binding TemplateError}"
+                     IsVisible="{Binding TemplateError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+          <!-- 3. Books: what each one will get -->
+          <TextBlock Classes="section-label" Margin="0,8,0,0" Text="{x:Static r:Strings.Series_StepBooks}" />
+          <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="{StaticResource BorderControl}" CornerRadius="{StaticResource RadiusCard}"
+                  ClipToBounds="True">
+            <StackPanel>
+              <Grid ColumnDefinitions="28,*,48,*,1.4*,Auto" Background="{DynamicResource CardBrush}">
+                <TextBlock Grid.Column="1" Classes="section-label" Margin="8,12" Text="{x:Static r:Strings.Series_ColFile}" />
+                <TextBlock Grid.Column="2" Classes="section-label" Margin="8,12" Text="{x:Static r:Strings.Series_ColNumber}" />
+                <TextBlock Grid.Column="3" Classes="section-label" Margin="8,12" Text="{x:Static r:Strings.Series_ColToday}" />
+                <TextBlock Grid.Column="4" Classes="section-label" Margin="8,12" Text="{x:Static r:Strings.Series_ColResult}" />
+              </Grid>
+              <ItemsControl ItemsSource="{Binding Rows}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:SeriesRowViewModel">
+                    <Border Classes="series-row" Classes.changed="{Binding IsChanged}">
+                      <Grid ColumnDefinitions="28,*,48,*,1.4*,Auto">
+                        <!-- Drag a book onto a group in the list to move it there -->
+                        <Border Background="Transparent" Cursor="SizeAll" c:BookDrag.BookId="{Binding BookId}">
+                          <c:StrokeIcon Data="{StaticResource Icon.Grip}" Width="16" Height="16" Foreground="{DynamicResource TextFaintBrush}" />
+                        </Border>
+                        <TextBlock Grid.Column="1" Classes="mono" FontSize="12" Margin="8,12" VerticalAlignment="Center" TextWrapping="Wrap"
+                                   MaxLines="3" TextTrimming="CharacterEllipsis" Text="{Binding FileName}" />
+                        <TextBlock Grid.Column="2" Classes="mono" Margin="8,12" VerticalAlignment="Center" Text="{Binding NumberText}" />
+                        <TextBlock Grid.Column="3" Classes="muted" FontSize="12.5" Margin="8,12" VerticalAlignment="Center" TextWrapping="Wrap"
+                                   MaxLines="3" TextTrimming="CharacterEllipsis" Text="{Binding TodayText}" />
+                        <Grid Grid.Column="4" ColumnDefinitions="Auto,*" Margin="8,8">
+                          <Border Width="32" Height="48" CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True" Margin="0,0,10,0"
+                                  Background="{DynamicResource HoverBrush}" IsVisible="{Binding HasMatch}">
+                            <Image Source="{Binding Cover}" Stretch="UniformToFill" />
+                          </Border>
+                          <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding ResultTitle}" Classes.no-match="{Binding IsNoMatch}" />
+                            <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding ResultIssue}"
+                                       IsVisible="{Binding HasMatch}" />
+                          </StackPanel>
+                        </Grid>
+                        <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="2" Margin="0,0,8,0" VerticalAlignment="Center">
+                          <Button Classes="icon" Command="{Binding OpenCommand}" ToolTip.Tip="{x:Static r:Strings.Review_OpenBook}"
+                                  AutomationProperties.Name="{x:Static r:Strings.Review_OpenBook}">
+                            <c:StrokeIcon Data="{StaticResource Icon.BookOpen}" Width="16" Height="16" />
+                          </Button>
+                          <Button Classes="icon" IsEnabled="{Binding CanChooseIssue}" ToolTip.Tip="{x:Static r:Strings.Series_ChooseIssue}"
+                                  AutomationProperties.Name="{x:Static r:Strings.Series_ChooseIssue}">
+                            <c:StrokeIcon Data="{StaticResource Icon.Stack}" Width="16" Height="16" />
+                            <Button.Flyout>
+                              <Flyout Placement="BottomEdgeAlignedRight">
+                                <ScrollViewer MaxHeight="320" MinWidth="260">
+                                  <ItemsControl ItemsSource="{Binding Issues}">
+                                    <ItemsControl.ItemTemplate>
+                                      <DataTemplate x:DataType="vm:IssueOptionViewModel">
+                                        <Button Classes="choice" HorizontalAlignment="Stretch" Content="{Binding Text}" Command="{Binding PickCommand}" />
+                                      </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                  </ItemsControl>
+                                </ScrollViewer>
+                              </Flyout>
+                            </Button.Flyout>
+                          </Button>
+                          <Button Classes="icon" Command="{Binding EditByHandCommand}" ToolTip.Tip="{x:Static r:Strings.Review_EditByHand}"
+                                  AutomationProperties.Name="{x:Static r:Strings.Review_EditByHand}">
+                            <c:StrokeIcon Data="{StaticResource Icon.Editor}" Width="16" Height="16" />
+                          </Button>
+                          <Button Classes="icon" Command="{Binding RemoveCommand}" ToolTip.Tip="{x:Static r:Strings.Series_Remove}"
+                                  AutomationProperties.Name="{x:Static r:Strings.Series_Remove}">
+                            <c:StrokeIcon Data="{StaticResource Icon.Close}" Width="16" Height="16" />
+                          </Button>
+                        </StackPanel>
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </ScrollViewer>
+    </DockPanel>
+  </Panel>
+</UserControl>

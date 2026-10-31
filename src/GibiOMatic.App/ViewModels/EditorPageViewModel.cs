@@ -57,7 +57,7 @@ public sealed partial class UniverseChipViewModel(string name, Action<UniverseCh
     private void Remove() => remove(this);
 }
 
-public sealed partial class HistoryRowViewModel(HistoryEntry entry, Func<HistoryEntry, Task> restore) : ViewModelBase
+public sealed partial class HistoryRowViewModel(HistoryEntry entry, Func<HistoryEntry, Task> restore, Func<HistoryBatch, Task>? undoBatch = null) : ViewModelBase
 {
     public HistoryEntry Entry { get; } = entry;
     public string When => Entry.SavedAt.ToLocalTime().ToString("g", CultureInfo.CurrentCulture);
@@ -65,6 +65,16 @@ public sealed partial class HistoryRowViewModel(HistoryEntry entry, Func<History
 
     [RelayCommand]
     private Task Restore() => restore(Entry);
+
+    /// <summary>The version from before a group approved in the Review by series: the whole group can be undone.</summary>
+    public bool HasBatch => Entry.Batch is not null && undoBatch is not null;
+
+    public string? UndoBatchText => Entry.Batch is { } batch ? string.Format(CultureInfo.CurrentCulture, Strings.Editor_UndoBatch, batch.Entries.Count) : null;
+
+    public string? UndoBatchHelp => Entry.Batch is { } batch ? string.Format(CultureInfo.CurrentCulture, Strings.Editor_UndoBatchHelp, batch.Label) : null;
+
+    [RelayCommand]
+    private Task UndoBatch() => Entry.Batch is { } batch && undoBatch is not null ? undoBatch(batch) : Task.CompletedTask;
 }
 
 /// <summary>
@@ -409,7 +419,7 @@ public sealed partial class EditorPageViewModel : PageViewModel
 
         foreach (var entry in (await _editor.GetHistoryAsync(library, bookId, ct)).Take(8))
         {
-            History.Add(new HistoryRowViewModel(entry, RestoreAsync));
+            History.Add(new HistoryRowViewModel(entry, RestoreAsync, UndoBatchAsync));
         }
 
         HasNoHistory = History.Count == 0;
@@ -642,6 +652,18 @@ public sealed partial class EditorPageViewModel : PageViewModel
         await _editor.RestoreAsync(library, _books[0].Metadata.Id, entry);
         await LoadAsync(CancellationToken.None);
         SetMessage(string.Format(CultureInfo.CurrentCulture, Strings.Editor_Restored, entry.SavedAt.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)), isError: false);
+    }
+
+    private async Task UndoBatchAsync(HistoryBatch batch)
+    {
+        if (_session.Identification is not { } queue)
+        {
+            return;
+        }
+
+        var restored = await queue.UndoBatchAsync(batch.Id);
+        await LoadAsync(CancellationToken.None);
+        SetMessage(string.Format(CultureInfo.CurrentCulture, Strings.Editor_BatchUndone, restored.Count), isError: false);
     }
 
     private void SetMessage(string message, bool isError)

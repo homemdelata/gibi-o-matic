@@ -48,6 +48,8 @@ public sealed class AppTestContext : IDisposable
     /// <summary>Never calls the real APIs; answers what each test scripts.</summary>
     public FakeIdentifier Identifier { get; } = new();
 
+    public FakeComicVineApi ComicVine { get; } = new();
+
     /// <summary>A Kindle in memory, connected or not.</summary>
     public FakeKindleDevice Kindle { get; } = new();
 
@@ -84,6 +86,7 @@ public sealed class AppTestContext : IDisposable
             .AddSingleton<IFilePicker>(FilePicker)
             .AddSingleton<IUiThread>(Ui)
             .AddSingleton<IBookIdentifier>(Identifier)
+            .AddSingleton<GibiOMatic.Metadata.Identification.IComicVineApi>(ComicVine)
             .AddSingleton<IUrlOpener>(Urls)
             .AddSingleton<IReaderLauncher>(Reader)
             .AddSingleton<GibiOMatic.App.ViewModels.IReaderImages>(new FakeReaderImages())
@@ -259,6 +262,28 @@ public sealed class FakeStartupRegistration : IStartupRegistration
         Applied.Add(mode);
         return true;
     }
+}
+
+/// <summary>ComicVine in memory, for the Review by series.</summary>
+public sealed class FakeComicVineApi : GibiOMatic.Metadata.Identification.IComicVineApi
+{
+    public List<GibiOMatic.Metadata.Sources.CvVolume> Volumes { get; } = [];
+    public List<GibiOMatic.Metadata.Sources.CvIssueSummary> Issues { get; } = [];
+
+    public Task<bool> HasKeyAsync(CancellationToken ct) => Task.FromResult(true);
+
+    public Task<IReadOnlyList<GibiOMatic.Metadata.Sources.CvVolume>> SearchVolumesAsync(string query, CancellationToken ct, int limit = 30) =>
+        Task.FromResult<IReadOnlyList<GibiOMatic.Metadata.Sources.CvVolume>>(Volumes);
+
+    public Task<IReadOnlyList<GibiOMatic.Metadata.Sources.CvIssueSummary>> GetIssuesAsync(IReadOnlyCollection<int> volumeIds, CancellationToken ct,
+        string? issueNumber = null) =>
+        Task.FromResult<IReadOnlyList<GibiOMatic.Metadata.Sources.CvIssueSummary>>(Issues.Where(i => volumeIds.Contains(i.VolumeId)).ToList());
+
+    public Task<GibiOMatic.Metadata.Sources.CvIssue?> GetIssueAsync(int id, CancellationToken ct) =>
+        Task.FromResult<GibiOMatic.Metadata.Sources.CvIssue?>(null);
+
+    public Task<GibiOMatic.Metadata.Sources.CvVolume?> GetVolumeAsync(int id, CancellationToken ct) =>
+        Task.FromResult(Volumes.FirstOrDefault(v => v.Id == id));
 }
 
 public sealed class FakeIdentifier : IBookIdentifier

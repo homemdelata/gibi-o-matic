@@ -48,12 +48,25 @@ public sealed record AppSettings
     /// <summary>How the reader shows pages (F3.5).</summary>
     public ReaderSettings Reader { get; init; } = new();
 
+    /// <summary>The Review's mode and the title format of the Review by series (F8).</summary>
+    public ReviewSettings Review { get; init; } = new();
+
     public static IReadOnlyList<BookFormat> DefaultFormatPreference { get; } =
         [BookFormat.Cbz, BookFormat.Pdf, BookFormat.Epub, BookFormat.Cbr];
 
     /// <summary>Keys written by newer versions of the app, preserved on save.</summary>
     [JsonExtensionData]
     public Dictionary<string, JsonElement>? UnknownProperties { get; init; }
+}
+
+/// <summary>What the Review remembers (SPEC §7.1).</summary>
+public sealed record ReviewSettings
+{
+    /// <summary>The Review opens By series instead of By book.</summary>
+    public bool BySeries { get; init; }
+
+    /// <summary>The last title format used in the Review by series.</summary>
+    public string TitleTemplate { get; init; } = Text.TitleTemplate.Default;
 }
 
 /// <summary>Reader preferences shared by all books; the reading direction is per book.</summary>

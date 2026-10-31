@@ -725,4 +725,63 @@
   <data name="Review_LinkGoodreads" xml:space="preserve"><value>O link do Goodreads não traz o ISBN. Na página do livro, abra “Detalhes da edição”, copie o ISBN e cole aqui.</value></data>
   <data name="Review_LoadingIsbn" xml:space="preserve"><value>Buscando o ISBN {0}…</value></data>
   <data name="Review_IsbnNotFound" xml:space="preserve"><value>O Open Library e o Google Books não têm o ISBN {0}.</value></data>
+  <data name="Review_ByBook" xml:space="preserve"><value>Por livro</value></data>
+  <data name="Review_BySeries" xml:space="preserve"><value>Por série</value></data>
+  <data name="Review_Mode" xml:space="preserve"><value>Modo da Revisão</value></data>
+  <data name="Series_NoGroup" xml:space="preserve"><value>Sem grupo</value></data>
+  <data name="Series_Books" xml:space="preserve"><value>{0} livros</value></data>
+  <data name="Series_Diverge" xml:space="preserve"><value>{0} divergem</value></data>
+  <data name="Series_NumberRepeated" xml:space="preserve"><value>número repetido</value></data>
+  <data name="Series_NumberMissing" xml:space="preserve"><value>sem número</value></data>
+  <data name="Series_Groups" xml:space="preserve"><value>Grupos da Revisão</value></data>
+  <data name="Series_DropHint" xml:space="preserve"><value>Arraste um livro da tabela para um grupo para mudá-lo de grupo.</value></data>
+  <data name="Series_Ungroup" xml:space="preserve"><value>Desagrupar</value></data>
+  <data name="Series_MergeWith" xml:space="preserve"><value>Juntar com…</value></data>
+  <data name="Series_Merge" xml:space="preserve"><value>Juntar</value></data>
+  <data name="Series_AddBooks" xml:space="preserve"><value>Adicionar livros</value></data>
+  <data name="Series_AddSearch" xml:space="preserve"><value>Buscar entre os outros livros da fila</value></data>
+  <data name="Series_Add" xml:space="preserve"><value>Adicionar</value></data>
+  <data name="Series_CreateGroup" xml:space="preserve"><value>Criar grupo com os marcados</value></data>
+  <data name="Series_NoGroupHelp" xml:space="preserve"><value>Livros que não formam série com nenhum outro. Revise-os um a um, ou marque alguns e crie um grupo.</value></data>
+  <data name="Series_ReviewBook" xml:space="preserve"><value>Revisar</value></data>
+  <data name="Series_StepSeries" xml:space="preserve"><value>1 · SÉRIE</value></data>
+  <data name="Series_StepTitle" xml:space="preserve"><value>2 · FORMATO DO TÍTULO</value></data>
+  <data name="Series_StepBooks" xml:space="preserve"><value>3 · LIVROS</value></data>
+  <data name="Series_SeriesHelp" xml:space="preserve"><value>A série que todos os livros do grupo vão receber. Volumes do ComicVine encontrados pelos livros, o mais usado primeiro:</value></data>
+  <data name="Series_Issues" xml:space="preserve"><value>{0} edições</value></data>
+  <data name="Series_UsedBy" xml:space="preserve"><value>{0} livros</value></data>
+  <data name="Series_LinkPlaceholder" xml:space="preserve"><value>Ou cole um link do ComicVine (volume ou edição)</value></data>
+  <data name="Series_Name" xml:space="preserve"><value>Nome da série</value></data>
+  <data name="Series_Publisher" xml:space="preserve"><value>Editora</value></data>
+  <data name="Series_Year" xml:space="preserve"><value>Ano de início</value></data>
+  <data name="Series_ByHand" xml:space="preserve"><value>Sem volume (à mão)</value></data>
+  <data name="Series_NoVolume" xml:space="preserve"><value>Sem volume do ComicVine: cada livro fica com o próprio candidato quando o número bate.</value></data>
+  <data name="Series_LoadingVolume" xml:space="preserve"><value>Lendo as edições de {0} no ComicVine…</value></data>
+  <data name="Series_VolumeFailed" xml:space="preserve"><value>Não foi possível ler esse volume no ComicVine. Tente de novo mais tarde.</value></data>
+  <data name="Series_TemplateHelp" xml:space="preserve"><value>Campos: {Series}, {Number} ({Number:00} completa com zeros), {Name} (o nome da edição no ComicVine), {Year}. Um campo vazio sai junto com o separador.</value></data>
+  <data name="Series_KeepTitles" xml:space="preserve"><value>Manter o título de cada livro</value></data>
+  <data name="Series_Preview" xml:space="preserve"><value>Prévia: {0}</value></data>
+  <data name="Series_UnknownField" xml:space="preserve"><value>Campo desconhecido: {0}</value></data>
+  <data name="Series_ColFile" xml:space="preserve"><value>ARQUIVO</value></data>
+  <data name="Series_ColNumber" xml:space="preserve"><value>Nº</value></data>
+  <data name="Series_ColToday" xml:space="preserve"><value>HOJE</value></data>
+  <data name="Series_ColResult" xml:space="preserve"><value>RESULTADO</value></data>
+  <data name="Series_NoMatch" xml:space="preserve"><value>Sem correspondência</value></data>
+  <data name="Series_NoCandidate" xml:space="preserve"><value>Sem candidato</value></data>
+  <data name="Series_OwnCandidate" xml:space="preserve"><value>candidato do próprio livro</value></data>
+  <data name="Series_ChooseIssue" xml:space="preserve"><value>Escolher edição</value></data>
+  <data name="Series_Remove" xml:space="preserve"><value>Tirar do grupo</value></data>
+  <data name="Series_Summary" xml:space="preserve"><value>{0} de {1} livros com registro</value></data>
+  <data name="Series_Approve" xml:space="preserve"><value>Aprovar grupo</value></data>
+  <data name="Series_Confirm" xml:space="preserve"><value>Aprovar {0} livros? {1} mudam de volume; {2} sem correspondência ficam na Revisão.</value></data>
+  <data name="Series_ConfirmGo" xml:space="preserve"><value>Aprovar</value></data>
+  <data name="Series_Approving" xml:space="preserve"><value>Aprovando {0} de {1}…</value></data>
+  <data name="Series_Approved" xml:space="preserve"><value>{0} livros de {1} aprovados.</value></data>
+  <data name="Series_Undo" xml:space="preserve"><value>Desfazer</value></data>
+  <data name="Series_Undone" xml:space="preserve"><value>Desfeito: {0} livros voltaram para a Revisão.</value></data>
+  <data name="Series_Empty" xml:space="preserve"><value>Nada para revisar por série.</value></data>
+  <data name="Editor_UndoBatch" xml:space="preserve"><value>Desfazer o grupo ({0} livros)</value></data>
+  <data name="Editor_UndoBatchHelp" xml:space="preserve"><value>Volta todos os livros aprovados juntos em "{0}" para como estavam antes.</value></data>
+  <data name="Editor_BatchUndone" xml:space="preserve"><value>Desfeito: {0} livros voltaram para a Revisão.</value></data>
+  <data name="Series_Dismiss" xml:space="preserve"><value>Fechar aviso</value></data>
 </root>
