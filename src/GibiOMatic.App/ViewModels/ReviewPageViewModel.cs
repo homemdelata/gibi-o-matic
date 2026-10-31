@@ -182,8 +182,8 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
     private IReadOnlyList<string> _toReview = [];
     private CatalogBook? _book;
 
-    /// <summary>The search text read from the selected book; searching it unchanged searches the book itself.</summary>
-    private string? _suggestedSearchText;
+    /// <summary>The box's text when it came from a search of the book itself (not typed); searching it unchanged searches the book again.</summary>
+    private string? _untypedSearchText;
     private readonly IReaderLauncher _readerWindows;
     private readonly IFileRevealer _revealer;
 
@@ -563,11 +563,13 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
         _ = LoadLargeCoverAsync(item, library);
         var result = item.Identification.Result;
 
-        // Read from the book with the current title parser, not from the stored result: a result
-        // from an older version keeps its old reading ("RoboCop #3"), and searching again with it
-        // would repeat the old search.
-        _suggestedSearchText = BookQuery.From(_book.Metadata).EditableText;
-        SearchText = _suggestedSearchText;
+        // The box shows the search that found these candidates: the words typed, exactly as typed,
+        // or else the book's own reading. That reading may come from an older version ("RoboCop #3"),
+        // so searching it unchanged searches the book itself, with the current title parser.
+        var query = result?.Query;
+        var shown = query?.TypedText ?? query?.EditableText ?? BookQuery.From(_book.Metadata).EditableText;
+        _untypedSearchText = query?.TypedText is null ? shown : null;
+        SearchText = shown;
         NoCandidateText = string.Format(CultureInfo.CurrentCulture, Strings.Review_NothingFor, SearchText);
         NotesText = IdentificationText.Notes(item.Identification.Message);
         foreach (var candidate in result?.Candidates ?? [])
@@ -821,10 +823,10 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             return;
         }
 
-        // The suggested text is the book's own title: searching it is searching the book, which also
-        // uses the publisher and year (typed text doesn't).
+        // Unchanged text from a search of the book itself searches the book again, with the current
+        // title parser and its publisher and year (typed text has neither).
         var typed = string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim();
-        var text = typed == _suggestedSearchText ? null : typed;
+        var text = typed == _untypedSearchText ? null : typed;
         Candidates.Clear();
         Rows.Clear();
         SelectedCandidate = null;
