@@ -744,9 +744,9 @@
   <data name="Series_CreateGroup" xml:space="preserve"><value>Create a group with the checked ones</value></data>
   <data name="Series_NoGroupHelp" xml:space="preserve"><value>Books that form no series with any other. Review them one by one, or check some and create a group.</value></data>
   <data name="Series_ReviewBook" xml:space="preserve"><value>Review</value></data>
-  <data name="Series_StepSeries" xml:space="preserve"><value>1 · SERIES</value></data>
-  <data name="Series_StepTitle" xml:space="preserve"><value>2 · TITLE FORMAT</value></data>
-  <data name="Series_StepBooks" xml:space="preserve"><value>3 · BOOKS</value></data>
+  <data name="Series_StepSeries" xml:space="preserve"><value>SERIES</value></data>
+  <data name="Series_StepTitle" xml:space="preserve"><value>TITLE FORMAT</value></data>
+  <data name="Series_StepBooks" xml:space="preserve"><value>BOOKS</value></data>
   <data name="Series_SeriesHelp" xml:space="preserve"><value>The series every book of the group will get. ComicVine volumes found by the books, most used first:</value></data>
   <data name="Series_Issues" xml:space="preserve"><value>{0} issues</value></data>
   <data name="Series_LinkPlaceholder" xml:space="preserve"><value>Or paste a ComicVine link (volume or issue)</value></data>
@@ -784,4 +784,5 @@
   <data name="Editor_BatchUndone" xml:space="preserve"><value>Undone: {0} books are back in the Review.</value></data>
   <data name="Series_Dismiss" xml:space="preserve"><value>Close the notice</value></data>
   <data name="Series_OneBook" xml:space="preserve"><value>1 book</value></data>
+  <data name="Series_BestFor" xml:space="preserve"><value>best match for {0} of {1} books</value></data>
 </root>

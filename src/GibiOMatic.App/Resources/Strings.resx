@@ -744,9 +744,9 @@
   <data name="Series_CreateGroup" xml:space="preserve"><value>Criar grupo com os marcados</value></data>
   <data name="Series_NoGroupHelp" xml:space="preserve"><value>Livros que não formam série com nenhum outro. Revise-os um a um, ou marque alguns e crie um grupo.</value></data>
   <data name="Series_ReviewBook" xml:space="preserve"><value>Revisar</value></data>
-  <data name="Series_StepSeries" xml:space="preserve"><value>1 · SÉRIE</value></data>
-  <data name="Series_StepTitle" xml:space="preserve"><value>2 · FORMATO DO TÍTULO</value></data>
-  <data name="Series_StepBooks" xml:space="preserve"><value>3 · LIVROS</value></data>
+  <data name="Series_StepSeries" xml:space="preserve"><value>SÉRIE</value></data>
+  <data name="Series_StepTitle" xml:space="preserve"><value>FORMATO DO TÍTULO</value></data>
+  <data name="Series_StepBooks" xml:space="preserve"><value>LIVROS</value></data>
   <data name="Series_SeriesHelp" xml:space="preserve"><value>A série que todos os livros do grupo vão receber. Volumes do ComicVine encontrados pelos livros, o mais usado primeiro:</value></data>
   <data name="Series_Issues" xml:space="preserve"><value>{0} edições</value></data>
   <data name="Series_LinkPlaceholder" xml:space="preserve"><value>Ou cole um link do ComicVine (volume ou edição)</value></data>
@@ -784,4 +784,5 @@
   <data name="Editor_BatchUndone" xml:space="preserve"><value>Desfeito: {0} livros voltaram para a Revisão.</value></data>
   <data name="Series_Dismiss" xml:space="preserve"><value>Fechar aviso</value></data>
   <data name="Series_OneBook" xml:space="preserve"><value>1 livro</value></data>
+  <data name="Series_BestFor" xml:space="preserve"><value>melhor candidato de {0} de {1} livros</value></data>
 </root>

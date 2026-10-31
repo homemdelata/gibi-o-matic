@@ -55,10 +55,11 @@ public sealed partial class VolumeOptionViewModel : ViewModelBase
 {
     private readonly Action<VolumeOptionViewModel> _pick;
 
-    public VolumeOptionViewModel(CvVolume volume, int usedBy, string? coverUrl, Action<VolumeOptionViewModel> pick, Func<string?, Task<Bitmap?>> loadCover)
+    public VolumeOptionViewModel(CvVolume volume, int usedBy, int groupSize, string? coverUrl, Action<VolumeOptionViewModel> pick, Func<string?, Task<Bitmap?>> loadCover)
     {
         Volume = volume;
         UsedBy = usedBy;
+        _groupSize = groupSize;
         _pick = pick;
         _ = LoadAsync(loadCover, coverUrl);
     }
@@ -79,7 +80,10 @@ public sealed partial class VolumeOptionViewModel : ViewModelBase
         Volume.IssueCount > 0 ? string.Format(CultureInfo.CurrentCulture, Strings.Series_Issues, Volume.IssueCount) : null,
     }.Where(p => !string.IsNullOrEmpty(p)));
 
-    public string UsedByText => SeriesReviewViewModel.Books(UsedBy);
+    private readonly int _groupSize;
+
+    /// <summary>"Best match for 1 of 2 books": the other books may still have an issue in it.</summary>
+    public string UsedByText => string.Format(CultureInfo.CurrentCulture, Strings.Series_BestFor, UsedBy, _groupSize);
 
     [ObservableProperty]
     public partial Bitmap? Cover { get; private set; }
@@ -161,6 +165,12 @@ public sealed partial class SeriesRowViewModel : ViewModelBase
         }
     }
 
+    /// <summary>The book's own cover, to compare with the record's.</summary>
+    [ObservableProperty]
+    public partial Bitmap? BookCover { get; private set; }
+
+    public async Task LoadBookCoverAsync() => BookCover = await _owner.LoadBookCoverAsync(Plan.Book.Book);
+
     public async Task LoadCoverAsync()
     {
         var url = Plan.Candidate?.Record.CoverUrl;
@@ -207,7 +217,8 @@ public sealed partial class SeriesBookViewModel(ReviewGroupBook book, string? gr
 /// </summary>
 public sealed partial class SeriesReviewViewModel : ViewModelBase
 {
-    private const int CoverWidth = 160;
+    /// <summary>Covers are decoded big enough for the hover preview.</summary>
+    private const int CoverWidth = 400;
 
     private readonly LibrarySession _session;
     private readonly VolumeMatcher _matcher;
@@ -537,7 +548,7 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
             .ThenByDescending(x => x.Any)
             .ThenBy(x => x.Volume.Name, StringComparer.CurrentCultureIgnoreCase)
             .Take(12)
-            .Select(x => new VolumeOptionViewModel(x.Volume, x.Best, x.Cover, v => _ = SetSeriesAsync(v.Volume, null, remember: true), LoadCoverAsync));
+            .Select(x => new VolumeOptionViewModel(x.Volume, x.Best, group.Books.Count, x.Cover, v => _ = SetSeriesAsync(v.Volume, null, remember: true), LoadCoverAsync));
     }
 
     /// <summary>"Deadly Class #3 · Reagan Youth" → "Deadly Class" (results stored before the volume name was kept).</summary>
@@ -753,6 +764,7 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
                 var row = new SeriesRowViewModel(plans[i], this);
                 Rows.Add(row);
                 _ = row.LoadCoverAsync();
+                _ = row.LoadBookCoverAsync();
             }
         }
 
@@ -780,6 +792,10 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
     }
 
     public Task<Bitmap?> LoadCoverAsync(string? url) => LoadRemoteCoverAsync(url);
+
+    public async Task<Bitmap?> LoadBookCoverAsync(Library.Index.CatalogBook book) => _session.Current is { } library
+        ? await _covers.LoadAsync(Path.Combine(library.RootPath, book.Folder, Library.LibraryLayout.CoverFileName), CoverWidth)
+        : null;
 
     private async Task<Bitmap?> LoadRemoteCoverAsync(string? url) =>
         url is not null && await _remoteCovers.GetAsync(url) is { } path ? await _covers.LoadAsync(path, CoverWidth) : null;
