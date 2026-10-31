@@ -171,11 +171,18 @@ public sealed class ComicVineClient(SourceClient client, IComicVineKeyProvider k
                   ?? throw new MetadataSourceException(SourceIds.ComicVine, MetadataSourceError.InvalidKey, "No ComicVine key.");
 
         // ComicVine answers HTTP 200 with status_code 107 when the quota is exceeded,
-        // and 100 for an invalid key; neither is cached.
+        // and 100 for an invalid key; neither is cached, nor are incomplete search results.
         var body = await client.GetAsync(resource, url, "api_key=" + Uri.EscapeDataString(key), ct,
             isRateLimited: b => StatusOf(b) == 107,
-            isCacheable: b => StatusOf(b) == 1);
+            isCacheable: b => StatusOf(b) == 1 && !(resource == "search" && IsIncompleteSearch(b)));
         var doc = JsonDocument.Parse(body);
+        if (resource == "search" && IsIncompleteSearch(doc.RootElement))
+        {
+            doc.Dispose();
+            throw new MetadataSourceException(SourceIds.ComicVine, MetadataSourceError.BadResponse,
+                "ComicVine returned search results without publishers or issue counts; try again later.");
+        }
+
         var status = doc.RootElement.Int("status_code");
         if (status == 100)
         {
@@ -191,6 +198,31 @@ public sealed class ComicVineClient(SourceClient client, IComicVineKeyProvider k
         }
 
         return doc;
+    }
+
+    /// <summary>
+    /// For a few days in October 2026 ComicVine's search answered without the publisher and with
+    /// zero issues for every volume; read as true, that hides the right volume (a 72-issue series
+    /// looks like a one-shot). Several results that all lack both are such an answer.
+    /// </summary>
+    internal static bool IsIncompleteSearch(JsonElement root)
+    {
+        var results = root.Items("results").ToList();
+        return results.Count >= 3
+               && results.All(v => v.Prop("publisher") is not { ValueKind: JsonValueKind.Object } && (v.Int("count_of_issues") ?? 0) == 0);
+    }
+
+    private static bool IsIncompleteSearch(string body)
+    {
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            return IsIncompleteSearch(doc.RootElement);
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 
     private static int? StatusOf(string body)

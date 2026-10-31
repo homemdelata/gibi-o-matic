@@ -165,6 +165,48 @@ public sealed class SourceParsingTests : IDisposable
     }
 
     [Fact]
+    public async Task ComicVine_incomplete_search_results_are_an_error_and_are_not_cached()
+    {
+        // Seen for days in October 2026: no publisher and zero issues for every volume.
+        const string incomplete = """
+            {"status_code":1,"error":"OK","results":[
+              {"id":18033,"name":"The Boys","start_year":"2006","publisher":null,"count_of_issues":0},
+              {"id":62088,"name":"The Boys","start_year":"2007","publisher":null,"count_of_issues":0},
+              {"id":66024,"name":"The Boys","start_year":"2008","publisher":null,"count_of_issues":0}]}
+            """;
+        const string complete = """
+            {"status_code":1,"error":"OK","results":[
+              {"id":18033,"name":"The Boys","start_year":"2006","publisher":{"name":"Dynamite Entertainment"},"count_of_issues":72}]}
+            """;
+        var answers = new Queue<string>([incomplete, complete]);
+        var http = new FakeHttp(_ => FakeHttp.Json(answers.Dequeue()));
+        var cv = new ComicVineClient(Client(http), new FixedKey("k"));
+
+        var ex = await Assert.ThrowsAsync<MetadataSourceException>(() => cv.SearchVolumesAsync("The Boys", Ct));
+        var volumes = await cv.SearchVolumesAsync("The Boys", Ct);
+
+        Assert.Equal(MetadataSourceError.BadResponse, ex.Error);
+        Assert.Equal(2, http.Requests.Count);
+        Assert.Equal(new CvVolume(18033, "The Boys", 2006, "Dynamite Entertainment", 72), Assert.Single(volumes));
+    }
+
+    [Fact]
+    public async Task A_cached_answer_that_is_no_longer_acceptable_is_asked_again()
+    {
+        var cache = new ResponseCache(_temp.Path);
+        await cache.SetAsync("t", "https://api.example/s", "bad", Ct);
+        var http = new FakeHttp(_ => FakeHttp.Json("good"));
+        var client = new SourceClient("t", new HttpClient(http), cache, new RateLimiter(TimeSpan.Zero, 1000),
+            new RetryPolicy(1, TimeSpan.Zero, TimeSpan.Zero), TimeSpan.FromDays(1), NullLogger.Instance);
+
+        var body = await client.GetAsync("s", "https://api.example/s", null, Ct, isCacheable: b => b != "bad");
+
+        Assert.Equal("good", body);
+        Assert.Single(http.Requests);
+        Assert.Equal("good", await cache.GetAsync("t", "https://api.example/s", TimeSpan.FromDays(1), Ct));
+    }
+
+    [Fact]
     public async Task ComicVine_without_a_key_does_not_call_the_api()
     {
         var http = new FakeHttp(_ => throw new InvalidOperationException("no call expected"));
