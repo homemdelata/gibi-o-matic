@@ -432,7 +432,8 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
     }
 
     /// <summary>Reloads the queue; keeps the selected book (or picks <paramref name="selectBookId"/>).</summary>
-    public async Task RefreshAsync(CancellationToken ct = default, string? selectBookId = null)
+    /// <param name="reloadSelected">Shows the selected book again even when it stays selected (its result changed).</param>
+    public async Task RefreshAsync(CancellationToken ct = default, string? selectBookId = null, bool reloadSelected = false)
     {
         if (_session.Identification is not { } queue || _session.Index is not { } index || _session.Current is not { } library)
         {
@@ -477,7 +478,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             var counts = await queue.GetCountsAsync(ct);
             EmptyText = string.Format(CultureInfo.CurrentCulture, Strings.Review_Empty, counts.AutoApproved, counts.Approved);
             var next = Items.FirstOrDefault(i => i.BookId == keep) ?? Items.FirstOrDefault();
-            if (next?.BookId != Selected?.BookId || next is null)
+            if (reloadSelected || next?.BookId != Selected?.BookId || next is null)
             {
                 await SelectAsync(next, ct);
             }
@@ -572,6 +573,16 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
         SearchText = shown;
         NoCandidateText = string.Format(CultureInfo.CurrentCulture, Strings.Review_NothingFor, SearchText);
         NotesText = IdentificationText.Notes(item.Identification.Message);
+
+        // Candidates found by an older version of the identification ("RoboCop #3" for "RoboCop Vol. 3 -
+        // Last Stand #8") would be found differently now: the book is searched again as it opens.
+        // Typed searches stay as they are, and so do approved books opened from the Library.
+        if (result is { IsFromOlderAlgorithm: true, Query.TypedText: null } && _book.Metadata.Review.Status == ReviewStatus.Pending && IsIdle)
+        {
+            _ = SearchAgainCommand.ExecuteAsync(null);
+            return;
+        }
+
         foreach (var candidate in result?.Candidates ?? [])
         {
             Candidates.Add(new CandidateViewModel(candidate, c => _ = PickAsync(c, CancellationToken.None), LoadRemoteCoverAsync));
@@ -836,9 +847,9 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
         try
         {
             await queue.SearchAgainAsync(item.BookId, text, ct);
-            SetBusy(null);
-            Selected = null;
-            await RefreshAsync(ct, item.BookId);
+
+            // Busy until the list holds the new result, which is shown even if the book was clicked meanwhile.
+            await RefreshAsync(ct, item.BookId, reloadSelected: true);
             SearchText = text ?? SearchText;
             NoCandidateText = string.Format(CultureInfo.CurrentCulture, Strings.Review_NothingFor, text ?? item.Title);
         }

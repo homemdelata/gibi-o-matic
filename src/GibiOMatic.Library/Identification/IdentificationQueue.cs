@@ -234,7 +234,7 @@ public sealed class IdentificationQueue : IAsyncDisposable
         var candidates = await _identifier.FromComicVineLinkAsync(book.Metadata, link, ct);
         if (candidates.Count > 0)
         {
-            await SetStateAsync(bookId, IdentificationState.NeedsReview, new IdentificationResult(BookQuery.From(book.Metadata), candidates, []), null, ct);
+            await SetStateAsync(bookId, IdentificationState.NeedsReview, new IdentificationResult(BookQuery.From(book.Metadata), candidates, []) { Algorithm = BookIdentifier.Algorithm }, null, ct);
             OnChanged();
         }
 

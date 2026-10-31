@@ -103,16 +103,20 @@ public sealed class ReviewAndEditorTests : IDisposable
     }
 
     [Fact]
-    public async Task The_search_box_keeps_the_last_search_and_an_old_reading_searches_the_book_again()
+    public async Task Results_from_an_older_version_are_searched_again_and_the_box_keeps_the_last_search()
     {
         await _app.EnterUiThreadAsync();
-        // The first result was stored by an older version, which read this title as "RoboCop #3".
-        var first = true;
-        _app.Identifier.QueryOf = (_, text) =>
+        // The first RoboCop result was stored by an older version, which read the title as "RoboCop #3".
+        var oldResultGiven = false;
+        _app.Identifier.QueryOf = (book, text) =>
         {
-            var old = first && text is null;
-            first = false;
-            return old ? new BookQuery { SearchText = "RoboCop", Series = "RoboCop", Number = "3", Kind = BookKind.Issue } : null;
+            if (oldResultGiven || text is not null || !book.Title.StartsWith("RoboCop", StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            oldResultGiven = true;
+            return new BookQuery { SearchText = "RoboCop", Series = "RoboCop", Number = "3", Kind = BookKind.Issue };
         };
         var searched = new List<string?>();
         _app.Identifier.Respond = (_, text) =>
@@ -122,28 +126,34 @@ public sealed class ReviewAndEditorTests : IDisposable
         };
         await ImportAsync("RoboCop Vol. 3 - Last Stand #5.pdf", "Saga Vol. 1.pdf");
         var review = _app.Get<ReviewPageViewModel>();
-        await review.OnNavigatedToAsync(Ct);
-        var robocop = review.Items.Single(i => i.Title.StartsWith("RoboCop", StringComparison.Ordinal));
-        var saga = review.Items.Single(i => i.Title.StartsWith("Saga", StringComparison.Ordinal));
-        robocop.SelectCommand.Execute(null);
-
-        // The box shows the search that found the candidates on screen, even an old one…
-        Assert.Equal("RoboCop #3", review.SearchText);
-
-        // …and searching it unchanged searches the book itself, with the current parser.
         searched.Clear();
-        await review.SearchAgainCommand.ExecuteAsync(null);
+
+        // Opening the book searches it again by itself, with the current reading.
+        await review.OnNavigatedToAsync(Ct);
+        var robocop = review.Items.Single(i => i.Title.StartsWith("RoboCop", StringComparison.Ordinal)).BookId;
+        var saga = review.Items.Single(i => i.Title.StartsWith("Saga", StringComparison.Ordinal)).BookId;
+        review.Items.Single(i => i.BookId == robocop).SelectCommand.Execute(null);
+        await WhenSearchedAsync(review);
         Assert.Equal([null], searched);
         Assert.Equal("RoboCop: Last Stand #5", review.SearchText);
 
         // Typed words stay as typed, also after looking at another book, and are searched again as typed.
         review.SearchText = "Robocop Last Stand #5";
         await review.SearchAgainCommand.ExecuteAsync(null);
-        review.Items.Single(i => i.BookId == saga.BookId).SelectCommand.Execute(null);
-        review.Items.Single(i => i.BookId == robocop.BookId).SelectCommand.Execute(null);
+        review.Items.Single(i => i.BookId == saga).SelectCommand.Execute(null);
+        review.Items.Single(i => i.BookId == robocop).SelectCommand.Execute(null);
+        await WhenSearchedAsync(review);
         Assert.Equal("Robocop Last Stand #5", review.SearchText);
         await review.SearchAgainCommand.ExecuteAsync(null);
         Assert.Equal([null, "Robocop Last Stand #5", "Robocop Last Stand #5"], searched);
+    }
+
+    private static async Task WhenSearchedAsync(ReviewPageViewModel review)
+    {
+        if (review.SearchAgainCommand.ExecutionTask is { } running)
+        {
+            await running;
+        }
     }
 
     [Fact]

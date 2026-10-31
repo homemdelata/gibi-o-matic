@@ -13,6 +13,14 @@ namespace GibiOMatic.Metadata.Identification;
 public sealed record IdentificationResult(BookQuery Query, IReadOnlyList<MetadataCandidate> Candidates, IReadOnlyList<string> Notes)
 {
     public MetadataCandidate? Best => Candidates.Count > 0 ? Candidates[0] : null;
+
+    /// <summary>
+    /// The <see cref="BookIdentifier.Algorithm"/> that found these candidates; 0 for results stored
+    /// before it was recorded. An older one means the book would be read and searched differently now.
+    /// </summary>
+    public int Algorithm { get; init; }
+
+    public bool IsFromOlderAlgorithm => Algorithm < BookIdentifier.Algorithm;
 }
 
 public interface IBookIdentifier
@@ -39,6 +47,13 @@ public sealed partial class BookIdentifier(
     IComicVineApi comicVine,
     ILogger<BookIdentifier> logger) : IBookIdentifier
 {
+    /// <summary>
+    /// Version of the title reading and scoring, stored with every result. Raise it when a change
+    /// should make old results be searched again: the Review does it when such a book is opened.
+    /// 1: titles split into series, numbers and subtitle (2026-10-30).
+    /// </summary>
+    public const int Algorithm = 1;
+
     /// <summary>Confidence given to a record found by the file's ISBN.</summary>
     public const double IsbnConfidence = 0.96;
 
@@ -167,7 +182,7 @@ public sealed partial class BookIdentifier(
             }
         }
 
-        return new IdentificationResult(cvQuery, ordered, notes);
+        return new IdentificationResult(cvQuery, ordered, notes) { Algorithm = Algorithm };
     }
 
     public async Task<MetadataCandidate> CompleteAsync(MetadataCandidate candidate, CancellationToken ct)
