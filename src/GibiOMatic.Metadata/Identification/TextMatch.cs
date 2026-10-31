@@ -108,7 +108,10 @@ public static partial class TextMatch
             : string.Equals(a.Trim(), b.Trim(), StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>Number of a collected edition written in an issue name: "Volume 11", "Vol. 1", "Book Two", "TPB 3".</summary>
+    /// <summary>
+    /// Number of a collected edition written in an issue name: "Volume 11", "Vol. 1", "Book Two", "TPB 3",
+    /// "Part One: …"; not "The Kingdom, Part 2".
+    /// </summary>
     public static string? CollectedNumber(string? name)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -151,6 +154,7 @@ public static partial class TextMatch
     [GeneratedRegex(@"[^a-z0-9]+")]
     private static partial Regex NonWord();
 
-    [GeneratedRegex(@"\b(?:vol(?:ume)?|book|tpb|part)\.?\s*(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b", RegexOptions.IgnoreCase)]
+    // "Part" only opens a name ("Part One: …"): "The Kingdom, Part 2" is a chapter of a story.
+    [GeneratedRegex(@"(?:^\s*part|\b(?:vol(?:ume)?|book|tpb))\.?\s*(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b", RegexOptions.IgnoreCase)]
     private static partial Regex CollectedNumberRegex();
 }
