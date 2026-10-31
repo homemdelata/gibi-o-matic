@@ -181,6 +181,9 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
     /// <summary>The books of the queue still under review (not an approved one opened from the Library).</summary>
     private IReadOnlyList<string> _toReview = [];
     private CatalogBook? _book;
+
+    /// <summary>The search text read from the selected book; searching it unchanged searches the book itself.</summary>
+    private string? _suggestedSearchText;
     private readonly IReaderLauncher _readerWindows;
     private readonly IFileRevealer _revealer;
 
@@ -559,7 +562,12 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
         _ = ShowFileInfoAsync(item, library);
         _ = LoadLargeCoverAsync(item, library);
         var result = item.Identification.Result;
-        SearchText = (result?.Query ?? BookQuery.From(_book.Metadata)).EditableText;
+
+        // Read from the book with the current title parser, not from the stored result: a result
+        // from an older version keeps its old reading ("RoboCop #3"), and searching again with it
+        // would repeat the old search.
+        _suggestedSearchText = BookQuery.From(_book.Metadata).EditableText;
+        SearchText = _suggestedSearchText;
         NoCandidateText = string.Format(CultureInfo.CurrentCulture, Strings.Review_NothingFor, SearchText);
         NotesText = IdentificationText.Notes(item.Identification.Message);
         foreach (var candidate in result?.Candidates ?? [])
@@ -813,7 +821,10 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             return;
         }
 
-        var text = string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim();
+        // The suggested text is the book's own title: searching it is searching the book, which also
+        // uses the publisher and year (typed text doesn't).
+        var typed = string.IsNullOrWhiteSpace(SearchText) ? null : SearchText.Trim();
+        var text = typed == _suggestedSearchText ? null : typed;
         Candidates.Clear();
         Rows.Clear();
         SelectedCandidate = null;
