@@ -499,3 +499,6 @@ gibiteca.local.json
 # Claude Code (local user settings and personal context)
 .claude/settings.local.json
 CLAUDE.local.md
+
+# The /release Claude Code skill (the "[Rr]elease/" build-output rule above would hide it)
+!.claude/skills/release/
