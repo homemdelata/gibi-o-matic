@@ -1,0 +1,18 @@
+<Project>
+  <!--
+    File version: MinVer sets X.Y.Z.0, the same for every pre-release of a version (0.1.1-alpha.0.11
+    and 0.1.1-alpha.0.16 are both 0.1.1.0). The Windows Installer only replaces a versioned file with a
+    higher version, so installing a newer MSI kept the older DLLs. The fourth number is now the
+    commit height of a pre-release (alpha.0.16 → 0.1.1.16) and 65534 for a release, which comes after
+    its own pre-releases (0.1.1 → 0.1.1.65534) and before the next version's (0.1.2-alpha.0.1 → 0.1.2.1).
+  -->
+  <Target Name="GibiFileVersion" AfterTargets="MinVer" Condition="'$(MinVerMajor)' != ''">
+    <PropertyGroup>
+      <_GibiHeight>$([System.Text.RegularExpressions.Regex]::Match('$(MinVerPreRelease)', '(\d+)$').Value)</_GibiHeight>
+      <_GibiRevision Condition="'$(MinVerPreRelease)' == ''">65534</_GibiRevision>
+      <_GibiRevision Condition="'$(MinVerPreRelease)' != '' and '$(_GibiHeight)' != ''">$(_GibiHeight)</_GibiRevision>
+      <_GibiRevision Condition="'$(_GibiRevision)' == ''">0</_GibiRevision>
+      <FileVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch).$(_GibiRevision)</FileVersion>
+    </PropertyGroup>
+  </Target>
+</Project>
