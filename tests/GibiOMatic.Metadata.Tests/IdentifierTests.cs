@@ -372,6 +372,52 @@ public sealed class IdentifierTests
         Assert.Single(result.Candidates, c => c.Confidence >= 0.6);
     }
 
+    [Theory]
+    [InlineData("Volume 11", "11")]
+    [InlineData("Book Two: The Secret of the Wings", "2")]
+    [InlineData("Part One: The Beginning", "1")]
+    [InlineData("The Kingdom, Part 2", null)]
+    [InlineData("Glorious Five Year Plan, Part One", null)]
+    public void Part_counts_only_at_the_start_of_an_issue_name(string name, string? number) =>
+        Assert.Equal(number, TextMatch.CollectedNumber(name));
+
+    private static FakeComicVine SpawnOrigins()
+    {
+        // Real ComicVine data: the collected editions are issues of one volume, #19 named after a story arc.
+        var cv = new FakeComicVine();
+        cv.Volumes.Add(new(48526, "Spawn Origins Collection", 2009, "Image", 22));
+        cv.Issues.AddRange(
+        [
+            new(427159, 48526, "Spawn Origins Collection", "19", "The Kingdom, Part 2", new PartialDate(2013, 9, 25)),
+            new(427000, 48526, "Spawn Origins Collection", "2", null, new PartialDate(2009, 12, 1)),
+        ]);
+        cv.Details[427159] = new CvIssue(427159, 48526, "Spawn Origins Collection", "19", "The Kingdom, Part 2", new PartialDate(2013, 9, 25),
+            [new Credit(CreditRole.Writer, "Todd McFarlane")], null, "https://cv/427159");
+        return cv;
+    }
+
+    [Fact]
+    public async Task A_chapter_in_the_issue_name_is_not_the_volume_number()
+    {
+        var result = await Identifier(SpawnOrigins()).IdentifyAsync(Book("Spawn Origins Vol. 19"), Settings, null, Ct);
+
+        var best = result.Best!;
+        Assert.Equal("4000-427159", best.Record.ComicVineId);
+        Assert.Equal(("Spawn Origins Collection, Vol. 19", "Spawn Origins Collection", "19", BookKind.Tpb),
+            (best.Record.Title, best.Record.SeriesName, best.Record.Number, best.Record.Kind));
+        Assert.Contains(MatchReason.Number, best.Reasons);
+    }
+
+    [Fact]
+    public async Task An_issue_link_with_a_chapter_in_its_name_keeps_its_number()
+    {
+        var candidates = await Identifier(SpawnOrigins()).FromComicVineLinkAsync(Book("Spawn Origins Vol. 19"),
+            "https://comicvine.gamespot.com/spawn-origins-collection-19-the-kingdom-part-2/4000-427159/", Ct);
+
+        var candidate = Assert.Single(candidates);
+        Assert.Equal(("Spawn Origins Collection, Vol. 19", "19"), (candidate.Record.Title, candidate.Record.Number));
+    }
+
     [Fact]
     public async Task A_series_named_after_its_creator_and_numbered_by_the_issue_name()
     {

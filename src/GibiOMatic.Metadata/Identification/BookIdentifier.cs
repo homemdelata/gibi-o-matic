@@ -51,8 +51,10 @@ public sealed partial class BookIdentifier(
     /// Version of the title reading and scoring, stored with every result. Raise it when a change
     /// should make old results be searched again: the Review does it when such a book is opened.
     /// 1: titles split into series, numbers and subtitle (2026-10-30).
+    /// 2: "Part 2" inside an issue name is no collected-edition number; "… Collection" volumes
+    ///    number their books by issue (2026-10-31).
     /// </summary>
-    public const int Algorithm = 1;
+    public const int Algorithm = 2;
 
     /// <summary>Confidence given to a record found by the file's ISBN.</summary>
     public const double IsbnConfidence = 0.96;
@@ -370,6 +372,9 @@ public sealed partial class BookIdentifier(
         // A deluxe/hardcover series named like the series numbers its volumes by issue number.
         collected ??= !nameIsArc && shortVolume && volume.IssueCount > 1 && exactSeriesVolume && query.Kind != BookKind.Issue ? issue.IssueNumber : null;
 
+        // So does a series of collected editions named so: "Spawn Origins Collection" #19 is Vol. 19.
+        collected ??= !nameIsArc && query.Kind != BookKind.Issue && CollectedSeriesName().IsMatch(volume.Name) ? issue.IssueNumber : null;
+
         // A series that only ever had one collected edition: "Scotch McTiernan… Vol. 1" is the single
         // issue of the volume of that name.
         collected ??= volume.IssueCount == 1 && exactSeriesVolume && wantsCollected
@@ -577,6 +582,9 @@ public sealed partial class BookIdentifier(
 
     [GeneratedRegex(@"^\s*(?:vol(?:ume)?|book|tpb|part)\.?\s*(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b\s*[:,-]?\s*", RegexOptions.IgnoreCase)]
     private static partial Regex CollectedNumberPrefix();
+
+    [GeneratedRegex(@"\b(?:collection|tpb|trade paperback|hardcover|deluxe edition|library edition)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex CollectedSeriesName();
 
     [GeneratedRegex(@"^(?:[\p{L}.\-]+\s+){1,2}[\p{L}.\-]+['’]s\s+(?=\S)")]
     private static partial Regex CreatorPrefix();
