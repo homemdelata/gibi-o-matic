@@ -271,7 +271,7 @@
                     <StackPanel Grid.Column="1" Spacing="4">
                       <TextBlock FontWeight="SemiBold" Text="{Binding Title}" TextWrapping="Wrap" MaxLines="3" TextTrimming="CharacterEllipsis" />
                       <TextBlock Classes="muted" FontSize="12" Text="{Binding MetaLine}" TextWrapping="Wrap" />
-                      <TextBlock Classes="muted" FontSize="12" Text="{Binding SourceText}" />
+                      <TextBlock Classes="muted" FontSize="12" Text="{Binding SourceText}" TextWrapping="Wrap" />
                       <TextBlock Classes="muted" FontSize="12" Text="{Binding PagesText}"
                                  IsVisible="{Binding PagesText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                       <TextBlock Classes="mono" FontSize="12" FontWeight="Medium" Margin="0,2,0,0" Text="{Binding ConfidenceText}"

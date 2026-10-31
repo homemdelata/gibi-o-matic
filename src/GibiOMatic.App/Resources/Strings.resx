@@ -287,6 +287,7 @@
   <data name="Review_SearchPlaceholder" xml:space="preserve"><value>Buscar com outras palavras (ex.: House of Slaughter Vol. 1)</value></data>
   <data name="Review_Skip" xml:space="preserve"><value>Pular</value></data>
   <data name="Review_Source" xml:space="preserve"><value>Fonte: {0}</value></data>
+  <data name="Review_SourceRecord" xml:space="preserve"><value>{0}: {1}</value></data>
   <data name="Review_Subtitle_Count" xml:space="preserve"><value>{0} livros · ordenados por gravidade</value></data>
   <data name="Role_Artist" xml:space="preserve"><value>Arte</value></data>
   <data name="Role_Author" xml:space="preserve"><value>Autor</value></data>

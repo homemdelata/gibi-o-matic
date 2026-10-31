@@ -499,6 +499,7 @@ public sealed partial class BookIdentifier(
             Publisher = volume.Publisher,
             ComicVineId = $"4000-{issue.Id}",
             ComicVineVolumeId = volume.Id,
+            SourceName = string.IsNullOrWhiteSpace(issue.Name) ? $"{volume.Name} #{issue.IssueNumber}" : $"{volume.Name} #{issue.IssueNumber} · {issue.Name}",
             VolumeIssueCount = volume.IssueCount,
             IsOneShot = oneShot,
             IsDetailed = false,

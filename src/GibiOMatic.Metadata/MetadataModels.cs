@@ -33,6 +33,12 @@ public sealed record MetadataRecord
 
     public int? ComicVineVolumeId { get; init; }
 
+    /// <summary>
+    /// The record exactly as the source names it, before the title, series and number are read from
+    /// it: "Spawn Origins Collection #19 · The Kingdom, Part 2" (volume, issue number, issue name).
+    /// </summary>
+    public string? SourceName { get; init; }
+
     /// <summary>Number of issues of the ComicVine volume; 1 means a collected edition or a one-shot.</summary>
     public int? VolumeIssueCount { get; init; }
 

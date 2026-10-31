@@ -406,6 +406,7 @@ public sealed class IdentifierTests
         Assert.Equal(("Spawn Origins Collection, Vol. 19", "Spawn Origins Collection", "19", BookKind.Tpb),
             (best.Record.Title, best.Record.SeriesName, best.Record.Number, best.Record.Kind));
         Assert.Contains(MatchReason.Number, best.Reasons);
+        Assert.Equal("Spawn Origins Collection #19 · The Kingdom, Part 2", best.Record.SourceName);
     }
 
     [Fact]
