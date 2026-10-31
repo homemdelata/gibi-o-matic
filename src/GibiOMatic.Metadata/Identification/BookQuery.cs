@@ -22,6 +22,9 @@ public sealed partial record BookQuery
     public string? Isbn { get; init; }
     public string? Language { get; init; }
 
+    /// <summary>The words typed in the Review's search box, as typed; null when the book itself was searched.</summary>
+    public string? TypedText { get; init; }
+
     /// <summary>Year that tells apart series with the same name ("RoboCop (2003)"), compared with the volume's start year.</summary>
     public int? SeriesYear { get; init; }
 
@@ -114,6 +117,7 @@ public sealed partial record BookQuery
             Subtitle = string.IsNullOrWhiteSpace(subtitle) ? null : subtitle,
             Kind = kind,
             SeriesYear = parts.SeriesYear,
+            TypedText = string.IsNullOrWhiteSpace(overrideText) ? null : overrideText.Trim(),
             Publisher = overrideText is null ? book.Publisher : null,
             Year = overrideText is null ? book.Date?.Year : null,
             Isbn = Core.Text.Isbn.IsValid(book.Identifiers.Isbn) ? Core.Text.Isbn.Normalize(book.Identifiers.Isbn!) : null,
