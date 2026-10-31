@@ -53,8 +53,10 @@ public sealed partial class BookIdentifier(
     /// 1: titles split into series, numbers and subtitle (2026-10-30).
     /// 2: "Part 2" inside an issue name is no collected-edition number; "… Collection" volumes
     ///    number their books by issue (2026-10-31).
+    /// 3: the file's page count decides between issue and collected edition; more translations
+    ///    recognised by their publisher; chapters are single issues (2026-10-31).
     /// </summary>
-    public const int Algorithm = 2;
+    public const int Algorithm = 3;
 
     /// <summary>Confidence given to a record found by the file's ISBN.</summary>
     public const double IsbnConfidence = 0.96;
@@ -370,7 +372,9 @@ public sealed partial class BookIdentifier(
         var wantsCollected = query.Kind is BookKind.Tpb or BookKind.Omnibus;
 
         // A deluxe/hardcover series named like the series numbers its volumes by issue number.
-        collected ??= !nameIsArc && shortVolume && volume.IssueCount > 1 && exactSeriesVolume && query.Kind != BookKind.Issue ? issue.IssueNumber : null;
+        // Not when the issue is a chapter of a story ("What Happened Part One"): that volume is the single issues.
+        collected ??= !nameIsArc && shortVolume && volume.IssueCount > 1 && exactSeriesVolume && query.Kind != BookKind.Issue
+                      && !IsChapter(issue.Name) ? issue.IssueNumber : null;
 
         // So does a series of collected editions named so: "Spawn Origins Collection" #19 is Vol. 19.
         collected ??= !nameIsArc && query.Kind != BookKind.Issue && CollectedSeriesName().IsMatch(volume.Name) ? issue.IssueNumber : null;
@@ -499,6 +503,7 @@ public sealed partial class BookIdentifier(
             Publisher = volume.Publisher,
             ComicVineId = $"4000-{issue.Id}",
             ComicVineVolumeId = volume.Id,
+            SourceName = string.IsNullOrWhiteSpace(issue.Name) ? $"{volume.Name} #{issue.IssueNumber}" : $"{volume.Name} #{issue.IssueNumber} · {issue.Name}",
             VolumeIssueCount = volume.IssueCount,
             IsOneShot = oneShot,
             IsDetailed = false,
@@ -582,6 +587,14 @@ public sealed partial class BookIdentifier(
 
     [GeneratedRegex(@"^\s*(?:vol(?:ume)?|book|tpb|part)\.?\s*(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b\s*[:,-]?\s*", RegexOptions.IgnoreCase)]
     private static partial Regex CollectedNumberPrefix();
+
+    /// <summary>"What Happened Part One", "Chapter One: The Delirium of Hope": the name of one chapter of a story.</summary>
+    private static bool IsChapter(string? name) =>
+        name is not null && ChapterName().Match(name) is { Success: true } m
+                         && (m.Value.StartsWith("chapter", StringComparison.OrdinalIgnoreCase) || m.Index > 0);
+
+    [GeneratedRegex(@"\b(?:part|chapter)\s*(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex ChapterName();
 
     [GeneratedRegex(@"\b(?:collection|tpb|trade paperback|hardcover|deluxe edition|library edition)\b", RegexOptions.IgnoreCase)]
     private static partial Regex CollectedSeriesName();

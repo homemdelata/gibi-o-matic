@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Maintenance tool, not part of the solution: checks approved books against the current identification. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>GibiOMatic.Reidentify</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\GibiOMatic.App\GibiOMatic.App.csproj" />
+  </ItemGroup>
+</Project>

@@ -93,7 +93,13 @@ public sealed partial class CandidateViewModel : ViewModelBase
         Candidate.Record.IsOneShot ? Strings.Field_OneShot : null,
     }.Where(p => !string.IsNullOrEmpty(p)));
 
-    public string SourceText => string.Format(CultureInfo.CurrentCulture, Strings.Review_Source, IdentificationText.SourceName(Candidate.Record.Source));
+    /// <summary>
+    /// "ComicVine: Spawn Origins Collection #19 · The Kingdom, Part 2": the record as the source names
+    /// it, so a wrong reading of it shows; just "Source: ComicVine" for results stored without it.
+    /// </summary>
+    public string SourceText => Candidate.Record.SourceName is { } name
+        ? string.Format(CultureInfo.CurrentCulture, Strings.Review_SourceRecord, IdentificationText.SourceName(Candidate.Record.Source), name)
+        : string.Format(CultureInfo.CurrentCulture, Strings.Review_Source, IdentificationText.SourceName(Candidate.Record.Source));
 
     /// <summary>"128 pages" when the source knows (Open Library, Google Books; ComicVine does not have it).</summary>
     public string? PagesText => Candidate.Record.PageCount is { } pages

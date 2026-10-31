@@ -109,6 +109,13 @@ public sealed partial record BookQuery
             }
         }
 
+        // The file's page count tells a collected edition from a single issue better than its name:
+        // "Low #1" with 178 pages is the first trade paperback, "Rockstars Vol. 1" with 40 pages an issue.
+        if (KindByPages(book) is { } byPages && kind != BookKind.Omnibus)
+        {
+            kind = byPages;
+        }
+
         return new BookQuery
         {
             SearchText = searchText,
@@ -124,6 +131,17 @@ public sealed partial record BookQuery
             Language = book.Language,
         };
     }
+
+    /// <summary>Single issues have up to ~40 pages, collected editions ~90 or more; in between it says nothing.</summary>
+    public const int MaxIssuePages = 40;
+
+    public const int MinCollectedPages = 90;
+
+    /// <summary>The kind the main original's page count points to (comic formats only: an EPUB counts chapters).</summary>
+    internal static BookKind? KindByPages(BookMetadata book) =>
+        book.Files.FirstOrDefault(f => f.Role == FileRole.Original) is { Format: not BookFormat.Epub, Pages: { } pages }
+            ? pages <= MaxIssuePages ? BookKind.Issue : pages >= MinCollectedPages ? BookKind.Tpb : null
+            : null;
 
     private static string Searchable(string text) => Whitespace().Replace(text.Replace(':', ' '), " ").Trim();
 

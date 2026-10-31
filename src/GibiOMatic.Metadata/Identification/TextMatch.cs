@@ -13,7 +13,18 @@ public static partial class TextMatch
         ["urban comics", "cross cult", "splitter", "panini comics brasil", "panini brasil", "panini verlag", "panini france", "panini espana",
          "planeta comic", "planeta deagostini", "norma editorial", "ecc ediciones", "dargaud", "glenat", "delcourt", "kana", "carlsen",
          "egmont", "mythos editora", "devir", "pipoca nanquim", "saldapress", "salda press", "bao publishing", "j-pop", "hachette",
-         "les humanoides associes", "editorial televisa", "levoir", "g floy", "akileos", "dupuis", "le lombard", "casterman"],
+         "les humanoides associes", "editorial televisa", "levoir", "g floy", "akileos", "dupuis", "le lombard", "casterman",
+         "fibra", "egmont polska", "egmont ehapa", "egmont ehapa verlag", "egmont comics", "extrem erfolgreich enterprises",
+         "de vliegende hollander", "daewon c i", "moztros producciones", "juniorpress bv", "soleil", "editions glenat", "glenat spain",
+         "carlsen verlag", "carlsen comics dk", "tokyopop gmbh", "milky way ediciones", "atlantic forlags ab", "meriberica liber",
+         "editorial ivrea", "ankama", "abril", "play press", "taifu comics", "pika edition", "magic press", "ediperiodici",
+         "sergio bonelli editore", "hjemmet", "semic s a", "tm semic", "catalan communications", "verlag thomas tilsner",
+         "editions trip comix", "jbc", "edizioni star comics", "edizioni bd", "mandragora", "walt disney company italia",
+         "lucha comics", "letrablanka", "nasha idea", "zanir", "marfil comics", "gredown",
+         // Japanese editions (the English ones are Viz, Kodansha Comics USA, Yen Press…)
+         "shueisha", "kodansha", "shogakukan", "kadokawa shoten", "akita shoten", "hakusensha", "houbunsha", "ichijinsha",
+         "fujimi shobo", "ascii media works", "media factory", "enterbrain", "takeshobo", "tokuma shoten", "nihon bungeisha",
+         "shonen gahosha", "tong li publishing co"],
         StringComparer.Ordinal);
 
     /// <summary>Lower case, no accents, letters and digits separated by single spaces.</summary>

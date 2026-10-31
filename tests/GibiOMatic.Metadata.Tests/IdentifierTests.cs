@@ -94,6 +94,60 @@ public sealed class IdentifierTests
         CreatedAt = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
     };
 
+    private static BookMetadata WithPages(BookMetadata book, int pages, BookFormat format = BookFormat.Cbz) => book with
+    {
+        Files = [new BookFile { Name = "book." + format.ToString().ToLowerInvariant(), Format = format, Sha256 = "00", Pages = pages }],
+    };
+
+    [Theory]
+    [InlineData("Low #1", 178, BookFormat.Cbz, BookKind.Tpb)]
+    [InlineData("Rockstars Vol. 1", 40, BookFormat.Cbz, BookKind.Issue)]
+    [InlineData("ROM #1", 54, BookFormat.Cbz, BookKind.Issue)]
+    [InlineData("Saga Vol. 1", 60, BookFormat.Pdf, BookKind.Tpb)]
+    [InlineData("Saga Vol. 1", 12, BookFormat.Epub, BookKind.Tpb)]
+    public void The_page_count_tells_a_collected_edition_from_an_issue(string title, int pages, BookFormat format, BookKind kind) =>
+        Assert.Equal(kind, BookQuery.From(WithPages(Book(title), pages, format)).Kind);
+
+    [Theory]
+    [InlineData("Egmont Polska", true)]
+    [InlineData("Fibra", true)]
+    [InlineData("Extrem Erfolgreich Enterprises", true)]
+    [InlineData("Dark Horse Comics", false)]
+    public void Translations_are_recognised_by_their_publisher(string publisher, bool foreign) =>
+        Assert.Equal(foreign, TextMatch.IsForeignPublisher(publisher));
+
+    [Fact]
+    public async Task A_thick_book_is_the_collected_edition_not_the_first_issue()
+    {
+        // Real ComicVine data: the single issues (2014, 11 issues, #1 "What Happened Part One") and
+        // the trade paperbacks (2015, 3 issues) are both volumes named "Bee and Puppycat".
+        var cv = new FakeComicVine();
+        cv.Volumes.AddRange([new(73912, "Bee and Puppycat", 2014, "Boom! Studios", 11), new(81368, "Bee and Puppycat", 2015, "Boom! Studios", 3)]);
+        cv.Issues.AddRange(
+        [
+            new(1, 73912, "Bee and Puppycat", "1", "What Happened Part One", new PartialDate(2014, 5, 14)),
+            new(2, 81368, "Bee and Puppycat", "1", null, new PartialDate(2015, 4, 1)),
+        ]);
+
+        var result = await Identifier(cv).IdentifyAsync(WithPages(Book("Bee and Puppycat Vol. 1"), 130), Settings, null, Ct);
+
+        Assert.Equal("4000-2", result.Best?.Record.ComicVineId);
+        Assert.Equal(("Bee and Puppycat, Vol. 1", BookKind.Tpb), (result.Best!.Record.Title, result.Best.Record.Kind));
+    }
+
+    [Fact]
+    public async Task A_first_issue_named_like_a_volume_is_found_as_an_issue_by_its_pages()
+    {
+        var cv = new FakeComicVine();
+        cv.Volumes.Add(new(1, "Rockstars", 2016, "Image", 8));
+        cv.Issues.Add(new(566750, 1, "Rockstars", "1", "Nativity In Blacklight Part One", new PartialDate(2016, 12, 14)));
+
+        var result = await Identifier(cv).IdentifyAsync(WithPages(Book("Rockstars Vol. 1"), 40), Settings, null, Ct);
+
+        Assert.Equal(("Rockstars #1: Nativity In Blacklight Part One", "1", BookKind.Issue),
+            (result.Best!.Record.Title, result.Best.Record.Number, result.Best.Record.Kind));
+    }
+
     private static BookIdentifier Identifier(FakeComicVine cv, params IIsbnSource[] isbn) =>
         new(isbn, cv, NullLogger<BookIdentifier>.Instance);
 
@@ -406,6 +460,7 @@ public sealed class IdentifierTests
         Assert.Equal(("Spawn Origins Collection, Vol. 19", "Spawn Origins Collection", "19", BookKind.Tpb),
             (best.Record.Title, best.Record.SeriesName, best.Record.Number, best.Record.Kind));
         Assert.Contains(MatchReason.Number, best.Reasons);
+        Assert.Equal("Spawn Origins Collection #19 · The Kingdom, Part 2", best.Record.SourceName);
     }
 
     [Fact]
