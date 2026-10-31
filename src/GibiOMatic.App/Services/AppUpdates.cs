@@ -1,4 +1,5 @@
 using System.Reflection;
+using GibiOMatic.Core.Settings;
 using Microsoft.Extensions.Logging;
 using Velopack;
 using Velopack.Sources;
@@ -93,8 +94,9 @@ public enum UpdateState
 }
 
 /// <summary>
-/// Looks for a new version shortly after the start and once a day, and installs it when the user
-/// asks (F6). Shared by the banner in the shell and by the Settings.
+/// Looks for a new version shortly after the start and once a day, unless turned off in the
+/// Settings, and installs it when the user asks (F6). Shared by the banner in the shell and by the
+/// Settings.
 /// </summary>
 public sealed class UpdateChecker : IDisposable
 {
@@ -103,13 +105,15 @@ public sealed class UpdateChecker : IDisposable
 
     private readonly IAppUpdater _updater;
     private readonly IUiThread _ui;
+    private readonly ISettingsService _settings;
     private readonly ILogger<UpdateChecker> _logger;
     private Timer? _timer;
 
-    public UpdateChecker(IAppUpdater updater, IUiThread ui, ILogger<UpdateChecker> logger)
+    public UpdateChecker(IAppUpdater updater, IUiThread ui, ISettingsService settings, ILogger<UpdateChecker> logger)
     {
         _updater = updater;
         _ui = ui;
+        _settings = settings;
         _logger = logger;
         State = updater.IsSupported ? UpdateState.Idle : UpdateState.Unsupported;
     }
@@ -132,9 +136,13 @@ public sealed class UpdateChecker : IDisposable
     {
         if (_updater.IsSupported)
         {
-            _timer ??= new Timer(_ => _ui.Post(() => _ = CheckAsync()), null, FirstCheck, Interval);
+            _timer ??= new Timer(_ => _ui.Post(() => _ = CheckOnScheduleAsync()), null, FirstCheck, Interval);
         }
     }
+
+    /// <summary>The check of the timer: skipped while the automatic checks are off.</summary>
+    public Task CheckOnScheduleAsync(CancellationToken ct = default) =>
+        _settings.Current.CheckForUpdates ? CheckAsync(ct) : Task.CompletedTask;
 
     public async Task CheckAsync(CancellationToken ct = default)
     {

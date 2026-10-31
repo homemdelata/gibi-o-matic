@@ -83,13 +83,14 @@ As capturas usam uma biblioteca inventada (títulos, autores e capas fictícios)
 
 Baixe a última versão em [**Releases**](https://github.com/homemdelata/gibi-o-matic/releases/latest):
 
-- **Windows 10 ou 11:** `Gibi-o-matic-win-Setup.exe`. Ele instala só para o seu usuário, sem pedir
-  administrador, e cria atalhos na área de trabalho e no menu Iniciar. O instalador ainda não é assinado, então
-  na primeira vez o Windows pode avisar "editor desconhecido": clique em *Mais informações* → *Executar assim mesmo*.
+- **Windows 10 ou 11:** `Gibi-o-matic-win.msi`. Ele instala só para o seu usuário, sem pedir administrador, e
+  cria atalhos na área de trabalho e no menu Iniciar. O instalador ainda não é assinado (veja a
+  [política de assinatura](docs/CODE-SIGNING.md), em inglês), então o Windows pode avisar "editor desconhecido":
+  clique em *Mais informações* → *Executar assim mesmo*.
 - **Linux (x64):** `Gibi-o-matic.AppImage`. Dê permissão de execução (`chmod +x Gibi-o-matic.AppImage`) e abra.
 
 O app já traz o .NET; não é preciso instalar mais nada. Ele procura versões novas no GitHub e avisa quando há
-uma; nada é instalado sem você pedir.
+uma (dá para desligar nas Configurações); nada é instalado sem você pedir.
 
 Por enquanto, não há versão para macOS.
 
@@ -127,7 +128,15 @@ feita de pastas e JSON comuns, que dá para ler sem o app, e o índice sempre po
 
 Sem telemetria e sem contas. O app só usa a internet para as buscas de metadados (ComicVine, Open Library e, se
 você ligar, Google Books), para baixar o Kindle Comic Converter (do GitHub, quando você pede) e para procurar
-atualizações (GitHub). O conteúdo dos seus arquivos não sai da sua máquina.
+atualizações (GitHub; *Configurações → Geral → Procurar atualizações automaticamente* desliga). O conteúdo dos
+seus arquivos não sai da sua máquina. Os detalhes, com as políticas de cada serviço, estão na
+[política de assinatura](docs/CODE-SIGNING.md#privacy-policy), em inglês.
+
+### Política de assinatura de código
+
+Assinatura de código gratuita fornecida por [SignPath.io](https://about.signpath.io), certificado da
+[SignPath Foundation](https://signpath.org) (inscrição em análise). O que é assinado, quem aprova e a política de
+privacidade estão em [`docs/CODE-SIGNING.md`](docs/CODE-SIGNING.md), em inglês.
 
 ## Compilando
 

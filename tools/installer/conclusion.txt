@@ -1,0 +1,3 @@
+Gibi-o-matic is installed. Your library, settings and index are never removed by uninstalling.
+
+O Gibi-o-matic está instalado. Desinstalar nunca apaga sua biblioteca, suas configurações nem o índice.
