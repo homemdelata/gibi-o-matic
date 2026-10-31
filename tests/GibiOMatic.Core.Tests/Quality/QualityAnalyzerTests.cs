@@ -38,7 +38,9 @@ public sealed class QualityAnalyzerTests
 
     /// <summary>
     /// The same books scored by <c>reference/python/analyze.py</c> (with its "\b" typo fixed),
-    /// so the port keeps the exact scores of the validated script.
+    /// so the port keeps the exact scores of the validated script. One deliberate difference: J
+    /// ("Lumberjanes_Issue_18.cbz") also gets "series only in the title", because the title parser
+    /// reads "_" as a space and finds "Issue 18" (the script's regex stopped at the "_").
     /// </summary>
     [Fact]
     public void Scores_match_the_reference_script()
@@ -63,7 +65,7 @@ public sealed class QualityAnalyzerTests
         var expected = new Dictionary<string, int>
         {
             ["A"] = 18, ["B"] = 100, ["C"] = 14, ["D"] = 32, ["E"] = 45, ["F"] = 94, ["G"] = 94,
-            ["H"] = 94, ["I"] = 94, ["J"] = 43, ["K"] = 59, ["L"] = 92, ["M"] = 100, ["N"] = 100,
+            ["H"] = 94, ["I"] = 94, ["J"] = 26, ["K"] = 59, ["L"] = 92, ["M"] = 100, ["N"] = 100,
         };
         var context = QualityContext.From(books.Values);
 
