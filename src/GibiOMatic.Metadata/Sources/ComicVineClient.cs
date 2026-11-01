@@ -6,7 +6,8 @@ using GibiOMatic.Metadata.Identification;
 
 namespace GibiOMatic.Metadata.Sources;
 
-public sealed record CvVolume(int Id, string Name, int? StartYear, string? Publisher, int IssueCount);
+/// <param name="CoverUrl">The volume's image (usually its first issue's cover); only the volume search brings it.</param>
+public sealed record CvVolume(int Id, string Name, int? StartYear, string? Publisher, int IssueCount, string? CoverUrl = null);
 
 public sealed record CvIssueSummary(int Id, int VolumeId, string VolumeName, string? IssueNumber, string? Name, PartialDate? Date,
     string? CoverUrl = null, string? CoverFullUrl = null);
@@ -39,11 +40,11 @@ public sealed class ComicVineClient(SourceClient client, IComicVineKeyProvider k
     /// <summary>Volumes whose name matches <paramref name="query"/> (ComicVine's own ranking).</summary>
     public async Task<IReadOnlyList<CvVolume>> SearchVolumesAsync(string query, CancellationToken ct, int limit = 30)
     {
-        var url = $"{Base}/search/?format=json&resources=volume&limit={limit}&field_list=id,name,start_year,publisher,count_of_issues&query={Uri.EscapeDataString(query)}";
+        var url = $"{Base}/search/?format=json&resources=volume&limit={limit}&field_list=id,name,start_year,publisher,count_of_issues,image&query={Uri.EscapeDataString(query)}";
         using var doc = await GetAsync("search", url, ct);
         return doc.RootElement.Items("results")
             .Select(v => new CvVolume(v.Int("id") ?? 0, v.Str("name") ?? string.Empty, v.Int("start_year"),
-                v.Prop("publisher")?.Str("name"), v.Int("count_of_issues") ?? 0))
+                v.Prop("publisher")?.Str("name"), v.Int("count_of_issues") ?? 0, CoverOf(v)))
             .Where(v => v.Id > 0)
             .ToList();
     }
@@ -65,7 +66,31 @@ public sealed class ComicVineClient(SourceClient client, IComicVineKeyProvider k
             filter += ",issue_number:" + Uri.EscapeDataString(issueNumber);
         }
 
-        var url = $"{Base}/issues/?format=json&limit=100&sort=cover_date:asc&field_list=id,name,issue_number,cover_date,store_date,volume,image&filter={filter}";
+        return await GetIssuesPageAsync(filter, 0, ct);
+    }
+
+    /// <summary>Every issue of one volume, oldest first: one request per 100 issues (each cached), at most 1000.</summary>
+    public async Task<IReadOnlyList<CvIssueSummary>> GetVolumeIssuesAsync(int volumeId, int issueCount, CancellationToken ct)
+    {
+        var all = new List<CvIssueSummary>();
+        var filter = "volume:" + volumeId.ToString(CultureInfo.InvariantCulture);
+        for (var offset = 0; offset == 0 || offset < Math.Min(issueCount, 1000); offset += 100)
+        {
+            var page = await GetIssuesPageAsync(filter, offset, ct);
+            all.AddRange(page);
+            if (page.Count < 100)
+            {
+                break;
+            }
+        }
+
+        return all;
+    }
+
+    private async Task<IReadOnlyList<CvIssueSummary>> GetIssuesPageAsync(string filter, int offset, CancellationToken ct)
+    {
+        var url = $"{Base}/issues/?format=json&limit=100&sort=cover_date:asc&field_list=id,name,issue_number,cover_date,store_date,volume,image&filter={filter}"
+                  + (offset > 0 ? $"&offset={offset.ToString(CultureInfo.InvariantCulture)}" : string.Empty);
         using var doc = await GetAsync("issues", url, ct);
         return doc.RootElement.Items("results")
             .Select(i => new CvIssueSummary(i.Int("id") ?? 0, i.Prop("volume")?.Int("id") ?? 0, i.Prop("volume")?.Str("name") ?? string.Empty,

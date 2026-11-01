@@ -168,12 +168,51 @@ Bands: **Poor** (< 60), **Review** (60–84), **OK** (≥ 85). The rule already 
 ## 7. Review and Editor
 
 - **Review**: queue sorted by quality score. For each book: candidates with a confidence % and a *field · current · proposed* table, with one checkbox per field. Actions: Approve and next, Skip, Edit by hand.
+- **Review by series** (section 7.1): the same queue, one series at a time.
 - **Editor**: every field from section 4.3, credits with roles, cover (replace or use page 1), preview of the names each destination will generate.
 - **Batch editing**: select N books and edit the fields they share. Empty fields change nothing. "Number in sequence" is for the series number.
 - Every save creates an entry in `.gibiomatic/history` and can be undone.
 - **Remove from library** (right-click menu in the Library, in "Continue reading" and in the Review queue; Editor for a single book): asks for confirmation, with two ways out. "Remove" moves the book's folder (original, cover, `metadata.json`) to `.gibiomatic/trash/<date>-<id6>/`, with a `.trash.json`; "Remove and delete the files" deletes the folder and the history for good. The book leaves the index, the identification, the reading status and the destination lists; destination copies are deleted, but never the one already on the Kindle.
 - **Show in Explorer** ("Show in folder" outside Windows), in the same places and next to the book's path: opens the file manager with the original selected.
 - **File not found**: when the library opens, the app checks whether each book's original is still on disk. Missing ones get a badge on the cover and the "No file" filter; the Review, the Editor and the book panel warn about it and offer removal. If a book's whole folder is gone (deleted or moved by hand), the index is rebuilt from the `metadata.json` files.
+
+### 7.1 Review by series
+
+**Why**: the books of one series are identified one at a time, and they often come back different: one book matched the series' volume, another matched a "Series: Subtitle" volume, another was not found, and the titles come out in different shapes. Today the user has to compare them by hand before approving each one. Here the user decides once for the whole series.
+
+**Where**: a **By book | By series** switch at the top of the Review. Both modes show the same queue (books not reviewed yet); a book approved in one mode leaves both. The switch is remembered.
+
+**Groups** (left column):
+- Only books in the Review queue are grouped. A group is a **proposal**: nothing is written to `metadata.json` until it is approved.
+- Automatic grouping, recomputed when the queue changes:
+  1. key = the series that `TitleParser.Parse` reads from the title, normalized (case, punctuation, accents, a leading "The" and spaces ignored). "Deadly Class, Vol. 3" and "DeadlyClass_v5" share the key `deadlyclass`;
+  2. groups whose books' best candidates point to the same ComicVine volume are merged;
+  3. a key with a single book does not form a group.
+- Books outside every group sit in a fixed **No group** entry at the end, reviewed one by one as in the By book mode.
+- Each group shows its name, the number of books and a warning when its books disagree: "2 diverge" (best candidates in different volumes, or no candidate), "number repeated", "number missing". Groups with warnings come first.
+- **Manual corrections**, kept in the index until the books are approved, so the automatic grouping never undoes them:
+  - **Remove from group**: the book goes to No group;
+  - **Ungroup**: every book of the group goes to No group;
+  - **Add to group**: pick books from No group or from other groups, with a search box, or drag a book onto a group;
+  - **Merge with…**: joins two groups (e.g. the one with the file name typo);
+  - **Create group**: from books selected in No group.
+
+**The open group** (right side):
+1. **Series**: the series every book of the group will get (name, publisher, start year). A list of the ComicVine volumes found by the group's books, with cover, publisher, year and issue count, most used first; or a search of ComicVine volumes by name, inside the app (its results take the place of that list, with "Back to suggestions"; the group's name is searched as it opens when no book found a volume; the volumes of the books' publisher, then those with enough issues for the group's highest number, come first); or a ComicVine link; or typed by hand.
+2. **Title format**: a template applied to every book's title, with a live preview. Fields: `{Series}`, `{Number}` (`{Number:00}` pads), `{Name}` (the issue's name on ComicVine, where it keeps the collected edition's subtitle), `{Year}`. Default: `{Series} Vol. {Number}: {Name}`; a part whose field is empty is dropped together with its separator. "Keep each book's title" turns it off. The last template used is remembered.
+3. **Table**, one row per book: file name, number read from the title, what the book matched today (volume and issue), and the result: the new title, the issue it will get and its cover. Rows that change are highlighted.
+   - Each book's record: the issue with the book's number in the chosen volume (one ComicVine call for the whole group: `issues/?filter=volume:ID`, cached). If the volume has no such issue (collected editions that are volumes of their own on ComicVine), the book's own best candidate is kept when its number agrees. Otherwise the row says "No match" and offers a list of the volume's issues to pick from, each with its cover (bigger on hover).
+   - The group's series (step 1) is written to every book, whatever volume its record came from.
+   - The other fields follow the Review's default: the ones the Review would tick for that record.
+   - Row actions: open the book in the reader, choose another issue, edit by hand, remove from group.
+
+**Approve the group** (the table is the dry run):
+- A confirmation summarizes it: "Approve 6 books? 2 change volume, 1 without a match stays in the Review".
+- Books with a record are approved as in the Review (`matchedBy: comicvine-volume`, folder moved to `{Publisher}/{Series}/`, automatic destinations triggered). Books without a match stay in the group, with the series already chosen.
+- Every book gets its own history entry, all of them tagged with the same batch, so the whole group can be undone at once.
+- After approving, the next group opens.
+
+**Not in scope**: regrouping books that are already approved. Those are fixed in the Editor or the batch Editor, or sent back to the Review.
 
 ## 8. Metadata sources and identification
 
@@ -301,7 +340,7 @@ Based on the Claude Design prototype. Screens:
 |---|---|
 | Library | Cover grid (series or books), quality badges, filters (Needs review, No date, No series, Unknown author, Complete), search, panel for the selected book |
 | Inbox | New files with the identification result, duplicate handling, import |
-| Review | Queue, candidates, field-by-field comparison |
+| Review | Queue, candidates, field-by-field comparison; By book / By series modes (§7.1) |
 | Editor | One book or a batch, credits by role, preview of the output names |
 | Destinations | Cards with status and rules; "Add destination" |
 | Destination detail | Main action (Kindle: choose and send) and settings with "Advanced" collapsed |
@@ -363,6 +402,7 @@ GibiOMatic.sln
 | **F4 · Kindle destination** | KCC integration, profiles, sending over MTP on Windows | a chosen book reaches the Colorsoft and opens with Panel View |
 | **F5 · Automatic inbox** | Watched folder, identification on arrival, duplicates and replacement | a new Humble download goes from download to Komga with no manual steps, or only the approval |
 | **F6 · Polish** | English, light theme, Windows installer, Linux build, user documentation | ready for someone else to install on their own |
+| **F8 · Review by series** | Groups of the Review queue by series, one series and title format per group, group approval and undo (§7.1) | a mixed series of ~6 books is approved with one decision |
 
 ### Backlog
 Real panel detection (Panel View with per-panel regions), other destinations (section 9.4), reading the ISBN by OCR from the credits page, suggesting missing series, automatic app updates, server/Docker mode.

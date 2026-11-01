@@ -73,10 +73,19 @@ public sealed class VelopackUpdater : IAppUpdater
 
 public static class AppInfo
 {
+    /// <summary>"0.6.1-alpha.0.3+751a8612…": MinVer's version, then the commit (SourceLink).</summary>
+    private static readonly string Informational =
+        typeof(AppInfo).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0";
+
     /// <summary>"0.6.0", or "0.6.1-alpha.0.3" between tags (MinVer), without the commit.</summary>
-    public static string Version { get; } =
-        (typeof(AppInfo).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0")
-        .Split('+')[0];
+    public static string Version { get; } = Informational.Split('+')[0];
+
+    /// <summary>"751a861": the commit built; null when the build didn't know it.</summary>
+    public static string? Commit { get; } = Informational.Split('+') is [_, { Length: >= 7 } sha, ..] ? sha[..7] : null;
+
+    /// <summary>Built with uncommitted changes (<c>GibiLocalChanges</c>, set by Directory.Build.targets).</summary>
+    public static bool HasLocalChanges { get; } = typeof(AppInfo).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
+        .Any(a => a is { Key: "GibiLocalChanges", Value: "true" });
 }
 
 public enum UpdateState

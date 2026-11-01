@@ -106,3 +106,23 @@ public sealed class TitleParserTests
     public void Book_keys_keep_different_volumes_apart() =>
         Assert.NotEqual(TitleParser.BookKey("Saga, Vol. 1"), TitleParser.BookKey("Saga, Vol. 11"));
 }
+
+public sealed class TitleTemplateTests
+{
+    [Theory]
+    [InlineData("{Series} Vol. {Number}: {Name}", "Deadly Class", "3", "The Snake Pit", 2015, "Deadly Class Vol. 3: The Snake Pit")]
+    [InlineData("{Series} Vol. {Number}: {Name}", "Deadly Class", "3", null, 2015, "Deadly Class Vol. 3")]
+    [InlineData("{Series} Vol. {Number}: {Name}", "Plutona", null, "The End", null, "Plutona: The End")]
+    [InlineData("{Series} Vol. {Number}: {Name}", null, "3", "The Snake Pit", null, "Vol. 3: The Snake Pit")]
+    [InlineData("{Series} Vol. {Number:00}", "Saga", "3", null, null, "Saga Vol. 03")]
+    [InlineData("{Series} #{Number:000}", "Saga", "12.5", null, null, "Saga #012.5")]
+    [InlineData("{Series} ({Year})", "Saga", "1", null, null, "Saga")]
+    [InlineData("{Series} ({Year})", "Saga", "1", null, 2012, "Saga (2012)")]
+    [InlineData("{Series}, Book {Number} - {Name} [{Year}]", "Wynd", "1", null, null, "Wynd, Book 1")]
+    public void Drops_empty_fields_with_their_separator(string template, string? series, string? number, string? name, int? year, string expected) =>
+        Assert.Equal(expected, TitleTemplate.Render(template, new TitleFields(series, number, name, year)));
+
+    [Fact]
+    public void Reports_unknown_fields() =>
+        Assert.Equal(["Volume"], TitleTemplate.UnknownFields("{Series} {Volume} {number}"));
+}

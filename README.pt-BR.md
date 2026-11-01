@@ -53,7 +53,8 @@ ENTRADA ──importar──► ARQUIVO (original + metadata.json) ──gerar�
   ele vai para a Lixeira (ou para `_imported`, dentro da pasta de Entrada, se preferir). Os livros esperam em
   `_To review` até os metadados serem aprovados. O app pode ficar na bandeja do sistema e iniciar com ele.
 - **Metadados do ComicVine e da Open Library.** As identificações seguras são aprovadas sozinhas, e as outras
-  esperam na **Revisão**, com a comparação campo a campo. O **Editor** cuida do resto, inclusive em lote, com
+  esperam na **Revisão**, com a comparação campo a campo, um livro por vez ou **por série** (escolha a série do
+  ComicVine e o formato do título uma vez, aprove todos os livros dela juntos e desfaça tudo de uma vez). O **Editor** cuida do resto, inclusive em lote, com
   créditos por função e *universos* (séries da mesma linha, que viram coleções no Komga). Uma nota de qualidade
   aponta o que falta em cada livro.
 - **Destinos.** O **Komga** recebe CBZ com `ComicInfo.xml`, organizados por série. O **Kindle** recebe as
@@ -66,8 +67,10 @@ ENTRADA ──importar──► ARQUIVO (original + metadata.json) ──gerar�
 | Entrada | Revisão |
 |---|---|
 | ![Entrada](docs/images/inbox-pt-BR.png) | ![Revisão](docs/images/review-pt-BR.png) |
-| **Editor** | **Tema claro** |
-| ![Editor](docs/images/editor-pt-BR.png) | ![Biblioteca no tema claro](docs/images/library-light-pt-BR.png) |
+| **Revisão por série** | **Editor** |
+| ![Revisão por série](docs/images/review-series-pt-BR.png) | ![Editor](docs/images/editor-pt-BR.png) |
+| **Tema claro** | |
+| ![Biblioteca no tema claro](docs/images/library-light-pt-BR.png) | |
 
 As capturas usam uma biblioteca inventada (títulos, autores e capas fictícios), gerada por
 [`tools/Screenshots`](tools/Screenshots).

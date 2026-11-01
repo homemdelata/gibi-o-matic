@@ -106,6 +106,7 @@ public sealed class LibraryIndex(string databasePath)
             DELETE FROM book_files WHERE book_id = @id;
             DELETE FROM identifications WHERE book_id = @id;
             DELETE FROM reading_state WHERE book_id = @id;
+            DELETE FROM review_group_books WHERE book_id = @id;
             """,
             new { id }, cancellationToken: ct));
     }

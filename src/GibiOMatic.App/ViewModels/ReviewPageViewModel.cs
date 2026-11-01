@@ -9,6 +9,7 @@ using GibiOMatic.Conversion;
 using GibiOMatic.Core.Domain;
 using GibiOMatic.Core.Libraries;
 using GibiOMatic.Core.Quality;
+using GibiOMatic.Core.Settings;
 using GibiOMatic.Library;
 using GibiOMatic.Library.Editing;
 using GibiOMatic.Library.Identification;
@@ -195,8 +196,12 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
 
     public ReviewPageViewModel(LibrarySession session, ThumbnailCache thumbnails, ICoverLoader covers, CoverImageCache remoteCovers,
         IBookFileReader reader, IUrlOpener urls, IUiThread ui, IReaderLauncher readerWindows, IFileRevealer revealer, BookEditor editor,
-        ILogger<ReviewPageViewModel> logger)
+        VolumeMatcher matcher, ISettingsService settings, ILogger<ReviewPageViewModel> logger)
     {
+        _settings = settings;
+        IsBySeries = settings.Current.Review.BySeries;
+        Series = new SeriesReviewViewModel(session, matcher, settings, remoteCovers, covers, readerWindows, urls, logger,
+            bookId => _ = ReviewBookAsync(bookId), bookId => RequestNavigation(NavPage.Editor, [bookId]));
         _revealer = revealer;
         RemovePrompt = new RemoveBookPromptViewModel(session, editor, logger) { Removed = id => _ = OnRemovedAsync(id) };
         _readerWindows = readerWindows;
@@ -208,7 +213,14 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
         _covers = covers;
         _logger = logger;
         Status = new IdentificationStatusViewModel(session, ui);
-        _refresh = new Debouncer(ui, TimeSpan.FromMilliseconds(500), () => RefreshAsync());
+        _refresh = new Debouncer(ui, TimeSpan.FromMilliseconds(500), async () =>
+        {
+            await RefreshAsync();
+            if (IsBySeries)
+            {
+                await Series.RefreshAsync();
+            }
+        });
         if (session.Identification is { } queue)
         {
             queue.Changed += OnQueueChanged;
@@ -217,12 +229,55 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
 
     public override string Title => Strings.Nav_Review;
 
+    private readonly ISettingsService _settings;
+
+    /// <summary>The Review by series (SPEC §7.1): the same queue, one series at a time.</summary>
+    public SeriesReviewViewModel Series { get; }
+
+    /// <summary>By series instead of By book; remembered.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsByBook), nameof(ShowBookEmpty), nameof(ShowComparison))]
+    public partial bool IsBySeries { get; private set; }
+
+    public bool IsByBook => !IsBySeries;
+
+    public bool ShowBookEmpty => IsByBook && IsEmpty;
+
+    public bool ShowComparison => IsByBook && HasSelection;
+
+    [RelayCommand]
+    private Task ShowByBookAsync() => SetModeAsync(bySeries: false);
+
+    [RelayCommand]
+    private Task ShowBySeriesAsync() => SetModeAsync(bySeries: true);
+
+    private async Task SetModeAsync(bool bySeries, string? bookId = null)
+    {
+        if (IsBySeries != bySeries)
+        {
+            IsBySeries = bySeries;
+            await _settings.SaveAsync(_settings.Current with { Review = _settings.Current.Review with { BySeries = bySeries } });
+        }
+
+        if (bySeries)
+        {
+            await Series.RefreshAsync();
+        }
+        else
+        {
+            await RefreshAsync(CancellationToken.None, bookId);
+        }
+    }
+
+    /// <summary>A book of "No group", reviewed on its own in the By book mode.</summary>
+    private Task ReviewBookAsync(string bookId) => SetModeAsync(bySeries: false, bookId);
+
     public IdentificationStatusViewModel Status { get; }
 
     public ObservableCollection<ReviewItemViewModel> Items { get; } = [];
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasSelection))]
+    [NotifyPropertyChangedFor(nameof(HasSelection), nameof(ShowComparison))]
     public partial ReviewItemViewModel? Selected { get; private set; }
 
     public bool HasSelection => Selected is not null;
@@ -300,7 +355,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
     }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsEmpty))]
+    [NotifyPropertyChangedFor(nameof(IsEmpty), nameof(ShowBookEmpty))]
     public partial bool HasItems { get; private set; }
 
     public bool IsEmpty => !HasItems;
@@ -434,7 +489,17 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             }
         }
 
+        if (IsBySeries && bookId is not null)
+        {
+            // A book sent to the Review from elsewhere is shown on its own.
+            IsBySeries = false;
+        }
+
         await RefreshAsync(ct, bookId);
+        if (IsBySeries)
+        {
+            await Series.RefreshAsync(ct: ct);
+        }
     }
 
     /// <summary>Reloads the queue; keeps the selected book (or picks <paramref name="selectBookId"/>).</summary>
@@ -868,7 +933,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
     private void OnQueueChanged(object? sender, EventArgs e)
     {
         // New books in the review appear on their own; the one being reviewed stays put.
-        if (!IsBusy)
+        if (!IsBusy && Series.IsIdle)
         {
             _refresh.Trigger();
         }

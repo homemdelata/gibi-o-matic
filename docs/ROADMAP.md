@@ -14,6 +14,7 @@ Status: ⬜ not started · 🟨 in progress · ✅ done. `§` sections refer to 
 | F5 | Automatic inbox | ✅ |
 | F6 | Polish and distribution | ✅ |
 | F7 | Visual revamp | ✅ (the user's test is pending) |
+| F8 | Review by series | ✅ (the user's test is pending) |
 
 When each phase is done: green build and tests → update this file → commit and push → **stop and explain to the user how to test it**.
 
@@ -251,6 +252,22 @@ A "subtle Spider-Verse" look, specified in `docs/design/revamp/REVAMP.md`.
 - [x] Inbox: after importing, the file goes to the Recycle Bin (default), to `_imported` or is deleted, chosen in Settings.
 - [x] Library: unreviewed books stay in `Books/_To review/` and only move to `{Publisher}/{Series}/` after approval.
 - [x] Remove from library (internal trash or delete for good), "Show in Explorer" and a notice when the original file is not found (badge, "No file" filter, Review and Editor).
+
+---
+
+## F8 · Review by series (§7.1, user request)
+
+Goal: decide the ComicVine series and the title format once for all the books of a series in the Review queue, instead of comparing them one by one.
+
+- [x] **Grouping** (`GibiOMatic.Library` or `Core`, no UI): from the queue and the stored identifications, build the groups (normalized `TitleParser` series key; merge groups whose best candidates share a ComicVine volume; single books go to No group) and the warnings (diverge, number repeated, number missing). Tests with synthetic queues: "Deadly Class, Vol. 3" + "DeadlyClass_v5" in one group, a one-shot in No group, two keys merged by the same volume.
+- [x] **Manual corrections** in the index (new migration): remove from group, ungroup, add to group, merge, create group. They survive recomputing the groups and are dropped when the book is approved or leaves the queue. Tests.
+- [x] **Matching inside a volume** (`GibiOMatic.Metadata`): given a volume and the group's books, one `issues/?filter=volume:ID` call (cached, through the rate limiter) and the per-book record: issue by number → own best candidate with the same number → No match. Tests with recorded ComicVine responses (no real API).
+- [x] **Title template**: `{Series}`, `{Number}`, `{Number:00}`, `{Name}`, `{Year}`; an empty field drops its part and separator. Reuse the destinations' naming template if it fits; otherwise record why in `DECISIONS.md`. Tests.
+- [x] **Group approval**: the plan (per-book field changes, as the Review's defaults, plus the group's series and the title), confirmation summary, approval through the same path as the Review (`matchedBy: comicvine-volume`, folder move, automatic destinations), history entries tagged with one batch id and "undo the batch" (add it to the history if it doesn't exist). Tests on a synthetic library.
+- [x] **UI**: By book / By series switch in the Review (remembered); group list with warnings and No group; the open group with the series picker (volumes found, a ComicVine search inside the app, ComicVine link, by hand), title template with live preview, the table with highlighted changes and row actions (open, choose issue, edit by hand, remove from group); drag a book onto a group; Approve group → next group. Strings in pt-BR and en.
+- [x] Screenshots (`tools/Screenshots`) and the README in both languages, if the Review screenshot changes.
+
+**Done when**: the user takes a series of ~6 books that came back mixed from identification (different volumes, one not found), fixes the group if needed, chooses the series and the title format once and approves all of them with one confirmation, and can undo it all at once.
 
 ---
 

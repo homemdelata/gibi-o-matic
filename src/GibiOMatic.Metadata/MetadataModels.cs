@@ -33,6 +33,14 @@ public sealed record MetadataRecord
 
     public int? ComicVineVolumeId { get; init; }
 
+    /// <summary>The ComicVine volume's name ("Deadly Class: A Fond Farewell"); null in results stored before it was kept.</summary>
+    public string? VolumeName { get; init; }
+
+    public int? VolumeStartYear { get; init; }
+
+    /// <summary>The ComicVine issue's own name ("Volume 11: Over the Hill…"), if it has one.</summary>
+    public string? IssueName { get; init; }
+
     /// <summary>
     /// The record exactly as the source names it, before the title, series and number are read from
     /// it: "Spawn Origins Collection #19 · The Kingdom, Part 2" (volume, issue number, issue name).

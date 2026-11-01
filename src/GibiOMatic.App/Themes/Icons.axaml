@@ -27,6 +27,8 @@
   <StreamGeometry x:Key="Icon.Stack">M12,3 L21,7.5 L12,12 L3,7.5 Z M3,12 L12,16.5 L21,12 M3,16.5 L12,21 L21,16.5</StreamGeometry>
   <StreamGeometry x:Key="Icon.Close">M6,6 L18,18 M18,6 L6,18</StreamGeometry>
   <StreamGeometry x:Key="Icon.Alert">M12,5 V13.5 M12,19 V19.01</StreamGeometry>
+  <!-- Lucide "grip-vertical" (ISC license): something that can be dragged -->
+  <StreamGeometry x:Key="Icon.Grip">M9,5 V5.01 M9,12 V12.01 M9,19 V19.01 M15,5 V5.01 M15,12 V12.01 M15,19 V19.01</StreamGeometry>
   <StreamGeometry x:Key="Icon.Check">M20,6 L9,17 L4,12</StreamGeometry>
   <!-- Lucide "trash-2" (ISC license) -->
   <StreamGeometry x:Key="Icon.Trash">M3,6 H21 M19,6 V20 A2,2 0 0 1 17,22 H7 A2,2 0 0 1 5,20 V6 M8,6 V4 A2,2 0 0 1 10,2 H14 A2,2 0 0 1 16,4 V6 M10,11 V17 M14,11 V17</StreamGeometry>

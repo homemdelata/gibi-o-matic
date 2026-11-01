@@ -140,6 +140,19 @@ internal static class IndexMigrations
         """
         ALTER TABLE inbox_items ADD COLUMN auto INTEGER NOT NULL DEFAULT 0;
         """,
+
+        // 11: Review by series (F8): the user's corrections to the automatic groups, and the series chosen for a group
+        """
+        CREATE TABLE review_group_books (
+            book_id   TEXT PRIMARY KEY,
+            group_id  TEXT
+        );
+
+        CREATE TABLE review_group_series (
+            group_id     TEXT PRIMARY KEY,
+            series_json  TEXT NOT NULL
+        );
+        """,
     ];
 
     public static int LatestVersion => All.Count;

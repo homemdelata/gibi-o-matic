@@ -254,10 +254,13 @@
               <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="vm:HistoryRowViewModel">
                   <Border Background="{DynamicResource CardBrush}" CornerRadius="{StaticResource RadiusCard}" Padding="14,8" Margin="0,0,0,6">
-                    <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Grid ColumnDefinitions="Auto,*,Auto,Auto">
                       <TextBlock Classes="mono muted" FontSize="12" VerticalAlignment="Center" Text="{Binding When}" />
                       <TextBlock Grid.Column="1" Margin="14,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Text="{Binding Title}" />
-                      <Button Grid.Column="2" Classes="secondary" MinHeight="32" Padding="12,0" FontSize="13"
+                      <Button Grid.Column="2" Classes="secondary" MinHeight="32" Padding="12,0" Margin="0,0,8,0" FontSize="13"
+                              Content="{Binding UndoBatchText}" Command="{Binding UndoBatchCommand}" ToolTip.Tip="{Binding UndoBatchHelp}"
+                              IsVisible="{Binding HasBatch}" />
+                      <Button Grid.Column="3" Classes="secondary" MinHeight="32" Padding="12,0" FontSize="13"
                               Content="{x:Static r:Strings.Editor_Restore}" Command="{Binding RestoreCommand}" />
                     </Grid>
                   </Border>

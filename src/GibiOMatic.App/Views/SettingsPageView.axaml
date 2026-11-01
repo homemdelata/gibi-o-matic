@@ -230,7 +230,11 @@
                 <TextBlock Classes="help" Text="{x:Static r:Strings.Update_Help}" />
               </StackPanel>
               <StackPanel Grid.Column="1" Spacing="10">
-                <TextBlock Classes="mono" Text="{Binding Update.VersionText}" />
+                <StackPanel Spacing="2">
+                  <TextBlock Classes="mono" Text="{Binding Update.VersionText}" />
+                  <TextBlock Classes="help" Text="{x:Static vm:UpdateStatusViewModel.BuildText}"
+                             IsVisible="{x:Static vm:UpdateStatusViewModel.HasBuildText}" />
+                </StackPanel>
                 <TextBlock Classes="help" Text="{Binding Update.StatusText}" IsVisible="{Binding !Update.StatusIsError}"
                            Foreground="{DynamicResource TextSecondaryBrush}" />
                 <TextBlock Classes="error" Text="{Binding Update.StatusText}" IsVisible="{Binding Update.StatusIsError}" />
