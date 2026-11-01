@@ -757,6 +757,13 @@
   <data name="Series_NoVolume" xml:space="preserve"><value>Sem volume do ComicVine: cada livro fica com o próprio candidato quando o número bate.</value></data>
   <data name="Series_LoadingVolume" xml:space="preserve"><value>Lendo as edições de {0} no ComicVine…</value></data>
   <data name="Series_VolumeFailed" xml:space="preserve"><value>Não foi possível ler esse volume no ComicVine. Tente de novo mais tarde.</value></data>
+  <data name="Series_SeriesSearch" xml:space="preserve"><value>Buscar a série no ComicVine</value></data>
+  <data name="Series_Search" xml:space="preserve"><value>Buscar</value></data>
+  <data name="Series_Searching" xml:space="preserve"><value>Buscando “{0}” no ComicVine…</value></data>
+  <data name="Series_SearchResults" xml:space="preserve"><value>Séries do ComicVine para “{0}”:</value></data>
+  <data name="Series_SearchNothing" xml:space="preserve"><value>Nada no ComicVine para “{0}”. Tente outras palavras, ou cole o link do volume.</value></data>
+  <data name="Series_SearchFailed" xml:space="preserve"><value>Não foi possível buscar no ComicVine agora. Tente de novo mais tarde.</value></data>
+  <data name="Series_ShowSuggestions" xml:space="preserve"><value>Voltar às sugestões</value></data>
   <data name="Series_TemplateHelp" xml:space="preserve"><value>Campos: {Series}, {Number} ({Number:00} completa com zeros), {Name} (o nome da edição no ComicVine), {Year}. Um campo vazio sai junto com o separador.</value></data>
   <data name="Series_KeepTitles" xml:space="preserve"><value>Manter o título de cada livro</value></data>
   <data name="Series_Preview" xml:space="preserve"><value>Prévia: {0}</value></data>

@@ -50,12 +50,12 @@ public sealed partial class SeriesGroupItemViewModel(ReviewGroup? group, int cou
     private Task Drop(string bookId) => owner.MoveBookAsync(bookId, this);
 }
 
-/// <summary>A ComicVine volume found by the group's books, to choose as the group's series.</summary>
+/// <summary>A ComicVine volume found by the group's books, or by a search, to choose as the group's series.</summary>
 public sealed partial class VolumeOptionViewModel : ViewModelBase
 {
     private readonly Action<VolumeOptionViewModel> _pick;
 
-    public VolumeOptionViewModel(CvVolume volume, int usedBy, int groupSize, string? coverUrl, Action<VolumeOptionViewModel> pick, Func<string?, Task<Bitmap?>> loadCover)
+    public VolumeOptionViewModel(CvVolume volume, int? usedBy, int groupSize, string? coverUrl, Action<VolumeOptionViewModel> pick, Func<string?, Task<Bitmap?>> loadCover)
     {
         Volume = volume;
         UsedBy = usedBy;
@@ -68,8 +68,8 @@ public sealed partial class VolumeOptionViewModel : ViewModelBase
 
     public CvVolume Volume { get; }
 
-    /// <summary>Books of the group whose best candidate is in this volume.</summary>
-    public int UsedBy { get; }
+    /// <summary>Books of the group whose best candidate is in this volume; null for a volume no book found.</summary>
+    public int? UsedBy { get; }
 
     public string Name => Volume.Name;
 
@@ -83,7 +83,7 @@ public sealed partial class VolumeOptionViewModel : ViewModelBase
     private readonly int _groupSize;
 
     /// <summary>"Best match for 1 of 2 books": the other books may still have an issue in it.</summary>
-    public string UsedByText => string.Format(CultureInfo.CurrentCulture, Strings.Series_BestFor, UsedBy, _groupSize);
+    public string? UsedByText => UsedBy is { } count ? string.Format(CultureInfo.CurrentCulture, Strings.Series_BestFor, count, _groupSize) : null;
 
     [ObservableProperty]
     public partial Bitmap? Cover { get; private set; }
@@ -234,6 +234,8 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
     private ReviewGrouping _grouping = new([], []);
     private VolumeIssues? _issues;
     private CancellationTokenSource? _loading;
+    private CancellationTokenSource? _searching;
+    private List<VolumeOptionViewModel> _suggestions = [];
     private bool _settingSeries;
 
     public SeriesReviewViewModel(LibrarySession session, VolumeMatcher matcher, ISettingsService settings, CoverImageCache remoteCovers, ICoverLoader covers,
@@ -320,6 +322,7 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
 
         var previous = Selected;
         Selected = item;
+        _searching?.Cancel();
         ConfirmText = null;
         AddSearch = null;
         IsAdding = false;
@@ -489,7 +492,7 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsIdle))]
-    [NotifyCanExecuteChangedFor(nameof(AskApproveCommand), nameof(ApproveCommand), nameof(UseLinkCommand))]
+    [NotifyCanExecuteChangedFor(nameof(AskApproveCommand), nameof(ApproveCommand), nameof(UseLinkCommand), nameof(SearchSeriesCommand))]
     public partial string? BusyText { get; private set; }
 
     public bool IsIdle => BusyText is null;
@@ -501,14 +504,12 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
 
     private async Task OpenGroupAsync(ReviewGroup group)
     {
-        Volumes.Clear();
         SeriesError = null;
         SeriesLink = null;
         KeepTitles = false;
-        foreach (var option in VolumeOptions(group))
-        {
-            Volumes.Add(option);
-        }
+        SeriesSearch = group.Name;
+        _suggestions = VolumeOptions(group).ToList();
+        ShowVolumes(_suggestions, null);
 
         // The series chosen before (books left without a match), else the volume most of the books found.
         var saved = Groups is { } groups ? await groups.GetSeriesAsync(group.Id) : null;
@@ -526,6 +527,12 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
         else
         {
             await SetSeriesAsync(null, new GroupSeries(group.Name, null, null));
+        }
+
+        // No book found a volume: the group's name is searched at once, nothing is chosen.
+        if (_suggestions.Count == 0 && saved?.VolumeId is null)
+        {
+            await SearchAsync(auto: true);
         }
     }
 
@@ -548,8 +555,115 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
             .ThenByDescending(x => x.Any)
             .ThenBy(x => x.Volume.Name, StringComparer.CurrentCultureIgnoreCase)
             .Take(12)
-            .Select(x => new VolumeOptionViewModel(x.Volume, x.Best, group.Books.Count, x.Cover, v => _ = SetSeriesAsync(v.Volume, null, remember: true), LoadCoverAsync));
+            .Select(x => new VolumeOptionViewModel(x.Volume, x.Best, group.Books.Count, x.Cover, PickVolume, LoadCoverAsync));
     }
+
+    private void PickVolume(VolumeOptionViewModel option) => _ = SetSeriesAsync(option.Volume, null, remember: true);
+
+    /// <summary>The cards shown: the suggestions, or the results of a search (<paramref name="resultsText"/>).</summary>
+    private void ShowVolumes(IEnumerable<VolumeOptionViewModel> options, string? resultsText)
+    {
+        Volumes.Clear();
+        foreach (var option in options)
+        {
+            option.IsSelected = option.Volume.Id == Volume?.Id;
+            Volumes.Add(option);
+        }
+
+        SearchResultsText = resultsText;
+    }
+
+    // ---- Searching ComicVine for the series ----
+
+    /// <summary>The words searched; starts as the group's name.</summary>
+    [ObservableProperty]
+    public partial string? SeriesSearch { get; set; }
+
+    /// <summary>"ComicVine series for “Saga”": the cards are a search's results, not the suggestions.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsShowingResults), nameof(CanShowSuggestions))]
+    public partial string? SearchResultsText { get; private set; }
+
+    public bool IsShowingResults => SearchResultsText is not null;
+
+    public bool CanShowSuggestions => IsShowingResults && _suggestions.Count > 0;
+
+    [RelayCommand(CanExecute = nameof(IsIdle))]
+    private Task SearchSeriesAsync() => SearchAsync(auto: false);
+
+    [RelayCommand]
+    private void ShowSuggestions() => ShowVolumes(_suggestions, null);
+
+    /// <summary>Searches the volumes named like <see cref="SeriesSearch"/>; <paramref name="auto"/> stays quiet on failure.</summary>
+    private async Task SearchAsync(bool auto)
+    {
+        if (Selected?.Group is not { } group || string.IsNullOrWhiteSpace(SeriesSearch))
+        {
+            return;
+        }
+
+        var words = SeriesSearch.Trim();
+        SeriesError = null;
+        _searching?.Cancel();
+        using var searching = _searching = new CancellationTokenSource();
+        BusyText = string.Format(CultureInfo.CurrentCulture, Strings.Series_Searching, words);
+        IReadOnlyList<CvVolume> found;
+        try
+        {
+            if (!await _matcher.HasKeyAsync(searching.Token))
+            {
+                SeriesError = auto ? null : Strings.Note_NoKey;
+                return;
+            }
+
+            found = await _matcher.SearchAsync(words, SeriesPublisher ?? PublisherOf(group), HighestNumber(group), searching.Token);
+        }
+        catch (OperationCanceledException) when (searching.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception ex) when (ex is MetadataSourceException or HttpRequestException)
+        {
+            _logger.LogWarning(ex, "Could not search ComicVine for a series");
+            SeriesError = auto ? null : Strings.Series_SearchFailed;
+            return;
+        }
+        finally
+        {
+            if (_searching == searching)
+            {
+                _searching = null;
+                BusyText = null;
+            }
+        }
+
+        if (searching.IsCancellationRequested || Selected?.Group?.Id != group.Id)
+        {
+            return;
+        }
+
+        // A volume the books found too keeps its card (and its count).
+        var suggested = _suggestions.ToDictionary(v => v.Volume.Id);
+        ShowVolumes(
+            found.Take(12).Select(v => suggested.GetValueOrDefault(v.Id) ?? new VolumeOptionViewModel(v, null, group.Books.Count, v.CoverUrl, PickVolume, LoadCoverAsync)),
+            string.Format(CultureInfo.CurrentCulture, found.Count == 0 ? Strings.Series_SearchNothing : Strings.Series_SearchResults, words));
+    }
+
+    /// <summary>The publisher most of the group's books have.</summary>
+    private static string? PublisherOf(ReviewGroup group) =>
+        group.Books
+            .Select(b => b.Best?.Record.Publisher ?? b.Book.Metadata.Publisher)
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .GroupBy(p => p!, StringComparer.CurrentCultureIgnoreCase)
+            .OrderByDescending(g => g.Count())
+            .Select(g => g.Key)
+            .FirstOrDefault();
+
+    private static int HighestNumber(ReviewGroup group) =>
+        group.Books
+            .Select(b => double.TryParse(b.Number, NumberStyles.Float, CultureInfo.InvariantCulture, out var n) ? (int)Math.Ceiling(n) : 0)
+            .DefaultIfEmpty(0)
+            .Max();
 
     /// <summary>"Deadly Class #3 · Reagan Youth" → "Deadly Class" (results stored before the volume name was kept).</summary>
     private static string? NameFromSource(string? source)

@@ -757,6 +757,13 @@
   <data name="Series_NoVolume" xml:space="preserve"><value>No ComicVine volume: each book keeps its own candidate when the number agrees.</value></data>
   <data name="Series_LoadingVolume" xml:space="preserve"><value>Reading the issues of {0} on ComicVine…</value></data>
   <data name="Series_VolumeFailed" xml:space="preserve"><value>Could not read that volume on ComicVine. Try again later.</value></data>
+  <data name="Series_SeriesSearch" xml:space="preserve"><value>Search ComicVine for the series</value></data>
+  <data name="Series_Search" xml:space="preserve"><value>Search</value></data>
+  <data name="Series_Searching" xml:space="preserve"><value>Searching ComicVine for “{0}”…</value></data>
+  <data name="Series_SearchResults" xml:space="preserve"><value>ComicVine series for “{0}”:</value></data>
+  <data name="Series_SearchNothing" xml:space="preserve"><value>Nothing on ComicVine for “{0}”. Try other words, or paste the volume's link.</value></data>
+  <data name="Series_SearchFailed" xml:space="preserve"><value>Could not search ComicVine now. Try again later.</value></data>
+  <data name="Series_ShowSuggestions" xml:space="preserve"><value>Back to suggestions</value></data>
   <data name="Series_TemplateHelp" xml:space="preserve"><value>Fields: {Series}, {Number} ({Number:00} pads it), {Name} (the issue's name on ComicVine), {Year}. An empty field is dropped with its separator.</value></data>
   <data name="Series_KeepTitles" xml:space="preserve"><value>Keep each book's title</value></data>
   <data name="Series_Preview" xml:space="preserve"><value>Preview: {0}</value></data>

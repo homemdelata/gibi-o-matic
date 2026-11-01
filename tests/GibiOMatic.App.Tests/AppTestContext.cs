@@ -272,8 +272,14 @@ public sealed class FakeComicVineApi : GibiOMatic.Metadata.Identification.IComic
 
     public Task<bool> HasKeyAsync(CancellationToken ct) => Task.FromResult(true);
 
-    public Task<IReadOnlyList<GibiOMatic.Metadata.Sources.CvVolume>> SearchVolumesAsync(string query, CancellationToken ct, int limit = 30) =>
-        Task.FromResult<IReadOnlyList<GibiOMatic.Metadata.Sources.CvVolume>>(Volumes);
+    /// <summary>The words of every volume search.</summary>
+    public List<string> Searches { get; } = [];
+
+    public Task<IReadOnlyList<GibiOMatic.Metadata.Sources.CvVolume>> SearchVolumesAsync(string query, CancellationToken ct, int limit = 30)
+    {
+        Searches.Add(query);
+        return Task.FromResult<IReadOnlyList<GibiOMatic.Metadata.Sources.CvVolume>>(Volumes.ToList());
+    }
 
     public Task<IReadOnlyList<GibiOMatic.Metadata.Sources.CvIssueSummary>> GetIssuesAsync(IReadOnlyCollection<int> volumeIds, CancellationToken ct,
         string? issueNumber = null) =>

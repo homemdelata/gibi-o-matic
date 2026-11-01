@@ -161,6 +161,83 @@ public sealed class ReviewBySeriesTests : IDisposable
         Assert.False(_app.Get<ISettingsService>().Current.Review.BySeries);
     }
 
+    [Fact]
+    public async Task The_series_is_searched_on_ComicVine_without_leaving_the_app()
+    {
+        await _app.EnterUiThreadAsync();
+        _app.ComicVine.Volumes.AddRange(
+        [
+            new CvVolume(7, "Saga", 1999, "Other Press", 1),
+            new CvVolume(12, "Saga", 2012, "Image", 66, "https://cv/s/12.jpg"),
+        ]);
+        _app.ComicVine.Issues.AddRange(
+        [
+            new CvIssueSummary(1201, 12, "Saga", "1", "Chapter One", new PartialDate(2012)),
+            new CvIssueSummary(1202, 12, "Saga", "2", "Chapter Two", new PartialDate(2012)),
+        ]);
+        await ImportAsync("Saga Vol1.pdf", "Saga Vol2.pdf");
+        var review = _app.Get<ReviewPageViewModel>();
+        await review.OnNavigatedToAsync(Ct);
+        await review.ShowBySeriesCommand.ExecuteAsync(null);
+        var series = review.Series;
+
+        // No book found a volume: the group's name was searched as it opened, and nothing chosen.
+        await WaitAsync(() => series.IsIdle && series.IsShowingResults);
+        Assert.Equal(["Saga"], _app.ComicVine.Searches);
+        Assert.Equal("Saga", series.SeriesSearch);
+        Assert.Equal(string.Format(CultureInfo.CurrentCulture, Strings.Series_SearchResults, "Saga"), series.SearchResultsText);
+        Assert.False(series.CanShowSuggestions);
+        Assert.Null(series.Volume);
+        Assert.All(series.Volumes, v => Assert.Null(v.UsedByText));
+
+        // Two issues: the volume with enough of them comes first.
+        Assert.Equal([12, 7], series.Volumes.Select(v => v.Volume.Id));
+        series.Volumes[0].PickCommand.Execute(null);
+        await WaitAsync(() => series.IsIdle && series.Rows.All(r => r.HasMatch));
+        Assert.Equal(12, series.Volume?.Id);
+        Assert.True(series.Volumes[0].IsSelected);
+        Assert.Equal(["Saga Vol. 1: Chapter One", "Saga Vol. 2: Chapter Two"], series.Rows.Select(r => r.ResultTitle));
+
+        // Other words, nothing found.
+        _app.ComicVine.Volumes.Clear();
+        series.SeriesSearch = "Sagga";
+        await series.SearchSeriesCommand.ExecuteAsync(null);
+        Assert.Equal(["Saga", "Sagga"], _app.ComicVine.Searches);
+        Assert.Empty(series.Volumes);
+        Assert.Equal(string.Format(CultureInfo.CurrentCulture, Strings.Series_SearchNothing, "Sagga"), series.SearchResultsText);
+        Assert.Equal(12, series.Volume?.Id);
+    }
+
+    [Fact]
+    public async Task A_search_replaces_the_suggestions_until_going_back()
+    {
+        await _app.EnterUiThreadAsync();
+        _app.Identifier.Respond = (book, _) => [Candidate(100, "Deadly Class", book.Title[^1..])];
+        _app.ComicVine.Volumes.AddRange([new CvVolume(100, "Deadly Class", 2014, "Image", 2), new CvVolume(555, "Deadly Class: Killer Set", 2020, "Image", 1)]);
+        await ImportAsync("Deadly Class Vol1.pdf", "Deadly Class Vol2.pdf");
+        var review = _app.Get<ReviewPageViewModel>();
+        await review.OnNavigatedToAsync(Ct);
+        await review.ShowBySeriesCommand.ExecuteAsync(null);
+        var series = review.Series;
+        await WaitAsync(() => series.IsIdle);
+        Assert.Empty(_app.ComicVine.Searches);
+        var suggestion = Assert.Single(series.Volumes);
+
+        await series.SearchSeriesCommand.ExecuteAsync(null);
+
+        // The suggested volume keeps its card and its count.
+        Assert.Equal([100, 555], series.Volumes.Select(v => v.Volume.Id));
+        Assert.Same(suggestion, series.Volumes[0]);
+        Assert.NotNull(series.Volumes[0].UsedByText);
+        Assert.Null(series.Volumes[1].UsedByText);
+        Assert.True(series.CanShowSuggestions);
+
+        series.ShowSuggestionsCommand.Execute(null);
+        Assert.False(series.IsShowingResults);
+        Assert.Same(suggestion, Assert.Single(series.Volumes));
+        Assert.True(suggestion.IsSelected);
+    }
+
     private static async Task WaitAsync(Func<bool> done)
     {
         for (var waited = 0; waited < 5_000 && !done(); waited += 20)

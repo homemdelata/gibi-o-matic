@@ -137,7 +137,24 @@
 
           <!-- 1. Series -->
           <TextBlock Classes="section-label" Text="{x:Static r:Strings.Series_StepSeries}" />
-          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{x:Static r:Strings.Series_SeriesHelp}" />
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBox Text="{Binding SeriesSearch}" PlaceholderText="{x:Static r:Strings.Series_SeriesSearch}"
+                     AutomationProperties.Name="{x:Static r:Strings.Series_SeriesSearch}">
+              <TextBox.InnerLeftContent>
+                <c:StrokeIcon Data="{StaticResource Icon.Search}" Width="17" Height="17" Margin="12,0,0,0" Foreground="{DynamicResource TextMutedBrush}" />
+              </TextBox.InnerLeftContent>
+              <TextBox.KeyBindings>
+                <KeyBinding Gesture="Enter" Command="{Binding SearchSeriesCommand}" />
+              </TextBox.KeyBindings>
+            </TextBox>
+            <Button Grid.Column="1" Classes="secondary" Margin="10,0,0,0" Content="{x:Static r:Strings.Series_Search}" Command="{Binding SearchSeriesCommand}" />
+          </Grid>
+          <TextBlock Classes="muted" TextWrapping="Wrap" Text="{x:Static r:Strings.Series_SeriesHelp}" IsVisible="{Binding !IsShowingResults}" />
+          <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding IsShowingResults}">
+            <TextBlock Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap" Text="{Binding SearchResultsText}" />
+            <Button Grid.Column="1" Classes="secondary" MinHeight="32" Padding="12,0" Margin="12,0,0,0" FontSize="13"
+                    Content="{x:Static r:Strings.Series_ShowSuggestions}" Command="{Binding ShowSuggestionsCommand}" IsVisible="{Binding CanShowSuggestions}" />
+          </Grid>
           <ItemsControl ItemsSource="{Binding Volumes}" Padding="3,0,0,0">
             <ItemsControl.ItemsPanel>
               <ItemsPanelTemplate>
@@ -164,7 +181,8 @@
                     <StackPanel Grid.Column="1" Spacing="3">
                       <TextBlock FontWeight="SemiBold" Text="{Binding Name}" TextWrapping="Wrap" MaxLines="2" TextTrimming="CharacterEllipsis" />
                       <TextBlock Classes="muted" FontSize="12" Text="{Binding MetaLine}" TextWrapping="Wrap" />
-                      <TextBlock FontSize="12" Foreground="{DynamicResource AccentTextBrush}" TextWrapping="Wrap" Text="{Binding UsedByText}" />
+                      <TextBlock FontSize="12" Foreground="{DynamicResource AccentTextBrush}" TextWrapping="Wrap" Text="{Binding UsedByText}"
+                                 IsVisible="{Binding UsedByText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                     </StackPanel>
                   </Grid>
                 </Button>

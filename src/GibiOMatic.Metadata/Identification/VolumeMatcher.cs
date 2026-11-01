@@ -55,6 +55,30 @@ public sealed class VolumeMatcher(IComicVineApi comicVine)
         return await comicVine.GetIssueAsync(target.Id, ct) is { } issue ? await comicVine.GetVolumeAsync(issue.VolumeId, ct) : null;
     }
 
+    /// <summary>
+    /// Volumes named like <paramref name="query"/>, to choose the series of a group by hand: one search
+    /// request (cached and spaced like every ComicVine call), ranked by <see cref="Rank"/>.
+    /// </summary>
+    public async Task<IReadOnlyList<CvVolume>> SearchAsync(string query, string? publisher, int highestNumber, CancellationToken ct) =>
+        Rank(await comicVine.SearchVolumesAsync(query, ct), publisher, highestNumber);
+
+    /// <summary>
+    /// ComicVine's own order, but the volumes that fit the group first: the publisher of its books,
+    /// then enough issues for its highest number ("Saga" by Image with 66 issues before a "Saga" of 1).
+    /// </summary>
+    public static IReadOnlyList<CvVolume> Rank(IReadOnlyList<CvVolume> found, string? publisher, int highestNumber) =>
+        found
+            .Select((volume, i) => (Volume: volume, Order: i))
+            .OrderByDescending(x => (SamePublisher(x.Volume.Publisher, publisher) ? 2 : 0) + (highestNumber > 0 && x.Volume.IssueCount >= highestNumber ? 1 : 0))
+            .ThenBy(x => x.Order)
+            .Select(x => x.Volume)
+            .ToList();
+
+    /// <summary>"Image" and "Image Comics" are the same publisher.</summary>
+    private static bool SamePublisher(string? volume, string? books) =>
+        !string.IsNullOrWhiteSpace(volume) && !string.IsNullOrWhiteSpace(books)
+        && (volume.Contains(books.Trim(), StringComparison.OrdinalIgnoreCase) || books.Contains(volume.Trim(), StringComparison.OrdinalIgnoreCase));
+
     public async Task<VolumeIssues> GetIssuesAsync(CvVolume volume, CancellationToken ct) =>
         new(volume, await comicVine.GetVolumeIssuesAsync(volume.Id, volume.IssueCount, ct));
 

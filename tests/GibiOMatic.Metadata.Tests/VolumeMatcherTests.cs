@@ -121,6 +121,29 @@ public sealed class VolumeMatcherTests : IDisposable
         Assert.Null(await matcher.FromLinkAsync("https://example.com", Ct));
     }
 
+    [Fact]
+    public async Task A_search_puts_the_volumes_that_fit_the_group_first()
+    {
+        var (matcher, http) = Create(_ => """
+            {"status_code":1,"error":"OK","results":[
+             {"id":1,"name":"Saga","start_year":"1999","publisher":{"name":"Other Press"},"count_of_issues":70},
+             {"id":2,"name":"Saga","start_year":"2010","publisher":{"name":"Image Comics"},"count_of_issues":1},
+             {"id":3,"name":"Saga","start_year":"2012","publisher":{"name":"Image"},"count_of_issues":66,
+              "image":{"small_url":"https://cv/s/3.jpg","original_url":"https://cv/o/3.jpg"}},
+             {"id":4,"name":"Saga of the Swamp Thing","start_year":"1982","publisher":{"name":"DC Comics"},"count_of_issues":45}]}
+            """);
+
+        var found = await matcher.SearchAsync("Saga", "Image", 9, Ct);
+
+        Assert.Equal([3, 2, 1, 4], found.Select(v => v.Id));
+        Assert.Equal("https://cv/s/3.jpg", found[0].CoverUrl);
+        var request = Assert.Single(http.Requests);
+        Assert.Contains("resources=volume", request.RequestUri!.Query, StringComparison.Ordinal);
+
+        // Nothing known about the group: ComicVine's own order.
+        Assert.Equal([1, 2, 3, 4], VolumeMatcher.Rank(found.OrderBy(v => v.Id).ToList(), null, 0).Select(v => v.Id));
+    }
+
     [Theory]
     [InlineData("Deadly Class", "Volume 3: The Snake Pit", null, "The Snake Pit")]
     [InlineData("Deadly Class: A Fond Farewell Part One", "Volume 11", null, "A Fond Farewell Part One")]
