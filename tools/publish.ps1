@@ -69,7 +69,10 @@ if ($forWindows) {
     Copy-Item (Join-Path $root 'LICENSE') $license -Force
     # The welcome page starts with the version being installed (the MSI's own dialogs don't show it).
     $welcome = Join-Path $artifacts 'welcome.txt'
-    $welcomeText = "Gibi-o-matic $version`r`n`r`n" + (Get-Content (Join-Path $texts 'welcome.txt') -Raw -Encoding UTF8)
+    # The commit too (and "local changes"), since builds of one commit share the version.
+    $commit = (git -C $root rev-parse --short=7 HEAD | Out-String).Trim()
+    $build = if ($dirty) { "$commit + local changes" } else { $commit }
+    $welcomeText = "Gibi-o-matic $version ($build)`r`n`r`n" + (Get-Content (Join-Path $texts 'welcome.txt') -Raw -Encoding UTF8)
     [IO.File]::WriteAllText($welcome, $welcomeText, (New-Object Text.UTF8Encoding $false))
     $installer = @('--msi', '--instLocation', 'PerUser',
         '--instWelcome', $welcome,

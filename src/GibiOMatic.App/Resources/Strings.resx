@@ -698,6 +698,9 @@
   <data name="Update_Help" xml:space="preserve"><value>O app procura versões novas no GitHub ao abrir e uma vez por dia, se a opção abaixo estiver ligada. Nada é instalado sem você pedir.</value></data>
   <data name="Update_Automatic" xml:space="preserve"><value>Procurar atualizações automaticamente</value></data>
   <data name="Update_Version" xml:space="preserve"><value>Gibi-o-matic {0}</value></data>
+  <data name="Version_LocalTag" xml:space="preserve"><value>local</value></data>
+  <data name="Version_Build" xml:space="preserve"><value>Commit {0}</value></data>
+  <data name="Version_BuildLocal" xml:space="preserve"><value>Commit {0}, com alterações locais (não commitadas)</value></data>
   <data name="Update_Check" xml:space="preserve"><value>Procurar atualização</value></data>
   <data name="Update_Install" xml:space="preserve"><value>Atualizar e reiniciar</value></data>
   <data name="Update_Later" xml:space="preserve"><value>Agora não</value></data>

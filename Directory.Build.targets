@@ -15,4 +15,24 @@
       <FileVersion>$(MinVerMajor).$(MinVerMinor).$(MinVerPatch).$(_GibiRevision)</FileVersion>
     </PropertyGroup>
   </Target>
+
+  <!--
+    Local changes: the version only changes with a commit, so two builds of the same commit with
+    different uncommitted changes looked the same. The app's assembly says when it was built from
+    a working tree with changes (AssemblyMetadata "GibiLocalChanges"), and the app shows "local" next
+    to its version. Without git (or outside a repository) nothing is added.
+  -->
+  <Target Name="GibiLocalChanges" BeforeTargets="GetAssemblyAttributes" Condition="'$(MSBuildProjectName)' == 'GibiOMatic.App'">
+    <Exec Command="git status --porcelain" WorkingDirectory="$(MSBuildProjectDirectory)" ConsoleToMSBuild="true" EchoOff="true"
+          StandardOutputImportance="low" StandardErrorImportance="low" IgnoreExitCode="true" ContinueOnError="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="_GibiStatus" />
+      <Output TaskParameter="ExitCode" PropertyName="_GibiStatusExit" />
+    </Exec>
+    <ItemGroup Condition="'$(_GibiStatusExit)' == '0' and '$(_GibiStatus)' != ''">
+      <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+        <_Parameter1>GibiLocalChanges</_Parameter1>
+        <_Parameter2>true</_Parameter2>
+      </AssemblyAttribute>
+    </ItemGroup>
+  </Target>
 </Project>

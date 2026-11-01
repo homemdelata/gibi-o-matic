@@ -24,6 +24,23 @@ public sealed partial class UpdateStatusViewModel : ViewModelBase, IDisposable
 
     public string VersionText => string.Format(CultureInfo.CurrentCulture, Strings.Update_Version, _checker.CurrentVersion);
 
+    /// <summary>
+    /// The sidebar's corner, under the version: between tags, which commit it is, and "local" when it was
+    /// built with uncommitted changes ("751a861 · local"), so two test builds differ; null for a release.
+    /// </summary>
+    public static string? BuildLine => AppInfo.Commit is { } commit && (AppInfo.Version.Contains('-', StringComparison.Ordinal) || AppInfo.HasLocalChanges)
+        ? AppInfo.HasLocalChanges ? $"{commit} · {Strings.Version_LocalTag}" : commit
+        : null;
+
+    public static bool HasBuildLine => BuildLine is not null;
+
+    /// <summary>"Commit 751a861, with local (uncommitted) changes"; null when the build didn't know its commit.</summary>
+    public static string? BuildText => AppInfo.Commit is not { } commit
+        ? null
+        : string.Format(CultureInfo.CurrentCulture, AppInfo.HasLocalChanges ? Strings.Version_BuildLocal : Strings.Version_Build, commit);
+
+    public static bool HasBuildText => BuildText is not null;
+
     public bool IsSupported => _checker.State != UpdateState.Unsupported;
 
     [ObservableProperty]

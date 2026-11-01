@@ -4,6 +4,7 @@
              xmlns:c="using:GibiOMatic.App.Controls"
              xmlns:conv="using:GibiOMatic.App.Converters"
              xmlns:r="using:GibiOMatic.App.Resources"
+             xmlns:svc="using:GibiOMatic.App.Services"
              x:Class="GibiOMatic.App.Views.ShellView"
              x:DataType="vm:ShellViewModel">
   <Grid ColumnDefinitions="Auto,*">
@@ -17,6 +18,13 @@
           <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="12" Margin="6,0,6,22">
             <Image Source="/Assets/logo.png" Width="40" Height="40" RenderOptions.BitmapInterpolationMode="HighQuality" />
             <TextBlock Classes="brand" Text="Gibi-o-matic" VerticalAlignment="Center" />
+          </StackPanel>
+
+          <!-- The version, under everything: which build this is -->
+          <StackPanel DockPanel.Dock="Bottom" Margin="6,10,6,0" Background="Transparent" ToolTip.Tip="{x:Static vm:UpdateStatusViewModel.BuildText}">
+            <TextBlock Classes="mono muted" FontSize="11" TextTrimming="CharacterEllipsis" Text="{x:Static svc:AppInfo.Version}" />
+            <TextBlock Classes="mono muted" FontSize="11" TextTrimming="CharacterEllipsis" Text="{x:Static vm:UpdateStatusViewModel.BuildLine}"
+                       IsVisible="{x:Static vm:UpdateStatusViewModel.HasBuildLine}" />
           </StackPanel>
 
           <!-- Status of the archive and of each destination -->

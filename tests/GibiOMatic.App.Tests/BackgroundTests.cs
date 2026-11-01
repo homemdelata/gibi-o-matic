@@ -156,6 +156,22 @@ public sealed class BackgroundTests : IDisposable
     }
 
     [Fact]
+    public void The_sidebar_version_says_which_build_it_is()
+    {
+        Assert.NotNull(AppInfo.Commit);
+        Assert.Contains(AppInfo.Commit, UpdateStatusViewModel.BuildText, StringComparison.Ordinal);
+        if (AppInfo.Version.Contains('-', StringComparison.Ordinal) || AppInfo.HasLocalChanges)
+        {
+            Assert.StartsWith(AppInfo.Commit, UpdateStatusViewModel.BuildLine, StringComparison.Ordinal);
+            Assert.Equal(AppInfo.HasLocalChanges, UpdateStatusViewModel.BuildLine!.EndsWith(" · " + Strings.Version_LocalTag, StringComparison.Ordinal));
+        }
+        else
+        {
+            Assert.Null(UpdateStatusViewModel.BuildLine);
+        }
+    }
+
+    [Fact]
     public async Task The_settings_show_the_version_and_an_unreachable_source_is_an_error_not_a_crash()
     {
         await _app.EnterUiThreadAsync();
