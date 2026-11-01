@@ -238,6 +238,26 @@ public sealed class ReviewBySeriesTests : IDisposable
         Assert.True(suggestion.IsSelected);
     }
 
+    [Fact]
+    public void An_issue_reads_its_cover_only_when_shown()
+    {
+        var asked = new List<string?>();
+        var option = new IssueOptionViewModel(new CvIssueSummary(1201, 12, "Saga", "1", "Chapter One", new PartialDate(2012), "https://cv/s/1201.jpg"),
+            _ => { }, url =>
+            {
+                asked.Add(url);
+                return Task.FromResult<Avalonia.Media.Imaging.Bitmap?>(null);
+            });
+
+        Assert.Empty(asked);
+        Assert.Equal("#1 · Chapter One · 2012", option.Text);
+
+        _ = option.Cover;
+        _ = option.Cover;
+
+        Assert.Equal(["https://cv/s/1201.jpg"], asked);
+    }
+
     private static async Task WaitAsync(Func<bool> done)
     {
         for (var waited = 0; waited < 5_000 && !done(); waited += 20)

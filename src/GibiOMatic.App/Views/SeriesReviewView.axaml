@@ -300,11 +300,34 @@
                             <c:StrokeIcon Data="{StaticResource Icon.Stack}" Width="16" Height="16" />
                             <Button.Flyout>
                               <Flyout Placement="BottomEdgeAlignedRight">
-                                <ScrollViewer MaxHeight="320" MinWidth="260">
+                                <!-- Virtualized: only the issues on screen read their covers -->
+                                <ScrollViewer MaxHeight="420" Width="340">
                                   <ItemsControl ItemsSource="{Binding Issues}">
+                                    <ItemsControl.ItemsPanel>
+                                      <ItemsPanelTemplate>
+                                        <VirtualizingStackPanel />
+                                      </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                       <DataTemplate x:DataType="vm:IssueOptionViewModel">
-                                        <Button Classes="choice" HorizontalAlignment="Stretch" Content="{Binding Text}" Command="{Binding PickCommand}" />
+                                        <Button Classes="choice" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" Command="{Binding PickCommand}">
+                                          <Grid ColumnDefinitions="Auto,*">
+                                            <Border Width="36" Height="54" CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True" Margin="0,0,10,0"
+                                                    Background="{DynamicResource HoverBrush}" ToolTip.Placement="LeftEdgeAlignedTop" ToolTip.ShowDelay="250"
+                                                    ToolTip.IsEnabled="{Binding Cover, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                              <ToolTip.Tip>
+                                                <ToolTip Classes="cover-preview">
+                                                  <Image Source="{Binding Cover}" MaxWidth="400" MaxHeight="560" Stretch="Uniform" />
+                                                </ToolTip>
+                                              </ToolTip.Tip>
+                                              <Panel>
+                                                <Border Background="{StaticResource HalftoneBrush}" />
+                                                <Image Source="{Binding Cover}" Stretch="UniformToFill" />
+                                              </Panel>
+                                            </Border>
+                                            <TextBlock Grid.Column="1" VerticalAlignment="Center" TextWrapping="Wrap" Text="{Binding Text}" />
+                                          </Grid>
+                                        </Button>
                                       </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                   </ItemsControl>

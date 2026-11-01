@@ -96,8 +96,31 @@ public sealed partial class VolumeOptionViewModel : ViewModelBase
 }
 
 /// <summary>An issue of the group's volume, offered to a book without a match.</summary>
-public sealed partial class IssueOptionViewModel(CvIssueSummary issue, Action<CvIssueSummary> pick) : ViewModelBase
+public sealed partial class IssueOptionViewModel(CvIssueSummary issue, Action<CvIssueSummary> pick, Func<string?, Task<Bitmap?>> loadCover) : ViewModelBase
 {
+    private bool _coverAsked;
+
+    /// <summary>
+    /// The issue's cover, read the first time it is shown: the list only shows the issues on screen,
+    /// so a volume of 300 issues doesn't fetch 300 covers when it opens.
+    /// </summary>
+    public Bitmap? Cover
+    {
+        get
+        {
+            if (!_coverAsked)
+            {
+                _coverAsked = true;
+                _ = LoadCoverAsync();
+            }
+
+            return field;
+        }
+        private set => SetProperty(ref field, value);
+    }
+
+    private async Task LoadCoverAsync() => Cover = await loadCover(issue.CoverUrl);
+
     public string Text => string.Join(" · ", new[]
     {
         "#" + issue.IssueNumber,
@@ -706,6 +729,7 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
 
         SeriesError = null;
         _issues = null;
+        _issueCovers.Clear();
         if (volume is not null)
         {
             _loading?.Cancel();
@@ -893,8 +917,26 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
 
     public IReadOnlyList<IssueOptionViewModel> IssueOptionsFor(SeriesRowViewModel row) =>
         _issues is { } issues
-            ? issues.Issues.Select(i => new IssueOptionViewModel(i, picked => ChooseIssue(row, picked))).ToList()
+            ? issues.Issues.Select(i => new IssueOptionViewModel(i, picked => ChooseIssue(row, picked), LoadIssueCoverAsync)).ToList()
             : [];
+
+    /// <summary>One read per cover while the volume is open, however many rows list it.</summary>
+    private readonly Dictionary<string, Task<Bitmap?>> _issueCovers = [];
+
+    private Task<Bitmap?> LoadIssueCoverAsync(string? url)
+    {
+        if (url is null)
+        {
+            return Task.FromResult<Bitmap?>(null);
+        }
+
+        if (!_issueCovers.TryGetValue(url, out var cover))
+        {
+            _issueCovers[url] = cover = LoadRemoteCoverAsync(url);
+        }
+
+        return cover;
+    }
 
     private void ChooseIssue(SeriesRowViewModel row, CvIssueSummary issue)
     {
