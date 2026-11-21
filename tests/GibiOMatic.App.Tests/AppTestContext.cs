@@ -50,6 +50,9 @@ public sealed class AppTestContext : IDisposable
 
     public FakeComicVineApi ComicVine { get; } = new();
 
+    /// <summary>Never the real Claude Code command line.</summary>
+    public FakeClaudeCode Claude { get; } = new();
+
     /// <summary>A Kindle in memory, connected or not.</summary>
     public FakeKindleDevice Kindle { get; } = new();
 
@@ -87,6 +90,7 @@ public sealed class AppTestContext : IDisposable
             .AddSingleton<IUiThread>(Ui)
             .AddSingleton<IBookIdentifier>(Identifier)
             .AddSingleton<GibiOMatic.Metadata.Identification.IComicVineApi>(ComicVine)
+            .AddSingleton<GibiOMatic.Metadata.Assisted.IClaudeCode>(Claude)
             .AddSingleton<IUrlOpener>(Urls)
             .AddSingleton<IReaderLauncher>(Reader)
             .AddSingleton<GibiOMatic.App.ViewModels.IReaderImages>(new FakeReaderImages())

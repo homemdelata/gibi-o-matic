@@ -109,9 +109,10 @@ public static class AssistedRecords
     }
 
     /// <summary>
-    /// The result the Review shows: Claude's candidates first (those with a matching cover before the
-    /// others), then the algorithm's, without the same ComicVine record twice. Older answers of
-    /// Claude are replaced by <paramref name="assisted"/>.
+    /// The result stored for the book: Claude's candidates first (those with a matching cover before
+    /// the others, one per record), then all the algorithm's. The algorithm's are kept even when they
+    /// repeat Claude's record, since that agreement counts for the automatic approval; the Review
+    /// shows each record once. Older answers of Claude are replaced by <paramref name="assisted"/>.
     /// </summary>
     public static IdentificationResult Merge(IdentificationResult result, IEnumerable<MetadataCandidate> assisted)
     {
@@ -123,7 +124,7 @@ public static class AssistedRecords
             .ToList();
         var seen = new HashSet<string>(StringComparer.Ordinal);
         var merged = new List<MetadataCandidate>();
-        foreach (var candidate in mine.Concat(result.Candidates.Where(c => c.Assisted is null)))
+        foreach (var candidate in mine)
         {
             if (candidate.Record.ComicVineId is { } id && !seen.Add(id))
             {
@@ -133,6 +134,7 @@ public static class AssistedRecords
             merged.Add(candidate);
         }
 
+        merged.AddRange(result.Candidates.Where(c => c.Assisted is null));
         return result with { Candidates = merged };
     }
 

@@ -846,7 +846,9 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             return;
         }
 
-        foreach (var candidate in result?.Candidates ?? [])
+        // Claude's record and the algorithm's same record are shown once, as Claude's (with its evidence).
+        var fromClaude = (result?.Candidates ?? []).Where(c => c.Assisted is not null).Select(c => c.Record.ComicVineId).OfType<string>().ToHashSet();
+        foreach (var candidate in (result?.Candidates ?? []).Where(c => c.Assisted is not null || c.Record.ComicVineId is null || !fromClaude.Contains(c.Record.ComicVineId)))
         {
             Candidates.Add(new CandidateViewModel(candidate, c => _ = PickAsync(c, CancellationToken.None), LoadRemoteCoverAsync));
         }
