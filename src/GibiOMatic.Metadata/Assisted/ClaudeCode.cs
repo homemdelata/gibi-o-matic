@@ -46,34 +46,54 @@ public sealed class ClaudeCodeCli(ILogger<ClaudeCodeCli> logger) : IClaudeCode
 {
     private static readonly TimeSpan StatusTimeout = TimeSpan.FromSeconds(20);
 
-    /// <summary>Where <c>claude</c> is, or null. The native installer puts it in ~/.local/bin; npm in %APPDATA%\npm.</summary>
+    /// <summary>
+    /// Where the <c>claude</c> executable is, or null. The native installer puts it in ~/.local/bin;
+    /// npm puts a <c>claude.cmd</c> in %APPDATA%\npm that only starts
+    /// <c>node_modules\@anthropic-ai\claude-code\bin\claude.exe</c>, which is used instead: through
+    /// cmd.exe the arguments would break at line breaks and <c>&lt;</c>, <c>&gt;</c>, <c>&amp;</c> would
+    /// be read as commands (found on 2026-11-21). A launcher that is not an executable is never run.
+    /// </summary>
     public static string? Locate()
     {
-        var names = OperatingSystem.IsWindows() ? new[] { "claude.exe", "claude.cmd" } : ["claude"];
         var folders = (Environment.GetEnvironmentVariable("PATH") ?? string.Empty)
             .Split(System.IO.Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Append(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local", "bin"))
             .Append(System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "npm"));
         foreach (var folder in folders)
         {
-            foreach (var name in names)
+            try
             {
-                try
+                if (Executable(folder) is { } path)
                 {
-                    var path = System.IO.Path.Combine(folder, name);
-                    if (File.Exists(path))
-                    {
-                        return path;
-                    }
+                    return path;
                 }
-                catch (ArgumentException)
-                {
-                    // A malformed PATH entry.
-                }
+            }
+            catch (ArgumentException)
+            {
+                // A malformed PATH entry.
             }
         }
 
         return null;
+    }
+
+    /// <summary>The executable <c>claude</c> of one folder: itself, or the one an npm launcher starts.</summary>
+    internal static string? Executable(string folder)
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            var path = System.IO.Path.Combine(folder, "claude");
+            return File.Exists(path) ? path : null;
+        }
+
+        var exe = System.IO.Path.Combine(folder, "claude.exe");
+        if (File.Exists(exe))
+        {
+            return exe;
+        }
+
+        var npm = System.IO.Path.Combine(folder, "node_modules", "@anthropic-ai", "claude-code", "bin", "claude.exe");
+        return File.Exists(System.IO.Path.Combine(folder, "claude.cmd")) && File.Exists(npm) ? npm : null;
     }
 
     public async Task<ClaudeStatus> GetStatusAsync(CancellationToken ct)
@@ -110,6 +130,12 @@ public sealed class ClaudeCodeCli(ILogger<ClaudeCodeCli> logger) : IClaudeCode
         }
 
         var parsed = ParseOutput(result.Output, started.Elapsed);
+        if (parsed.Error is "no-output" or "unreadable-output" && FirstLine(result.Errors) is { } reason)
+        {
+            // Nothing on stdout: what claude printed on stderr says why ("Invalid API key", an unknown option…).
+            parsed = parsed with { Error = $"{parsed.Error}: {Shorten(reason)}" };
+        }
+
         if (!parsed.Succeeded)
         {
             logger.LogWarning("Claude Code failed ({Error}, exit {Exit}): {Stderr}", parsed.Error, result.ExitCode, Tail(result.Errors));
@@ -200,6 +226,11 @@ public sealed class ClaudeCodeCli(ILogger<ClaudeCodeCli> logger) : IClaudeCode
         output.Split((char[])[' ', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries).FirstOrDefault(p => char.IsDigit(p[0]));
 
     private static string Shorten(string text) => text.Length <= 200 ? text : text[..200];
+
+    private static string? FirstLine(string text) =>
+        text.Split(LineBreaks, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault();
+
+    private static readonly char[] LineBreaks = ['\r', '\n'];
 
     private static string Tail(string text) => text.Length <= 500 ? text : text[^500..];
 
