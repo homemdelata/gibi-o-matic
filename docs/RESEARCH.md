@@ -77,6 +77,16 @@ The JSON output also has `is_error`, `terminal_reason`, `num_turns`, `duration_m
 - Error: on the Snotgirl credits page, "Image Comics logo designed by Rob Liefeld" was read as a "book design" credit. Credits from that page need the user's check.
 - Amazon was never fetched: its data came only from search results.
 
+**One run for a group** (the 14 books grouped by title as *The Boys*; Haiku and Sonnet, effort medium):
+- **Material**: 11 trade paperbacks titled "Vol. 1" to "Vol. 12" (no Vol. 5), *Herogasm*, and *Dear Becky* #1 and #2. Each run got `group.json`, the 14 covers at about 500 px and the credits pages of only 2 books.
+- **Cost**: about 2.5 min per run (154 s Sonnet, 166 s Haiku), with 30 and 35 ComicVine calls. No web search was needed.
+- **The pattern**: both models found how ComicVine catalogues the series. Each trade paperback is its own one-issue volume ("The Boys: Get Some", 4050-…), whose issue is named "Vol. 2". The algorithm's candidates were single issues of the main volume 4050-18033, all wrong.
+- **Records**: both models gave the same 14 edition records (4000-217033 … 4000-370329 for the trades, 4000-766280 and 4000-772465 for Dear Becky). Both saw that *Herogasm* is Vol. 5, so the run is complete from 1 to 12.
+- **The spin-off**:
+  - Haiku put *Dear Becky* (a separate 2020 mini-series) in "doesn't belong", with the suggested series "The Boys: Dear Becky";
+  - Sonnet kept it in the group and only reported the numbers 1 and 2 as repeated, with a note to split it.
+- **Covers**: the models opened only 2 or 3 ComicVine covers and matched the rest by title and number. Afterwards all 14 ComicVine covers were downloaded and compared by dHash: all matched, at 0 to 8 bits of 64. The app has to check every row itself.
+
 ### Open Library
 - `https://openlibrary.org/api/books?bibkeys=ISBN:<isbn>&format=json&jscmd=data` got it right the first time:
   - `9781534321236` → *Deadly Class, Vol. 11* (Rick Remender, Wes Craig, 2022);

@@ -288,10 +288,27 @@ Bands: **Poor** (< 60), **Review** (60–84), **OK** (≥ 85). The rule already 
 
 **When it runs** (user decision): Settings chooses **Only when I ask** (default) or **Automatically for the books that go to the Review** (after the identification of §8.2, on import and in the Inbox). Where it can be asked:
 - the Review, for one book;
-- the Review by series (§7.1), for a group: one run chooses the volume for the whole group;
+- the Review by series (§7.1), for a group (**Ask Claude about this series**, below);
 - a batch, "Ask Claude about N books": first an estimate (dry run), then confirmation, progress, cancellation and a log.
 
 The app shows the count of books, the time and the calls, not dollars: on a subscription the `total_cost_usd` of the CLI is only what the API would have charged.
+
+**A run for a group** (the Review by series, §7.1): one run identifies all the group's books. It is more consistent and cheaper than a run per book, because Claude works out once how ComicVine catalogues the series. For example, each trade paperback of *The Boys* is its own one-issue ComicVine volume ("The Boys: Get Some", whose issue is named "Vol. 2"). The algorithm doesn't find these, because it searches the main series' issues. In a test on 2026-11-21 with the 14 *The Boys* books of the maintainer's Review, one run of about 2.5 min found the right record for all 14, with Haiku and with Sonnet. The app then checked all 14 covers, and every one matched. Details in `RESEARCH.md`.
+- **What goes in**: `group.json` with every book (id, title, file name, page count, embedded ISBN, the algorithm's candidates), the cover of every book at about 500 px, and the inner pages of only 1 or 2 books. One credits page is usually enough to understand the series.
+- **What comes back** (schema):
+  - the series and its ComicVine volume;
+  - the pattern: how ComicVine catalogues the collected editions;
+  - for each book: whether it belongs to the group, its number, the edition record, its kind and its evidence;
+  - the books that don't belong, each with a suggested series (e.g. *Dear Becky* #1 and #2, a separate mini-series, in the *The Boys* group);
+  - the numbers that are missing or repeated, with notes.
+- **In the group screen** (§7.1):
+  - the app fills the series step and the table as if the user had chosen them, with a **Suggested by Claude** label, the pattern and the evidence;
+  - the app checks every row as in step 5 above, covers included, because the model looks at only a few covers and matches the rest by title and number;
+  - a row whose check fails, or that has no record, is left unmatched, with **Search deeper** for that book alone;
+  - the books that don't belong are shown with **Move to series X**.
+
+  The user still approves the group. Automatic approval doesn't apply to groups.
+- **Level**: the quick one's model, with effort medium, is the default. In the test Haiku was as right as Sonnet, and was the one that separated the spin-off.
 
 **Edition missing from ComicVine** (e.g. *Snotgirl Vol. 4*: ComicVine has the series and its issues, not the trade paperback): the book gets the series from the ComicVine volume and the other fields from the answer, with their sources, and the Review says "edition without a ComicVine record".
 
