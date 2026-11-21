@@ -271,9 +271,11 @@ Bands: **Poor** (< 60), **Review** (60–84), **OK** (≥ 85). The rule already 
    - tools: `--restricted`, and `--tools Read,WebSearch,WebFetch` (the web tools only when the web is on);
    - ComicVine: `--strict-mcp-config` and `--mcp-config` with the app's server;
    - site guard: `--settings` with the guard hook and the allow rules;
-   - limits: `--permission-mode dontAsk`, `--no-session-persistence`, a cap on turns, `--max-budget-usd` as a safety stop, a timeout and cancellation.
+   - limits: `--permission-mode dontAsk`, `--no-session-persistence`, `--max-budget-usd` as a safety stop, a timeout and cancellation (the CLI has no turn cap; the prompts state the budget of calls and the MCP server refuses ComicVine calls beyond 60 per run).
+
+   The app finds the `claude` executable on the `PATH`, in `~/.local/bin` or behind npm's `claude.cmd`, and never runs it through a shell or a `.cmd`. The MCP server and the hook are the app itself, started as `GibiOMatic --claude-mcp <folder>` and `--claude-hook <folder>`.
 3. **ComicVine only through the app**: an MCP server of the app (`stdio`) offers `comicvine_search`, `comicvine_volume` (a volume and its issues) and `comicvine_issue`, which also saves the issue's cover in the folder for Claude to look at. It uses the app's client, cache and rate limiter. **The ComicVine key never reaches Claude**, and ComicVine blocks Claude's own web fetches anyway (HTTP 403).
-4. **Web limited to a list of sites**: a `PreToolUse` hook forces `allowed_domains` on every web search and denies a page fetch outside the list. Every call goes to the log. The default list has comicvine.gamespot.com, leagueofcomicgeeks.com, comics.org, mycomicshop.com, amazon.com, goodreads.com, openlibrary.org, the publishers' sites and en.wikipedia.org; it can be edited under Advanced. Some domains make the search fail as a whole (humblebundle.com did), so the list is checked when it is saved.
+4. **Web limited to a list of sites**: a `PreToolUse` hook forces `allowed_domains` on every web search and denies a page fetch outside the list. Every call goes to the log. The default list has comicvine.gamespot.com, leagueofcomicgeeks.com, comics.org, mycomicshop.com, amazon.com, goodreads.com, openlibrary.org, the publishers' sites and en.wikipedia.org; it can be edited under Advanced. Some domains make the search fail as a whole (humblebundle.com did), so the list is cleaned when it is saved: invalid entries and the domains known to break the search are dropped, and the user is told which.
 5. **The answer is checked by the app, never trusted as is**:
    - it is validated against the schema;
    - the ComicVine record is read again by its id, through the usual client;

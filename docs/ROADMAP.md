@@ -15,7 +15,7 @@ Status: ⬜ not started · 🟨 in progress · ✅ done. `§` sections refer to 
 | F6 | Polish and distribution | ✅ |
 | F7 | Visual revamp | ✅ (the user's test is pending) |
 | F8 | Review by series | ✅ |
-| F9 | Assisted identification with Claude Code | ⬜ (spike done on 2026-11-21) |
+| F9 | Assisted identification with Claude Code | ✅ (the user's test is pending) |
 
 When each phase is done: green build and tests → update this file → commit and push → **stop and explain to the user how to test it**.
 
@@ -277,20 +277,20 @@ Goal: decide the ComicVine series and the title format once for all the books of
 Goal: when the user has Claude Code installed and logged in, it identifies the books the algorithm can't: it reads the cover and the credits page, searches ComicVine through the app and a fixed list of sites, and returns a proposal with its evidence for the Review.
 
 - [x] **Spike** (2026-11-21, outside the repository): 14 books from the maintainer's Review, quick search with Haiku and Sonnet, deep search with Sonnet on two of them, and one run for the 14-book *The Boys* group with each model. Findings in `RESEARCH.md` ("Claude Code"), decisions in `DECISIONS.md`.
-- [ ] **Runner** (`GibiOMatic.Metadata`, behind `IAssistedIdentifier`):
+- [x] **Runner** (`GibiOMatic.Metadata`, behind `IAssistedIdentifier`):
   - finds `claude`, and reads `--version` and `auth status`;
   - starts it with a clean environment and the arguments of §8.4, with a timeout, cancellation and one run at a time (an option for two);
   - reads the JSON output (`structured_output`, `is_error`, `terminal_reason`, `num_turns`).
   
   Tests with a fake runner and recorded outputs. The tests that call the real `claude` are integration tests, skipped when it isn't installed and logged in.
-- [ ] **Book folder**: the cover and the inner pages (3 after the cover, the last 2) rendered by `GibiOMatic.Conversion`, plus `book.json` with the list of images. Tests with synthetic PDF, CBZ and EPUB files.
-- [ ] **The app's MCP server** (stdio): `comicvine_search`, `comicvine_volume`, `comicvine_issue` (saves the cover in the folder) over the existing client, cache and rate limiter, without ever returning the key.
+- [x] **Book folder**: the cover and the inner pages (3 after the cover, the last 2) rendered by `GibiOMatic.Conversion`, plus `book.json` with the list of images. Tests with synthetic PDF, CBZ and EPUB files.
+- [x] **The app's MCP server** (stdio): `comicvine_search`, `comicvine_volume`, `comicvine_issue` (saves the cover in the folder) over the existing client, cache and rate limiter, without ever returning the key.
   - Choose the transport: the official C# MCP SDK (check the license, record it in `THIRD-PARTY.md`) or the small JSON-RPC by hand that the spike used.
   - Choose how `claude` starts it: a console mode of the app or a small executable of its own, measuring the start time.
   - Tests with recorded ComicVine responses.
-- [ ] **Site guard**: the `PreToolUse` hook (forces `allowed_domains`, denies fetches outside the list, logs every call), the default list and the check that drops the domains the search rejects. Tests of the rule.
-- [ ] **Prompts and schemas** (quick and deep), in English, with a version number like `BookIdentifier.Algorithm`, so answers from an older prompt are asked again.
-- [ ] **Checking the answer**:
+- [x] **Site guard**: the `PreToolUse` hook (forces `allowed_domains`, denies fetches outside the list, logs every call), the default list and the check that drops the domains the search rejects. Tests of the rule.
+- [x] **Prompts and schemas** (quick and deep), in English, with a version number like `BookIdentifier.Algorithm`, so answers from an older prompt are asked again.
+- [x] **Checking the answer**:
   - the ComicVine record read again by id;
   - covers compared by a perceptual hash (dHash), which can also help the identification of §8.2;
   - `Proposal.Compare`, a candidate with the source `claude`, its evidence, doubts and the source of each field;
@@ -298,16 +298,16 @@ Goal: when the user has Claude Code installed and logged in, it identifies the b
   - credits read from the credits page start unticked.
   
   Tests.
-- [ ] **A run for a group** (§8.4, "A run for a group"):
+- [x] **A run for a group** (§8.4, "A run for a group"):
   - `group.json` with every book, every cover at about 500 px and the inner pages of 1 or 2 books;
   - the group prompt and schema (series, pattern, one row per book, books that don't belong, numbers missing or repeated);
   - every row checked like a single answer, covers included, and a row that fails is left unmatched;
   - in By series: the series step and the table filled in with **Suggested by Claude**, **Move to series X** for the books that don't belong, and **Search deeper** for an unmatched row. The user still approves the group.
 
   Tests with a recorded group answer.
-- [ ] **Storage**: the answers in the index (new migration), so the Review shows them without asking again.
-- [ ] **Automatic approval** (off by default): minimum confidence plus the conditions of §8.4, `matchedBy: claude-auto`. Tests of every condition.
-- [ ] **Settings**:
+- [x] **Storage**: the answers in the index (new migration), so the Review shows them without asking again.
+- [x] **Automatic approval** (off by default): minimum confidence plus the conditions of §8.4, `matchedBy: claude-auto`. Tests of every condition.
+- [x] **Settings**:
   - a section with the state (installed, logged in, version);
   - on/off, with the privacy notice;
   - model and effort per level;
@@ -316,12 +316,12 @@ Goal: when the user has Claude Code installed and logged in, it identifies the b
   - automatic approval.
   
   Strings in pt-BR and en.
-- [ ] **Review**:
+- [x] **Review**:
   - **Ask Claude** and **Search deeper** for one book and, in By series, for a group;
   - the evidence and doubts, the two covers side by side, the source of each field on hover;
   - the warnings "different cover" and "edition without a ComicVine record";
   - the batch with a dry run, progress, cancellation and a log.
-- [ ] README in both languages (with screenshots, if the Review changes), the installer's privacy notice and `THIRD-PARTY.md`.
+- [x] README in both languages (with screenshots, if the Review changes), the installer's privacy notice and `THIRD-PARTY.md`.
 
 **Done when**: the user turns it on, runs the quick search on ~20 books of their Review queue and gets, for most of them, the right ComicVine record with evidence they can check. A book whose edition is missing from ComicVine (such as *Snotgirl Vol. 4*) gets a full record from the deep search, with the source of each field. A series group such as *The Boys* comes back from one run with the right record for every book and the books that don't belong pointed out. Nothing is approved without the user unless they turned automatic approval on.
 

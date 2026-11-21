@@ -77,6 +77,8 @@ The JSON output also has `is_error`, `terminal_reason`, `num_turns`, `duration_m
 - Error: on the Snotgirl credits page, "Image Comics logo designed by Rob Liefeld" was read as a "book design" credit. Credits from that page need the user's check.
 - Amazon was never fetched: its data came only from search results.
 
+**The `claude` of npm on Windows** (found while building F9): `%APPDATA%\npm\claude.cmd` only runs `node_modules\@anthropic-ai\claude-code\bin\claude.exe %*`. Through it, a `--json-schema` with line breaks failed with "not valid JSON", and a `<slug>` inside an argument became a redirection ("cannot find the file"). Calling `claude.exe` directly, with one argument per element, works.
+
 **One run for a group** (the 14 books grouped by title as *The Boys*; Haiku and Sonnet, effort medium):
 - **Material**: 11 trade paperbacks titled "Vol. 1" to "Vol. 12" (no Vol. 5), *Herogasm*, and *Dear Becky* #1 and #2. Each run got `group.json`, the 14 covers at about 500 px and the credits pages of only 2 books.
 - **Cost**: about 2.5 min per run (154 s Sonnet, 166 s Haiku), with 30 and 35 ComicVine calls. No web search was needed.

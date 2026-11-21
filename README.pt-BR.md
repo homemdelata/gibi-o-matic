@@ -57,6 +57,12 @@ ENTRADA ──importar──► ARQUIVO (original + metadata.json) ──gerar�
   ComicVine e o formato do título uma vez, aprove todos os livros dela juntos e desfaça tudo de uma vez). O **Editor** cuida do resto, inclusive em lote, com
   créditos por função e *universos* (séries da mesma linha, que viram coleções no Komga). Uma nota de qualidade
   aponta o que falta em cada livro.
+- **Ajuda opcional do seu próprio Claude Code.** Se você tem o [Claude Code](https://claude.com/claude-code)
+  instalado e logado, a Revisão pode perguntar a ele sobre os livros que o algoritmo não acha: ele olha a capa e a
+  página de créditos, busca no ComicVine (pelo app) e numa lista de sites que você escolhe, e volta com o registro
+  e as evidências. O app confere cada resposta (relê o registro e compara as capas) antes de mostrar. Funciona para
+  um livro, um lote ou uma série inteira de uma vez; uma busca aprofundada completa as edições que o ComicVine não
+  tem. Usa o seu login e o seu plano do Claude, vem desligado e não aprova nada sozinho, a não ser que você deixe.
 - **Destinos.** O **Komga** recebe CBZ com `ComicInfo.xml`, organizados por série. O **Kindle** recebe as
   cópias convertidas antes, enviadas por USB quando você conecta o aparelho. Editar um livro atualiza as cópias.
 - **Leitor** próprio para CBZ, CBR, PDF e EPUB, com página dupla, leitura da direita para a esquerda e
@@ -107,7 +113,8 @@ Por enquanto, não há versão para macOS.
    texto. No Linux, onde isso ainda não existe, use a variável de ambiente `GIBIOMATIC_COMICVINE_KEY`.
 3. **Importe** arrastando arquivos para a *Entrada*, ou escolha uma pasta de Entrada em
    *Configurações → Pastas* para os downloads entrarem sozinhos.
-4. **Revise** o que a identificação não aprovou sozinha.
+4. **Revise** o que a identificação não aprovou sozinha. Se você usa o Claude Code, ligue em
+   *Configurações → Claude* e use *Perguntar ao Claude* na Revisão (antes, rode `claude auth login` num terminal).
 5. **Adicione um destino** em *Destinos*:
    - **Komga:** a pasta de uma biblioteca do Komga. O endereço e a chave do servidor são opcionais; com eles, o
      app pede ao Komga uma nova leitura da pasta depois de cada mudança.
@@ -132,7 +139,8 @@ feita de pastas e JSON comuns, que dá para ler sem o app, e o índice sempre po
 Sem telemetria e sem contas. O app só usa a internet para as buscas de metadados (ComicVine, Open Library e, se
 você ligar, Google Books), para baixar o Kindle Comic Converter (do GitHub, quando você pede) e para procurar
 atualizações (GitHub; *Configurações → Geral → Procurar atualizações automaticamente* desliga). O conteúdo dos
-seus arquivos não sai da sua máquina. Os detalhes, com as políticas de cada serviço, estão na
+seus arquivos não sai da sua máquina, a não ser que você ligue o Claude Code: aí a capa, algumas páginas internas,
+o título e o nome do arquivo de cada livro perguntado vão para a Anthropic pela sua própria conta. Os detalhes, com as políticas de cada serviço, estão na
 [assinatura e privacidade](docs/CODE-SIGNING.md#privacy-policy), em inglês.
 
 ### Assinatura de código

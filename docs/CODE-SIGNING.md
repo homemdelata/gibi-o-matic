@@ -12,20 +12,27 @@ machine, from this repository's source code. Changes reach `main` only through a
 
 ## Privacy policy
 
-Gibi-o-matic has no telemetry and no accounts, and the contents of your files never leave your computer. It only
-goes online for these things:
+Gibi-o-matic has no telemetry and no accounts, and the contents of your files never leave your computer unless
+you turn on Claude Code (below). It only goes online for these things:
 
 - **Looking for new versions** on GitHub, after it starts and once a day. You can turn this off in
   *Settings → General → Look for updates automatically*. The installer shows this notice before installing.
 - **Metadata lookups** when you import or identify a book: Open Library, ComicVine (with your own API key)
   and Google Books (only if you turn it on). Each source can be turned off in *Settings → Metadata*.
 - **Downloading Kindle Comic Converter** from GitHub, only when you ask.
+- **Claude Code**, only if you turn it on in *Settings → Claude* (off by default) and have it installed and logged
+  in. For each book it asks about, the app gives your own Claude Code the book's cover, a few inner pages (the ones
+  after the cover and the last two, where the credits usually are), the title, the file name and the candidates
+  found; Claude Code sends them to Anthropic through your account, under your plan. Its web searches are limited to
+  a list of sites you can edit, and it reaches ComicVine only through the app, so your ComicVine key never leaves
+  the app. Nothing else from the library is sent.
 
 Each service's own policy covers what it does with a request:
 [GitHub](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement),
 [Open Library (Internet Archive)](https://archive.org/about/terms),
-[ComicVine (Fandom)](https://www.fandom.com/privacy-policy) and
-[Google Books](https://policies.google.com/privacy).
+[ComicVine (Fandom)](https://www.fandom.com/privacy-policy),
+[Google Books](https://policies.google.com/privacy) and
+[Anthropic](https://www.anthropic.com/legal/privacy).
 
 ## Uninstalling
 
