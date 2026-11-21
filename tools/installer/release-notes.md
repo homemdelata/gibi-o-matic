@@ -5,4 +5,4 @@
 
 You don't need to install .NET separately. To get started, see the [README](https://github.com/homemdelata/gibi-o-matic#getting-started). The app's updater uses the `.nupkg`, `RELEASES` and `releases.*.json` files; you don't need to download them.
 
-[Code signing policy](https://github.com/homemdelata/gibi-o-matic/blob/main/docs/CODE-SIGNING.md)
+The installer is not signed, so Windows may warn about an "unknown publisher": click *More info* → *Run anyway*. [Code signing and privacy](https://github.com/homemdelata/gibi-o-matic/blob/main/docs/CODE-SIGNING.md)

@@ -1,29 +1,14 @@
-# Code signing policy
+# Code signing and privacy
 
-Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by
-[SignPath Foundation](https://signpath.org).
+> **Status:** the Windows installer is not signed. SignPath Foundation declined the project's application in
+> November 2026, and the project doesn't buy a certificate for now. Windows may warn about an "unknown publisher"
+> the first time: click *More info* → *Run anyway*.
 
-> **Status:** the application to SignPath Foundation is pending. Until it is approved, the Windows installer is
-> not signed, and Windows may warn about an "unknown publisher" the first time.
+## How releases are built
 
-## What is signed
-
-Only the Windows release of Gibi-o-matic: the installer (`Gibi-o-matic-win.msi`) and the executables built from
-this repository's source code. The [`release.yml`](../.github/workflows/release.yml) workflow builds them on
-GitHub Actions from a `v*` tag, never on a personal machine. This project doesn't sign the third-party files in
-the installer: they keep their own maintainers' signatures, if any. The Linux AppImage is not signed.
-
-An approver approves each signing request by hand, one release at a time.
-
-## Team roles
-
-| Role | Members |
-|---|---|
-| Committers and reviewers | [@homemdelata](https://github.com/homemdelata) |
-| Approvers | [@homemdelata](https://github.com/homemdelata) |
-
-Changes from anyone else reach `main` only through a pull request reviewed by a committer, with a green CI.
-Everyone in a role uses multi-factor authentication on GitHub and on SignPath.
+The Windows installer (`Gibi-o-matic-win.msi`) and the Linux AppImage are built by the
+[`release.yml`](../.github/workflows/release.yml) workflow on GitHub Actions from a `v*` tag, never on a personal
+machine, from this repository's source code. Changes reach `main` only through a pull request with a green CI.
 
 ## Privacy policy
 

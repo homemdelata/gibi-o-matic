@@ -14,7 +14,7 @@ Status: ⬜ not started · 🟨 in progress · ✅ done. `§` sections refer to 
 | F5 | Automatic inbox | ✅ |
 | F6 | Polish and distribution | ✅ |
 | F7 | Visual revamp | ✅ (the user's test is pending) |
-| F8 | Review by series | ✅ (the user's test is pending) |
+| F8 | Review by series | ✅ |
 | F9 | Assisted identification with Claude Code | ⬜ (spike done on 2026-11-21) |
 
 When each phase is done: green build and tests → update this file → commit and push → **stop and explain to the user how to test it**.
@@ -325,13 +325,7 @@ Goal: when the user has Claude Code installed and logged in, it identifies the b
 - [x] English documentation and project files, contributor guide, Code of Conduct, security policy, issue and PR templates, Dependabot, English screenshots (2026-10-28).
 - [x] First public release (v0.1.0) and the repository made public (2026-10-30).
 - [x] Prepare code signing through SignPath Foundation (2026-10-30): MSI installer with a privacy notice, "Look for updates automatically" setting, [`CODE-SIGNING.md`](CODE-SIGNING.md). Application sent on 2026-10-30.
-- [ ] **When SignPath answers** (waiting for them):
-  - Accepted:
-    1. Set up the SignPath project. Its artifact configuration signs `GibiOMatic.exe`, `Gibi-o-matic.exe`, `Update.exe` and the MSI. Its metadata restrictions set the product name to "Gibi-o-matic" and the product version to the same value in each build (SignPath rule).
-    2. Store the SignPath API token as a repository secret. Then call SignPath's GitHub Action from `release.yml`: `vpk pack` signs during packaging (`--signTemplate`), so the release job either signs through it or uploads the unsigned build to SignPath, waits for the approval and repacks. Read the current SignPath and Velopack docs before choosing.
-    3. Approve the first signing request by hand. Then check the signature of the MSI and of the installed `GibiOMatic.exe` (`Get-AuthenticodeSignature`).
-    4. Remove "application pending" from `CODE-SIGNING.md` and both READMEs, and the "not signed yet" notice from the installation sections and `tools/installer/release-notes.md`.
-  - Rejected (for example, not enough reputation yet): note the reason here and apply again once the project has more users. Otherwise, the alternative is a Certum Open Source certificate (about €69, issued in the maintainer's name).
+- [x] SignPath answered (2026-11-21): **declined**. The user decided to go without code signing for now (no Certum certificate either). `CODE-SIGNING.md`, both READMEs and the release notes now say the installer is not signed. The MSI, its privacy notice and the "Look for updates automatically" setting stay. Applying again once the project has more users remains possible.
 
 ---
 
