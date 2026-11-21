@@ -15,6 +15,9 @@ public enum VolumeMatchKind
     /// <summary>Picked by the user from the volume's issues.</summary>
     Chosen,
 
+    /// <summary>Proposed by Claude for the whole group and checked by the app (SPEC §8.4).</summary>
+    Claude,
+
     /// <summary>No record: the book stays in the Review.</summary>
     None,
 }

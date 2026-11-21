@@ -213,10 +213,10 @@ public sealed class ComicVineMcpServer(IComicVineApi comicVine, string folder, F
     }
 
     private static string Result(JsonNode id, JsonObject result) =>
-        new JsonObject { ["jsonrpc"] = "2.0", ["id"] = id, ["result"] = result }.ToJsonString();
+        new JsonObject { ["jsonrpc"] = "2.0", ["id"] = id, ["result"] = result }.ToJsonString(Compact);
 
     private static string Error(JsonNode? id, int code, string message) =>
-        new JsonObject { ["jsonrpc"] = "2.0", ["id"] = id, ["error"] = new JsonObject { ["code"] = code, ["message"] = message } }.ToJsonString();
+        new JsonObject { ["jsonrpc"] = "2.0", ["id"] = id, ["error"] = new JsonObject { ["code"] = code, ["message"] = message } }.ToJsonString(Compact);
 
     private async Task LogAsync(string line, CancellationToken ct)
     {

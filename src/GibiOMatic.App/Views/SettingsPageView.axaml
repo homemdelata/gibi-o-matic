@@ -152,6 +152,111 @@
         </StackPanel>
       </TabItem>
 
+      <!-- Claude Code (F9, SPEC 8.4) -->
+      <TabItem Header="{x:Static r:Strings.Settings_TabClaude}">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Spacing="14" Margin="0,0,12,0">
+          <TextBlock Classes="help" FontSize="13" TextWrapping="Wrap" Text="{x:Static r:Strings.Claude_Intro}" />
+          <Border Classes="card">
+            <StackPanel Spacing="10">
+              <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Spacing="2" VerticalAlignment="Center">
+                  <TextBlock Classes="strong" Text="{x:Static r:Strings.Claude_StatusLabel}" />
+                  <TextBlock Classes="help" TextWrapping="Wrap" Text="{Binding ClaudeStatusText}" Foreground="{DynamicResource TextSecondaryBrush}" />
+                </StackPanel>
+                <Button Grid.Column="1" Classes="secondary" Content="{x:Static r:Strings.Claude_CheckAgain}" Command="{Binding CheckClaudeCommand}" />
+              </Grid>
+              <CheckBox Content="{x:Static r:Strings.Claude_Enable}" IsChecked="{Binding ClaudeEnabled}" FontWeight="SemiBold" />
+              <TextBlock Classes="help" Margin="28,0,0,0" TextWrapping="Wrap" Foreground="{DynamicResource WarnTextBrush}"
+                         Text="{x:Static r:Strings.Claude_Privacy}" />
+            </StackPanel>
+          </Border>
+
+          <Border Classes="card" IsEnabled="{Binding ClaudeEnabled}">
+            <Grid ColumnDefinitions="260,*">
+              <StackPanel Spacing="2" Margin="0,0,16,0" VerticalAlignment="Top">
+                <TextBlock Classes="strong" Text="{x:Static r:Strings.Claude_ModelsLabel}" />
+                <TextBlock Classes="help" TextWrapping="Wrap" Text="{x:Static r:Strings.Claude_ModelsHelp}" />
+              </StackPanel>
+              <Grid Grid.Column="1" ColumnDefinitions="Auto,12,*,12,*" RowDefinitions="Auto,Auto,Auto,Auto" VerticalAlignment="Top">
+                <TextBlock Grid.Column="2" Classes="field-label" Text="{x:Static r:Strings.Claude_Model}" />
+                <TextBlock Grid.Column="4" Classes="field-label" Text="{x:Static r:Strings.Claude_Effort}" />
+                <TextBlock Grid.Row="1" VerticalAlignment="Center" Text="{x:Static r:Strings.Claude_Quick}" />
+                <ComboBox Grid.Row="1" Grid.Column="2" Margin="0,6,0,0" HorizontalAlignment="Stretch" ItemsSource="{Binding ClaudeModels}" SelectedItem="{Binding QuickModel}"
+                          AutomationProperties.Name="{x:Static r:Strings.Claude_Quick}" />
+                <ComboBox Grid.Row="1" Grid.Column="4" Margin="0,6,0,0" HorizontalAlignment="Stretch" ItemsSource="{Binding ClaudeEfforts}" SelectedItem="{Binding QuickEffort}"
+                          AutomationProperties.Name="{x:Static r:Strings.Claude_Effort}" />
+                <TextBlock Grid.Row="2" VerticalAlignment="Center" Text="{x:Static r:Strings.Claude_Deep}" />
+                <ComboBox Grid.Row="2" Grid.Column="2" Margin="0,6,0,0" HorizontalAlignment="Stretch" ItemsSource="{Binding ClaudeModels}" SelectedItem="{Binding DeepModel}"
+                          AutomationProperties.Name="{x:Static r:Strings.Claude_Deep}" />
+                <ComboBox Grid.Row="2" Grid.Column="4" Margin="0,6,0,0" HorizontalAlignment="Stretch" ItemsSource="{Binding ClaudeEfforts}" SelectedItem="{Binding DeepEffort}"
+                          AutomationProperties.Name="{x:Static r:Strings.Claude_Effort}" />
+                <TextBlock Grid.Row="3" VerticalAlignment="Center" Text="{x:Static r:Strings.Claude_Group}" />
+                <ComboBox Grid.Row="3" Grid.Column="2" Margin="0,6,0,0" HorizontalAlignment="Stretch" ItemsSource="{Binding ClaudeModels}" SelectedItem="{Binding GroupModel}"
+                          AutomationProperties.Name="{x:Static r:Strings.Claude_Group}" />
+                <ComboBox Grid.Row="3" Grid.Column="4" Margin="0,6,0,0" HorizontalAlignment="Stretch" ItemsSource="{Binding ClaudeEfforts}" SelectedItem="{Binding GroupEffort}"
+                          AutomationProperties.Name="{x:Static r:Strings.Claude_Effort}" />
+              </Grid>
+            </Grid>
+          </Border>
+
+          <Border Classes="card" IsEnabled="{Binding ClaudeEnabled}">
+            <Grid ColumnDefinitions="260,*">
+              <StackPanel Spacing="2" Margin="0,0,16,0" VerticalAlignment="Top">
+                <TextBlock Classes="strong" Text="{x:Static r:Strings.Claude_WhenLabel}" />
+                <TextBlock Classes="help" TextWrapping="Wrap" Text="{x:Static r:Strings.Claude_WhenHelp}" />
+              </StackPanel>
+              <StackPanel Grid.Column="1" Spacing="6">
+                <RadioButton GroupName="ClaudeWhen" Content="{x:Static r:Strings.Claude_OnRequest}" IsChecked="{Binding ClaudeOnRequest}" />
+                <RadioButton GroupName="ClaudeWhen" Content="{x:Static r:Strings.Claude_Automatic}" IsChecked="{Binding ClaudeAutomatic}" />
+                <CheckBox Margin="0,6,0,0" IsChecked="{Binding ClaudeDeepAfterQuick}">
+                  <TextBlock TextWrapping="Wrap" Text="{x:Static r:Strings.Claude_DeepAfterQuick}" />
+                </CheckBox>
+              </StackPanel>
+            </Grid>
+          </Border>
+
+          <Border Classes="card" IsEnabled="{Binding ClaudeEnabled}">
+            <Grid ColumnDefinitions="260,*">
+              <StackPanel Spacing="2" Margin="0,0,16,0" VerticalAlignment="Top">
+                <TextBlock Classes="strong" Text="{x:Static r:Strings.Claude_WebLabel}" />
+                <TextBlock Classes="help" TextWrapping="Wrap" Text="{x:Static r:Strings.Claude_WebHelp}" />
+              </StackPanel>
+              <StackPanel Grid.Column="1" Spacing="8">
+                <CheckBox Content="{x:Static r:Strings.Claude_UseWeb}" IsChecked="{Binding ClaudeUseWeb}" FontWeight="SemiBold" />
+                <Expander Header="{x:Static r:Strings.Claude_Advanced}" HorizontalAlignment="Stretch" IsEnabled="{Binding ClaudeUseWeb}">
+                  <StackPanel Spacing="8">
+                    <TextBlock Classes="help" Text="{x:Static r:Strings.Claude_SitesHelp}" />
+                    <TextBox Classes="mono" AcceptsReturn="True" TextWrapping="NoWrap" MinHeight="160" MaxHeight="320"
+                             Text="{Binding ClaudeSites}" AutomationProperties.Name="{x:Static r:Strings.Claude_Advanced}" />
+                    <Button Classes="secondary" HorizontalAlignment="Left" Content="{x:Static r:Strings.Claude_RestoreSites}"
+                            Command="{Binding RestoreClaudeSitesCommand}" />
+                  </StackPanel>
+                </Expander>
+              </StackPanel>
+            </Grid>
+          </Border>
+
+          <Border Classes="card" IsEnabled="{Binding ClaudeEnabled}">
+            <Grid ColumnDefinitions="260,*">
+              <StackPanel Spacing="2" Margin="0,0,16,0" VerticalAlignment="Top">
+                <TextBlock Classes="strong" Text="{x:Static r:Strings.Claude_ApprovalLabel}" />
+              </StackPanel>
+              <StackPanel Grid.Column="1" Spacing="8">
+                <CheckBox Content="{x:Static r:Strings.Claude_AutoApprove}" IsChecked="{Binding ClaudeAutoApprove}" FontWeight="SemiBold" />
+                <TextBlock Classes="help" Margin="28,0,0,0" TextWrapping="Wrap" Text="{x:Static r:Strings.Claude_AutoApproveHelp}" />
+                <StackPanel Orientation="Horizontal" Spacing="10" Margin="28,0,0,0" IsEnabled="{Binding ClaudeAutoApprove}">
+                  <TextBlock VerticalAlignment="Center" Text="{x:Static r:Strings.Claude_Minimum}" />
+                  <NumericUpDown Minimum="50" Maximum="100" Increment="1" FormatString="0" Width="130" Value="{Binding ClaudeAutoApproveMinimum}"
+                                 AutomationProperties.Name="{x:Static r:Strings.Claude_Minimum}" />
+                </StackPanel>
+              </StackPanel>
+            </Grid>
+          </Border>
+        </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
       <!-- General -->
       <TabItem Header="{x:Static r:Strings.Settings_TabGeneral}">
         <ScrollViewer HorizontalScrollBarVisibility="Disabled">

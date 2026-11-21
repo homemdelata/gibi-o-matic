@@ -136,6 +136,37 @@
             </StackPanel>
           </Border>
 
+          <!-- Claude for the whole group (SPEC 8.4): one run fills the series and the table; the user still approves -->
+          <Border Classes="card" Padding="14,12" IsVisible="{Binding ClaudeEnabled}">
+            <StackPanel Spacing="8">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Classes="help" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,12,0" Text="{x:Static r:Strings.Series_AskClaudeHelp}" />
+                <Button Grid.Column="1" Classes="secondary" MinHeight="32" Padding="12,0" FontSize="13" VerticalAlignment="Top"
+                        Content="{x:Static r:Strings.Series_AskClaude}" Command="{Binding AskClaudeCommand}" />
+              </Grid>
+              <TextBlock Classes="help" TextWrapping="Wrap" Foreground="{DynamicResource WarnTextBrush}" Text="{Binding ClaudeMessage}"
+                         IsVisible="{Binding ClaudeMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              <StackPanel Spacing="6" IsVisible="{Binding HasClaudeResult}">
+                <TextBlock FontWeight="SemiBold" Foreground="{DynamicResource AccentTextBrush}" Text="{x:Static r:Strings.Series_ClaudeSuggested}" />
+                <TextBlock Classes="help" TextWrapping="Wrap" Text="{Binding ClaudeSummary}" />
+                <ItemsControl ItemsSource="{Binding ClaudeOutsiders}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:ClaudeOutsiderViewModel">
+                      <Grid ColumnDefinitions="*,Auto" Margin="0,4,0,0">
+                        <StackPanel Spacing="2" Margin="0,0,12,0">
+                          <TextBlock FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding Title}" />
+                          <TextBlock Classes="help" TextWrapping="Wrap" Foreground="{DynamicResource WarnTextBrush}" Text="{Binding Reason}" />
+                        </StackPanel>
+                        <Button Grid.Column="1" Classes="secondary" MinHeight="30" Padding="10,0" FontSize="12.5" VerticalAlignment="Center"
+                                Content="{Binding MoveText}" Command="{Binding MoveCommand}" />
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
           <!-- 1. Series -->
           <TextBlock Classes="section-label" Text="{x:Static r:Strings.Series_StepSeries}" />
           <Grid ColumnDefinitions="*,Auto">
@@ -287,7 +318,12 @@
                           <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
                             <TextBlock FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding ResultTitle}" Classes.no-match="{Binding IsNoMatch}" />
                             <TextBlock Classes="muted" FontSize="12" TextWrapping="Wrap" Text="{Binding ResultIssue}"
-                                       IsVisible="{Binding HasMatch}" />
+                                       IsVisible="{Binding HasMatch}" ToolTip.Tip="{Binding ClaudeTip}" ToolTip.IsEnabled="{Binding HasClaudeTip}" />
+                            <TextBlock Classes="help" FontSize="12" TextWrapping="Wrap" Foreground="{DynamicResource WarnTextBrush}" Text="{Binding ClaudeNote}"
+                                       IsVisible="{Binding HasClaudeNote}" />
+                            <Button Classes="link" FontSize="12.5" HorizontalAlignment="Left" Content="{x:Static r:Strings.Review_SearchDeeper}"
+                                    Command="{Binding SearchDeeperCommand}" IsVisible="{Binding CanSearchDeeper}"
+                                    ToolTip.Tip="{x:Static r:Strings.Review_SearchDeeperHelp}" />
                           </StackPanel>
                         </Grid>
                         <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="2" Margin="0,0,8,0" VerticalAlignment="Center">

@@ -15,6 +15,7 @@ using GibiOMatic.Library.Editing;
 using GibiOMatic.Library.Identification;
 using GibiOMatic.Library.Index;
 using GibiOMatic.Metadata;
+using GibiOMatic.Metadata.Assisted;
 using GibiOMatic.Metadata.Http;
 using GibiOMatic.Metadata.Identification;
 using Microsoft.Extensions.Logging;
@@ -111,6 +112,30 @@ public sealed partial class CandidateViewModel : ViewModelBase
 
     public CheckStatus Level => IdentificationText.LevelOf(Candidate.Confidence);
 
+    /// <summary>The candidate came from Claude (SPEC §8.4).</summary>
+    public bool IsFromClaude => Candidate.Assisted is not null;
+
+    /// <summary>"Claude (haiku, quick search)".</summary>
+    public string? ClaudeLine => Candidate.Assisted is { } a ? ClaudeText.Source(a) : null;
+
+    public bool CoverDiffers => Candidate.Assisted?.CoverMatches == false;
+
+    /// <summary>"The cover matches the book's.", or why it differs.</summary>
+    public string? CoverText => Candidate.Assisted switch
+    {
+        { CoverMatches: true } => Strings.Review_CoverMatches,
+        { CoverMatches: false } a => string.IsNullOrWhiteSpace(a.CoverExplanation) ? Strings.Review_CoverDiffers : $"{Strings.Review_CoverDiffers} {a.CoverExplanation}",
+        _ => null,
+    };
+
+    public bool EditionMissing => Candidate.Assisted?.EditionMissing == true;
+
+    public IReadOnlyList<string> Evidence => Candidate.Assisted?.Evidence ?? [];
+
+    public string? DoubtsText => Candidate.Assisted?.Doubts is { Length: > 0 } doubts
+        ? string.Format(CultureInfo.CurrentCulture, Strings.Review_ClaudeDoubts, doubts)
+        : null;
+
     [ObservableProperty]
     public partial bool IsSelected { get; set; }
 
@@ -126,8 +151,13 @@ public sealed partial class CandidateViewModel : ViewModelBase
 }
 
 /// <summary>A row of the "field · current · proposed" table, with its check box.</summary>
-public sealed partial class FieldRowViewModel(FieldChange change, Action changed) : ViewModelBase
+public sealed partial class FieldRowViewModel(FieldChange change, Action changed, bool unticked = false, string? source = null) : ViewModelBase
 {
+    /// <summary>"Source: credits page page-004", for a field of Claude's answer.</summary>
+    public string? SourceTip { get; } = source is null ? null : string.Format(CultureInfo.CurrentCulture, Strings.Review_FieldSource, source);
+
+    public bool HasSource => SourceTip is not null;
+
     public FieldChange Change { get; } = change;
     public string Label => IdentificationText.FieldLabel(Change.Field);
     public string Current => Display(Change.Current);
@@ -162,7 +192,7 @@ public sealed partial class FieldRowViewModel(FieldChange change, Action changed
     /// the file's is kept unless chosen.
     /// </summary>
     [ObservableProperty]
-    public partial bool IsApplied { get; set; } = change.Changed && change.Field != ProposalField.Cover;
+    public partial bool IsApplied { get; set; } = change.Changed && change.Field != ProposalField.Cover && !unticked;
 
     partial void OnIsAppliedChanged(bool value) => changed();
 }
@@ -212,6 +242,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
         _thumbnails = thumbnails;
         _covers = covers;
         _logger = logger;
+        _ui = ui;
         Status = new IdentificationStatusViewModel(session, ui);
         _refresh = new Debouncer(ui, TimeSpan.FromMilliseconds(500), async () =>
         {
@@ -225,6 +256,145 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
         {
             queue.Changed += OnQueueChanged;
         }
+
+        if (session.Assisted is { } assisted)
+        {
+            assisted.Changed += OnClaudeChanged;
+        }
+    }
+
+    private readonly IUiThread _ui;
+
+    // ---- Claude (F9, SPEC §8.4) ----
+
+    /// <summary>The user turned the assisted identification on in Settings.</summary>
+    public bool ClaudeEnabled => _settings.Current.Claude.Enabled;
+
+    private CancellationTokenSource? _claudeRun;
+
+    [ObservableProperty]
+    public partial bool IsClaudeRunning { get; private set; }
+
+    /// <summary>Why the last run gave nothing ("Claude did not answer (timeout)").</summary>
+    [ObservableProperty]
+    public partial string? ClaudeMessage { get; private set; }
+
+    [RelayCommand(CanExecute = nameof(IsIdle))]
+    private Task AskClaudeAsync() => RunClaudeAsync(AssistedLevel.Quick);
+
+    [RelayCommand(CanExecute = nameof(IsIdle))]
+    private Task SearchDeeperAsync() => RunClaudeAsync(AssistedLevel.Deep);
+
+    [RelayCommand]
+    private void CancelClaude() => _claudeRun?.Cancel();
+
+    private async Task RunClaudeAsync(AssistedLevel level)
+    {
+        if (Selected is not { } item || _session.Assisted is not { } assisted)
+        {
+            return;
+        }
+
+        if (!ClaudeEnabled)
+        {
+            ClaudeMessage = Strings.Claude_Off;
+            return;
+        }
+
+        ClaudeMessage = null;
+        Candidates.Clear();
+        Rows.Clear();
+        SelectedCandidate = null;
+        ConfidenceText = null;
+        AppliedSummary = null;
+        using var run = _claudeRun = new CancellationTokenSource();
+        IsClaudeRunning = true;
+        SetBusy(string.Format(CultureInfo.CurrentCulture, level == AssistedLevel.Deep ? Strings.Review_ClaudeDeepWorking : Strings.Review_ClaudeWorking, item.Title));
+        Library.Identification.AssistedBookResult? result = null;
+        try
+        {
+            result = await assisted.RunBookAsync(item.BookId, level, run.Token);
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        finally
+        {
+            _claudeRun = null;
+            IsClaudeRunning = false;
+            SetBusy(null);
+        }
+
+        await RefreshAsync(CancellationToken.None, item.BookId, reloadSelected: true);
+        ClaudeMessage = result switch
+        {
+            { Outcome: Library.Identification.AssistedOutcome.Failed } failed => ClaudeText.Failure(failed.Message),
+            { Outcome: Library.Identification.AssistedOutcome.NotFound } => Strings.Review_ClaudeNotFound,
+            _ => null,
+        };
+    }
+
+    /// <summary>"Ask Claude (12)": the books of the queue without an answer from Claude yet.</summary>
+    [ObservableProperty]
+    public partial string? AskClaudeAllText { get; private set; }
+
+    [ObservableProperty]
+    public partial string? AskClaudeAllConfirmText { get; private set; }
+
+    /// <summary>"Claude: 3 of 12 · Saga, Vol. 3" while a batch runs.</summary>
+    [ObservableProperty]
+    public partial string? ClaudeProgressText { get; private set; }
+
+    private IReadOnlyList<string> _unanswered = [];
+    private int _batchTotal;
+
+    [RelayCommand]
+    private void AskClaudeAll() => AskClaudeAllConfirmText = _unanswered.Count == 0
+        ? null
+        : string.Format(CultureInfo.CurrentCulture, Strings.Review_AskClaudeAllConfirm, _unanswered.Count, Math.Max(1, (int)Math.Ceiling(_unanswered.Count * 40 / 60.0)));
+
+    [RelayCommand]
+    private void CancelAskClaudeAll() => AskClaudeAllConfirmText = null;
+
+    [RelayCommand]
+    private void ConfirmAskClaudeAll()
+    {
+        AskClaudeAllConfirmText = null;
+        if (_session.Assisted is { } assisted && _unanswered.Count > 0)
+        {
+            _batchTotal = assisted.Done + assisted.Pending + (assisted.CurrentTitle is null ? 0 : 1) + _unanswered.Count;
+            assisted.Enqueue(_unanswered);
+        }
+    }
+
+    [RelayCommand]
+    private void StopClaudeBatch() => _session.Assisted?.CancelBatch();
+
+    private void OnClaudeChanged(object? sender, EventArgs e) => _ui.Post(UpdateClaudeProgress);
+
+    private void UpdateClaudeProgress()
+    {
+        if (_session.Assisted is not { } assisted)
+        {
+            return;
+        }
+
+        var batchRunning = assisted.Pending > 0 || (_batchTotal > 0 && assisted.CurrentTitle is not null && !IsClaudeRunning);
+        if (!batchRunning)
+        {
+            if (_batchTotal > 0)
+            {
+                _batchTotal = 0;
+                _refresh.Trigger();
+            }
+
+            ClaudeProgressText = null;
+            return;
+        }
+
+        _batchTotal = Math.Max(_batchTotal, assisted.Done + assisted.Pending + 1);
+        ClaudeProgressText = string.Format(CultureInfo.CurrentCulture, Strings.Review_ClaudeProgress, Math.Min(assisted.Done + 1, _batchTotal), _batchTotal,
+            assisted.CurrentTitle ?? "…");
     }
 
     public override string Title => Strings.Nav_Review;
@@ -440,7 +610,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
     /// <summary>A search or a details request is running (it can take seconds: the sources are spaced).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowNoCandidateHint), nameof(ShowCandidates))]
-    [NotifyCanExecuteChangedFor(nameof(ApproveCommand), nameof(SkipCommand), nameof(SearchAgainCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ApproveCommand), nameof(SkipCommand), nameof(SearchAgainCommand), nameof(AskClaudeCommand), nameof(SearchDeeperCommand))]
     public partial bool IsBusy { get; private set; }
 
     [ObservableProperty]
@@ -541,6 +711,23 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             HasItems = Items.Count > 0;
             _toReview = items.Where(i => books[i.BookId].Metadata.Review.Status == ReviewStatus.Pending).Select(i => i.BookId).ToList();
             SearchAllText = _toReview.Count == 0 ? null : string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchAll, _toReview.Count);
+            OnPropertyChanged(nameof(ClaudeEnabled));
+            if (ClaudeEnabled && _session.Assisted is { } assisted)
+            {
+                var answered = await assisted.Store.GetAnsweredAsync(ct);
+                _unanswered = _toReview.Where(id => !answered.Contains(id)).ToList();
+            }
+            else
+            {
+                _unanswered = [];
+            }
+
+            AskClaudeAllText = _unanswered.Count == 0 ? null : string.Format(CultureInfo.CurrentCulture, Strings.Review_AskClaudeAll, _unanswered.Count);
+            if (AskClaudeAllText is null)
+            {
+                AskClaudeAllConfirmText = null;
+            }
+
             if (SearchAllText is null)
             {
                 SearchAllConfirmText = null;
@@ -616,6 +803,11 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
         ConfidenceText = null;
         NotesText = null;
         AppliedSummary = null;
+        if (item?.BookId != _book?.Metadata.Id)
+        {
+            ClaudeMessage = null;
+        }
+
         if (item is null || _session.Current is not { } library)
         {
             _book = null;
@@ -704,9 +896,11 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
         ConfidenceText = $"{candidate.ConfidenceText} · {IdentificationText.Reasons(candidate.Candidate)}";
         ConfidenceLevel = candidate.Level;
         Rows.Clear();
+        var assisted = candidate.Candidate.Assisted;
         foreach (var change in Proposal.Compare(_book.Metadata, candidate.Candidate.Record).Where(r => r.Proposed is not null))
         {
-            Rows.Add(new FieldRowViewModel(change, UpdateSummary));
+            Rows.Add(new FieldRowViewModel(change, UpdateSummary, assisted?.Unticked.Contains(change.Field) == true,
+                assisted is null ? null : ClaudeText.FieldSource(assisted, change.Field)));
         }
 
         UpdateSummary();
@@ -946,6 +1140,12 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             queue.Changed -= OnQueueChanged;
         }
 
+        if (_session.Assisted is { } assisted)
+        {
+            assisted.Changed -= OnClaudeChanged;
+        }
+
+        _claudeRun?.Cancel();
         _refresh.Dispose();
         Status.Dispose();
     }

@@ -11,6 +11,7 @@ using GibiOMatic.Core.Secrets;
 using GibiOMatic.Core.Settings;
 using GibiOMatic.Library.Import;
 using GibiOMatic.Metadata;
+using GibiOMatic.Metadata.Assisted;
 using GibiOMatic.Metadata.Http;
 using GibiOMatic.Metadata.Sources;
 using Microsoft.Extensions.Logging;
@@ -58,6 +59,7 @@ public sealed partial class SettingsPageViewModel : PageViewModel
     private readonly ComicVineClient _comicVine;
     private readonly IStartupRegistration _startup;
     private readonly string _runningLanguage;
+    private readonly IClaudeCode _claude;
 
     public SettingsPageViewModel(
         ISettingsService settings,
@@ -70,8 +72,10 @@ public sealed partial class SettingsPageViewModel : PageViewModel
         IStartupRegistration startup,
         TrayController tray,
         UpdateChecker updates,
+        IClaudeCode claude,
         ILogger<SettingsPageViewModel> logger)
     {
+        _claude = claude;
         _startup = startup;
         Update = new UpdateStatusViewModel(updates);
         TraySupported = tray.IsSupported;
@@ -244,7 +248,100 @@ public sealed partial class SettingsPageViewModel : PageViewModel
         }
     }
 
-    public override async Task OnNavigatedToAsync(CancellationToken ct = default) => await UpdateKeyStatusAsync(ct);
+    public override async Task OnNavigatedToAsync(CancellationToken ct = default)
+    {
+        await UpdateKeyStatusAsync(ct);
+        await CheckClaudeAsync(ct);
+    }
+
+    // ---- Claude Code (F9, SPEC §8.4) ----
+
+    public IReadOnlyList<string> ClaudeModels => ClaudeSettings.Models;
+
+    public IReadOnlyList<string> ClaudeEfforts => ClaudeSettings.Efforts;
+
+    /// <summary>The user turned the assisted identification on.</summary>
+    [ObservableProperty]
+    public partial bool ClaudeEnabled { get; set; }
+
+    /// <summary>"Claude Code 2.1.316, logged in (claude.ai)", or what is missing.</summary>
+    [ObservableProperty]
+    public partial string? ClaudeStatusText { get; private set; }
+
+    [ObservableProperty]
+    public partial bool ClaudeReady { get; private set; }
+
+    [ObservableProperty]
+    public partial string QuickModel { get; set; } = "haiku";
+
+    [ObservableProperty]
+    public partial string QuickEffort { get; set; } = "low";
+
+    [ObservableProperty]
+    public partial string DeepModel { get; set; } = "sonnet";
+
+    [ObservableProperty]
+    public partial string DeepEffort { get; set; } = "medium";
+
+    [ObservableProperty]
+    public partial string GroupModel { get; set; } = "haiku";
+
+    [ObservableProperty]
+    public partial string GroupEffort { get; set; } = "medium";
+
+    [ObservableProperty]
+    public partial bool ClaudeUseWeb { get; set; }
+
+    /// <summary>One site per line (Advanced).</summary>
+    [ObservableProperty]
+    public partial string? ClaudeSites { get; set; }
+
+    /// <summary>Also for every book that goes to the Review (otherwise only when asked).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ClaudeOnRequest))]
+    public partial bool ClaudeAutomatic { get; set; }
+
+    public bool ClaudeOnRequest
+    {
+        get => !ClaudeAutomatic;
+        set => ClaudeAutomatic = !value;
+    }
+
+    [ObservableProperty]
+    public partial bool ClaudeDeepAfterQuick { get; set; }
+
+    [ObservableProperty]
+    public partial bool ClaudeAutoApprove { get; set; }
+
+    /// <summary>The minimum confidence for automatic approval, in percent.</summary>
+    [ObservableProperty]
+    public partial decimal ClaudeAutoApproveMinimum { get; set; } = 95;
+
+    [RelayCommand]
+    private async Task CheckClaudeAsync(CancellationToken ct)
+    {
+        ClaudeStatusText = Strings.Claude_Checking;
+        ClaudeStatus status;
+        try
+        {
+            status = await _claude.GetStatusAsync(ct);
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            _logger.LogWarning(ex, "Could not check Claude Code");
+            status = ClaudeStatus.Missing;
+        }
+
+        ClaudeReady = status.IsReady;
+        ClaudeStatusText = !status.Installed
+            ? Strings.Claude_NotInstalled
+            : !status.LoggedIn
+                ? string.Format(CultureInfo.CurrentCulture, Strings.Claude_NotLoggedIn, status.Version)
+                : string.Format(CultureInfo.CurrentCulture, Strings.Claude_Ready, status.Version, status.AuthMethod ?? "—");
+    }
+
+    [RelayCommand]
+    private void RestoreClaudeSites() => ClaudeSites = string.Join(Environment.NewLine, ClaudeSettings.DefaultSites);
 
     private async Task UpdateKeyStatusAsync(CancellationToken ct)
     {
@@ -421,7 +518,21 @@ public sealed partial class SettingsPageViewModel : PageViewModel
                 Sources = Sources.Select(src => new SourceSetting(src.Id, src.Enabled)).ToList(),
                 AlwaysReview = AlwaysReview,
             },
+            Claude = new ClaudeSettings
+            {
+                Enabled = ClaudeEnabled,
+                Quick = new ClaudeLevelSettings(Text(QuickModel, "haiku"), Text(QuickEffort, "low")),
+                Deep = new ClaudeLevelSettings(Text(DeepModel, "sonnet"), Text(DeepEffort, "medium")),
+                Group = new ClaudeLevelSettings(Text(GroupModel, "haiku"), Text(GroupEffort, "medium")),
+                UseWeb = ClaudeUseWeb,
+                Sites = SiteGuard.Clean((ClaudeSites ?? string.Empty).Split(SiteSeparators), out var droppedSites),
+                When = ClaudeAutomatic ? ClaudeRunMode.Automatic : ClaudeRunMode.OnRequest,
+                DeepAfterQuick = ClaudeDeepAfterQuick,
+                AutoApprove = ClaudeAutoApprove,
+                AutoApproveMinimum = (double)Math.Clamp(ClaudeAutoApproveMinimum, 50, 100) / 100,
+            },
         };
+        ClaudeSites = string.Join(Environment.NewLine, updated.Claude.Sites);
 
         try
         {
@@ -432,7 +543,9 @@ public sealed partial class SettingsPageViewModel : PageViewModel
                 return;
             }
 
-            SetStatus(Strings.Settings_Saved, isError: false);
+            SetStatus(droppedSites.Count == 0
+                ? Strings.Settings_Saved
+                : string.Format(CultureInfo.CurrentCulture, Strings.Claude_SitesDropped, string.Join(", ", droppedSites)), isError: false);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -455,7 +568,22 @@ public sealed partial class SettingsPageViewModel : PageViewModel
         CloseToTray = settings.Background.CloseToTray ?? true;
         StartWithSystem = settings.Background.StartWithSystem != StartupMode.Off;
         StartInTray = settings.Background.StartWithSystem != StartupMode.Window;
+        var claude = settings.Claude;
+        ClaudeEnabled = claude.Enabled;
+        (QuickModel, QuickEffort) = (claude.Quick.Model, claude.Quick.Effort);
+        (DeepModel, DeepEffort) = (claude.Deep.Model, claude.Deep.Effort);
+        (GroupModel, GroupEffort) = (claude.Group.Model, claude.Group.Effort);
+        ClaudeUseWeb = claude.UseWeb;
+        ClaudeSites = string.Join(Environment.NewLine, claude.Sites);
+        ClaudeAutomatic = claude.When == ClaudeRunMode.Automatic;
+        ClaudeDeepAfterQuick = claude.DeepAfterQuick;
+        ClaudeAutoApprove = claude.AutoApprove;
+        ClaudeAutoApproveMinimum = (decimal)Math.Round(claude.AutoApproveMinimum * 100);
     }
+
+    private static readonly char[] SiteSeparators = ['\n', '\r', ',', ' ', ';'];
+
+    private static string Text(string? value, string fallback) => string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
 
     /// <summary>Whether <paramref name="path"/> is <paramref name="folder"/> or inside it.</summary>
     private static bool IsInside(string path, string folder)

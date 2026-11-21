@@ -9,6 +9,7 @@ using GibiOMatic.Core.Settings;
 using GibiOMatic.Core.Text;
 using GibiOMatic.Library.Identification;
 using GibiOMatic.Metadata;
+using GibiOMatic.Metadata.Assisted;
 using GibiOMatic.Metadata.Http;
 using GibiOMatic.Metadata.Identification;
 using GibiOMatic.Metadata.Sources;
@@ -162,10 +163,28 @@ public sealed partial class SeriesRowViewModel : ViewModelBase
 
     /// <summary>The issue it will get, and where it came from.</summary>
     public string? ResultIssue => Plan.Candidate is { } c
-        ? Plan.Kind == VolumeMatchKind.OwnCandidate
-            ? $"{c.Record.SourceName ?? c.Record.Title} ({Strings.Series_OwnCandidate})"
-            : c.Record.SourceName ?? c.Record.Title
+        ? Plan.Kind switch
+        {
+            VolumeMatchKind.OwnCandidate => $"{c.Record.SourceName ?? c.Record.Title} ({Strings.Series_OwnCandidate})",
+            VolumeMatchKind.Claude => $"{c.Record.SourceName ?? c.Record.Title} ({Strings.Series_ClaudeRow})",
+            _ => c.Record.SourceName ?? c.Record.Title,
+        }
         : null;
+
+    /// <summary>What Claude said about the book, when its group run left a note ("other cover", "not of this series").</summary>
+    public string? ClaudeNote => _owner.ClaudeNoteFor(this);
+
+    public bool HasClaudeNote => ClaudeNote is not null;
+
+    /// <summary>Claude's evidence for the row, on hover.</summary>
+    public string? ClaudeTip => _owner.ClaudeTipFor(this);
+
+    public bool HasClaudeTip => ClaudeTip is not null;
+
+    public bool CanSearchDeeper => _owner.ClaudeEnabled && IsNoMatch;
+
+    [RelayCommand]
+    private Task SearchDeeper() => _owner.SearchDeeperAsync(this);
 
     /// <summary>The row differs from what the book would get on its own: highlighted.</summary>
     public bool IsChanged => Plan.Changes;
@@ -212,6 +231,24 @@ public sealed partial class SeriesRowViewModel : ViewModelBase
 
     [RelayCommand]
     private Task Remove() => _owner.RemoveAsync(this);
+}
+
+/// <summary>A book Claude says belongs to another series, with the way out.</summary>
+public sealed partial class ClaudeOutsiderViewModel(string title, AssistedOutsider outsider, SeriesReviewViewModel owner) : ViewModelBase
+{
+    public AssistedOutsider Outsider { get; } = outsider;
+
+    public string Title { get; } = title;
+
+    public string Reason => Outsider.Reason ?? string.Empty;
+
+    /// <summary>"Move to “The Boys: Dear Becky”", or "Remove from group" when Claude named no series.</summary>
+    public string MoveText => Outsider.SuggestedSeries is { } series
+        ? string.Format(CultureInfo.CurrentCulture, Strings.Series_MoveToSeries, series)
+        : Strings.Series_Remove;
+
+    [RelayCommand]
+    private Task Move() => owner.MoveOutsidersAsync(this);
 }
 
 /// <summary>A book of the queue that can be added to the open group, or picked in No group.</summary>
@@ -515,7 +552,7 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsIdle))]
-    [NotifyCanExecuteChangedFor(nameof(AskApproveCommand), nameof(ApproveCommand), nameof(UseLinkCommand), nameof(SearchSeriesCommand))]
+    [NotifyCanExecuteChangedFor(nameof(AskApproveCommand), nameof(ApproveCommand), nameof(UseLinkCommand), nameof(SearchSeriesCommand), nameof(AskClaudeCommand))]
     public partial string? BusyText { get; private set; }
 
     public bool IsIdle => BusyText is null;
@@ -557,6 +594,8 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
         {
             await SearchAsync(auto: true);
         }
+
+        await LoadClaudeAsync(group);
     }
 
     private IEnumerable<VolumeOptionViewModel> VolumeOptions(ReviewGroup group)
@@ -867,9 +906,10 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
 
     private void BuildRows(ReviewGroup group)
     {
-        if (Rows.Count > 0 && !group.Books.Select(b => b.BookId).SequenceEqual(Rows.Select(r => r.BookId)))
+        if (Rows.Count > 0 && !group.Books.Select(b => b.BookId).SequenceEqual(Rows.Select(r => r.BookId)) && _claude?.GroupId != group.Id)
         {
             _chosen.Clear();
+            _fromClaude.Clear();
         }
 
         var unknown = TitleTemplate.UnknownFields(Template ?? string.Empty);
@@ -880,7 +920,7 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
         var plans = group.Books.Select(b =>
         {
             var match = _chosen.TryGetValue(b.BookId, out var chosen)
-                ? new VolumeBookMatch(b.BookId, VolumeMatchKind.Chosen, chosen)
+                ? new VolumeBookMatch(b.BookId, _fromClaude.Contains(b.BookId) && chosen.Assisted is not null ? VolumeMatchKind.Claude : VolumeMatchKind.Chosen, chosen)
                 : VolumeMatcher.Match(issues, new VolumeBook(b.Book.Metadata, b.Number, b.Best));
             return SeriesPlan.Row(b, match, series, template);
         }).ToList();
@@ -943,6 +983,7 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
         if (_issues is { } issues && Selected?.Group is { } group)
         {
             _chosen[row.BookId] = VolumeMatcher.CandidateFor(issue, issues.Volume, row.Plan.Book.Book.Metadata);
+            _fromClaude.Remove(row.BookId);
             BuildRows(group);
         }
     }
@@ -973,6 +1014,230 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
             await groups.RemoveAsync([row.BookId]);
             await RefreshAsync();
         }
+    }
+
+    // ---- Claude (F9, SPEC §8.4, "A run for a group") ----
+
+    public bool ClaudeEnabled => _settings.Current.Claude.Enabled;
+
+    /// <summary>The checked answer of Claude's run for the open group, if any.</summary>
+    private AssistedGroupResult? _claude;
+
+    /// <summary>"Suggested by Claude": the pattern, the numbers missing or repeated and the notes.</summary>
+    [ObservableProperty]
+    public partial string? ClaudeSummary { get; private set; }
+
+    [ObservableProperty]
+    public partial string? ClaudeMessage { get; private set; }
+
+    public bool HasClaudeResult => _claude is not null;
+
+    /// <summary>The books Claude says belong to another series.</summary>
+    public ObservableCollection<ClaudeOutsiderViewModel> ClaudeOutsiders { get; } = [];
+
+    [RelayCommand(CanExecute = nameof(IsIdle))]
+    private async Task AskClaudeAsync(CancellationToken ct)
+    {
+        if (Selected?.Group is not { } group || _session.Assisted is not { } assisted)
+        {
+            return;
+        }
+
+        if (!ClaudeEnabled)
+        {
+            ClaudeMessage = Strings.Claude_Off;
+            return;
+        }
+
+        ClaudeMessage = null;
+        BusyText = string.Format(CultureInfo.CurrentCulture, Strings.Series_ClaudeWorking, group.Books.Count, group.Name);
+        AssistedGroupResult result;
+        try
+        {
+            result = await assisted.RunGroupAsync(group, ct);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        finally
+        {
+            BusyText = null;
+        }
+
+        if (result.Failed)
+        {
+            ClaudeMessage = ClaudeText.Failure(result.Message);
+            return;
+        }
+
+        if (Selected?.Group?.Id == group.Id)
+        {
+            await ApplyClaudeAsync(group, result, chooseSeries: true);
+        }
+    }
+
+    /// <summary>
+    /// Fills the group as if the user had chosen: the series (when Claude gave its volume) and, for
+    /// every row that passed the checks, its record. The user still approves the group.
+    /// </summary>
+    private async Task ApplyClaudeAsync(ReviewGroup group, AssistedGroupResult result, bool chooseSeries)
+    {
+        _claude = result;
+        var inGroup = group.Books.Select(b => b.BookId).ToHashSet(StringComparer.Ordinal);
+        foreach (var row in result.Rows.Where(r => r.Candidate is not null && inGroup.Contains(r.BookId)))
+        {
+            _chosen[row.BookId] = row.Candidate!;
+            _fromClaude.Add(row.BookId);
+        }
+
+        var lines = new List<string>();
+        if (!string.IsNullOrWhiteSpace(result.Pattern))
+        {
+            lines.Add(string.Format(CultureInfo.CurrentCulture, Strings.Series_ClaudePattern, result.Pattern));
+        }
+
+        lines.Add(string.Format(CultureInfo.CurrentCulture, Strings.Series_ClaudeMatched, result.Rows.Count(r => r.Candidate is not null && inGroup.Contains(r.BookId)),
+            group.Books.Count));
+        if (result.MissingNumbers.Count > 0)
+        {
+            lines.Add(string.Format(CultureInfo.CurrentCulture, Strings.Series_ClaudeMissing, string.Join(", ", result.MissingNumbers)));
+        }
+
+        if (result.RepeatedNumbers.Count > 0)
+        {
+            lines.Add(string.Format(CultureInfo.CurrentCulture, Strings.Series_ClaudeRepeated, string.Join(", ", result.RepeatedNumbers)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(result.Notes))
+        {
+            lines.Add(result.Notes);
+        }
+
+        ClaudeSummary = string.Join(Environment.NewLine, lines);
+        OnPropertyChanged(nameof(HasClaudeResult));
+        ClaudeOutsiders.Clear();
+        foreach (var outsider in result.Outsiders.Where(o => inGroup.Contains(o.BookId)))
+        {
+            var book = group.Books.First(b => b.BookId == outsider.BookId);
+            ClaudeOutsiders.Add(new ClaudeOutsiderViewModel(book.Title, outsider, this));
+        }
+
+        if (chooseSeries && result.Series is { } series)
+        {
+            var volume = series.VolumeId is { } id ? new CvVolume(id, series.Name, series.StartYear, series.Publisher, series.IssueCount) : null;
+            await SetSeriesAsync(volume, series, remember: true);
+        }
+        else
+        {
+            BuildRows(group);
+        }
+    }
+
+    /// <summary>Claude's last answer for the group, shown again when it is opened.</summary>
+    private async Task LoadClaudeAsync(ReviewGroup group)
+    {
+        _claude = null;
+        _fromClaude.Clear();
+        ClaudeSummary = null;
+        ClaudeMessage = null;
+        ClaudeOutsiders.Clear();
+        OnPropertyChanged(nameof(HasClaudeResult));
+        OnPropertyChanged(nameof(ClaudeEnabled));
+        if (_session.Assisted is { } assisted && await assisted.Store.GetGroupAsync(group.Id) is { } stored && Selected?.Group?.Id == group.Id)
+        {
+            await ApplyClaudeAsync(group, stored, chooseSeries: false);
+        }
+    }
+
+    /// <summary>Books whose record came from Claude's group run (shown as "suggested by Claude").</summary>
+    private readonly HashSet<string> _fromClaude = new(StringComparer.Ordinal);
+
+    public string? ClaudeNoteFor(SeriesRowViewModel row)
+    {
+        if (_claude is null)
+        {
+            return null;
+        }
+
+        if (_claude.Outsiders.FirstOrDefault(o => o.BookId == row.BookId) is { } outsider)
+        {
+            return string.Format(CultureInfo.CurrentCulture, Strings.Series_ClaudeOutsider, outsider.Reason ?? outsider.SuggestedSeries ?? "?");
+        }
+
+        return _claude.Rows.FirstOrDefault(r => r.BookId == row.BookId) switch
+        {
+            { Problem: "cover" } => Strings.Series_ClaudeCoverDiffers,
+            { Candidate: null, Belongs: true } r when row.IsNoMatch => string.Format(CultureInfo.CurrentCulture, Strings.Series_ClaudeNoRecord,
+                r.Doubts ?? r.Problem ?? "—"),
+            _ => null,
+        };
+    }
+
+    public string? ClaudeTipFor(SeriesRowViewModel row) =>
+        _claude?.Rows.FirstOrDefault(r => r.BookId == row.BookId) is { Evidence.Count: > 0 } r
+            ? string.Join(Environment.NewLine, r.Evidence.Select(e => "• " + e))
+            : null;
+
+    /// <summary>"Search deeper" for a row left without a match: a deep run for that book alone.</summary>
+    public async Task SearchDeeperAsync(SeriesRowViewModel row)
+    {
+        if (_session.Assisted is not { } assisted || Selected?.Group is not { } group || !IsIdle)
+        {
+            return;
+        }
+
+        ClaudeMessage = null;
+        BusyText = string.Format(CultureInfo.CurrentCulture, Strings.Review_ClaudeDeepWorking, row.Plan.Book.Title);
+        AssistedBookResult? result;
+        try
+        {
+            result = await assisted.RunBookAsync(row.BookId, AssistedLevel.Deep);
+        }
+        finally
+        {
+            BusyText = null;
+        }
+
+        if (result is { Candidate: { } candidate } && candidate.Assisted?.CoverMatches != false && Selected?.Group?.Id == group.Id)
+        {
+            _chosen[row.BookId] = candidate;
+            _fromClaude.Add(row.BookId);
+            BuildRows(group);
+        }
+        else
+        {
+            ClaudeMessage = result switch
+            {
+                { Outcome: AssistedOutcome.Failed } failed => ClaudeText.Failure(failed.Message),
+                { Candidate: { } } => Strings.Series_ClaudeCoverDiffers,
+                _ => Strings.Review_ClaudeNotFound,
+            };
+        }
+    }
+
+    /// <summary>"Move to “The Boys: Dear Becky”": the books Claude put in that series form a group of their own.</summary>
+    public async Task MoveOutsidersAsync(ClaudeOutsiderViewModel outsider)
+    {
+        if (Groups is not { } groups || _claude is null || Selected?.Group is not { } group)
+        {
+            return;
+        }
+
+        var books = _claude.Outsiders
+            .Where(o => string.Equals(o.SuggestedSeries, outsider.Outsider.SuggestedSeries, StringComparison.OrdinalIgnoreCase))
+            .Select(o => o.BookId)
+            .Where(id => group.Books.Any(b => b.BookId == id))
+            .ToList();
+        if (outsider.Outsider.SuggestedSeries is null || books.Count < 2)
+        {
+            await groups.RemoveAsync(books.Count == 0 ? [outsider.Outsider.BookId] : books);
+            await RefreshAsync(group.Id);
+            return;
+        }
+
+        await groups.CreateAsync(books);
+        await RefreshAsync(group.Id);
     }
 
     // ---- Approval ----
