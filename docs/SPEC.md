@@ -167,7 +167,7 @@ Bands: **Poor** (< 60), **Review** (60–84), **OK** (≥ 85). The rule already 
 
 ## 7. Review and Editor
 
-- **Review**: queue sorted by quality score. For each book: candidates with a confidence % and a *field · current · proposed* table, with one checkbox per field. Actions: Approve and next, Skip, Edit by hand.
+- **Review**: the queue in the order the user chooses (title A–Z, the default, or Z–A; recently added or added longest ago; most problems first, by quality score), with a text filter over titles and file names; skipped books stay at the end. By series, the same order and filter apply to the groups (a group's date is its newest book's; a filter finds a group by its name or by any of its books). For each book: candidates with a confidence % and a *field · current · proposed* table, with one checkbox per field. Actions: Approve and next, Skip, Edit by hand.
 - **Review by series** (section 7.1): the same queue, one series at a time.
 - **Editor**: every field from section 4.3, credits with roles, cover (replace or use page 1), preview of the names each destination will generate.
 - **Batch editing**: select N books and edit the fields they share. Empty fields change nothing. "Number in sequence" is for the series number.

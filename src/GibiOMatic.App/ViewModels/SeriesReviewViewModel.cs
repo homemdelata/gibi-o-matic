@@ -353,9 +353,15 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
             return;
         }
 
+        await ShowGroupsAsync(openId);
+    }
+
+    /// <summary>Fills the group list from the last grouping, in the chosen order and filter; keeps the open group (or opens <paramref name="openId"/>).</summary>
+    public async Task ShowGroupsAsync(string? openId = null)
+    {
         var keep = openId ?? Selected?.Group?.Id ?? (Selected?.IsNoGroup == true ? NoGroupId : null);
         GroupItems.Clear();
-        foreach (var group in _grouping.Groups)
+        foreach (var group in ReviewListView.Arrange(_grouping.Groups, _sort, _filter))
         {
             GroupItems.Add(new SeriesGroupItemViewModel(group, group.Books.Count, this));
         }
@@ -367,6 +373,16 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
     }
 
     private const string NoGroupId = "";
+
+    private ReviewSort _sort = ReviewSort.TitleAscending;
+    private string? _filter;
+
+    /// <summary>The order and the text filter of the group list ("No group" always stays at the end); applied on the next refresh.</summary>
+    public void Arrange(ReviewSort sort, string? filter)
+    {
+        _sort = sort;
+        _filter = filter;
+    }
 
     private bool BooksChanged(SeriesGroupItemViewModel next) =>
         next.Group is { } g && !g.Books.Select(b => b.BookId).SequenceEqual(Rows.Select(r => r.BookId));

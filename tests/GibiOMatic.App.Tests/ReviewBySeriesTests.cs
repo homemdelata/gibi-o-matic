@@ -157,7 +157,7 @@ public sealed class ReviewBySeriesTests : IDisposable
 
         // A book of No group is reviewed on its own, By book.
         series.UngroupedBooks.Single(b => b.Book.BookId == plutona).ReviewCommand.Execute(null);
-        await WaitAsync(() => review.IsByBook && review.Selected?.BookId == plutona);
+        await WaitAsync(() => review.IsByBook && review.Selected?.BookId == plutona && !_app.Get<ISettingsService>().Current.Review.BySeries);
         Assert.False(_app.Get<ISettingsService>().Current.Review.BySeries);
     }
 

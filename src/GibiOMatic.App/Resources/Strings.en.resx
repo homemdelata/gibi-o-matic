@@ -868,4 +868,12 @@
   <data name="Series_ClaudeCoverDiffers" xml:space="preserve"><value>Claude proposed a record with another cover; left without a match.</value></data>
   <data name="Series_ClaudeNoRecord" xml:space="preserve"><value>Claude found no record: {0}</value></data>
   <data name="Series_ClaudeRow" xml:space="preserve"><value>suggested by Claude</value></data>
+  <data name="Review_Sort" xml:space="preserve"><value>Sort</value></data>
+  <data name="Review_SortTitleAsc" xml:space="preserve"><value>Title (A–Z)</value></data>
+  <data name="Review_SortTitleDesc" xml:space="preserve"><value>Title (Z–A)</value></data>
+  <data name="Review_SortNewest" xml:space="preserve"><value>Recently added</value></data>
+  <data name="Review_SortOldest" xml:space="preserve"><value>Added longest ago</value></data>
+  <data name="Review_SortProblems" xml:space="preserve"><value>Most problems first</value></data>
+  <data name="Review_Filter" xml:space="preserve"><value>Filter by text</value></data>
+  <data name="Review_FilterNothing" xml:space="preserve"><value>Nothing with "{0}".</value></data>
 </root>

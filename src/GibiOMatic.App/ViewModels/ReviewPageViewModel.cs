@@ -232,6 +232,8 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
         IsBySeries = settings.Current.Review.BySeries;
         Series = new SeriesReviewViewModel(session, matcher, settings, remoteCovers, covers, readerWindows, urls, logger,
             bookId => _ = ReviewBookAsync(bookId), bookId => RequestNavigation(NavPage.Editor, [bookId]));
+        SelectedSort = ReviewListView.Options.FirstOrDefault(o => o.Sort == settings.Current.Review.Sort) ?? ReviewListView.Options[0];
+        Series.Arrange(SelectedSort.Sort, null);
         _revealer = revealer;
         RemovePrompt = new RemoveBookPromptViewModel(session, editor, logger) { Removed = id => _ = OnRemovedAsync(id) };
         _readerWindows = readerWindows;
@@ -444,7 +446,75 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
 
     public IdentificationStatusViewModel Status { get; }
 
+    /// <summary>The books shown: the queue, filtered and in the chosen order.</summary>
     public ObservableCollection<ReviewItemViewModel> Items { get; } = [];
+
+    /// <summary>Every book of the queue, whatever the filter.</summary>
+    private IReadOnlyList<ReviewItemViewModel> _allItems = [];
+
+    public IReadOnlyList<ReviewSortOption> SortOptions => ReviewListView.Options;
+
+    /// <summary>The order of both lists, remembered.</summary>
+    [ObservableProperty]
+    public partial ReviewSortOption SelectedSort { get; set; } = ReviewListView.Options[0];
+
+    /// <summary>Only the books (or groups) whose title, file name or group name has this text.</summary>
+    [ObservableProperty]
+    public partial string? FilterText { get; set; }
+
+    /// <summary>"Nothing matches “xyz”." when the filter hides every book.</summary>
+    [ObservableProperty]
+    public partial string? FilterEmptyText { get; private set; }
+
+    partial void OnSelectedSortChanged(ReviewSortOption value)
+    {
+        if (_settings.Current.Review.Sort != value.Sort)
+        {
+            _ = _settings.SaveAsync(_settings.Current with { Review = _settings.Current.Review with { Sort = value.Sort } });
+        }
+
+        _ = ArrangeAsync();
+    }
+
+    partial void OnFilterTextChanged(string? value) => _ = ArrangeAsync();
+
+    /// <summary>Applies the order and the filter to both lists; the selected book stays selected if it is still shown.</summary>
+    private async Task ArrangeAsync()
+    {
+        Series.Arrange(SelectedSort.Sort, FilterText);
+        if (IsBySeries)
+        {
+            await Series.ShowGroupsAsync();
+            return;
+        }
+
+        var keep = Selected?.BookId;
+        ShowItems(keep);
+        var next = Items.FirstOrDefault(i => i.BookId == keep) ?? Items.FirstOrDefault();
+        if (next?.BookId != Selected?.BookId || next is null)
+        {
+            await SelectAsync(next, CancellationToken.None);
+        }
+        else
+        {
+            next.IsSelected = true;
+            Selected = next;
+        }
+    }
+
+    private void ShowItems(string? keep)
+    {
+        Items.Clear();
+        foreach (var item in ReviewListView.Arrange(_allItems, SelectedSort.Sort, FilterText))
+        {
+            item.IsSelected = item.BookId == keep;
+            Items.Add(item);
+        }
+
+        FilterEmptyText = _allItems.Count > 0 && Items.Count == 0
+            ? string.Format(CultureInfo.CurrentCulture, Strings.Review_FilterNothing, FilterText?.Trim())
+            : null;
+    }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection), nameof(ShowComparison))]
@@ -696,19 +766,12 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
                     var card = new BookCardViewModel(book, QualityAnalyzer.Analyze(book.Metadata, context), library, _thumbnails, _covers, _ => { });
                     return new ReviewItemViewModel(card, i, IssueOf(i, card.Report), SelectItem, this);
                 })
-                .OrderBy(i => i.Identification.Skipped)
-                .ThenBy(i => i.Score)
-                .ThenBy(i => i.Title, StringComparer.CurrentCultureIgnoreCase)
                 .ToList();
 
             var keep = selectBookId ?? Selected?.BookId;
-            Items.Clear();
-            foreach (var item in items)
-            {
-                Items.Add(item);
-            }
-
-            HasItems = Items.Count > 0;
+            _allItems = items;
+            ShowItems(keep);
+            HasItems = items.Count > 0;
             _toReview = items.Where(i => books[i.BookId].Metadata.Review.Status == ReviewStatus.Pending).Select(i => i.BookId).ToList();
             SearchAllText = _toReview.Count == 0 ? null : string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchAll, _toReview.Count);
             OnPropertyChanged(nameof(ClaudeEnabled));
@@ -732,7 +795,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             {
                 SearchAllConfirmText = null;
             }
-            Subtitle = string.Format(CultureInfo.CurrentCulture, Strings.Review_Subtitle_Count, Items.Count);
+            Subtitle = string.Format(CultureInfo.CurrentCulture, Strings.Review_Subtitle_Count, items.Count);
             var counts = await queue.GetCountsAsync(ct);
             EmptyText = string.Format(CultureInfo.CurrentCulture, Strings.Review_Empty, counts.AutoApproved, counts.Approved);
             var next = Items.FirstOrDefault(i => i.BookId == keep) ?? Items.FirstOrDefault();

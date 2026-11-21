@@ -70,6 +70,23 @@ public sealed record ReviewSettings
 
     /// <summary>The last title format used in the Review by series.</summary>
     public string TitleTemplate { get; init; } = Text.TitleTemplate.Default;
+
+    /// <summary>The order of the Review's lists (by book and by series).</summary>
+    public ReviewSort Sort { get; init; } = ReviewSort.TitleAscending;
+}
+
+/// <summary>The order of the Review's lists.</summary>
+public enum ReviewSort
+{
+    TitleAscending,
+    TitleDescending,
+
+    /// <summary>The books imported last first (a group: its newest book).</summary>
+    NewestFirst,
+    OldestFirst,
+
+    /// <summary>The worst quality score first (a group: the groups with warnings first), as before 2026-11-21.</summary>
+    MostProblemsFirst,
 }
 
 /// <summary>Reader preferences shared by all books; the reading direction is per book.</summary>
