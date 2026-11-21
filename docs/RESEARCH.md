@@ -40,6 +40,43 @@ Everything here was verified on 2026-10-16/17, in a session analyzing the user's
   - Issue names also carry story arcs that look like book numbers: issues #1-#5 of *Wynd* (Boom!, 2020) are all named "Book One: The Flight of the Prince"; the trade paperback is issue #1 of another *Wynd* volume (2021).
   - Some volumes start with the creator's name: "Richard Stark's Parker", "Frank Miller's RoboCop", "Michael Turner's Fathom".
 
+### Claude Code (spike of 2026-11-21, CLI 2.1.316)
+Spike for F9 (SPEC §8.4).
+- **Material**: 14 books from the maintainer's Review queue, copied to a test folder. For 9 of them the algorithm had found no result; the other 5 had only weak or wrong candidates.
+- **Each run**: `claude -p` in a folder holding `book.json`, the cover and 5 inner pages. ComicVine came through a small MCP server of our own, and the web was limited to a list of sites.
+
+**Command line** (all of these flags exist in 2.1.316):
+- `--model`, `--effort low|medium|high|xhigh|max`, `--output-format json`;
+- `--json-schema` (the answer comes in `structured_output`), `--append-system-prompt`;
+- `--restricted` (no Bash and similar tools; user settings ignored; `--settings` still applies);
+- `--tools Read,WebSearch,WebFetch`, `--strict-mcp-config`, `--mcp-config`, `--settings`;
+- `--permission-mode dontAsk`, `--no-session-persistence`, `--max-budget-usd`.
+
+The JSON output also has `is_error`, `terminal_reason`, `num_turns`, `duration_ms` and `total_cost_usd`. On a subscription, `total_cost_usd` is only what the API would have charged; the user isn't billed for it.
+
+**Login and environment**:
+- The command line has its own login, separate from the desktop app's. `claude auth status` answers JSON with `loggedIn` and `authMethod`.
+- Started from inside another Claude session, the child inherits `CLAUDE_*` and `ANTHROPIC_*` (`ANTHROPIC_BASE_URL` among them) and fails with "OAuth session expired". Start it without those variables.
+- Without `< /dev/null`, `-p` waits 3 s for stdin.
+
+**ComicVine and the web**:
+- Claude's `WebFetch` of comicvine.gamespot.com gets **HTTP 403**, so ComicVine has to come through the app (MCP).
+- With the MCP, almost all the work came from ComicVine, the cover and the credits page: the web search was used only 3 times in 28 runs.
+- A `PreToolUse` hook given in `--settings` can rewrite a tool's input (`updatedInput`) and allow or deny it, so it can force `allowed_domains` on `WebSearch` and deny a `WebFetch` outside the list.
+- With `humblebundle.com` in `allowed_domains`, **every** search failed ("not accessible to our user agent"); without it, they worked.
+
+**Results of the quick search**:
+- Haiku (effort low) and Sonnet (effort medium) took 13 to 41 s per book. Both found a ComicVine record for all 14 books and agreed on 12. In the other 2, Haiku gave only the series and Sonnet the edition.
+- The titles that said nothing were solved from the cover and the credits page: "BTMMFDRS" → *BTTM FDRS* (Fantagraphics, 2019); "SKYBOUND LOGO white.eps" → *Outcast #1*; "Monstress_Template" → *Monstress #1*; "RoboCop - Dead or Alive #7" → *RoboCop* (Boom!, 2014) #7, where the algorithm had proposed *Crossed*.
+- Sonnet didn't open the inner pages when it wasn't told their names (there is no Glob tool); Haiku tried names and read them, and got the ISBN from the credits page of 4 books. `book.json` has to list the images.
+- The model's confidence doesn't track what it checked: Sonnet gave 0.85 to books whose credits page it had not looked at.
+
+**Results of the deep search** (Sonnet, effort medium, on 2 books, about 35 s each):
+- *Snotgirl Vol. 4*: ComicVine has the series and issues #16-20 but not the trade paperback. The deep search got the ISBN, the date, the page count and the summary from imagecomics.com (the page was fetched), with the source of each field.
+- *Wynd Book Three*: it compared the file's cover with the ComicVine record's (saved by the MCP for it to look at): same book, different art. The credits page lists the regular ISBN and a "Limited Edition" ISBN, which League of Comic Geeks lists as the hardcover.
+- Error: on the Snotgirl credits page, "Image Comics logo designed by Rob Liefeld" was read as a "book design" credit. Credits from that page need the user's check.
+- Amazon was never fetched: its data came only from search results.
+
 ### Open Library
 - `https://openlibrary.org/api/books?bibkeys=ISBN:<isbn>&format=json&jscmd=data` got it right the first time:
   - `9781534321236` → *Deadly Class, Vol. 11* (Rick Remender, Wes Craig, 2022);
