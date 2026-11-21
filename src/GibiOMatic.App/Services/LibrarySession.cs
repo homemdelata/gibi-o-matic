@@ -21,6 +21,7 @@ public sealed class LibrarySession : IAsyncDisposable, IDisposable
     private readonly ISettingsService _settings;
     private readonly ImportQueueFactory _queues;
     private readonly IdentificationQueueFactory _identifications;
+    private readonly AssistedQueueFactory _assisted;
     private readonly DestinationServiceFactory _destinations;
     private readonly BookEditor _editor;
     private readonly InboxWatchOptions _watchOptions;
@@ -29,8 +30,9 @@ public sealed class LibrarySession : IAsyncDisposable, IDisposable
 
     public LibrarySession(LibraryService libraries, ISettingsService settings, ImportQueueFactory queues,
         IdentificationQueueFactory identifications, DestinationServiceFactory destinations, BookEditor editor,
-        InboxWatchOptions watchOptions, ILoggerFactory loggers)
+        InboxWatchOptions watchOptions, ILoggerFactory loggers, AssistedQueueFactory assisted)
     {
+        _assisted = assisted;
         _libraries = libraries;
         _settings = settings;
         _queues = queues;
@@ -50,6 +52,9 @@ public sealed class LibrarySession : IAsyncDisposable, IDisposable
 
     /// <summary>Online identification of the current library's books, running in the background.</summary>
     public IdentificationQueue? Identification { get; private set; }
+
+    /// <summary>The runs of the user's Claude Code for the current library (F9).</summary>
+    public AssistedQueue? Assisted { get; private set; }
 
     /// <summary>Komga, Kindle…: copies generated in the background.</summary>
     public DestinationService? Destinations { get; private set; }
@@ -121,6 +126,8 @@ public sealed class LibrarySession : IAsyncDisposable, IDisposable
         _editor.BookRemoved += _onBookRemoved;
         await queue.StartAsync(ct);
         await identification.StartAsync(ct);
+        var assisted = _assisted.Create(library, identification);
+        assisted.Start();
         destinationService.Start();
         var arrivals = new ArrivalTracker(queue, identification, _libraries.GetIndex(library), _watchOptions, _loggers.CreateLogger<ArrivalTracker>());
         arrivals.Completed += (_, summary) => ArrivalsCompleted?.Invoke(this, summary);
@@ -128,6 +135,7 @@ public sealed class LibrarySession : IAsyncDisposable, IDisposable
         watcher.StatusChanged += (_, _) => WatcherChanged?.Invoke(this, EventArgs.Empty);
         Queue = queue;
         Identification = identification;
+        Assisted = assisted;
         Destinations = destinationService;
         _arrivals = arrivals;
         Watcher = watcher;
@@ -300,6 +308,12 @@ public sealed class LibrarySession : IAsyncDisposable, IDisposable
         {
             await Queue.DisposeAsync().ConfigureAwait(false);
             Queue = null;
+        }
+
+        if (Assisted is not null)
+        {
+            await Assisted.DisposeAsync().ConfigureAwait(false);
+            Assisted = null;
         }
 
         if (Identification is not null)

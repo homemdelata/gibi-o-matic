@@ -16,6 +16,12 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        // Claude Code starts the app as its ComicVine server or its site guard (SPEC §8.4): no window, no single-instance check.
+        if (ClaudeModes.TryRun(args) is { } exitCode)
+        {
+            return exitCode;
+        }
+
         // Installer hooks first (they run the app with special arguments and exit right away).
         var velopack = VelopackApp.Build();
         if (OperatingSystem.IsWindows())

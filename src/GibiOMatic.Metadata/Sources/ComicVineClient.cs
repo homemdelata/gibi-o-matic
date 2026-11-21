@@ -167,7 +167,7 @@ public sealed class ComicVineClient(SourceClient client, IComicVineKeyProvider k
     /// ComicVine roles → credit roles (SPEC §8.2 item 4): only creative roles; editors and
     /// designers stay out, the old Calibre plugin mixed them with the authors.
     /// </summary>
-    internal static CreditRole? RoleOf(string role) => role.Trim().ToLowerInvariant() switch
+    public static CreditRole? RoleOf(string role) => role.Trim().ToLowerInvariant() switch
     {
         "writer" or "plotter" or "scripter" => CreditRole.Writer,
         "artist" or "penciler" or "penciller" or "breakdowns" => CreditRole.Artist,

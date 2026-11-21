@@ -51,6 +51,9 @@ public sealed record AppSettings
     /// <summary>The Review's mode and the title format of the Review by series (F8).</summary>
     public ReviewSettings Review { get; init; } = new();
 
+    /// <summary>Assisted identification with the user's own Claude Code (F9, SPEC §8.4). Off by default.</summary>
+    public ClaudeSettings Claude { get; init; } = new();
+
     public static IReadOnlyList<BookFormat> DefaultFormatPreference { get; } =
         [BookFormat.Cbz, BookFormat.Pdf, BookFormat.Epub, BookFormat.Cbr];
 

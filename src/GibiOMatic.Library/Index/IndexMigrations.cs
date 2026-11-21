@@ -153,6 +153,25 @@ internal static class IndexMigrations
             series_json  TEXT NOT NULL
         );
         """,
+
+        // 12: assisted identification with Claude Code (F9): the checked answers of each book and of each group
+        """
+        CREATE TABLE assisted_answers (
+            book_id         TEXT NOT NULL,
+            level           TEXT NOT NULL,
+            prompt_version  INTEGER NOT NULL,
+            outcome         TEXT NOT NULL,
+            result_json     TEXT NOT NULL,
+            at              TEXT NOT NULL,
+            PRIMARY KEY (book_id, level)
+        );
+
+        CREATE TABLE assisted_groups (
+            group_id     TEXT PRIMARY KEY,
+            result_json  TEXT NOT NULL,
+            at           TEXT NOT NULL
+        );
+        """,
     ];
 
     public static int LatestVersion => All.Count;

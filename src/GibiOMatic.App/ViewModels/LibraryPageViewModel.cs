@@ -367,7 +367,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
         LibraryFilter.NoSeries => book.Book.Metadata.Series is null,
         LibraryFilter.UnknownAuthor => QualityAnalyzer.HasUnknownAuthor(book.Book.Metadata),
         LibraryFilter.Complete => book.Band == QualityBand.Ok,
-        LibraryFilter.AutoApproved => book.Book.Metadata.Review.MatchedBy == MatchedBy.Auto,
+        LibraryFilter.AutoApproved => book.Book.Metadata.Review.MatchedBy is MatchedBy.Auto or MatchedBy.ClaudeAuto,
         LibraryFilter.Reading => book.IsReading,
         LibraryFilter.Read => book.IsRead,
         LibraryFilter.Unread => !book.IsReading && !book.IsRead,

@@ -145,4 +145,8 @@ public enum MatchedBy
 
     /// <summary>Approved by the safe auto-approval rules (SPEC §8.2).</summary>
     Auto,
+
+    /// <summary>Claude's answer, approved automatically under the user's rules (SPEC §8.4).</summary>
+    [JsonStringEnumMemberName("claude-auto")]
+    ClaudeAuto,
 }
