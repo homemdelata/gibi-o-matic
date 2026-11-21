@@ -1,46 +1,38 @@
-# Code signing policy
+# Code signing and privacy
 
-Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by
-[SignPath Foundation](https://signpath.org).
+> **Status:** the Windows installer is not signed. SignPath Foundation declined the project's application in
+> November 2026, and the project doesn't buy a certificate for now. Windows may warn about an "unknown publisher"
+> the first time: click *More info* → *Run anyway*.
 
-> **Status:** the application to SignPath Foundation is pending. Until it is approved, the Windows installer is
-> not signed, and Windows may warn about an "unknown publisher" the first time.
+## How releases are built
 
-## What is signed
-
-Only the Windows release of Gibi-o-matic: the installer (`Gibi-o-matic-win.msi`) and the executables built from
-this repository's source code. The [`release.yml`](../.github/workflows/release.yml) workflow builds them on
-GitHub Actions from a `v*` tag, never on a personal machine. This project doesn't sign the third-party files in
-the installer: they keep their own maintainers' signatures, if any. The Linux AppImage is not signed.
-
-An approver approves each signing request by hand, one release at a time.
-
-## Team roles
-
-| Role | Members |
-|---|---|
-| Committers and reviewers | [@homemdelata](https://github.com/homemdelata) |
-| Approvers | [@homemdelata](https://github.com/homemdelata) |
-
-Changes from anyone else reach `main` only through a pull request reviewed by a committer, with a green CI.
-Everyone in a role uses multi-factor authentication on GitHub and on SignPath.
+The Windows installer (`Gibi-o-matic-win.msi`) and the Linux AppImage are built by the
+[`release.yml`](../.github/workflows/release.yml) workflow on GitHub Actions from a `v*` tag, never on a personal
+machine, from this repository's source code. Changes reach `main` only through a pull request with a green CI.
 
 ## Privacy policy
 
-Gibi-o-matic has no telemetry and no accounts, and the contents of your files never leave your computer. It only
-goes online for these things:
+Gibi-o-matic has no telemetry and no accounts, and the contents of your files never leave your computer unless
+you turn on Claude Code (below). It only goes online for these things:
 
 - **Looking for new versions** on GitHub, after it starts and once a day. You can turn this off in
   *Settings → General → Look for updates automatically*. The installer shows this notice before installing.
 - **Metadata lookups** when you import or identify a book: Open Library, ComicVine (with your own API key)
   and Google Books (only if you turn it on). Each source can be turned off in *Settings → Metadata*.
 - **Downloading Kindle Comic Converter** from GitHub, only when you ask.
+- **Claude Code**, only if you turn it on in *Settings → Claude* (off by default) and have it installed and logged
+  in. For each book it asks about, the app gives your own Claude Code the book's cover, a few inner pages (the ones
+  after the cover and the last two, where the credits usually are), the title, the file name and the candidates
+  found; Claude Code sends them to Anthropic through your account, under your plan. Its web searches are limited to
+  a list of sites you can edit, and it reaches ComicVine only through the app, so your ComicVine key never leaves
+  the app. Nothing else from the library is sent.
 
 Each service's own policy covers what it does with a request:
 [GitHub](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement),
 [Open Library (Internet Archive)](https://archive.org/about/terms),
-[ComicVine (Fandom)](https://www.fandom.com/privacy-policy) and
-[Google Books](https://policies.google.com/privacy).
+[ComicVine (Fandom)](https://www.fandom.com/privacy-policy),
+[Google Books](https://policies.google.com/privacy) and
+[Anthropic](https://www.anthropic.com/legal/privacy).
 
 ## Uninstalling
 

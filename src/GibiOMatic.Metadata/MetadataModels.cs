@@ -8,6 +8,9 @@ public static class SourceIds
     public const string ComicVine = "comicvine";
     public const string GoogleBooks = "googlebooks";
 
+    /// <summary>A record built from Claude's answer when ComicVine has no record of the edition (SPEC §8.4).</summary>
+    public const string Claude = "claude";
+
     public static IReadOnlyList<string> All { get; } = [OpenLibrary, ComicVine, GoogleBooks];
 }
 
@@ -81,11 +84,17 @@ public enum MatchReason
 
     /// <summary>The user pointed to this record (a ComicVine link).</summary>
     ChosenByUser,
+
+    /// <summary>Claude found this record from the cover and the inner pages (SPEC §8.4).</summary>
+    Claude,
 }
 
 /// <summary>A possible identification of a book, with the confidence of the match (0–1).</summary>
 public sealed record MetadataCandidate(MetadataRecord Record, double Confidence, IReadOnlyList<MatchReason> Reasons)
 {
+    /// <summary>What Claude said about this candidate, when it came from the assisted identification (SPEC §8.4).</summary>
+    public Assisted.AssistedEvidence? Assisted { get; init; }
+
     /// <summary>The file's ISBN matches this record.</summary>
     public bool IsbnMatch => Reasons.Contains(MatchReason.Isbn);
 

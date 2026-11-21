@@ -16,6 +16,7 @@ using GibiOMatic.Library.Editing;
 using GibiOMatic.Library.Identification;
 using GibiOMatic.Library.Import;
 using GibiOMatic.Metadata;
+using GibiOMatic.Metadata.Assisted;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -70,6 +71,12 @@ public static class ServiceRegistration
         services.AddMetadataSources(paths);
         services.AddSingleton<BookEditor>();
         services.AddSingleton<IdentificationQueueFactory>();
+
+        // Assisted identification with the user's Claude Code (F9): the app starts itself as the MCP server and the hook.
+        services.AddSingleton<IClaudeCode, ClaudeCodeCli>();
+        services.AddSingleton(new ClaudeBridge(Environment.ProcessPath ?? "GibiOMatic", []));
+        services.AddSingleton<AssistedIdentifier>();
+        services.AddSingleton<AssistedQueueFactory>();
         services.AddSingleton(sp => new KomgaClient(new HttpClient { Timeout = TimeSpan.FromSeconds(15) }, sp.GetRequiredService<ILogger<KomgaClient>>()));
         services.AddSingleton<IDestinationType, KomgaDestinationType>();
         services.AddSingleton<IKccRunner, KccRunner>();
@@ -132,7 +139,7 @@ public static class ServiceRegistration
     /// The ComicVine key comes from the environment (CI, other developers) or, in Debug builds,
     /// from .NET user secrets. In production it is typed in Settings and kept in the secret store.
     /// </summary>
-    private static IConfiguration BuildConfiguration()
+    internal static IConfiguration BuildConfiguration()
     {
         var builder = new ConfigurationBuilder();
 #if DEBUG

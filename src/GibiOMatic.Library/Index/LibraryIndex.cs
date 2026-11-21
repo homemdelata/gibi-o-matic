@@ -37,9 +37,21 @@ public sealed class LibraryIndex(string databasePath)
         var version = await GetVersionAsync(ct);
         if (version > IndexMigrations.LatestVersion)
         {
-            // Written by a newer version of the app. It is only a cache: start over.
+            // Written by a newer version of the app: used as it is when that version says this one can
+            // still read it (it only added tables); otherwise it is only a cache, so start over.
+            if (await GetOldestReaderAsync(ct) is { } oldest && oldest <= IndexMigrations.LatestVersion)
+            {
+                return false;
+            }
+
             DeleteDatabaseFiles();
             version = 0;
+        }
+
+        // A copy of the index as it was before migrating, so going back to the older app can restore it by hand.
+        if (version > 0 && version < IndexMigrations.LatestVersion)
+        {
+            BackUp(version);
         }
 
         await using var connection = await OpenAsync(ct);
@@ -53,6 +65,10 @@ public sealed class LibraryIndex(string databasePath)
             await tx.CommitAsync(ct);
         }
 
+        await connection.ExecuteAsync(new CommandDefinition(
+            "INSERT INTO app_state (key, value) VALUES (@key, @value) ON CONFLICT(key) DO UPDATE SET value = @value;",
+            new { key = IndexMigrations.OldestReaderKey, value = IndexMigrations.OldestReader.ToString(System.Globalization.CultureInfo.InvariantCulture) },
+            cancellationToken: ct));
         return version < RebuildBelowVersion;
     }
 
@@ -215,6 +231,42 @@ public sealed class LibraryIndex(string databasePath)
         var connection = new SqliteConnection(_connectionString);
         await connection.OpenAsync(ct);
         return connection;
+    }
+
+    /// <summary>The oldest app schema a newer index says can read it; null when it doesn't say (written before 12).</summary>
+    private async Task<int?> GetOldestReaderAsync(CancellationToken ct)
+    {
+        try
+        {
+            await using var connection = await OpenAsync(ct);
+            var value = await connection.QueryFirstOrDefaultAsync<string>(new CommandDefinition(
+                "SELECT value FROM app_state WHERE key = @key;", new { key = IndexMigrations.OldestReaderKey }, cancellationToken: ct));
+            return int.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var oldest) ? oldest : null;
+        }
+        catch (SqliteException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Copies the database (and its write-ahead log) to <c>&lt;name&gt;.v&lt;version&gt;.bak</c>, replacing an older copy.</summary>
+    private void BackUp(int version)
+    {
+        try
+        {
+            foreach (var suffix in new[] { "", "-wal" })
+            {
+                var source = DatabasePath + suffix;
+                if (File.Exists(source))
+                {
+                    File.Copy(source, $"{DatabasePath}.v{version}.bak{suffix}", overwrite: true);
+                }
+            }
+        }
+        catch (IOException)
+        {
+            // Only a convenience: migrating goes on without it.
+        }
     }
 
     private void DeleteDatabaseFiles()

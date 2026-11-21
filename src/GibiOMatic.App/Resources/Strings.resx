@@ -795,4 +795,85 @@
   <data name="Series_Dismiss" xml:space="preserve"><value>Fechar aviso</value></data>
   <data name="Series_OneBook" xml:space="preserve"><value>1 livro</value></data>
   <data name="Series_BestFor" xml:space="preserve"><value>melhor candidato de {0} de {1} livros</value></data>
+  <data name="Settings_TabClaude" xml:space="preserve"><value>Claude</value></data>
+  <data name="Claude_Intro" xml:space="preserve"><value>Se você tem o Claude Code instalado e logado, o Gibi-o-matic pode pedir a ele que identifique os livros da Revisão olhando a capa, as páginas de créditos, o ComicVine (pelo próprio app) e alguns sites. Usa o seu login e o seu plano; o app não guarda nenhuma chave da Anthropic.</value></data>
+  <data name="Claude_Enable" xml:space="preserve"><value>Usar o Claude Code para identificar livros</value></data>
+  <data name="Claude_Privacy" xml:space="preserve"><value>Ligado, vão para a Anthropic, pela sua conta, de cada livro perguntado: a capa, algumas páginas internas, o título, o nome do arquivo e os candidatos. Nada mais da biblioteca.</value></data>
+  <data name="Claude_StatusLabel" xml:space="preserve"><value>Claude Code</value></data>
+  <data name="Claude_Checking" xml:space="preserve"><value>Verificando…</value></data>
+  <data name="Claude_NotInstalled" xml:space="preserve"><value>Claude Code não encontrado. Instale em claude.com/claude-code e rode "claude auth login" num terminal.</value></data>
+  <data name="Claude_NotLoggedIn" xml:space="preserve"><value>Claude Code {0} instalado, mas sem login. Rode "claude auth login" num terminal.</value></data>
+  <data name="Claude_Ready" xml:space="preserve"><value>Claude Code {0}, logado ({1}).</value></data>
+  <data name="Claude_CheckAgain" xml:space="preserve"><value>Verificar de novo</value></data>
+  <data name="Claude_ModelsLabel" xml:space="preserve"><value>Modelos</value></data>
+  <data name="Claude_ModelsHelp" xml:space="preserve"><value>O modelo e o esforço de cada tipo de busca. Modelos maiores acertam mais e gastam mais da cota do seu plano.</value></data>
+  <data name="Claude_Quick" xml:space="preserve"><value>Busca rápida</value></data>
+  <data name="Claude_Deep" xml:space="preserve"><value>Busca aprofundada</value></data>
+  <data name="Claude_Group" xml:space="preserve"><value>Série inteira</value></data>
+  <data name="Claude_Model" xml:space="preserve"><value>Modelo</value></data>
+  <data name="Claude_Effort" xml:space="preserve"><value>Esforço</value></data>
+  <data name="Claude_WhenLabel" xml:space="preserve"><value>Quando roda</value></data>
+  <data name="Claude_WhenHelp" xml:space="preserve"><value>Um livro por vez, no ritmo que o ComicVine permite.</value></data>
+  <data name="Claude_OnRequest" xml:space="preserve"><value>Só quando eu pedir, na Revisão</value></data>
+  <data name="Claude_Automatic" xml:space="preserve"><value>Automaticamente para os livros que vão para a Revisão</value></data>
+  <data name="Claude_DeepAfterQuick" xml:space="preserve"><value>Fazer a busca aprofundada sozinha quando a rápida achar só a série, uma capa diferente ou pouca confiança</value></data>
+  <data name="Claude_WebLabel" xml:space="preserve"><value>Web</value></data>
+  <data name="Claude_WebHelp" xml:space="preserve"><value>Buscas e páginas fora da lista são bloqueadas. O ComicVine vem sempre pelo app.</value></data>
+  <data name="Claude_UseWeb" xml:space="preserve"><value>Permitir buscas na web, só nestes sites</value></data>
+  <data name="Claude_Advanced" xml:space="preserve"><value>Sites permitidos (avançado)</value></data>
+  <data name="Claude_SitesHelp" xml:space="preserve"><value>Um site por linha; os subdomínios valem também.</value></data>
+  <data name="Claude_RestoreSites" xml:space="preserve"><value>Restaurar a lista padrão</value></data>
+  <data name="Claude_SitesDropped" xml:space="preserve"><value>Configurações salvas. Sites tirados da lista (inválidos ou que fazem a busca falhar): {0}.</value></data>
+  <data name="Claude_ApprovalLabel" xml:space="preserve"><value>Aprovação</value></data>
+  <data name="Claude_AutoApprove" xml:space="preserve"><value>Aprovar sozinho as respostas do Claude</value></data>
+  <data name="Claude_AutoApproveHelp" xml:space="preserve"><value>Só acima da confiança mínima e quando o app confirma tudo: um registro da edição no ComicVine, as capas iguais e uma concordância independente (o algoritmo, a outra busca ou o ISBN), sem trocar nenhum campo bom. Sem isso, tudo vai para a Revisão. Dá para desfazer pelo Editor.</value></data>
+  <data name="Claude_Minimum" xml:space="preserve"><value>Confiança mínima (%)</value></data>
+  <data name="Claude_LevelQuick" xml:space="preserve"><value>busca rápida</value></data>
+  <data name="Claude_LevelDeep" xml:space="preserve"><value>busca aprofundada</value></data>
+  <data name="Claude_LevelGroup" xml:space="preserve"><value>série</value></data>
+  <data name="Claude_Failed" xml:space="preserve"><value>O Claude não respondeu ({0}).</value></data>
+  <data name="Claude_Timeout" xml:space="preserve"><value>O Claude demorou demais e foi parado.</value></data>
+  <data name="Claude_Off" xml:space="preserve"><value>Ligue o Claude em Configurações → Claude.</value></data>
+  <data name="Review_AskClaude" xml:space="preserve"><value>Perguntar ao Claude</value></data>
+  <data name="Review_AskClaudeHelp" xml:space="preserve"><value>O Claude olha a capa e as páginas de créditos e procura no ComicVine.</value></data>
+  <data name="Review_SearchDeeper" xml:space="preserve"><value>Buscar mais a fundo</value></data>
+  <data name="Review_SearchDeeperHelp" xml:space="preserve"><value>Busca aprofundada: usa a web para o que o ComicVine não tem e diz a fonte de cada campo.</value></data>
+  <data name="Review_ClaudeWorking" xml:space="preserve"><value>O Claude está olhando "{0}"… (de 20 s a 1 min)</value></data>
+  <data name="Review_ClaudeDeepWorking" xml:space="preserve"><value>Busca aprofundada de "{0}"… (pode levar alguns minutos)</value></data>
+  <data name="Review_ClaudeCancel" xml:space="preserve"><value>Cancelar</value></data>
+  <data name="Review_ClaudeNotFound" xml:space="preserve"><value>O Claude não conseguiu dizer que livro é este.</value></data>
+  <data name="Review_ClaudeSource" xml:space="preserve"><value>Claude ({0}, {1})</value></data>
+  <data name="Review_ClaudeEvidence" xml:space="preserve"><value>O que o Claude viu</value></data>
+  <data name="Review_ClaudeDoubts" xml:space="preserve"><value>Dúvidas: {0}</value></data>
+  <data name="Review_CoverDiffers" xml:space="preserve"><value>A capa do registro é diferente da do livro.</value></data>
+  <data name="Review_CoverMatches" xml:space="preserve"><value>A capa confere com a do livro.</value></data>
+  <data name="Review_EditionMissing" xml:space="preserve"><value>Edição sem registro no ComicVine: os campos vêm da resposta do Claude, com a fonte de cada um (passe o mouse). Os créditos lidos da página de créditos começam desmarcados.</value></data>
+  <data name="Review_FieldSource" xml:space="preserve"><value>Fonte: {0}</value></data>
+  <data name="Review_AskClaudeAll" xml:space="preserve"><value>Perguntar ao Claude ({0})</value></data>
+  <data name="Review_AskClaudeAllConfirm" xml:space="preserve"><value>Perguntar ao Claude sobre {0} livros ainda sem resposta? Um por vez, de 20 s a 1 min cada (uns {1} min ao todo), usando a cota do seu plano. As respostas vão para a Revisão.</value></data>
+  <data name="Review_AskClaudeAllStart" xml:space="preserve"><value>Perguntar</value></data>
+  <data name="Review_ClaudeProgress" xml:space="preserve"><value>Claude: {0} de {1} · {2}</value></data>
+  <data name="Review_ClaudeStop" xml:space="preserve"><value>Parar</value></data>
+  <data name="Reason_Claude" xml:space="preserve"><value>Claude</value></data>
+  <data name="Series_AskClaude" xml:space="preserve"><value>Perguntar ao Claude sobre esta série</value></data>
+  <data name="Series_AskClaudeHelp" xml:space="preserve"><value>Uma execução para o grupo todo: o Claude entende como a série está no ComicVine e propõe o registro de cada livro. O app confere as capas e você aprova.</value></data>
+  <data name="Series_ClaudeWorking" xml:space="preserve"><value>O Claude está olhando os {0} livros de "{1}"… (leva uns minutos)</value></data>
+  <data name="Series_ClaudeSuggested" xml:space="preserve"><value>Sugerido pelo Claude</value></data>
+  <data name="Series_ClaudePattern" xml:space="preserve"><value>Como o ComicVine cataloga: {0}</value></data>
+  <data name="Series_ClaudeMissing" xml:space="preserve"><value>Números que faltam: {0}</value></data>
+  <data name="Series_ClaudeRepeated" xml:space="preserve"><value>Números repetidos: {0}</value></data>
+  <data name="Series_ClaudeMatched" xml:space="preserve"><value>{0} de {1} livros com registro conferido.</value></data>
+  <data name="Series_ClaudeOutsider" xml:space="preserve"><value>Não é desta série: {0}</value></data>
+  <data name="Series_MoveToSeries" xml:space="preserve"><value>Mover para "{0}"</value></data>
+  <data name="Series_ClaudeCoverDiffers" xml:space="preserve"><value>O Claude propôs um registro com outra capa; fica sem correspondência.</value></data>
+  <data name="Series_ClaudeNoRecord" xml:space="preserve"><value>O Claude não achou o registro: {0}</value></data>
+  <data name="Series_ClaudeRow" xml:space="preserve"><value>sugerido pelo Claude</value></data>
+  <data name="Review_Sort" xml:space="preserve"><value>Ordenar</value></data>
+  <data name="Review_SortTitleAsc" xml:space="preserve"><value>Título (A–Z)</value></data>
+  <data name="Review_SortTitleDesc" xml:space="preserve"><value>Título (Z–A)</value></data>
+  <data name="Review_SortNewest" xml:space="preserve"><value>Adicionados recentemente</value></data>
+  <data name="Review_SortOldest" xml:space="preserve"><value>Adicionados há mais tempo</value></data>
+  <data name="Review_SortProblems" xml:space="preserve"><value>Mais problemas primeiro</value></data>
+  <data name="Review_Filter" xml:space="preserve"><value>Filtrar por texto</value></data>
+  <data name="Review_FilterNothing" xml:space="preserve"><value>Nada com "{0}".</value></data>
 </root>

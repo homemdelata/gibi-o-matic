@@ -138,19 +138,54 @@ public sealed class LibraryServiceTests : IDisposable
     {
         var library = await _service.CreateAsync(_root, Ct);
         await WriteBookAsync("Image/Saga/Saga, Vol. 1 [aaaaaa]", "Saga, Vol. 1", "Saga");
-        await using (var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={IndexPath(library)};Pooling=False"))
-        {
-            await connection.OpenAsync(Ct);
-            await using var command = connection.CreateCommand();
-            command.CommandText = "PRAGMA user_version = 999;";
-            await command.ExecuteNonQueryAsync(Ct);
-        }
+        await ExecuteAsync(IndexPath(library), "PRAGMA user_version = 999;", "UPDATE app_state SET value = '999' WHERE key = 'index.oldestReader';");
 
         await _service.OpenAsync(_root, Ct);
 
         var index = new LibraryIndex(IndexPath(library));
         Assert.Equal(IndexMigrations.LatestVersion, await index.GetVersionAsync(Ct));
         Assert.Equal(1, await index.CountBooksAsync(Ct));
+    }
+
+    [Fact]
+    public async Task Index_of_a_newer_app_that_only_added_tables_is_kept_as_it_is()
+    {
+        var library = await _service.CreateAsync(_root, Ct);
+        await ExecuteAsync(IndexPath(library), "PRAGMA user_version = 999;", "INSERT INTO app_state (key, value) VALUES ('kept', 'yes');");
+
+        await _service.OpenAsync(_root, Ct);
+
+        var index = new LibraryIndex(IndexPath(library));
+        Assert.Equal(999, await index.GetVersionAsync(Ct));
+        Assert.Equal("yes", await index.GetStateAsync("kept", Ct));
+    }
+
+    [Fact]
+    public async Task Migrating_keeps_a_copy_of_the_index_as_it_was()
+    {
+        // An index as version 11 of the app left it.
+        var path = Path.Combine(_root, "old-index.db");
+        Directory.CreateDirectory(_root);
+        await ExecuteAsync(path, [.. IndexMigrations.All.Take(11), "PRAGMA user_version = 11;"]);
+
+        await new LibraryIndex(path).EnsureSchemaAsync(Ct);
+
+        Assert.True(File.Exists(path + ".v11.bak"));
+        Assert.Equal(IndexMigrations.LatestVersion, await new LibraryIndex(path).GetVersionAsync(Ct));
+        Assert.Equal(IndexMigrations.OldestReader.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            await new LibraryIndex(path).GetStateAsync(IndexMigrations.OldestReaderKey, Ct));
+    }
+
+    private static async Task ExecuteAsync(string databasePath, params string[] statements)
+    {
+        await using var connection = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={databasePath};Pooling=False");
+        await connection.OpenAsync(Ct);
+        foreach (var statement in statements)
+        {
+            await using var command = connection.CreateCommand();
+            command.CommandText = statement;
+            await command.ExecuteNonQueryAsync(Ct);
+        }
     }
 
     private async Task<BookMetadata> WriteBookAsync(string folder, string title, string? series)

@@ -167,7 +167,7 @@ Bands: **Poor** (< 60), **Review** (60–84), **OK** (≥ 85). The rule already 
 
 ## 7. Review and Editor
 
-- **Review**: queue sorted by quality score. For each book: candidates with a confidence % and a *field · current · proposed* table, with one checkbox per field. Actions: Approve and next, Skip, Edit by hand.
+- **Review**: the queue in the order the user chooses (title A–Z, the default, or Z–A; recently added or added longest ago; most problems first, by quality score), with a text filter over titles and file names; skipped books stay at the end. By series, the same order and filter apply to the groups (a group's date is its newest book's; a filter finds a group by its name or by any of its books). For each book: candidates with a confidence % and a *field · current · proposed* table, with one checkbox per field. Actions: Approve and next, Skip, Edit by hand.
 - **Review by series** (section 7.1): the same queue, one series at a time.
 - **Editor**: every field from section 4.3, credits with roles, cover (replace or use page 1), preview of the names each destination will generate.
 - **Batch editing**: select N books and edit the fields they share. Empty fields change nothing. "Number in sequence" is for the series number.
@@ -253,6 +253,79 @@ Bands: **Poor** (< 60), **Review** (60–84), **OK** (≥ 85). The rule already 
 - Calibre's Google source gets HTTP 500; Amazon fails because searches are blocked.
 - Conclusion: identifying collected editions needs logic of its own, which is what sets the app apart.
 
+### 8.4 Assisted identification with Claude Code (F9)
+
+**Why**: the algorithm of §8.2 depends on the title, and many books in the Review have titles that say nothing ("BTMMFDRS", "SKYBOUND LOGO white.eps", "Monstress_Template"), or ComicVine's word search misses them. The cover and the credits page say what the book is. In a test on 2026-11-21 with 14 books from the maintainer's Review (the algorithm had no result for 9 of them and only weak or wrong candidates for the other 5), Claude found the ComicVine record for all 14 (`RESEARCH.md`, "Claude Code").
+
+**What it is**: an optional helper that runs the user's own **Claude Code** (the `claude` command line) on a book and gets back a proposal with its evidence. It uses the user's Claude login and plan; the app holds no Anthropic key and doesn't call the Anthropic API. Off by default. Behind an `IAssistedIdentifier` interface, so another backend (the Anthropic API with a key) can come later.
+
+**Detection**: `claude --version` and `claude auth status` (JSON, `loggedIn`). Settings shows the state; when there is no login it tells the user to run `claude auth login` in a terminal.
+
+**One run, for one book**:
+1. The app fills a temporary folder:
+   - `book.json`: title, file name, format, page count, embedded metadata, the algorithm's candidates, the list of images in the folder and, for a deep search, the quick search's answer;
+   - `cover.jpg` and a few inner pages as JPEG of about 1100 px: the 3 after the cover and the last 2, where the credits page usually is. They are rendered with the app's own readers (PDFium, archives, EPUB).
+2. It starts `claude -p` in that folder, with these options:
+   - environment: without the `CLAUDE_*` and `ANTHROPIC_*` variables, because a parent Claude session's variables break the login;
+   - model and answer: `--model` and `--effort` of the level (below), `--output-format json`, `--json-schema` (the answer's schema), `--append-system-prompt` (the level's prompt);
+   - tools: `--restricted`, and `--tools Read,WebSearch,WebFetch` (the web tools only when the web is on);
+   - ComicVine: `--strict-mcp-config` and `--mcp-config` with the app's server;
+   - site guard: `--settings` with the guard hook and the allow rules;
+   - limits: `--permission-mode dontAsk`, `--no-session-persistence`, `--max-budget-usd` as a safety stop, a timeout and cancellation (the CLI has no turn cap; the prompts state the budget of calls and the MCP server refuses ComicVine calls beyond 60 per run).
+
+   The app finds the `claude` executable on the `PATH`, in `~/.local/bin` or behind npm's `claude.cmd`, and never runs it through a shell or a `.cmd`. The MCP server and the hook are the app itself, started as `GibiOMatic --claude-mcp <folder>` and `--claude-hook <folder>`.
+3. **ComicVine only through the app**: an MCP server of the app (`stdio`) offers `comicvine_search`, `comicvine_volume` (a volume and its issues) and `comicvine_issue`, which also saves the issue's cover in the folder for Claude to look at. It uses the app's client, cache and rate limiter. **The ComicVine key never reaches Claude**, and ComicVine blocks Claude's own web fetches anyway (HTTP 403).
+4. **Web limited to a list of sites**: a `PreToolUse` hook forces `allowed_domains` on every web search and denies a page fetch outside the list. Every call goes to the log. The default list has comicvine.gamespot.com, leagueofcomicgeeks.com, comics.org, mycomicshop.com, amazon.com, goodreads.com, openlibrary.org, the publishers' sites and en.wikipedia.org; it can be edited under Advanced. Some domains make the search fail as a whole (humblebundle.com did), so the list is cleaned when it is saved: invalid entries and the domains known to break the search are dropped, and the user is told which.
+5. **The answer is checked by the app, never trusted as is**:
+   - it is validated against the schema;
+   - the ComicVine record is read again by its id, through the usual client;
+   - the covers are compared by a perceptual hash;
+   - `Proposal.Compare` builds the field table, as for any other candidate.
+
+   The candidate has the source `claude`, its evidence, its doubts and the source of each field ("ISBN: credits page", "summary: imagecomics.com"). It joins the book's candidates in the Review.
+
+**Two levels** (model and effort editable per level):
+- **Quick** (default Haiku, effort low): ComicVine, the cover and the inner pages; the web only to confirm. About 20 s per book.
+- **Deep** (default Sonnet, effort medium): a bigger budget of searches; uses the web to fill what ComicVine lacks and returns the full record (title, number, subtitle, kind, publisher, imprint, release date, pages, ISBNs, issues it collects, summary, credits), with the source of each field. It also compares the cover with the ComicVine record's and explains a difference (variant, limited edition, earlier art). It runs from a **Search deeper** button, or by itself after the quick one (an option) when the quick one found only the series, the covers differ, or the confidence is below the threshold.
+
+**When it runs** (user decision): Settings chooses **Only when I ask** (default) or **Automatically for the books that go to the Review** (after the identification of §8.2, on import and in the Inbox). Where it can be asked:
+- the Review, for one book;
+- the Review by series (§7.1), for a group (**Ask Claude about this series**, below);
+- a batch, "Ask Claude about N books": first an estimate (dry run), then confirmation, progress, cancellation and a log.
+
+The app shows the count of books, the time and the calls, not dollars: on a subscription the `total_cost_usd` of the CLI is only what the API would have charged.
+
+**A run for a group** (the Review by series, §7.1): one run identifies all the group's books. It is more consistent and cheaper than a run per book, because Claude works out once how ComicVine catalogues the series. For example, each trade paperback of *The Boys* is its own one-issue ComicVine volume ("The Boys: Get Some", whose issue is named "Vol. 2"). The algorithm doesn't find these, because it searches the main series' issues. In a test on 2026-11-21 with the 14 *The Boys* books of the maintainer's Review, one run of about 2.5 min found the right record for all 14, with Haiku and with Sonnet. The app then checked all 14 covers, and every one matched. Details in `RESEARCH.md`.
+- **What goes in**: `group.json` with every book (id, title, file name, page count, embedded ISBN, the algorithm's candidates), the cover of every book at about 500 px, and the inner pages of only 1 or 2 books. One credits page is usually enough to understand the series.
+- **What comes back** (schema):
+  - the series and its ComicVine volume;
+  - the pattern: how ComicVine catalogues the collected editions;
+  - for each book: whether it belongs to the group, its number, the edition record, its kind and its evidence;
+  - the books that don't belong, each with a suggested series (e.g. *Dear Becky* #1 and #2, a separate mini-series, in the *The Boys* group);
+  - the numbers that are missing or repeated, with notes.
+- **In the group screen** (§7.1):
+  - the app fills the series step and the table as if the user had chosen them, with a **Suggested by Claude** label, the pattern and the evidence;
+  - the app checks every row as in step 5 above, covers included, because the model looks at only a few covers and matches the rest by title and number;
+  - a row whose check fails, or that has no record, is left unmatched, with **Search deeper** for that book alone;
+  - the books that don't belong are shown with **Move to series X**.
+
+  The user still approves the group. Automatic approval doesn't apply to groups.
+- **Level**: the quick one's model, with effort medium, is the default. In the test Haiku was as right as Sonnet, and was the one that separated the spin-off.
+
+**Edition missing from ComicVine** (e.g. *Snotgirl Vol. 4*: ComicVine has the series and its issues, not the trade paperback): the book gets the series from the ComicVine volume and the other fields from the answer, with their sources, and the Review says "edition without a ComicVine record".
+
+**Approval** (user decision): by default everything goes to the Review. An option, **off by default**, lets the user approve Claude's answers automatically. The user chooses the minimum confidence (default 0.95), and **all** of these, checked by the app, must hold:
+- an edition record (`4000-…`), not only the series;
+- the covers match;
+- one independent agreement: an ISBN read in the book that matches the record, or the algorithm's best candidate is the same record, or the quick and the deep search agree;
+- the safeguards of §8.2: no existing good field overwritten, `matchedBy: claude-auto` and the "Approved automatically" filter, undo through the history.
+
+The model's confidence alone never approves: in the test, Sonnet gave 0.85 to books whose credits page it had not looked at.
+
+**Fields to trust less**: credits read from the credits page start unticked, because that page mixes the publisher's staff with the book's ("Image Comics logo designed by Rob Liefeld" was read as "book design"). Editors are dropped as in §8.2.
+
+**Privacy**: turning it on shows what goes to Anthropic through the user's account: the cover, a few inner pages, the title, the file name and the candidates. Nothing else from the library.
+
 ## 9. Destinations
 
 ### 9.1 Common model
@@ -328,7 +401,7 @@ There is no migration from Calibre. The collection is rebuilt from originals dow
 
 ## 11. Settings
 
-- **General** (`%APPDATA%\GibiOMatic\settings.json`): language (pt-BR, en), theme (dark, light, system), Archive folder, Inbox folder, what to do with the file after importing (Recycle Bin, `_imported` or delete), closing the window (tray or quit), start with the system (off, tray only, with the window), metadata sources (order and on/off), automatic approval threshold, destinations.
+- **General** (`%APPDATA%\GibiOMatic\settings.json`): language (pt-BR, en), theme (dark, light, system), Archive folder, Inbox folder, what to do with the file after importing (Recycle Bin, `_imported` or delete), closing the window (tray or quit), start with the system (off, tray only, with the window), metadata sources (order and on/off), automatic approval threshold, assisted identification with Claude Code (§8.4: on/off, model and effort per level, web and its sites, when it runs, automatic approval), destinations.
 - **Secrets** (API keys) **never go to text files**: Windows DPAPI (`ProtectedData`) and, on Linux, libsecret.
 - **Library settings** (`gibiomatic-library.json`, on the Drive): only what belongs to the collection, independent of the machine (format version, id).
 
@@ -389,7 +462,7 @@ GibiOMatic.sln
 - Immutable originals, with the hash checked and an optional verification ("verify file").
 - Every batch operation has a dry run, confirmation and a log in `%LOCALAPPDATA%\GibiOMatic\logs`.
 - No secrets in the repository, nor in the files on the Drive.
-- The app sends data nowhere except the chosen metadata sources.
+- The app sends data nowhere except the chosen metadata sources and, when the user turns it on, their own Claude Code (§8.4).
 
 ## 15. Delivery phases
 
@@ -403,6 +476,7 @@ GibiOMatic.sln
 | **F5 · Automatic inbox** | Watched folder, identification on arrival, duplicates and replacement | a new Humble download goes from download to Komga with no manual steps, or only the approval |
 | **F6 · Polish** | English, light theme, Windows installer, Linux build, user documentation | ready for someone else to install on their own |
 | **F8 · Review by series** | Groups of the Review queue by series, one series and title format per group, group approval and undo (§7.1) | a mixed series of ~6 books is approved with one decision |
+| **F9 · Assisted identification** | The user's Claude Code identifies Review books from the cover, the credits page, ComicVine (through the app) and a list of sites; quick and deep levels, configurable automatic approval (§8.4) | books with useless titles come back with the right record and its evidence, and an edition missing from ComicVine gets a full record with sources |
 
 ### Backlog
 Real panel detection (Panel View with per-panel regions), other destinations (section 9.4), reading the ISBN by OCR from the credits page, suggesting missing series, automatic app updates, server/Docker mode.

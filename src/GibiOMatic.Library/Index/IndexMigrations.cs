@@ -153,7 +153,37 @@ internal static class IndexMigrations
             series_json  TEXT NOT NULL
         );
         """,
+
+        // 12: assisted identification with Claude Code (F9): the checked answers of each book and of each group
+        """
+        CREATE TABLE assisted_answers (
+            book_id         TEXT NOT NULL,
+            level           TEXT NOT NULL,
+            prompt_version  INTEGER NOT NULL,
+            outcome         TEXT NOT NULL,
+            result_json     TEXT NOT NULL,
+            at              TEXT NOT NULL,
+            PRIMARY KEY (book_id, level)
+        );
+
+        CREATE TABLE assisted_groups (
+            group_id     TEXT PRIMARY KEY,
+            result_json  TEXT NOT NULL,
+            at           TEXT NOT NULL
+        );
+        """,
     ];
 
     public static int LatestVersion => All.Count;
+
+    /// <summary>
+    /// The oldest schema version whose app can still use an index of <see cref="LatestVersion"/> as it
+    /// is: the migrations after it only added tables or columns that older apps simply don't read.
+    /// Kept in <c>app_state</c> (<see cref="OldestReaderKey"/>) so that going back to an older version
+    /// of the app does not throw the index away. Lower it to <see cref="LatestVersion"/> when a
+    /// migration changes what older apps read. 12 (assisted identification) only added tables.
+    /// </summary>
+    public const int OldestReader = 11;
+
+    public const string OldestReaderKey = "index.oldestReader";
 }

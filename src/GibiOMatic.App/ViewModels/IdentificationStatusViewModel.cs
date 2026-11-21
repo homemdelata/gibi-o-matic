@@ -123,6 +123,7 @@ public static class IdentificationText
             MatchReason.Kind => Strings.Reason_Kind,
             MatchReason.SecondSource => Strings.Reason_SecondSource,
             MatchReason.ChosenByUser => Strings.Reason_ChosenByUser,
+            MatchReason.Claude => Strings.Reason_Claude,
             _ => r.ToString(),
         });
         return string.Join(" + ", parts);
@@ -133,6 +134,7 @@ public static class IdentificationText
         Metadata.SourceIds.ComicVine => "ComicVine",
         Metadata.SourceIds.OpenLibrary => "Open Library",
         Metadata.SourceIds.GoogleBooks => "Google Books",
+        Metadata.SourceIds.Claude => "Claude",
         _ => source,
     };
 

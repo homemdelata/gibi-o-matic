@@ -60,6 +60,12 @@ INBOX ──import──► ARCHIVE (original + metadata.json) ──generate─
   ComicVine series and the title format once, approve every book of it together and undo it at once). The **Editor** handles everything else, including batch
   edits, credits by role and *universes* (series from the same line, which become collections in Komga). A
   quality score points out what each book is missing.
+- **Optional help from your own Claude Code.** If you have [Claude Code](https://claude.com/claude-code) installed
+  and logged in, the Review can ask it about the books the algorithm can't place: it looks at the cover and the
+  credits page, searches ComicVine (through the app) and a list of sites you choose, and comes back with the record
+  and its evidence. The app checks every answer (the record read again, the covers compared) before you see it.
+  It works for one book, a batch, or a whole series at once; a deeper search fills in editions ComicVine doesn't
+  have. It uses your Claude login and plan, is off by default, and approves nothing on its own unless you allow it.
 - **Destinations.** **Komga** gets CBZ files with `ComicInfo.xml`, organized by series. **Kindle** gets copies
   converted ahead of time, sent over USB when you plug the device in. Editing a book updates its copies.
 - **A built-in reader** for CBZ, CBR, PDF and EPUB, with two-page spreads, right-to-left reading and reading
@@ -90,8 +96,8 @@ The screenshots use a made-up library (titles, creators and covers are fictional
 Download the latest version from [**Releases**](https://github.com/homemdelata/gibi-o-matic/releases/latest):
 
 - **Windows 10 or 11:** `Gibi-o-matic-win.msi`. It installs for your user only, without administrator rights,
-  and adds shortcuts to the desktop and the Start menu. The installer is not signed yet (see the
-  [code signing policy](docs/CODE-SIGNING.md)), so Windows may warn about an "unknown publisher": click
+  and adds shortcuts to the desktop and the Start menu. The installer is not signed (see
+  [code signing and privacy](docs/CODE-SIGNING.md)), so Windows may warn about an "unknown publisher": click
   *More info* → *Run anyway*.
 - **Linux (x64):** `Gibi-o-matic.AppImage`. Make it executable (`chmod +x Gibi-o-matic.AppImage`) and run it.
 
@@ -110,7 +116,8 @@ macOS is not supported for now.
    where that is not available yet, set the `GIBIOMATIC_COMICVINE_KEY` environment variable instead.
 3. **Import** by dragging files onto the *Inbox*, or pick an Inbox folder in *Settings → Folders* so downloads
    come in by themselves.
-4. **Review** whatever the identification did not approve on its own.
+4. **Review** whatever the identification did not approve on its own. If you use Claude Code, turn it on in
+   *Settings → Claude* and use *Ask Claude* in the Review (run `claude auth login` in a terminal first).
 5. **Add a destination** under *Destinations*:
    - **Komga:** the folder of a Komga library. The server address and API key are optional; with them the app
      asks Komga to rescan after each change.
@@ -135,14 +142,15 @@ plain folders and JSON, readable without the app, and the index can always be re
 No telemetry, no accounts. The app only goes online for metadata lookups (ComicVine, Open Library and, if you
 turn it on, Google Books), to download Kindle Comic Converter (from GitHub, when you ask) and to check for updates
 (GitHub; *Settings → General → Look for updates automatically* turns it off). The contents of your files never
-leave your machine. The [code signing policy](docs/CODE-SIGNING.md#privacy-policy) has the details, with the
+leave your machine, unless you turn on Claude Code: then the cover, a few inner pages, the title and the file name
+of each book it asks about go to Anthropic through your own account. The [privacy policy](docs/CODE-SIGNING.md#privacy-policy) has the details, with the
 services' own policies.
 
-### Code signing policy
+### Code signing
 
-Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by
-[SignPath Foundation](https://signpath.org) (application pending). [`docs/CODE-SIGNING.md`](docs/CODE-SIGNING.md)
-says what is signed, who approves it, and what the privacy policy is.
+The Windows installer is not signed: SignPath Foundation declined the project's application, and there is no paid
+certificate for now. [`docs/CODE-SIGNING.md`](docs/CODE-SIGNING.md) says how releases are built and what the
+privacy policy is.
 
 ## Building from source
 

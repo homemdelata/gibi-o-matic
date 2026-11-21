@@ -40,6 +40,55 @@ Everything here was verified on 2026-10-16/17, in a session analyzing the user's
   - Issue names also carry story arcs that look like book numbers: issues #1-#5 of *Wynd* (Boom!, 2020) are all named "Book One: The Flight of the Prince"; the trade paperback is issue #1 of another *Wynd* volume (2021).
   - Some volumes start with the creator's name: "Richard Stark's Parker", "Frank Miller's RoboCop", "Michael Turner's Fathom".
 
+### Claude Code (spike of 2026-11-21, CLI 2.1.316)
+Spike for F9 (SPEC §8.4).
+- **Material**: 14 books from the maintainer's Review queue, copied to a test folder. For 9 of them the algorithm had found no result; the other 5 had only weak or wrong candidates.
+- **Each run**: `claude -p` in a folder holding `book.json`, the cover and 5 inner pages. ComicVine came through a small MCP server of our own, and the web was limited to a list of sites.
+
+**Command line** (all of these flags exist in 2.1.316):
+- `--model`, `--effort low|medium|high|xhigh|max`, `--output-format json`;
+- `--json-schema` (the answer comes in `structured_output`), `--append-system-prompt`;
+- `--restricted` (no Bash and similar tools; user settings ignored; `--settings` still applies);
+- `--tools Read,WebSearch,WebFetch`, `--strict-mcp-config`, `--mcp-config`, `--settings`;
+- `--permission-mode dontAsk`, `--no-session-persistence`, `--max-budget-usd`.
+
+The JSON output also has `is_error`, `terminal_reason`, `num_turns`, `duration_ms` and `total_cost_usd`. On a subscription, `total_cost_usd` is only what the API would have charged; the user isn't billed for it.
+
+**Login and environment**:
+- The command line has its own login, separate from the desktop app's. `claude auth status` answers JSON with `loggedIn` and `authMethod`.
+- Started from inside another Claude session, the child inherits `CLAUDE_*` and `ANTHROPIC_*` (`ANTHROPIC_BASE_URL` among them) and fails with "OAuth session expired". Start it without those variables.
+- Without `< /dev/null`, `-p` waits 3 s for stdin.
+
+**ComicVine and the web**:
+- Claude's `WebFetch` of comicvine.gamespot.com gets **HTTP 403**, so ComicVine has to come through the app (MCP).
+- With the MCP, almost all the work came from ComicVine, the cover and the credits page: the web search was used only 3 times in 28 runs.
+- A `PreToolUse` hook given in `--settings` can rewrite a tool's input (`updatedInput`) and allow or deny it, so it can force `allowed_domains` on `WebSearch` and deny a `WebFetch` outside the list.
+- With `humblebundle.com` in `allowed_domains`, **every** search failed ("not accessible to our user agent"); without it, they worked.
+
+**Results of the quick search**:
+- Haiku (effort low) and Sonnet (effort medium) took 13 to 41 s per book. Both found a ComicVine record for all 14 books and agreed on 12. In the other 2, Haiku gave only the series and Sonnet the edition.
+- The titles that said nothing were solved from the cover and the credits page: "BTMMFDRS" → *BTTM FDRS* (Fantagraphics, 2019); "SKYBOUND LOGO white.eps" → *Outcast #1*; "Monstress_Template" → *Monstress #1*; "RoboCop - Dead or Alive #7" → *RoboCop* (Boom!, 2014) #7, where the algorithm had proposed *Crossed*.
+- Sonnet didn't open the inner pages when it wasn't told their names (there is no Glob tool); Haiku tried names and read them, and got the ISBN from the credits page of 4 books. `book.json` has to list the images.
+- The model's confidence doesn't track what it checked: Sonnet gave 0.85 to books whose credits page it had not looked at.
+
+**Results of the deep search** (Sonnet, effort medium, on 2 books, about 35 s each):
+- *Snotgirl Vol. 4*: ComicVine has the series and issues #16-20 but not the trade paperback. The deep search got the ISBN, the date, the page count and the summary from imagecomics.com (the page was fetched), with the source of each field.
+- *Wynd Book Three*: it compared the file's cover with the ComicVine record's (saved by the MCP for it to look at): same book, different art. The credits page lists the regular ISBN and a "Limited Edition" ISBN, which League of Comic Geeks lists as the hardcover.
+- Error: on the Snotgirl credits page, "Image Comics logo designed by Rob Liefeld" was read as a "book design" credit. Credits from that page need the user's check.
+- Amazon was never fetched: its data came only from search results.
+
+**The `claude` of npm on Windows** (found while building F9): `%APPDATA%\npm\claude.cmd` only runs `node_modules\@anthropic-ai\claude-code\bin\claude.exe %*`. Through it, a `--json-schema` with line breaks failed with "not valid JSON", and a `<slug>` inside an argument became a redirection ("cannot find the file"). Calling `claude.exe` directly, with one argument per element, works.
+
+**One run for a group** (the 14 books grouped by title as *The Boys*; Haiku and Sonnet, effort medium):
+- **Material**: 11 trade paperbacks titled "Vol. 1" to "Vol. 12" (no Vol. 5), *Herogasm*, and *Dear Becky* #1 and #2. Each run got `group.json`, the 14 covers at about 500 px and the credits pages of only 2 books.
+- **Cost**: about 2.5 min per run (154 s Sonnet, 166 s Haiku), with 30 and 35 ComicVine calls. No web search was needed.
+- **The pattern**: both models found how ComicVine catalogues the series. Each trade paperback is its own one-issue volume ("The Boys: Get Some", 4050-…), whose issue is named "Vol. 2". The algorithm's candidates were single issues of the main volume 4050-18033, all wrong.
+- **Records**: both models gave the same 14 edition records (4000-217033 … 4000-370329 for the trades, 4000-766280 and 4000-772465 for Dear Becky). Both saw that *Herogasm* is Vol. 5, so the run is complete from 1 to 12.
+- **The spin-off**:
+  - Haiku put *Dear Becky* (a separate 2020 mini-series) in "doesn't belong", with the suggested series "The Boys: Dear Becky";
+  - Sonnet kept it in the group and only reported the numbers 1 and 2 as repeated, with a note to split it.
+- **Covers**: the models opened only 2 or 3 ComicVine covers and matched the rest by title and number. Afterwards all 14 ComicVine covers were downloaded and compared by dHash: all matched, at 0 to 8 bits of 64. The app has to check every row itself.
+
 ### Open Library
 - `https://openlibrary.org/api/books?bibkeys=ISBN:<isbn>&format=json&jscmd=data` got it right the first time:
   - `9781534321236` → *Deadly Class, Vol. 11* (Rick Remender, Wes Craig, 2022);

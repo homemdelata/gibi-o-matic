@@ -7,6 +7,7 @@ using GibiOMatic.Core.Settings;
 using GibiOMatic.Library.Editing;
 using GibiOMatic.Library.Index;
 using GibiOMatic.Metadata;
+using GibiOMatic.Metadata.Assisted;
 using GibiOMatic.Metadata.Http;
 using GibiOMatic.Metadata.Identification;
 using Microsoft.Extensions.Logging;
@@ -65,7 +66,14 @@ public sealed class IdentificationQueue : IAsyncDisposable
         _editor = editor;
         _settings = settings;
         _logger = logger;
+        Assisted = new AssistedStore(index);
     }
+
+    /// <summary>Claude's checked answers (SPEC §8.4); they join every result stored for the book.</summary>
+    public AssistedStore Assisted { get; }
+
+    /// <summary>The identification left a book for the user (with candidates or none): the automatic Claude mode starts there.</summary>
+    public event EventHandler<string>? ReviewNeeded;
 
     /// <summary>Identification states changed (queue, review, approvals).</summary>
     public event EventHandler? Changed;
@@ -241,7 +249,9 @@ public sealed class IdentificationQueue : IAsyncDisposable
         foreach (var bookId in restored)
         {
             var identification = await GetAsync(bookId, ct);
-            var state = identification?.Result?.Candidates.Count > 0 ? IdentificationState.NeedsReview : IdentificationState.NoMatch;
+            var state = identification?.Result?.Candidates.Count > 0 || (await Assisted.GetCandidatesAsync(bookId, ct)).Count > 0
+                ? IdentificationState.NeedsReview
+                : IdentificationState.NoMatch;
             await SetStateAsync(bookId, state, null, null, ct);
             BookUpdated?.Invoke(this, bookId);
         }
@@ -406,6 +416,11 @@ public sealed class IdentificationQueue : IAsyncDisposable
             var failed = result.Notes.Any(n => n.EndsWith(":Unavailable", StringComparison.Ordinal) || n.EndsWith(":RateLimited", StringComparison.Ordinal)
                                                || n.EndsWith(":BadResponse", StringComparison.Ordinal));
             await SetStateAsync(bookId, failed ? IdentificationState.Failed : IdentificationState.NoMatch, result, MessageOf(result), ct);
+            if (!failed)
+            {
+                ReviewNeeded?.Invoke(this, bookId);
+            }
+
             return;
         }
 
@@ -425,12 +440,69 @@ public sealed class IdentificationQueue : IAsyncDisposable
         }
 
         await SetStateAsync(bookId, IdentificationState.NeedsReview, result, MessageOf(result), ct);
+        ReviewNeeded?.Invoke(this, bookId);
+    }
+
+    /// <summary>
+    /// Claude's answers of a book (stored in <see cref="Assisted"/>) join its candidates; a book that
+    /// had none goes to the Review with them. Approved books keep their state.
+    /// </summary>
+    public async Task ApplyAssistedAsync(string bookId, CancellationToken ct = default)
+    {
+        var book = await _index.GetBookAsync(bookId, ct) ?? throw new InvalidOperationException($"Book {bookId} not found.");
+        var current = await GetAsync(bookId, ct);
+        var result = current?.Result ?? new IdentificationResult(BookQuery.From(book.Metadata), [], []) { Algorithm = BookIdentifier.Algorithm };
+        var assisted = await Assisted.GetCandidatesAsync(bookId, ct);
+        var state = current?.State is IdentificationState.Approved or IdentificationState.AutoApproved
+            ? current.State
+            : assisted.Count > 0 || result.Candidates.Count > 0 ? IdentificationState.NeedsReview : current?.State ?? IdentificationState.NoMatch;
+        await SetStateAsync(bookId, state, result, current?.Message, ct);
+        OnChanged();
+    }
+
+    /// <summary>
+    /// Approves Claude's candidate without the user (SPEC §8.4, "Approval"), when
+    /// <see cref="AssistedApproval.CanApprove"/> says so. Returns whether it did.
+    /// </summary>
+    public async Task<bool> AutoApproveAssistedAsync(string bookId, MetadataCandidate candidate, CancellationToken ct = default)
+    {
+        var book = await _index.GetBookAsync(bookId, ct);
+        var current = await GetAsync(bookId, ct);
+        if (book is null)
+        {
+            return false;
+        }
+
+        var algorithm = current?.Result is { } r ? r with { Candidates = r.Candidates.Where(c => c.Assisted is null).ToList() } : null;
+        var others = await Assisted.GetCandidatesAsync(bookId, ct);
+        if (!AssistedApproval.CanApprove(book.Metadata, candidate, algorithm, others, _settings.Current.Claude, _settings.Current.Metadata, out var reason))
+        {
+            _logger.LogInformation("Claude's answer for book {BookId} left for the Review ({Reason})", bookId, reason);
+            return false;
+        }
+
+        var fields = Proposal.DefaultSelection(Proposal.Compare(book.Metadata, candidate.Record)).Except(candidate.Assisted?.Unticked ?? []).ToHashSet();
+        await _editor.UpdateAsync(_library, bookId, b => Proposal.Apply(b, candidate.Record, fields) with
+        {
+            Review = new ReviewInfo { Status = ReviewStatus.Approved, ApprovedAt = DateTimeOffset.UtcNow, MatchedBy = MatchedBy.ClaudeAuto, Confidence = candidate.Confidence },
+        }, ct);
+        await SetStateAsync(bookId, IdentificationState.AutoApproved, null, null, ct);
+        _logger.LogInformation("Book {BookId} approved automatically from Claude's answer ({Confidence:P0})", bookId, candidate.Confidence);
+        BookUpdated?.Invoke(this, bookId);
+        OnChanged();
+        return true;
     }
 
     private static string? MessageOf(IdentificationResult result) => result.Notes.Count == 0 ? null : string.Join(';', result.Notes);
 
     private async Task SetStateAsync(string bookId, IdentificationState state, IdentificationResult? result, string? message, CancellationToken ct)
     {
+        // Claude's answers survive a new search of the algorithm: they are kept apart and merged in.
+        if (result is not null)
+        {
+            result = AssistedRecords.Merge(result, await Assisted.GetCandidatesAsync(bookId, ct));
+        }
+
         await using var connection = await _index.OpenAsync(ct);
         await connection.ExecuteAsync(new CommandDefinition(
             """
