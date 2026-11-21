@@ -175,4 +175,15 @@ internal static class IndexMigrations
     ];
 
     public static int LatestVersion => All.Count;
+
+    /// <summary>
+    /// The oldest schema version whose app can still use an index of <see cref="LatestVersion"/> as it
+    /// is: the migrations after it only added tables or columns that older apps simply don't read.
+    /// Kept in <c>app_state</c> (<see cref="OldestReaderKey"/>) so that going back to an older version
+    /// of the app does not throw the index away. Lower it to <see cref="LatestVersion"/> when a
+    /// migration changes what older apps read. 12 (assisted identification) only added tables.
+    /// </summary>
+    public const int OldestReader = 11;
+
+    public const string OldestReaderKey = "index.oldestReader";
 }
