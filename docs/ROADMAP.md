@@ -15,7 +15,7 @@ Status: ⬜ not started · 🟨 in progress · ✅ done. `§` sections refer to 
 | F6 | Polish and distribution | ✅ |
 | F7 | Visual revamp | ✅ (the user's test is pending) |
 | F8 | Review by series | ✅ |
-| F9 | Assisted identification with Claude Code | ✅ (the user's test is pending) |
+| F9 | Assisted identification with Claude Code | ✅ |
 
 When each phase is done: green build and tests → update this file → commit and push → **stop and explain to the user how to test it**.
 
