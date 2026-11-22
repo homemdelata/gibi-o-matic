@@ -470,9 +470,45 @@
                         <TextBlock Grid.Column="2" Classes="current" Classes.applied="{Binding IsApplied}" Margin="8,12" VerticalAlignment="Center"
                                    TextWrapping="Wrap" MaxLines="4" TextTrimming="CharacterEllipsis" Text="{Binding Current}" />
                         <StackPanel Grid.Column="3" Margin="8,12" VerticalAlignment="Center" Spacing="2">
-                          <TextBlock Classes="proposed" Classes.applied="{Binding IsApplied}" TextWrapping="Wrap" MaxLines="5"
-                                     TextTrimming="CharacterEllipsis" Text="{Binding Proposed}"
-                                     ToolTip.Tip="{Binding SourceTip}" ToolTip.IsEnabled="{Binding HasSource}" />
+                          <!-- The proposed value, with a pencil to change it before approving -->
+                          <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding ShowValue}">
+                            <TextBlock Classes="proposed" Classes.applied="{Binding IsApplied}" TextWrapping="Wrap" MaxLines="5" VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" Text="{Binding Proposed}"
+                                       ToolTip.Tip="{Binding SourceTip}" ToolTip.IsEnabled="{Binding ShowSource}" />
+                            <Button Grid.Column="1" Classes="tool" Margin="8,-8,0,-8" VerticalAlignment="Center" IsVisible="{Binding IsEditable}"
+                                    Command="{Binding EditCommand}" ToolTip.Tip="{Binding EditTip}" AutomationProperties.Name="{Binding EditTip}">
+                              <c:StrokeIcon Data="{StaticResource Icon.Editor}" Width="15" Height="15" />
+                            </Button>
+                          </Grid>
+                          <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding IsEdited}">
+                            <TextBlock Classes="help" VerticalAlignment="Center" Foreground="{DynamicResource AccentTextBrush}" Text="{x:Static r:Strings.Review_Edited}" />
+                            <Button Classes="link" Padding="0" VerticalAlignment="Center" FontSize="12.5" Content="{x:Static r:Strings.Review_EditRestore}"
+                                    Command="{Binding RestoreCommand}" ToolTip.Tip="{x:Static r:Strings.Review_EditRestoreHelp}"
+                                    AutomationProperties.Name="{x:Static r:Strings.Review_EditRestoreHelp}" />
+                          </StackPanel>
+                          <!-- Editing: Enter uses the value, Escape leaves it as it was -->
+                          <StackPanel Spacing="4" IsVisible="{Binding IsEditing}" PropertyChanged="OnEditorPropertyChanged">
+                            <Grid ColumnDefinitions="*,Auto,Auto">
+                              <TextBox Text="{Binding EditText}" AcceptsReturn="False" TextWrapping="Wrap" MaxHeight="120"
+                                       AutomationProperties.Name="{Binding EditTip}">
+                                <TextBox.KeyBindings>
+                                  <KeyBinding Gesture="Enter" Command="{Binding CommitEditCommand}" />
+                                  <KeyBinding Gesture="Escape" Command="{Binding CancelEditCommand}" />
+                                </TextBox.KeyBindings>
+                              </TextBox>
+                              <Button Grid.Column="1" Classes="icon" Margin="6,0,0,0" Command="{Binding CommitEditCommand}"
+                                      ToolTip.Tip="{x:Static r:Strings.Review_EditConfirm}" AutomationProperties.Name="{x:Static r:Strings.Review_EditConfirm}">
+                                <c:StrokeIcon Data="{StaticResource Icon.Check}" Width="15" Height="15" />
+                              </Button>
+                              <Button Grid.Column="2" Classes="icon" Margin="4,0,0,0" Command="{Binding CancelEditCommand}"
+                                      ToolTip.Tip="{x:Static r:Strings.Review_EditCancel}" AutomationProperties.Name="{x:Static r:Strings.Review_EditCancel}">
+                                <c:StrokeIcon Data="{StaticResource Icon.Close}" Width="15" Height="15" />
+                              </Button>
+                            </Grid>
+                            <TextBlock Classes="error" FontSize="12.5" TextWrapping="Wrap" Text="{Binding EditError}"
+                                       IsVisible="{Binding EditError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                            <TextBlock Classes="help" FontSize="12" TextWrapping="Wrap" Text="{Binding EditHelp}" />
+                          </StackPanel>
                           <TextBlock Classes="help" Foreground="{DynamicResource WarnTextBrush}" Text="{x:Static r:Strings.Review_Conflict}"
                                      IsVisible="{Binding Change.Conflict}" />
                         </StackPanel>

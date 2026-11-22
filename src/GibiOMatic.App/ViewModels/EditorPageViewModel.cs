@@ -465,7 +465,7 @@ public sealed partial class EditorPageViewModel : PageViewModel
         var date = book.Date;
         if (!string.IsNullOrWhiteSpace(DateText))
         {
-            date = ParseDate(DateText);
+            date = PartialDate.Parse(DateText);
             if (date is null)
             {
                 error = Strings.Editor_InvalidDate;
@@ -520,25 +520,6 @@ public sealed partial class EditorPageViewModel : PageViewModel
     }
 
     private static string? Clean(string? text) => string.IsNullOrWhiteSpace(text) ? null : text.Trim();
-
-    private static PartialDate? ParseDate(string text)
-    {
-        var parts = text.Trim().Split('-');
-        if (parts.Length is < 1 or > 3 || !parts.All(p => p.All(char.IsAsciiDigit) && p.Length > 0))
-        {
-            return null;
-        }
-
-        var year = int.Parse(parts[0], CultureInfo.InvariantCulture);
-        int? month = parts.Length > 1 ? int.Parse(parts[1], CultureInfo.InvariantCulture) : null;
-        int? day = parts.Length > 2 ? int.Parse(parts[2], CultureInfo.InvariantCulture) : null;
-        if (year is < 1800 or > 2200 || month is < 1 or > 12 || (day is not null && (month is null || day < 1 || day > DateTime.DaysInMonth(year, month.Value))))
-        {
-            return null;
-        }
-
-        return new PartialDate(year, month, day);
-    }
 
     [RelayCommand]
     private void AddCredit() => Credits.Add(new CreditRowViewModel(Roles[0], string.Empty, RemoveCredit));

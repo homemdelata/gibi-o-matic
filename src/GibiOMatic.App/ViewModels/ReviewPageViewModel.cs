@@ -188,7 +188,109 @@ public sealed partial class FieldRowViewModel(FieldChange change, Action changed
     public FieldChange Change { get; } = change;
     public string Label => IdentificationText.FieldLabel(Change.Field);
     public string Current => Display(Change.Current);
-    public string Proposed => Display(Change.Proposed);
+    public string Proposed => Display(EditedValue ?? Change.Proposed);
+
+    /// <summary>The proposed value can be changed before approving (SPEC §7): "Saga: Book One" → "Saga".</summary>
+    public bool IsEditable => Proposal.IsEditable(Change.Field);
+
+    /// <summary>"Edit Series", the accessible name of the pencil button.</summary>
+    public string EditTip => string.Format(CultureInfo.CurrentCulture, Strings.Review_EditField, Label);
+
+    /// <summary>The value the user typed in place of the source's; null keeps the source's.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Proposed), nameof(IsEdited), nameof(CanApply), nameof(ShowSource))]
+    public partial string? EditedValue { get; private set; }
+
+    public bool IsEdited => EditedValue is not null;
+
+    /// <summary>How to type the value: Enter and Esc, and the format of names and dates.</summary>
+    public string EditHelp => Change.Field switch
+    {
+        ProposalField.Date => Strings.Review_EditHelpDate,
+        ProposalField.Writers or ProposalField.Artists or ProposalField.Inkers or ProposalField.Colorists or ProposalField.Letterers
+            or ProposalField.CoverArtists => Strings.Review_EditHelpNames,
+        _ => Strings.Review_EditHelp,
+    };
+
+    /// <summary>The source's tip only while its value is the one shown.</summary>
+    public bool ShowSource => HasSource && !IsEdited;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowValue))]
+    public partial bool IsEditing { get; private set; }
+
+    public bool ShowValue => !IsEditing;
+
+    [ObservableProperty]
+    public partial string? EditText { get; set; }
+
+    /// <summary>Why the typed value cannot be used (blank, or a date in another format).</summary>
+    [ObservableProperty]
+    public partial string? EditError { get; private set; }
+
+    partial void OnEditTextChanged(string? value) => EditError = null;
+
+    [RelayCommand]
+    private void Edit()
+    {
+        if (IsEditable)
+        {
+            EditText = EditedValue ?? Change.Proposed;
+            EditError = null;
+            IsEditing = true;
+        }
+    }
+
+    /// <summary>Enter, the check button or approving: the typed value replaces the proposal and the row is checked.</summary>
+    [RelayCommand]
+    private void CommitEdit() => TryCommitEdit();
+
+    /// <returns>False when the typed value cannot be used; the row stays in editing, with the reason.</returns>
+    public bool TryCommitEdit()
+    {
+        if (!IsEditing)
+        {
+            return true;
+        }
+
+        if (!Proposal.IsValidEdit(Change.Field, EditText))
+        {
+            EditError = Change.Field == ProposalField.Date ? Strings.Editor_InvalidDate : Strings.Review_EditEmpty;
+            return false;
+        }
+
+        var text = EditText!.Trim();
+        EditedValue = text == Change.Proposed ? null : text;
+        IsEditing = false;
+        if (IsEdited)
+        {
+            IsApplied = true;
+        }
+
+        changed();
+        return true;
+    }
+
+    /// <summary>Escape: leaves the value as it was.</summary>
+    [RelayCommand]
+    private void CancelEdit()
+    {
+        IsEditing = false;
+        EditError = null;
+    }
+
+    /// <summary>Back to the source's value, checked as it would be by default.</summary>
+    [RelayCommand]
+    private void Restore()
+    {
+        EditedValue = null;
+        IsEditing = false;
+        EditError = null;
+        IsApplied = _defaultApplied;
+        changed();
+    }
+
+    private readonly bool _defaultApplied = change.Changed && change.Field != ProposalField.Cover && !unticked;
 
     private string Display(string? value) => value switch
     {
@@ -211,8 +313,8 @@ public sealed partial class FieldRowViewModel(FieldChange change, Action changed
         }
         : value ?? "—";
 
-    /// <summary>Only rows that change something can be applied.</summary>
-    public bool CanApply => Change.Changed;
+    /// <summary>Only rows that change something can be applied, or whose value the user typed.</summary>
+    public bool CanApply => Change.Changed || IsEdited;
 
     /// <summary>
     /// Changes are checked by default, conflicts included (they only get a warning), except the cover:
@@ -1401,13 +1503,22 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             return;
         }
 
-        var fields = Rows.Where(r => r.IsApplied).Select(r => r.Change.Field).ToHashSet();
+        // A value still being typed counts, as if Enter had been pressed; an invalid one stops here, with its message.
+        if (!Rows.Where(r => r.IsEditing).ToList().All(r => r.TryCommitEdit()))
+        {
+            return;
+        }
+
+        var applied = Rows.Where(r => r.IsApplied && r.CanApply).ToList();
+        var fields = applied.Select(r => r.Change.Field).ToHashSet();
+        var edits = applied.Where(r => r.EditedValue is not null).ToDictionary(r => r.Change.Field, r => r.EditedValue!);
+        var chosen = edits.Count == 0 ? candidate.Candidate : candidate.Candidate with { Record = Proposal.WithEdits(candidate.Candidate.Record, edits) };
         var index = Items.IndexOf(item);
         // Downloading the full-size cover takes a moment.
         SetBusy(fields.Contains(ProposalField.Cover) ? Strings.Review_DownloadingCover : null);
         try
         {
-            await queue.ApproveAsync(item.BookId, candidate.Candidate, fields, ct);
+            await queue.ApproveAsync(item.BookId, chosen, fields, ct);
         }
         finally
         {

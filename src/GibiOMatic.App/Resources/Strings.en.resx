@@ -858,6 +858,16 @@
   <data name="Review_CoverDiffers" xml:space="preserve"><value>The record's cover differs from the book's.</value></data>
   <data name="Review_CoverMatches" xml:space="preserve"><value>The cover matches the book's.</value></data>
   <data name="Review_EditionMissing" xml:space="preserve"><value>Edition without a ComicVine record: the fields come from Claude's answer, each with its source (hover). Credits read from the credits page start unticked.</value></data>
+  <data name="Review_EditField" xml:space="preserve"><value>Edit {0}</value></data>
+  <data name="Review_EditEmpty" xml:space="preserve"><value>Type a value, or undo the edit to use the source's.</value></data>
+  <data name="Review_EditConfirm" xml:space="preserve"><value>Use this value</value></data>
+  <data name="Review_EditCancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Review_Edited" xml:space="preserve"><value>Edited by you</value></data>
+  <data name="Review_EditRestore" xml:space="preserve"><value>Undo</value></data>
+  <data name="Review_EditRestoreHelp" xml:space="preserve"><value>Goes back to the source's value</value></data>
+  <data name="Review_EditHelp" xml:space="preserve"><value>Enter to use the value, Esc to cancel.</value></data>
+  <data name="Review_EditHelpNames" xml:space="preserve"><value>Enter to use the value, Esc to cancel. Names separated by commas.</value></data>
+  <data name="Review_EditHelpDate" xml:space="preserve"><value>Enter to use the value, Esc to cancel. YYYY, YYYY-MM or YYYY-MM-DD.</value></data>
   <data name="Review_FieldSource" xml:space="preserve"><value>Source: {0}</value></data>
   <data name="Review_AskClaudeAll" xml:space="preserve"><value>Ask Claude ({0})</value></data>
   <data name="Review_AskClaudeAllConfirm" xml:space="preserve"><value>Ask Claude about {0} books without an answer yet? One at a time, 20 s to 1 min each (about {1} min in all), using your plan's quota. The answers go to the Review.</value></data>

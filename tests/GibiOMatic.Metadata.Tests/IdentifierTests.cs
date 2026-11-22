@@ -630,4 +630,28 @@ public sealed class ProposalTests
         Assert.Null(applied.Summary);
         Assert.Equal("4000-1", applied.Identifiers.ComicVine);
     }
+
+    [Fact]
+    public void Edits_typed_in_the_review_replace_the_source_values_and_invalid_ones_are_ignored()
+    {
+        var record = Record with { SeriesName = "Saga: Compendium" };
+        var edits = new Dictionary<ProposalField, string>
+        {
+            [ProposalField.Series] = "  Saga ",
+            [ProposalField.Writers] = "Brian K. Vaughan, Someone Else,",
+            [ProposalField.Date] = "2012-13",
+            [ProposalField.Title] = " ",
+        };
+
+        var edited = Proposal.WithEdits(record, edits);
+
+        Assert.Equal("Saga", edited.SeriesName);
+        Assert.Equal(["Brian K. Vaughan", "Someone Else"], edited.Credits.Where(c => c.Role == CreditRole.Writer).Select(c => c.Name));
+        Assert.Equal(["Fiona Staples"], edited.Credits.Where(c => c.Role == CreditRole.Artist).Select(c => c.Name));
+        Assert.Equal(record.Date, edited.Date);
+        Assert.Equal(record.Title, edited.Title);
+        Assert.True(Proposal.IsValidEdit(ProposalField.Date, "2012-06"));
+        Assert.False(Proposal.IsValidEdit(ProposalField.Kind, "tpb"));
+        Assert.False(Proposal.IsEditable(ProposalField.Cover));
+    }
 }

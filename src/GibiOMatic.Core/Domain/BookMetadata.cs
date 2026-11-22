@@ -53,7 +53,28 @@ public enum BookKind
 
 public sealed record SeriesInfo(string Name, string? Number = null, string? Volume = null);
 
-public sealed record PartialDate(int Year, int? Month = null, int? Day = null);
+public sealed record PartialDate(int Year, int? Month = null, int? Day = null)
+{
+    /// <summary>"2022", "2022-06" or "2022-06-15"; null for anything else or an impossible date.</summary>
+    public static PartialDate? Parse(string? text)
+    {
+        var parts = (text ?? string.Empty).Trim().Split('-');
+        if (parts.Length is < 1 or > 3 || !parts.All(p => p.Length > 0 && p.All(char.IsAsciiDigit)))
+        {
+            return null;
+        }
+
+        var year = int.Parse(parts[0], System.Globalization.CultureInfo.InvariantCulture);
+        int? month = parts.Length > 1 ? int.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture) : null;
+        int? day = parts.Length > 2 ? int.Parse(parts[2], System.Globalization.CultureInfo.InvariantCulture) : null;
+        if (year is < 1800 or > 2200 || month is < 1 or > 12 || (day is not null && (month is null || day < 1 || day > DateTime.DaysInMonth(year, month.Value))))
+        {
+            return null;
+        }
+
+        return new PartialDate(year, month, day);
+    }
+}
 
 public sealed record Credit(CreditRole Role, string Name);
 
