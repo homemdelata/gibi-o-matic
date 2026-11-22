@@ -168,7 +168,11 @@
                   </Border>
                   <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center" Spacing="3">
                     <TextBlock FontWeight="SemiBold" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
-                    <TextBlock Classes="muted" FontSize="12" Text="{Binding Issue}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Classes="muted" FontSize="12" Text="{Binding Issue}" TextTrimming="CharacterEllipsis" IsVisible="{Binding !IsClaudeRunning}" />
+                    <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsClaudeRunning}">
+                      <c:StrokeIcon Data="{StaticResource Icon.Sparkle}" Width="12" Height="12" VerticalAlignment="Center" Foreground="{DynamicResource AccentTextBrush}" />
+                      <TextBlock FontSize="12" Foreground="{DynamicResource AccentTextBrush}" Text="{x:Static r:Strings.Review_ClaudeLooking}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
                   </StackPanel>
                   <!-- The current score and the best result's confidence: two different numbers, each named on hover -->
                   <Grid Grid.Column="2" ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnSpacing="5" VerticalAlignment="Center">
@@ -409,7 +413,7 @@
           </StackPanel>
 
           <!-- What Claude saw (SPEC 8.4): evidence, doubts, the covers and an edition missing from ComicVine -->
-          <Border Classes="card" Padding="14,12" IsVisible="{Binding SelectedCandidate.IsFromClaude, FallbackValue=False}">
+          <Border Classes="card" Padding="14,12" IsVisible="{Binding ShowClaudeEvidence}">
             <StackPanel Spacing="6">
               <TextBlock Classes="section-label" Text="{x:Static r:Strings.Review_ClaudeEvidence}" />
               <TextBlock Classes="muted" FontSize="12.5" Text="{Binding SelectedCandidate.ClaudeLine, FallbackValue={x:Null}}" />

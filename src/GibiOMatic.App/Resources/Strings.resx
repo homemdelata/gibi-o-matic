@@ -278,6 +278,7 @@
   <data name="Review_ScoreTip" xml:space="preserve"><value>Nota atual: {0} de 100, dos metadados que o livro tem hoje</value></data>
   <data name="Review_BestTip" xml:space="preserve"><value>Principal resultado: {0:0%} de confiança</value></data>
   <data name="Review_BestTipClaude" xml:space="preserve"><value>Principal resultado, do Claude: {0:0%} de confiança</value></data>
+  <data name="Review_ClaudeLooking" xml:space="preserve"><value>O Claude está olhando…</value></data>
   <data name="Review_Confidence" xml:space="preserve"><value>{0:0%} de confiança</value></data>
   <data name="Review_Conflict" xml:space="preserve"><value>O valor atual parece bom; desmarque para mantê-lo.</value></data>
   <data name="Review_EditByHand" xml:space="preserve"><value>Editar à mão</value></data>

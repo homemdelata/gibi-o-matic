@@ -17,14 +17,22 @@ public sealed class FakeClaudeCode : IClaudeCode
 
     public List<ClaudeRun> Runs { get; } = [];
 
+    /// <summary>When set, a run waits for it: Claude is still looking.</summary>
+    public TaskCompletionSource? Hold { get; set; }
+
     public Task<ClaudeStatus> GetStatusAsync(CancellationToken ct) => Task.FromResult(Status);
 
-    public Task<ClaudeRunResult> RunAsync(ClaudeRun run, CancellationToken ct)
+    public async Task<ClaudeRunResult> RunAsync(ClaudeRun run, CancellationToken ct)
     {
         Runs.Add(run);
-        return Task.FromResult(Answer(run) is { } output
+        if (Hold is { } hold)
+        {
+            await hold.Task.WaitAsync(ct);
+        }
+
+        return Answer(run) is { } output
             ? new ClaudeRunResult(output, null, 9, TimeSpan.FromSeconds(15))
-            : ClaudeRunResult.Failed("timeout", TimeSpan.FromMinutes(5)));
+            : ClaudeRunResult.Failed("timeout", TimeSpan.FromMinutes(5));
     }
 }
 
@@ -133,6 +141,66 @@ public sealed class ClaudeTests : IDisposable
         Assert.Contains("1", review.AskClaudeAllText);
         review.AskClaudeAllCommand.Execute(null);
         Assert.NotNull(review.AskClaudeAllConfirmText);
+    }
+
+    [Fact]
+    public async Task While_claude_looks_at_a_book_the_others_can_be_reviewed()
+    {
+        await _app.EnterUiThreadAsync();
+        await _app.Get<ISettingsService>().SaveAsync(new AppSettings { Claude = new ClaudeSettings { Enabled = true } }, Ct);
+        _app.Identifier.Respond = (_, _) => [FakeIdentifier.Candidate("Saga, Vol. 1", "Saga", "1", 0.6, MatchReason.Title)];
+        _app.Claude.Answer = _ => JsonSerializer.Serialize(new BookAnswer
+        {
+            Identified = true,
+            Title = "House of Slaughter, Vol. 1",
+            ComicVineUrl = "https://comicvine.gamespot.com/house-of-slaughter-1/4000-1/",
+            Confidence = 0.93,
+        }, Core.Json.GibiJson.Options);
+        await OpenAndImportAsync("alpha.pdf", "beta.pdf");
+        var review = _app.Get<ReviewPageViewModel>();
+        await review.OnNavigatedToAsync(Ct);
+        var first = review.Items[0].BookId;
+        var second = review.Items[1].BookId;
+
+        _app.Claude.Hold = new TaskCompletionSource();
+        var asking = review.AskClaudeCommand.ExecuteAsync(null);
+        Assert.True(review.IsClaudeRunning);
+        Assert.False(review.ShowCandidates);
+        Assert.True(review.Items[0].IsClaudeRunning);
+
+        // Another book shows as it is, with its own candidates, and can be worked on.
+        review.Items[1].SelectCommand.Execute(null);
+        await Task.Delay(50, Ct);
+        Assert.Equal(second, review.Selected?.BookId);
+        Assert.False(review.IsBusy);
+        Assert.False(review.IsClaudeRunning);
+        Assert.True(review.ShowCandidates);
+        Assert.Equal("Saga, Vol. 1", review.SelectedCandidate?.Title);
+        Assert.True(review.ApproveCommand.CanExecute(null));
+
+        // Back on the first book, the wait shows again.
+        review.Items[0].SelectCommand.Execute(null);
+        await Task.Delay(50, Ct);
+        Assert.True(review.IsClaudeRunning);
+        Assert.False(review.ShowCandidates);
+        Assert.False(review.ShowClaudeEvidence);
+
+        // Claude answers while the second book is on screen: it stays there; the first book's line shows the answer.
+        review.Items[1].SelectCommand.Execute(null);
+        await Task.Delay(50, Ct);
+        _app.Claude.Hold.SetResult();
+        await asking;
+        Assert.Equal(second, review.Selected?.BookId);
+        Assert.Equal("Saga, Vol. 1", review.SelectedCandidate?.Title);
+        Assert.False(review.IsBusy);
+        var answered = review.Items.Single(i => i.BookId == first);
+        Assert.False(answered.IsClaudeRunning);
+        Assert.True(answered.IsBestFromClaude);
+
+        answered.SelectCommand.Execute(null);
+        await Task.Delay(50, Ct);
+        Assert.True(review.ShowClaudeEvidence);
+        Assert.Equal("House of Slaughter, Vol. 1", review.SelectedCandidate?.Title);
     }
 
     [Fact]
