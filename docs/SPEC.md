@@ -291,7 +291,9 @@ Bands: **Poor** (< 60), **Review** (60–84), **OK** (≥ 85). The rule already 
 **When it runs** (user decision): Settings chooses **Only when I ask** (default) or **Automatically for the books that go to the Review** (after the identification of §8.2, on import and in the Inbox). Where it can be asked:
 - the Review, for one book;
 - the Review by series (§7.1), for a group (**Ask Claude about this series**, below);
-- a batch, "Ask Claude about N books": first an estimate (dry run), then confirmation, progress, cancellation and a log.
+- a batch, "Ask Claude about N books": first an estimate (dry run), then confirmation, progress, cancellation and a log. The button follows the Review's mode: By book it asks about the books without an answer, one run each; By series it asks about the groups without one, one group run each (the books of No group are left for the By book mode). Books approved while they wait are skipped, a group is asked about the books it still has in the Review, and a book or group asked by hand leaves the batch.
+
+Claude answers one question at a time, and a question belongs to its book or group, not to the screen: while it runs (or waits for its turn, which it says), the user reviews other books or groups as they are; going back shows the wait with **Cancel**. The lists mark what Claude is looking at, and an answer that arrives for the book or group on screen shows at once; one for another book or group shows when it is opened.
 
 The app shows the count of books, the time and the calls, not dollars: on a subscription the `total_cost_usd` of the CLI is only what the API would have charged.
 

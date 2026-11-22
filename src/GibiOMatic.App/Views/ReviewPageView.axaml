@@ -32,7 +32,7 @@
                   IsVisible="{Binding SearchAllText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
           <Button Classes="secondary" MinHeight="32" Padding="12,0" Margin="0,6,0,0" HorizontalAlignment="Left" FontSize="13"
                   Content="{Binding AskClaudeAllText}" Command="{Binding AskClaudeAllCommand}"
-                  ToolTip.Tip="{x:Static r:Strings.Review_AskClaudeHelp}"
+                  ToolTip.Tip="{Binding AskClaudeAllHelp}"
                   IsVisible="{Binding AskClaudeAllText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
         </StackPanel>
         <Border DockPanel.Dock="Top" Classes="card" Padding="12,10" Margin="0,0,0,12"
@@ -119,6 +119,10 @@
                       <TextBlock FontWeight="SemiBold" Text="{Binding Name}" TextTrimming="CharacterEllipsis" Classes.muted="{Binding IsNoGroup}" />
                       <TextBlock Classes="help" FontSize="12" Foreground="{DynamicResource WarnTextBrush}" Text="{Binding WarningText}"
                                  TextTrimming="CharacterEllipsis" IsVisible="{Binding HasWarnings}" />
+                      <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsClaudeRunning}">
+                        <c:StrokeIcon Data="{StaticResource Icon.Sparkle}" Width="12" Height="12" VerticalAlignment="Center" Foreground="{DynamicResource AccentTextBrush}" />
+                        <TextBlock FontSize="12" Foreground="{DynamicResource AccentTextBrush}" Text="{x:Static r:Strings.Review_ClaudeLooking}" TextTrimming="CharacterEllipsis" />
+                      </StackPanel>
                     </StackPanel>
                     <TextBlock Grid.Column="1" Classes="mono muted" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" Text="{Binding CountText}" />
                   </Grid>

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using GibiOMatic.App.Resources;
 using GibiOMatic.App.Services;
 using GibiOMatic.App.ViewModels;
 using GibiOMatic.Core.Settings;
@@ -201,6 +202,98 @@ public sealed class ClaudeTests : IDisposable
         await Task.Delay(50, Ct);
         Assert.True(review.ShowClaudeEvidence);
         Assert.Equal("House of Slaughter, Vol. 1", review.SelectedCandidate?.Title);
+    }
+
+    /// <summary>A group run answers with the series and no record (its books stay without a candidate); a book run gets nothing.</summary>
+    private static string? GroupOnly(ClaudeRun run) => File.Exists(Path.Combine(run.Folder, "group.json"))
+        ? JsonSerializer.Serialize(new GroupAnswer
+        {
+            Series = new GroupAnswerSeries { Name = "Saga", Publisher = "Image", StartYear = 2012 },
+            Pattern = "Each trade is an issue of the series.",
+            Books = [],
+            MissingNumbers = [],
+        }, Core.Json.GibiJson.Options)
+        : null;
+
+    [Fact]
+    public async Task By_series_the_batch_asks_claude_once_per_series()
+    {
+        await _app.EnterUiThreadAsync();
+        await _app.Get<ISettingsService>().SaveAsync(new AppSettings { Claude = new ClaudeSettings { Enabled = true } }, Ct);
+        _app.Claude.Answer = GroupOnly;
+        await OpenAndImportAsync("Saga Vol. 1.pdf", "Saga Vol. 2.pdf", "Wynd Vol. 1.pdf", "Wynd Vol. 2.pdf", "Plutona.pdf");
+        var review = _app.Get<ReviewPageViewModel>();
+        await review.OnNavigatedToAsync(Ct);
+        Assert.Equal(string.Format(Strings.Review_AskClaudeAll, 5), review.AskClaudeAllText);
+
+        // By series, the button counts the groups (not the books, nor "No group").
+        await review.ShowBySeriesCommand.ExecuteAsync(null);
+        Assert.Equal(string.Format(Strings.Review_AskClaudeAllSeries, 2), review.AskClaudeAllText);
+        Assert.Equal(Strings.Series_AskClaudeHelp, review.AskClaudeAllHelp);
+        review.AskClaudeAllCommand.Execute(null);
+        Assert.NotNull(review.AskClaudeAllConfirmText);
+        await review.ConfirmAskClaudeAllCommand.ExecuteAsync(null);
+
+        var assisted = Session.Assisted!;
+        for (var waited = 0; waited < 10_000 && (assisted.HasBatch || assisted.IsBusy); waited += 25)
+        {
+            await Task.Delay(25, Ct);
+        }
+
+        Assert.Equal(2, _app.Claude.Runs.Count);
+        Assert.All(_app.Claude.Runs, r => Assert.True(File.Exists(Path.Combine(r.Folder, "group.json"))));
+
+        // Both groups have their answer; the open one shows Claude's suggestion.
+        await review.Series.RefreshAsync(ct: Ct);
+        await Task.Delay(100, Ct);
+        Assert.Null(review.AskClaudeAllText);
+        Assert.True(review.Series.HasClaudeResult);
+
+        // Back by book, the button counts books again (the group runs found no record for them).
+        await review.ShowByBookCommand.ExecuteAsync(null);
+        Assert.Equal(string.Format(Strings.Review_AskClaudeAll, 5), review.AskClaudeAllText);
+    }
+
+    [Fact]
+    public async Task While_claude_looks_at_a_series_the_other_groups_can_be_reviewed()
+    {
+        await _app.EnterUiThreadAsync();
+        await _app.Get<ISettingsService>().SaveAsync(new AppSettings { Claude = new ClaudeSettings { Enabled = true } }, Ct);
+        _app.Claude.Answer = GroupOnly;
+        await OpenAndImportAsync("Saga Vol. 1.pdf", "Saga Vol. 2.pdf", "Wynd Vol. 1.pdf", "Wynd Vol. 2.pdf");
+        var review = _app.Get<ReviewPageViewModel>();
+        await review.ShowBySeriesCommand.ExecuteAsync(null);
+        var series = review.Series;
+        Assert.Equal("Saga", series.Selected?.Name);
+
+        _app.Claude.Hold = new TaskCompletionSource();
+        var asking = series.AskClaudeCommand.ExecuteAsync(null);
+        Assert.True(series.IsClaudeRunning);
+        Assert.False(series.IsIdle);
+        Assert.True(series.GroupItems[0].IsClaudeRunning);
+
+        // Another group opens as it is and can be worked on.
+        await series.GroupItems[1].SelectCommand.ExecuteAsync(null);
+        Assert.Equal("Wynd", series.Selected?.Name);
+        Assert.True(series.IsIdle);
+        Assert.False(series.IsClaudeRunning);
+        Assert.False(series.HasClaudeResult);
+
+        // Back on the first group, the wait shows again, with Cancel.
+        await series.GroupItems[0].SelectCommand.ExecuteAsync(null);
+        Assert.True(series.IsClaudeRunning);
+
+        // Claude answers while the other group is open: it stays open; the first one shows the answer when opened.
+        await series.GroupItems[1].SelectCommand.ExecuteAsync(null);
+        _app.Claude.Hold.SetResult();
+        await asking;
+        Assert.Equal("Wynd", series.Selected?.Name);
+        Assert.False(series.HasClaudeResult);
+        Assert.False(series.GroupItems[0].IsClaudeRunning);
+
+        await series.GroupItems[0].SelectCommand.ExecuteAsync(null);
+        Assert.True(series.HasClaudeResult);
+        Assert.Equal("Saga", series.SeriesName);
     }
 
     [Fact]

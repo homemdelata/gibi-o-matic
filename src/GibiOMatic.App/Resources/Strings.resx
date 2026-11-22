@@ -855,6 +855,9 @@
   <data name="Review_FieldSource" xml:space="preserve"><value>Fonte: {0}</value></data>
   <data name="Review_AskClaudeAll" xml:space="preserve"><value>Perguntar ao Claude ({0})</value></data>
   <data name="Review_AskClaudeAllConfirm" xml:space="preserve"><value>Perguntar ao Claude sobre {0} livros ainda sem resposta? Um por vez, de 20 s a 1 min cada (uns {1} min ao todo), usando a cota do seu plano. As respostas vão para a Revisão.</value></data>
+  <data name="Review_AskClaudeAllSeries" xml:space="preserve"><value>Perguntar ao Claude ({0} séries)</value></data>
+  <data name="Review_AskClaudeAllSeriesConfirm" xml:space="preserve"><value>Perguntar ao Claude sobre {0} séries ainda sem resposta? Uma execução por série, uma por vez (uns {1} min ao todo), usando a cota do seu plano. A sugestão aparece em cada série, para você aprovar; os livros sem grupo ficam para o modo Por livro.</value></data>
+  <data name="Review_ClaudeQueued" xml:space="preserve"><value>Na fila do Claude: "{0}" vem depois de "{1}".</value></data>
   <data name="Review_AskClaudeAllStart" xml:space="preserve"><value>Perguntar</value></data>
   <data name="Review_ClaudeProgress" xml:space="preserve"><value>Claude: {0} de {1} · {2}</value></data>
   <data name="Review_ClaudeStop" xml:space="preserve"><value>Parar</value></data>

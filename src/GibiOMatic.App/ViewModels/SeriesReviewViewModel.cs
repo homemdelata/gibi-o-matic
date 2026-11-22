@@ -43,6 +43,10 @@ public sealed partial class SeriesGroupItemViewModel(ReviewGroup? group, int cou
     [ObservableProperty]
     public partial bool IsSelected { get; set; }
 
+    /// <summary>Claude is looking at this group, or at one of its books (or it waits for Claude).</summary>
+    [ObservableProperty]
+    public partial bool IsClaudeRunning { get; set; }
+
     [RelayCommand]
     private Task Select() => owner.OpenAsync(this);
 
@@ -333,6 +337,12 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
     [ObservableProperty]
     public partial bool HasGroups { get; private set; }
 
+    /// <summary>The last grouping of the queue (the groups of the list, before the filter).</summary>
+    public ReviewGrouping Grouping => _grouping;
+
+    /// <summary>The groups were recomputed.</summary>
+    public event EventHandler? GroupsChanged;
+
     // ---- The group list ----
 
     /// <summary>Recomputes the groups; keeps the open one (or opens <paramref name="openId"/>, or the first).</summary>
@@ -368,6 +378,8 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
 
         GroupItems.Add(new SeriesGroupItemViewModel(null, _grouping.Ungrouped.Count, this));
         HasGroups = _grouping.Groups.Count > 0 || _grouping.Ungrouped.Count > 0;
+        MarkClaudeGroups();
+        GroupsChanged?.Invoke(this, EventArgs.Empty);
         var next = GroupItems.FirstOrDefault(g => (g.Group?.Id ?? NoGroupId) == keep) ?? GroupItems[0];
         await OpenAsync(next, reload: next.Group?.Id != Selected?.Group?.Id || next.Group is null || BooksChanged(next));
     }
@@ -398,6 +410,7 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
 
         var previous = Selected;
         Selected = item;
+        UpdateBusy();
         _searching?.Cancel();
         ConfirmText = null;
         AddSearch = null;
@@ -573,6 +586,103 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
 
     public bool IsIdle => BusyText is null;
 
+    /// <summary>The search, volume, link or approval running for the open group, if any.</summary>
+    private string? _busyText;
+
+    private void SetBusy(string? text)
+    {
+        _busyText = text;
+        UpdateBusy();
+    }
+
+    /// <summary>
+    /// The open group waits while something runs for it: a search, a volume, a link, an approval, or
+    /// Claude looking at it (or at one of its books). Claude's runs belong to their groups, so another
+    /// group shows as it is.
+    /// </summary>
+    private void UpdateBusy()
+    {
+        string? claudeText = null;
+        if (Selected?.Group is { } group && _claudeRuns.TryGetValue(group.Id, out var run))
+        {
+            var assisted = _session.Assisted;
+            var running = assisted?.CurrentGroupId == group.Id || (assisted?.CurrentBookId is { } book && group.Books.Any(b => b.BookId == book));
+            claudeText = assisted?.CurrentTitle is { } current && !running
+                ? string.Format(CultureInfo.CurrentCulture, Strings.Review_ClaudeQueued, group.Name, current)
+                : run.Text;
+        }
+
+        BusyText = _busyText ?? claudeText;
+        IsClaudeRunning = _busyText is null && claudeText is not null;
+        MarkClaudeGroups();
+    }
+
+    /// <summary>"Claude is looking…" on the entries of the groups Claude is (or will be) looking at.</summary>
+    private void MarkClaudeGroups()
+    {
+        var assisted = _session.Assisted;
+        foreach (var item in GroupItems)
+        {
+            item.IsClaudeRunning = item.Group is { } g
+                && (_claudeRuns.ContainsKey(g.Id) || assisted?.CurrentGroupId == g.Id || (assisted?.CurrentBookId is { } book && g.Books.Any(b => b.BookId == book)));
+        }
+    }
+
+    /// <summary>The group Claude was looking at, when the queue last changed.</summary>
+    private string? _claudeGroupSeen;
+
+    /// <summary>
+    /// Claude's queue changed: the marks and the wait of the open group follow it, and an answer the
+    /// batch just gave for the open group shows at once.
+    /// </summary>
+    public void UpdateClaude()
+    {
+        var current = _session.Assisted?.CurrentGroupId;
+        if (_claudeGroupSeen is { } answered && answered != current && Selected?.Group is { } open && open.Id == answered && !_claudeRuns.ContainsKey(answered))
+        {
+            _ = ShowStoredClaudeAsync(open);
+        }
+
+        _claudeGroupSeen = current;
+        UpdateBusy();
+    }
+
+    private async Task ShowStoredClaudeAsync(ReviewGroup group)
+    {
+        if (_session.Assisted is not { } assisted || Groups is not { } groups)
+        {
+            return;
+        }
+
+        try
+        {
+            var stored = await assisted.Store.GetGroupAsync(group.Id);
+            if (stored is null || Selected?.Group?.Id != group.Id)
+            {
+                return;
+            }
+
+            var saved = await groups.GetSeriesAsync(group.Id);
+            await ApplyClaudeAsync(group, stored, chooseSeries: saved is null && stored.Series is not null);
+        }
+        catch (Exception ex) when (LibrarySession.IsExpectedFailure(ex))
+        {
+            _logger.LogError(ex, "Could not show Claude's answer for group {GroupId}", group.Id);
+        }
+    }
+
+    /// <summary>Claude is looking at this group (asked here), or it waits for Claude.</summary>
+    public bool IsClaudeRunningFor(string groupId) => _claudeRuns.ContainsKey(groupId);
+
+    /// <summary>The Review is closing: the runs asked here stop.</summary>
+    public void CancelClaudeRuns()
+    {
+        foreach (var run in _claudeRuns.Values.ToList())
+        {
+            run.Cancel.Cancel();
+        }
+    }
+
     private GroupSeries? Series => string.IsNullOrWhiteSpace(SeriesName)
         ? null
         : new GroupSeries(SeriesName.Trim(), string.IsNullOrWhiteSpace(SeriesPublisher) ? null : SeriesPublisher.Trim(),
@@ -605,13 +715,17 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
             await SetSeriesAsync(null, new GroupSeries(group.Name, null, null));
         }
 
+        // Claude's answer for the group, if it was asked (here or in a batch); its series is chosen
+        // when the user hasn't chosen one yet, as if the run had just ended.
+        var stored = _session.Assisted is { } assisted ? await assisted.Store.GetGroupAsync(group.Id) : null;
+
         // No book found a volume: the group's name is searched at once, nothing is chosen.
-        if (_suggestions.Count == 0 && saved?.VolumeId is null)
+        if (_suggestions.Count == 0 && saved?.VolumeId is null && stored?.Series is null)
         {
             await SearchAsync(auto: true);
         }
 
-        await LoadClaudeAsync(group);
+        await LoadClaudeAsync(group, stored, chooseSeries: saved is null);
     }
 
     private IEnumerable<VolumeOptionViewModel> VolumeOptions(ReviewGroup group)
@@ -684,7 +798,7 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
         SeriesError = null;
         _searching?.Cancel();
         using var searching = _searching = new CancellationTokenSource();
-        BusyText = string.Format(CultureInfo.CurrentCulture, Strings.Series_Searching, words);
+        SetBusy(string.Format(CultureInfo.CurrentCulture, Strings.Series_Searching, words));
         IReadOnlyList<CvVolume> found;
         try
         {
@@ -711,7 +825,7 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
             if (_searching == searching)
             {
                 _searching = null;
-                BusyText = null;
+                SetBusy(null);
             }
         }
 
@@ -789,7 +903,7 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
         {
             _loading?.Cancel();
             using var loading = _loading = new CancellationTokenSource();
-            BusyText = string.Format(CultureInfo.CurrentCulture, Strings.Series_LoadingVolume, volume.Name);
+            SetBusy(string.Format(CultureInfo.CurrentCulture, Strings.Series_LoadingVolume, volume.Name));
             try
             {
                 _issues = await _matcher.GetIssuesAsync(volume, loading.Token);
@@ -808,7 +922,7 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
                 if (_loading == loading)
                 {
                     _loading = null;
-                    BusyText = null;
+                    SetBusy(null);
                 }
             }
         }
@@ -850,7 +964,7 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
             return;
         }
 
-        BusyText = Strings.Review_LoadingLink;
+        SetBusy(Strings.Review_LoadingLink);
         CvVolume? volume;
         try
         {
@@ -864,7 +978,7 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
         }
         finally
         {
-            BusyText = null;
+            SetBusy(null);
         }
 
         if (volume is null)
@@ -1051,10 +1165,32 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
     /// <summary>The books Claude says belong to another series.</summary>
     public ObservableCollection<ClaudeOutsiderViewModel> ClaudeOutsiders { get; } = [];
 
-    [RelayCommand(CanExecute = nameof(IsIdle))]
-    private async Task AskClaudeAsync(CancellationToken ct)
+    /// <summary>A question to Claude about a group (or one of its books), which goes on while the user reviews other groups.</summary>
+    private sealed record ClaudeRun(CancellationTokenSource Cancel, string Text);
+
+    /// <summary>The groups Claude is looking at (or that wait for it), by group id.</summary>
+    private readonly Dictionary<string, ClaudeRun> _claudeRuns = [];
+
+    /// <summary>Why the last run of each group gave nothing, kept until the group is opened again.</summary>
+    private readonly Dictionary<string, string> _claudeMessages = [];
+
+    /// <summary>Claude is looking at the open group: the wait shows a Cancel button.</summary>
+    [ObservableProperty]
+    public partial bool IsClaudeRunning { get; private set; }
+
+    [RelayCommand]
+    private void CancelClaude()
     {
-        if (Selected?.Group is not { } group || _session.Assisted is not { } assisted)
+        if (Selected?.Group is { } group && _claudeRuns.TryGetValue(group.Id, out var run))
+        {
+            run.Cancel.Cancel();
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(IsIdle))]
+    private async Task AskClaudeAsync()
+    {
+        if (Selected?.Group is not { } group || _session.Assisted is not { } assisted || _claudeRuns.ContainsKey(group.Id))
         {
             return;
         }
@@ -1065,31 +1201,61 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
             return;
         }
 
-        ClaudeMessage = null;
-        BusyText = string.Format(CultureInfo.CurrentCulture, Strings.Series_ClaudeWorking, group.Books.Count, group.Name);
-        AssistedGroupResult result;
-        try
-        {
-            result = await assisted.RunGroupAsync(group, ct);
-        }
-        catch (OperationCanceledException)
+        var result = await RunForGroupAsync(group, string.Format(CultureInfo.CurrentCulture, Strings.Series_ClaudeWorking, group.Books.Count, group.Name),
+            async ct => await assisted.RunGroupAsync(group, ct));
+        if (result is null)
         {
             return;
-        }
-        finally
-        {
-            BusyText = null;
         }
 
         if (result.Failed)
         {
-            ClaudeMessage = ClaudeText.Failure(result.Message);
+            ShowClaudeMessage(group, ClaudeText.Failure(result.Message));
             return;
         }
 
         if (Selected?.Group?.Id == group.Id)
         {
             await ApplyClaudeAsync(group, result, chooseSeries: true);
+        }
+    }
+
+    /// <summary>
+    /// Runs a question to Claude for a group: the group waits (with Cancel) only while it is open, and
+    /// the user may open other groups meanwhile. Null when cancelled.
+    /// </summary>
+    private async Task<T?> RunForGroupAsync<T>(ReviewGroup group, string text, Func<CancellationToken, Task<T?>> run) where T : class
+    {
+        ClaudeMessage = null;
+        _claudeMessages.Remove(group.Id);
+        using var cancel = new CancellationTokenSource();
+        _claudeRuns[group.Id] = new ClaudeRun(cancel, text);
+        UpdateBusy();
+        try
+        {
+            return await run(cancel.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return null;
+        }
+        finally
+        {
+            _claudeRuns.Remove(group.Id);
+            UpdateBusy();
+        }
+    }
+
+    /// <summary>Says why a run gave nothing: now if its group is open, else when it is opened again.</summary>
+    private void ShowClaudeMessage(ReviewGroup group, string message)
+    {
+        if (Selected?.Group?.Id == group.Id)
+        {
+            ClaudeMessage = message;
+        }
+        else
+        {
+            _claudeMessages[group.Id] = message;
         }
     }
 
@@ -1151,18 +1317,18 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
     }
 
     /// <summary>Claude's last answer for the group, shown again when it is opened.</summary>
-    private async Task LoadClaudeAsync(ReviewGroup group)
+    private async Task LoadClaudeAsync(ReviewGroup group, AssistedGroupResult? stored, bool chooseSeries)
     {
         _claude = null;
         _fromClaude.Clear();
         ClaudeSummary = null;
-        ClaudeMessage = null;
+        ClaudeMessage = _claudeMessages.Remove(group.Id, out var message) ? message : null;
         ClaudeOutsiders.Clear();
         OnPropertyChanged(nameof(HasClaudeResult));
         OnPropertyChanged(nameof(ClaudeEnabled));
-        if (_session.Assisted is { } assisted && await assisted.Store.GetGroupAsync(group.Id) is { } stored && Selected?.Group?.Id == group.Id)
+        if (stored is not null && Selected?.Group?.Id == group.Id)
         {
-            await ApplyClaudeAsync(group, stored, chooseSeries: false);
+            await ApplyClaudeAsync(group, stored, chooseSeries && stored.Series is not null);
         }
     }
 
@@ -1198,38 +1364,38 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
     /// <summary>"Search deeper" for a row left without a match: a deep run for that book alone.</summary>
     public async Task SearchDeeperAsync(SeriesRowViewModel row)
     {
-        if (_session.Assisted is not { } assisted || Selected?.Group is not { } group || !IsIdle)
+        if (_session.Assisted is not { } assisted || Selected?.Group is not { } group || !IsIdle || _claudeRuns.ContainsKey(group.Id))
         {
             return;
         }
 
-        ClaudeMessage = null;
-        BusyText = string.Format(CultureInfo.CurrentCulture, Strings.Review_ClaudeDeepWorking, row.Plan.Book.Title);
-        AssistedBookResult? result;
-        try
+        var result = await RunForGroupAsync(group, string.Format(CultureInfo.CurrentCulture, Strings.Review_ClaudeDeepWorking, row.Plan.Book.Title),
+            ct => assisted.RunBookAsync(row.BookId, AssistedLevel.Deep, ct));
+        if (result is null)
         {
-            result = await assisted.RunBookAsync(row.BookId, AssistedLevel.Deep);
-        }
-        finally
-        {
-            BusyText = null;
+            return; // cancelled
         }
 
-        if (result is { Candidate: { } candidate } && candidate.Assisted?.CoverMatches != false && Selected?.Group?.Id == group.Id)
+        if (result is { Candidate: { } candidate } && candidate.Assisted?.CoverMatches != false)
         {
-            _chosen[row.BookId] = candidate;
-            _fromClaude.Add(row.BookId);
-            BuildRows(group);
-        }
-        else
-        {
-            ClaudeMessage = result switch
+            // The book's answer is stored; the group shows it now if it is open, else when it is opened
+            // again (the book's candidates feed its row).
+            if (Selected?.Group?.Id == group.Id)
             {
-                { Outcome: AssistedOutcome.Failed } failed => ClaudeText.Failure(failed.Message),
-                { Candidate: { } } => Strings.Series_ClaudeCoverDiffers,
-                _ => Strings.Review_ClaudeNotFound,
-            };
+                _chosen[row.BookId] = candidate;
+                _fromClaude.Add(row.BookId);
+                BuildRows(group);
+            }
+
+            return;
         }
+
+        ShowClaudeMessage(group, result switch
+        {
+            { Outcome: AssistedOutcome.Failed } failed => ClaudeText.Failure(failed.Message),
+            { Candidate: { } } => Strings.Series_ClaudeCoverDiffers,
+            _ => Strings.Review_ClaudeNotFound,
+        });
     }
 
     /// <summary>"Move to “The Boys: Dear Becky”": the books Claude put in that series form a group of their own.</summary>
@@ -1289,7 +1455,7 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
         var plans = Rows.Select(r => r.Plan).ToList();
         var total = plans.Count(p => p.Candidate is not null);
         var index = GroupItems.IndexOf(Selected);
-        BusyText = string.Format(CultureInfo.CurrentCulture, Strings.Series_Approving, 0, total);
+        SetBusy(string.Format(CultureInfo.CurrentCulture, Strings.Series_Approving, 0, total));
         HistoryBatchResult result;
         try
         {
@@ -1302,12 +1468,12 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
             }
 
             var batch = await queue.ApproveGroupAsync(series.Name, series, plans,
-                new Progress<int>(done => BusyText = string.Format(CultureInfo.CurrentCulture, Strings.Series_Approving, done, total)), ct);
+                new Progress<int>(done => SetBusy(string.Format(CultureInfo.CurrentCulture, Strings.Series_Approving, done, total))), ct);
             result = new HistoryBatchResult(batch?.Id, batch?.Entries.Count ?? 0);
         }
         finally
         {
-            BusyText = null;
+            SetBusy(null);
         }
 
         if (!string.Equals(Template, _settings.Current.Review.TitleTemplate, StringComparison.Ordinal) && !KeepTitles)
