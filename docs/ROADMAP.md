@@ -103,7 +103,7 @@ When each phase is done: green build and tests → update this file → commit a
   - one-shot detection.
 - [x] Safe automatic approval (§8.2, item 3), with the `matchedBy: auto` mark and the "Approved automatically" filter.
 - [x] **Review screen** (`Review.dc.html`): queue by severity, candidates, field-by-field table with checkboxes, Approve and next, Skip.
-- [x] Change a proposed value before approving (user request, 2026-11-22): a pencil on each text row of the table ("Saga: Compendium" → "Saga"); the typed value is applied instead of the source's, and "Undo" brings the source's back.
+- [x] Change a proposed value before approving (user request, 2026-11-22): a pencil on each text row of the table ("Saga: Compendium" → "Saga"); the typed value is applied instead of the source's, and "Undo" brings the source's back. "+ Add field" adds a row for a text field the source had no value for.
 - [x] **Editor** (`Editor.dc.html`):
   - single book and batch;
   - credits by role;

@@ -322,6 +322,7 @@
   <data name="Review_SearchingHelp" xml:space="preserve"><value>It can take a few seconds: ComicVine requests are spaced to respect its limit.</value></data>
   <data name="Review_LoadingDetails" xml:space="preserve"><value>Loading the candidate's credits and summary…</value></data>
   <data name="Review_NothingFor" xml:space="preserve"><value>Nothing found for “{0}”.</value></data>
+  <data name="Field_CoverArtists" xml:space="preserve"><value>Cover artist</value></data>
   <data name="Field_Cover" xml:space="preserve"><value>Cover</value></data>
   <data name="Review_CoverFile" xml:space="preserve"><value>the file's cover</value></data>
   <data name="Review_CoverSource" xml:space="preserve"><value>the source's cover (the one on the chosen card)</value></data>
@@ -868,6 +869,8 @@
   <data name="Review_EditHelp" xml:space="preserve"><value>Enter to use the value, Esc to cancel.</value></data>
   <data name="Review_EditHelpNames" xml:space="preserve"><value>Enter to use the value, Esc to cancel. Names separated by commas.</value></data>
   <data name="Review_EditHelpDate" xml:space="preserve"><value>Enter to use the value, Esc to cancel. YYYY, YYYY-MM or YYYY-MM-DD.</value></data>
+  <data name="Review_AddField" xml:space="preserve"><value>+ Add field</value></data>
+  <data name="Review_AddFieldHelp" xml:space="preserve"><value>Type a value for a field the source did not have</value></data>
   <data name="Review_FieldSource" xml:space="preserve"><value>Source: {0}</value></data>
   <data name="Review_AskClaudeAll" xml:space="preserve"><value>Ask Claude ({0})</value></data>
   <data name="Review_AskClaudeAllConfirm" xml:space="preserve"><value>Ask Claude about {0} books without an answer yet? One at a time, 20 s to 1 min each (about {1} min in all), using your plan's quota. The answers go to the Review.</value></data>

@@ -517,6 +517,22 @@
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>
               </ItemsControl>
+              <!-- Fields the source had no value for, to type one before approving -->
+              <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="14,10" IsVisible="{Binding HasAddableFields}">
+                <Button Classes="link" Padding="0" HorizontalAlignment="Left" FontSize="13" ToolTip.Tip="{x:Static r:Strings.Review_AddFieldHelp}">
+                  <TextBlock Text="{x:Static r:Strings.Review_AddField}" />
+                  <Button.Flyout>
+                    <MenuFlyout Placement="BottomEdgeAlignedLeft" ItemsSource="{Binding AddableFields}">
+                      <MenuFlyout.ItemContainerTheme>
+                        <ControlTheme TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}" x:DataType="vm:AddableFieldViewModel">
+                          <Setter Property="Header" Value="{Binding Label}" />
+                          <Setter Property="Command" Value="{Binding AddCommand}" />
+                        </ControlTheme>
+                      </MenuFlyout.ItemContainerTheme>
+                    </MenuFlyout>
+                  </Button.Flyout>
+                </Button>
+              </Border>
             </StackPanel>
           </Border>
         </StackPanel>

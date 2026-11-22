@@ -178,8 +178,15 @@ public sealed partial class CandidateViewModel : ViewModelBase
 }
 
 /// <summary>A row of the "field · current · proposed" table, with its check box.</summary>
-public sealed partial class FieldRowViewModel(FieldChange change, Action changed, bool unticked = false, string? source = null) : ViewModelBase
+public sealed partial class FieldRowViewModel(FieldChange change, Action changed, bool unticked = false, string? source = null,
+    Action<FieldRowViewModel>? discard = null) : ViewModelBase
 {
+    /// <summary>
+    /// A field the source had no value for, added by the user with "+ Add field"; it leaves the
+    /// table again when its edit is cancelled or undone.
+    /// </summary>
+    public bool IsAdded => discard is not null;
+
     /// <summary>"Source: credits page page-004", for a field of Claude's answer.</summary>
     public string? SourceTip { get; } = source is null ? null : string.Format(CultureInfo.CurrentCulture, Strings.Review_FieldSource, source);
 
@@ -253,6 +260,13 @@ public sealed partial class FieldRowViewModel(FieldChange change, Action changed
             return true;
         }
 
+        if (IsAdded && !IsEdited && string.IsNullOrWhiteSpace(EditText))
+        {
+            // An added field left blank is no change: it just leaves the table.
+            CancelEdit();
+            return true;
+        }
+
         if (!Proposal.IsValidEdit(Change.Field, EditText))
         {
             EditError = Change.Field == ProposalField.Date ? Strings.Editor_InvalidDate : Strings.Review_EditEmpty;
@@ -277,6 +291,10 @@ public sealed partial class FieldRowViewModel(FieldChange change, Action changed
     {
         IsEditing = false;
         EditError = null;
+        if (IsAdded && !IsEdited)
+        {
+            discard!(this);
+        }
     }
 
     /// <summary>Back to the source's value, checked as it would be by default.</summary>
@@ -288,6 +306,10 @@ public sealed partial class FieldRowViewModel(FieldChange change, Action changed
         EditError = null;
         IsApplied = _defaultApplied;
         changed();
+        if (IsAdded)
+        {
+            discard!(this);
+        }
     }
 
     private readonly bool _defaultApplied = change.Changed && change.Field != ProposalField.Cover && !unticked;
@@ -324,6 +346,17 @@ public sealed partial class FieldRowViewModel(FieldChange change, Action changed
     public partial bool IsApplied { get; set; } = change.Changed && change.Field != ProposalField.Cover && !unticked;
 
     partial void OnIsAppliedChanged(bool value) => changed();
+}
+
+/// <summary>An item of the "+ Add field" menu.</summary>
+public sealed partial class AddableFieldViewModel(FieldChange change, Action<FieldChange> add) : ViewModelBase
+{
+    public ProposalField Field => change.Field;
+
+    public string Label => IdentificationText.FieldLabel(change.Field);
+
+    [RelayCommand]
+    private void Add() => add(change);
 }
 
 /// <summary>
@@ -1027,6 +1060,55 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
 
     public ObservableCollection<FieldRowViewModel> Rows { get; } = [];
 
+    /// <summary>
+    /// "+ Add field": the editable fields the source had no value for, in the table's order, so a
+    /// value can be typed for them before approving (an inker ComicVine does not list, an ISBN).
+    /// </summary>
+    public ObservableCollection<AddableFieldViewModel> AddableFields { get; } = [];
+
+    /// <summary>The rows of the comparison the table does not show, as <see cref="Proposal.Compare"/> made them.</summary>
+    private List<FieldChange> _hiddenRows = [];
+
+    [ObservableProperty]
+    public partial bool HasAddableFields { get; private set; }
+
+    partial void OnSelectedCandidateChanged(CandidateViewModel? value)
+    {
+        if (value is null)
+        {
+            _hiddenRows = [];
+            UpdateAddableFields();
+        }
+    }
+
+    private void UpdateAddableFields()
+    {
+        AddableFields.Clear();
+        foreach (var change in _hiddenRows.Where(c => Rows.All(r => r.Change.Field != c.Field)))
+        {
+            AddableFields.Add(new AddableFieldViewModel(change, AddField));
+        }
+
+        HasAddableFields = AddableFields.Count > 0;
+    }
+
+    /// <summary>Adds the field's row where the comparison would have it, open for typing.</summary>
+    private void AddField(FieldChange change)
+    {
+        var row = new FieldRowViewModel(change, UpdateSummary, discard: RemoveAddedRow);
+        var at = Rows.TakeWhile(r => r.Change.Field < change.Field).Count();
+        Rows.Insert(at, row);
+        UpdateAddableFields();
+        row.EditCommand.Execute(null);
+    }
+
+    private void RemoveAddedRow(FieldRowViewModel row)
+    {
+        Rows.Remove(row);
+        UpdateAddableFields();
+        UpdateSummary();
+    }
+
     [ObservableProperty]
     public partial string? ConfidenceText { get; private set; }
 
@@ -1358,12 +1440,15 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
         ConfidenceLevel = candidate.Level;
         Rows.Clear();
         var assisted = candidate.Candidate.Assisted;
-        foreach (var change in Proposal.Compare(_book.Metadata, candidate.Candidate.Record).Where(r => r.Proposed is not null))
+        var comparison = Proposal.Compare(_book.Metadata, candidate.Candidate.Record);
+        foreach (var change in comparison.Where(r => r.Proposed is not null))
         {
             Rows.Add(new FieldRowViewModel(change, UpdateSummary, assisted?.Unticked.Contains(change.Field) == true,
                 assisted is null ? null : ClaudeText.FieldSource(assisted, change.Field)));
         }
 
+        _hiddenRows = comparison.Where(r => r.Proposed is null && Proposal.IsEditable(r.Field)).ToList();
+        UpdateAddableFields();
         UpdateSummary();
     }
 

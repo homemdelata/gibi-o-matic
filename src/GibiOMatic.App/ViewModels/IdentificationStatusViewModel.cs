@@ -102,7 +102,7 @@ public static class IdentificationText
         ProposalField.Inkers => Strings.Role_Inker,
         ProposalField.Colorists => Strings.Role_Colorist,
         ProposalField.Letterers => Strings.Role_Letterer,
-        ProposalField.CoverArtists => Strings.Role_Cover,
+        ProposalField.CoverArtists => Strings.Field_CoverArtists,
         ProposalField.Isbn => Strings.Field_Isbn,
         ProposalField.Summary => Strings.Field_Summary,
         ProposalField.OneShot => Strings.Field_OneShot,
