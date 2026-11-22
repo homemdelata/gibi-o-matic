@@ -53,7 +53,7 @@ ENTRADA ──importar──► ARQUIVO (original + metadata.json) ──gerar�
   ele vai para a Lixeira (ou para `_imported`, dentro da pasta de Entrada, se preferir). Os livros esperam em
   `_To review` até os metadados serem aprovados. O app pode ficar na bandeja do sistema e iniciar com ele.
 - **Metadados do ComicVine e da Open Library.** As identificações seguras são aprovadas sozinhas, e as outras
-  esperam na **Revisão**, com a comparação campo a campo, um livro por vez ou **por série** (escolha a série do
+  esperam na **Revisão**, com a comparação campo a campo (dá para mudar qualquer valor proposto antes de aprovar), um livro por vez ou **por série** (escolha a série do
   ComicVine e o formato do título uma vez, aprove todos os livros dela juntos e desfaça tudo de uma vez). O **Editor** cuida do resto, inclusive em lote, com
   créditos por função e *universos* (séries da mesma linha, que viram coleções no Komga). Uma nota de qualidade
   aponta o que falta em cada livro.
