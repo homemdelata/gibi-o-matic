@@ -61,9 +61,7 @@ public static partial class EpubHtml
                 ? string.Concat(decoded.EnumerateRunes().Select(r => $"&#{r.Value};"))
                 : m.Value,
         });
-        using var reader = XmlReader.Create(new StringReader(withNumbers),
-            new XmlReaderSettings { DtdProcessing = DtdProcessing.Ignore, XmlResolver = null });
-        return XDocument.Load(reader);
+        return XmlFiles.Parse(withNumbers);
     }
 
     private static void Clean(XDocument doc, string readerCss)

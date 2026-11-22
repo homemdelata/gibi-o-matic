@@ -139,7 +139,7 @@ public sealed class CbzBuilderTests : IDisposable
         var cbr = SyntheticBooks.Cbr(_temp.Combine("a.cbr"), pages: 4);
         Assert.Equal(4, (await CbzBuilder.BuildAsync(cbr, BookFormat.Cbr, Saga, Target, null, Ct)).Pages);
 
-        var epub = SyntheticBooks.Epub(_temp.Combine("b.epub"), new SyntheticBooks.EpubOptions { Pages = 5 });
+        var epub = SyntheticBooks.Epub(_temp.Combine("b.epub"), new SyntheticBooks.EpubOptions { Pages = 5, XmlVersion = "1.1" });
         var target = _temp.Combine("out", "epub.cbz");
         Assert.Equal(5, (await CbzBuilder.BuildAsync(epub, BookFormat.Epub, Saga, target, null, Ct)).Pages);
         var (_, _, zip) = Open(target);

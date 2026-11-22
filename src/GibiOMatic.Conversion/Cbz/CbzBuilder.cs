@@ -95,7 +95,7 @@ public static partial class CbzBuilder
     internal static List<ZipArchiveEntry> EpubPageImages(ZipArchive epub)
     {
         var container = epub.GetEntry("META-INF/container.xml");
-        var opfPath = container is null ? null : XDocument.Load(container.Open())
+        var opfPath = container is null ? null : XmlFiles.Load(container.Open())
             .Descendants().FirstOrDefault(e => e.Name.LocalName == "rootfile")?.Attribute("full-path")?.Value;
         opfPath ??= epub.Entries.FirstOrDefault(e => e.FullName.EndsWith(".opf", StringComparison.OrdinalIgnoreCase))?.FullName;
         if (opfPath is null || Find(epub, opfPath) is not { } opfEntry)
@@ -103,7 +103,7 @@ public static partial class CbzBuilder
             return [];
         }
 
-        var package = new OpfPackage(XDocument.Load(opfEntry.Open()), Path.GetDirectoryName(opfPath)?.Replace('\\', '/') ?? string.Empty);
+        var package = new OpfPackage(XmlFiles.Load(opfEntry.Open()), Path.GetDirectoryName(opfPath)?.Replace('\\', '/') ?? string.Empty);
         var result = new List<ZipArchiveEntry>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var id in package.SpineItemIds)

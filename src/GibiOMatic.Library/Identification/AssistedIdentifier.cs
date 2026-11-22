@@ -67,7 +67,7 @@ public sealed class AssistedIdentifier(
         {
             await Task.Run(() => AssistedFolders.WriteBook(library, book, current, folder, previous, ct), ct);
         }
-        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             logger.LogWarning(ex, "Could not prepare the Claude folder of book {BookId}", book.Metadata.Id);
             return new AssistedBookResult(book.Metadata.Id, level, AssistedOutcome.Failed, null, null, "book-unreadable", TimeSpan.Zero, 0);
@@ -100,7 +100,7 @@ public sealed class AssistedIdentifier(
         {
             await Task.Run(() => AssistedFolders.WriteGroup(library, group, folder, ct), ct);
         }
-        catch (Exception ex) when (ex is IOException or InvalidDataException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is not OperationCanceledException)
         {
             logger.LogWarning(ex, "Could not prepare the Claude folder of group {GroupId}", group.Id);
             return Failed(group.Id, "book-unreadable", TimeSpan.Zero, 0);

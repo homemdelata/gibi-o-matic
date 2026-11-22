@@ -56,6 +56,26 @@ public sealed class ReaderTests : IDisposable
         }
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void An_epub_declaring_xml_1_1_opens(bool textOnly)
+    {
+        var path = SyntheticBooks.Epub(_temp.Combine($"xml11-{textOnly}.epub"),
+            new SyntheticBooks.EpubOptions { TextOnly = textOnly, FixedLayout = !textOnly, Pages = 4, XmlVersion = "1.1" });
+
+        using var book = BookReader.Open(path, BookFormat.Epub);
+
+        if (textOnly)
+        {
+            Assert.Equal(4, Assert.IsType<EpubBook>(book.Text).Chapters.Count);
+        }
+        else
+        {
+            Assert.Equal(4, Assert.IsAssignableFrom<IPageSource>(book.Pages).PageCount);
+        }
+    }
+
     [Fact]
     public void A_text_epub_opens_as_chapters_with_its_table_of_contents()
     {

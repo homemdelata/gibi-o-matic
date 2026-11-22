@@ -24,7 +24,7 @@ internal static class ComicArchiveReader
             try
             {
                 using var stream = comicInfo.OpenEntryStream();
-                metadata = ParseComicInfo(XDocument.Load(stream));
+                metadata = ParseComicInfo(XmlFiles.Load(stream));
             }
             catch (Exception ex) when (ex is System.Xml.XmlException or InvalidDataException or IOException)
             {

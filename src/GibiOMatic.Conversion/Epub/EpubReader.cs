@@ -24,7 +24,7 @@ internal static partial class EpubReader
         XDocument opf;
         using (var stream = opfEntry.Open())
         {
-            opf = XDocument.Load(stream);
+            opf = XmlFiles.Load(stream);
         }
 
         var package = new OpfPackage(opf, Path.GetDirectoryName(opfPath)?.Replace('\\', '/') ?? string.Empty);
@@ -52,7 +52,7 @@ internal static partial class EpubReader
         if (Find(zip, "META-INF/container.xml") is { } container)
         {
             using var stream = container.Open();
-            var doc = XDocument.Load(stream);
+            var doc = XmlFiles.Load(stream);
             var fullPath = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "rootfile")?.Attribute("full-path")?.Value;
             if (!string.IsNullOrWhiteSpace(fullPath))
             {

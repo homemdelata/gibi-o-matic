@@ -25,6 +25,7 @@ public static class ClaudeText
         "not-installed" => Strings.Claude_NotInstalled,
         "not-logged-in" => string.Format(CultureInfo.CurrentCulture, Strings.Claude_NotLoggedIn, string.Empty).Replace("  ", " ", StringComparison.Ordinal),
         "timeout" => Strings.Claude_Timeout,
+        "book-unreadable" => Strings.Claude_BookUnreadable,
         _ => string.Format(CultureInfo.CurrentCulture, Strings.Claude_Failed, message ?? "?"),
     };
 
