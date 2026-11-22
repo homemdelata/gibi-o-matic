@@ -275,6 +275,10 @@
   <data name="Review_ColCurrent" xml:space="preserve"><value>CURRENT</value></data>
   <data name="Review_ColField" xml:space="preserve"><value>FIELD</value></data>
   <data name="Review_ColProposed" xml:space="preserve"><value>PROPOSED</value></data>
+  <data name="Review_ScoreTip" xml:space="preserve"><value>Current score: {0} of 100, for the metadata the book has now</value></data>
+  <data name="Review_BestTip" xml:space="preserve"><value>Best result: {0:0%} confidence</value></data>
+  <data name="Review_BestTipClaude" xml:space="preserve"><value>Best result, from Claude: {0:0%} confidence</value></data>
+  <data name="Review_ClaudeLooking" xml:space="preserve"><value>Claude is looking…</value></data>
   <data name="Review_Confidence" xml:space="preserve"><value>{0:0%} confidence</value></data>
   <data name="Review_Conflict" xml:space="preserve"><value>The current value looks good; uncheck to keep it.</value></data>
   <data name="Review_EditByHand" xml:space="preserve"><value>Edit by hand</value></data>
@@ -720,6 +724,12 @@
   <data name="Review_SearchAll" xml:space="preserve"><value>Search all again ({0})</value></data>
   <data name="Review_SearchAllHelp" xml:space="preserve"><value>Searches metadata again for every book in the Review. Useful after setting the ComicVine key or when a source was down.</value></data>
   <data name="Review_SearchAllConfirm" xml:space="preserve"><value>Search the {0} books in the Review again? The current suggestions are replaced by the new ones, and books found with confidence are approved on their own. The search runs in the background, one book at a time.</value></data>
+  <data name="Review_SearchAllSeries" xml:space="preserve"><value>Search all again ({0} series)</value></data>
+  <data name="Review_SearchAllSeriesHelp" xml:space="preserve"><value>Searches ComicVine for the series of every group without a chosen series, by the group's name, as the group's Search button does. Nothing is chosen on its own.</value></data>
+  <data name="Review_SearchAllSeriesConfirm" xml:space="preserve"><value>Search ComicVine for the series of {0} groups without a chosen series? One search per group, spaced like every ComicVine call (about {1} min). Nothing is chosen on its own: when you open each group, the volumes found are in its list for you to choose.</value></data>
+  <data name="Review_SearchSeriesProgress" xml:space="preserve"><value>Searching series: {0} of {1} · {2}</value></data>
+  <data name="Review_SearchSeriesDone" xml:space="preserve"><value>Series of {0} groups searched: the volumes found are in each group's list.</value></data>
+  <data name="Review_SearchSeriesFailed" xml:space="preserve"><value>The search failed for {0} of {1} groups (ComicVine may be down); the others have the volumes in their list.</value></data>
   <data name="Review_SearchAllGo" xml:space="preserve"><value>Search again</value></data>
   <data name="Review_OpenIn" xml:space="preserve"><value>Look it up in the browser:</value></data>
   <data name="Review_OpenAmazonHelp" xml:space="preserve"><value>Opens the Amazon book search in the browser. On the page of the print edition (paperback or hardcover, not Kindle), copy the address and paste it in the field below: the app uses the ISBN in the link.</value></data>
@@ -851,6 +861,9 @@
   <data name="Review_FieldSource" xml:space="preserve"><value>Source: {0}</value></data>
   <data name="Review_AskClaudeAll" xml:space="preserve"><value>Ask Claude ({0})</value></data>
   <data name="Review_AskClaudeAllConfirm" xml:space="preserve"><value>Ask Claude about {0} books without an answer yet? One at a time, 20 s to 1 min each (about {1} min in all), using your plan's quota. The answers go to the Review.</value></data>
+  <data name="Review_AskClaudeAllSeries" xml:space="preserve"><value>Ask Claude ({0} series)</value></data>
+  <data name="Review_AskClaudeAllSeriesConfirm" xml:space="preserve"><value>Ask Claude about {0} series without an answer yet? One run per series, one at a time (about {1} min in all), using your plan's quota. The suggestion shows in each series for you to approve; the books without a group are left for the By book mode.</value></data>
+  <data name="Review_ClaudeQueued" xml:space="preserve"><value>Waiting for Claude: "{0}" comes after "{1}".</value></data>
   <data name="Review_AskClaudeAllStart" xml:space="preserve"><value>Ask</value></data>
   <data name="Review_ClaudeProgress" xml:space="preserve"><value>Claude: {0} of {1} · {2}</value></data>
   <data name="Review_ClaudeStop" xml:space="preserve"><value>Stop</value></data>

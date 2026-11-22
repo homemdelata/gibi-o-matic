@@ -35,10 +35,37 @@ public sealed partial class ReviewItemViewModel(BookCardViewModel card, BookIden
     /// <summary>What is wrong, in a few words ("Title, authors and series").</summary>
     public string Issue { get; } = issue;
 
+    /// <summary>The quality score of the metadata the book has now, before any candidate is applied.</summary>
     public int Score => Card.Report.Score;
+
+    /// <summary>"Current score: 35 of 100, for the metadata the book has now".</summary>
+    public string ScoreTip => string.Format(CultureInfo.CurrentCulture, Strings.Review_ScoreTip, Score);
+
+    /// <summary>The candidate the comparison opens with, when there is one.</summary>
+    public MetadataCandidate? Best { get; } = ReviewPageViewModel.ShownCandidates(identification.Result).FirstOrDefault();
+
+    public bool HasBest => Best is not null;
+
+    public bool IsBestFromClaude => Best?.Assisted is not null;
+
+    public bool IsBestFromSearch => Best is { Assisted: null };
+
+    /// <summary>"90%".</summary>
+    public string? BestText => Best is { } best ? best.Confidence.ToString("0%", CultureInfo.CurrentCulture) : null;
+
+    public CheckStatus BestLevel => Best is { } best ? IdentificationText.LevelOf(best.Confidence) : CheckStatus.Bad;
+
+    /// <summary>"Best result: 90% confidence", saying when Claude found it.</summary>
+    public string? BestTip => Best is { } best
+        ? string.Format(CultureInfo.CurrentCulture, IsBestFromClaude ? Strings.Review_BestTipClaude : Strings.Review_BestTip, best.Confidence)
+        : null;
 
     [ObservableProperty]
     public partial bool IsSelected { get; set; }
+
+    /// <summary>Claude is looking at this book (or it waits for Claude).</summary>
+    [ObservableProperty]
+    public partial bool IsClaudeRunning { get; set; }
 
     [RelayCommand]
     private void Select() => select(this);
@@ -234,6 +261,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             bookId => _ = ReviewBookAsync(bookId), bookId => RequestNavigation(NavPage.Editor, [bookId]));
         SelectedSort = ReviewListView.Options.FirstOrDefault(o => o.Sort == settings.Current.Review.Sort) ?? ReviewListView.Options[0];
         Series.Arrange(SelectedSort.Sort, null);
+        Series.GroupsChanged += OnGroupsChanged;
         _revealer = revealer;
         RemovePrompt = new RemoveBookPromptViewModel(session, editor, logger) { Removed = id => _ = OnRemovedAsync(id) };
         _readerWindows = readerWindows;
@@ -272,8 +300,16 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
     /// <summary>The user turned the assisted identification on in Settings.</summary>
     public bool ClaudeEnabled => _settings.Current.Claude.Enabled;
 
-    private CancellationTokenSource? _claudeRun;
+    /// <summary>A question to Claude about one book, which goes on while the user reviews other books.</summary>
+    private sealed record ClaudeRun(CancellationTokenSource Cancel, string Text);
 
+    /// <summary>The books Claude is looking at (or that wait for it), by book id.</summary>
+    private readonly Dictionary<string, ClaudeRun> _claudeRuns = [];
+
+    /// <summary>Why the last run of each book gave nothing, kept until the book is shown again.</summary>
+    private readonly Dictionary<string, string> _claudeMessages = [];
+
+    /// <summary>Claude is looking at the selected book: the comparison shows the wait and a Cancel button.</summary>
     [ObservableProperty]
     public partial bool IsClaudeRunning { get; private set; }
 
@@ -288,11 +324,17 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
     private Task SearchDeeperAsync() => RunClaudeAsync(AssistedLevel.Deep);
 
     [RelayCommand]
-    private void CancelClaude() => _claudeRun?.Cancel();
+    private void CancelClaude()
+    {
+        if (Selected is { } item && _claudeRuns.TryGetValue(item.BookId, out var run))
+        {
+            run.Cancel.Cancel();
+        }
+    }
 
     private async Task RunClaudeAsync(AssistedLevel level)
     {
-        if (Selected is not { } item || _session.Assisted is not { } assisted)
+        if (Selected is not { } item || _session.Assisted is not { } assisted || _claudeRuns.ContainsKey(item.BookId))
         {
             return;
         }
@@ -304,41 +346,63 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
         }
 
         ClaudeMessage = null;
+        _claudeMessages.Remove(item.BookId);
         Candidates.Clear();
         Rows.Clear();
         SelectedCandidate = null;
         ConfidenceText = null;
         AppliedSummary = null;
-        using var run = _claudeRun = new CancellationTokenSource();
-        IsClaudeRunning = true;
-        SetBusy(string.Format(CultureInfo.CurrentCulture, level == AssistedLevel.Deep ? Strings.Review_ClaudeDeepWorking : Strings.Review_ClaudeWorking, item.Title));
+
+        // The run belongs to its book: the user may go on to other books, and back to this one, meanwhile.
+        using var cancel = new CancellationTokenSource();
+        _claudeRuns[item.BookId] = new ClaudeRun(cancel,
+            string.Format(CultureInfo.CurrentCulture, level == AssistedLevel.Deep ? Strings.Review_ClaudeDeepWorking : Strings.Review_ClaudeWorking, item.Title));
+        UpdateBusy();
         Library.Identification.AssistedBookResult? result = null;
         try
         {
-            result = await assisted.RunBookAsync(item.BookId, level, run.Token);
+            result = await assisted.RunBookAsync(item.BookId, level, cancel.Token);
         }
         catch (OperationCanceledException)
         {
         }
         finally
         {
-            _claudeRun = null;
-            IsClaudeRunning = false;
-            SetBusy(null);
+            _claudeRuns.Remove(item.BookId);
+            UpdateBusy();
         }
 
-        await RefreshAsync(CancellationToken.None, item.BookId, reloadSelected: true);
-        ClaudeMessage = result switch
+        var message = result switch
         {
             { Outcome: Library.Identification.AssistedOutcome.Failed } failed => ClaudeText.Failure(failed.Message),
             { Outcome: Library.Identification.AssistedOutcome.NotFound } => Strings.Review_ClaudeNotFound,
             _ => null,
         };
+        if (message is not null)
+        {
+            _claudeMessages[item.BookId] = message;
+        }
+
+        // The book on screen is shown again only when it is the one Claude looked at; another one stays as it is.
+        var showing = Selected?.BookId == item.BookId;
+        await RefreshAsync(CancellationToken.None, showing ? item.BookId : null, reloadSelected: showing);
+        if (showing)
+        {
+            ClaudeMessage = message;
+            _claudeMessages.Remove(item.BookId);
+        }
     }
 
-    /// <summary>"Ask Claude (12)": the books of the queue without an answer from Claude yet.</summary>
+    /// <summary>
+    /// "Ask Claude (12)": by book, the books of the queue without an answer from Claude yet; by series,
+    /// the groups without one ("Ask Claude (5 series)"), one run each. Null when there is none.
+    /// </summary>
     [ObservableProperty]
     public partial string? AskClaudeAllText { get; private set; }
+
+    /// <summary>What the batch button does, in the mode on screen.</summary>
+    [ObservableProperty]
+    public partial string AskClaudeAllHelp { get; private set; } = Strings.Review_AskClaudeHelp;
 
     [ObservableProperty]
     public partial string? AskClaudeAllConfirmText { get; private set; }
@@ -348,29 +412,110 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
     public partial string? ClaudeProgressText { get; private set; }
 
     private IReadOnlyList<string> _unanswered = [];
-    private int _batchTotal;
+    private IReadOnlyList<ReviewGroup> _unansweredGroups = [];
+    private bool _batchShown;
+
+    /// <summary>Counts what the batch button would ask about, in the mode on screen.</summary>
+    private async Task UpdateAskClaudeAllAsync(CancellationToken ct = default)
+    {
+        OnPropertyChanged(nameof(ClaudeEnabled));
+        _unanswered = [];
+        _unansweredGroups = [];
+        if (ClaudeEnabled && _session.Assisted is { } assisted)
+        {
+            try
+            {
+                if (IsBySeries)
+                {
+                    var answered = await assisted.Store.GetAnsweredGroupsAsync(ct);
+                    _unansweredGroups = Series.Grouping.Groups
+                        .Where(g => !answered.Contains(g.Id) && !assisted.IsQueued(groupId: g.Id) && assisted.CurrentGroupId != g.Id && !Series.IsClaudeRunningFor(g.Id))
+                        .ToList();
+                }
+                else
+                {
+                    var answered = await assisted.Store.GetAnsweredAsync(ct);
+                    _unanswered = _toReview
+                        .Where(id => !answered.Contains(id) && !assisted.IsQueued(bookId: id) && assisted.CurrentBookId != id && !_claudeRuns.ContainsKey(id))
+                        .ToList();
+                }
+            }
+            catch (Exception ex) when (LibrarySession.IsExpectedFailure(ex))
+            {
+                _logger.LogError(ex, "Could not count the books without an answer from Claude");
+            }
+        }
+
+        AskClaudeAllHelp = IsBySeries ? Strings.Series_AskClaudeHelp : Strings.Review_AskClaudeHelp;
+        AskClaudeAllText = IsBySeries
+            ? _unansweredGroups.Count == 0 ? null : string.Format(CultureInfo.CurrentCulture, Strings.Review_AskClaudeAllSeries, _unansweredGroups.Count)
+            : _unanswered.Count == 0 ? null : string.Format(CultureInfo.CurrentCulture, Strings.Review_AskClaudeAll, _unanswered.Count);
+        if (AskClaudeAllText is null)
+        {
+            AskClaudeAllConfirmText = null;
+        }
+    }
 
     [RelayCommand]
-    private void AskClaudeAll() => AskClaudeAllConfirmText = _unanswered.Count == 0
-        ? null
-        : string.Format(CultureInfo.CurrentCulture, Strings.Review_AskClaudeAllConfirm, _unanswered.Count, Math.Max(1, (int)Math.Ceiling(_unanswered.Count * 40 / 60.0)));
+    private void AskClaudeAll()
+    {
+        if (IsBySeries)
+        {
+            // About 2.5 min for 14 books in the test: half a minute for the series, plus some seconds per book.
+            var seconds = _unansweredGroups.Sum(g => 30 + (8 * g.Books.Count));
+            AskClaudeAllConfirmText = _unansweredGroups.Count == 0
+                ? null
+                : string.Format(CultureInfo.CurrentCulture, Strings.Review_AskClaudeAllSeriesConfirm, _unansweredGroups.Count, Math.Max(1, (int)Math.Ceiling(seconds / 60.0)));
+            return;
+        }
+
+        AskClaudeAllConfirmText = _unanswered.Count == 0
+            ? null
+            : string.Format(CultureInfo.CurrentCulture, Strings.Review_AskClaudeAllConfirm, _unanswered.Count, Math.Max(1, (int)Math.Ceiling(_unanswered.Count * 40 / 60.0)));
+    }
 
     [RelayCommand]
     private void CancelAskClaudeAll() => AskClaudeAllConfirmText = null;
 
     [RelayCommand]
-    private void ConfirmAskClaudeAll()
+    private async Task ConfirmAskClaudeAllAsync()
     {
         AskClaudeAllConfirmText = null;
-        if (_session.Assisted is { } assisted && _unanswered.Count > 0)
+        if (_session.Assisted is not { } assisted)
         {
-            _batchTotal = assisted.Done + assisted.Pending + (assisted.CurrentTitle is null ? 0 : 1) + _unanswered.Count;
+            return;
+        }
+
+        if (IsBySeries)
+        {
+            assisted.EnqueueGroups(_unansweredGroups);
+        }
+        else
+        {
             assisted.Enqueue(_unanswered);
         }
+
+        UpdateClaudeProgress();
+        await UpdateAskClaudeAllAsync();
     }
 
     [RelayCommand]
     private void StopClaudeBatch() => _session.Assisted?.CancelBatch();
+
+    /// <summary>The groups changed (a refresh, an approval, a book moved): by series, the batch buttons count them again.</summary>
+    private void OnGroupsChanged(object? sender, EventArgs e)
+    {
+        if (IsBySeries)
+        {
+            _ = UpdateGroupButtonsAsync();
+        }
+    }
+
+    private async Task UpdateGroupButtonsAsync()
+    {
+        await UpdateSearchAllAsync();
+        await UpdateAskClaudeAllAsync();
+    }
 
     private void OnClaudeChanged(object? sender, EventArgs e) => _ui.Post(UpdateClaudeProgress);
 
@@ -381,12 +526,15 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             return;
         }
 
-        var batchRunning = assisted.Pending > 0 || (_batchTotal > 0 && assisted.CurrentTitle is not null && !IsClaudeRunning);
-        if (!batchRunning)
+        // The marks on the lists ("Claude is looking…") and the wait of a book asked by hand.
+        UpdateBusy();
+        Series.UpdateClaude();
+        if (!assisted.HasBatch)
         {
-            if (_batchTotal > 0)
+            if (_batchShown)
             {
-                _batchTotal = 0;
+                // The answers are in: the lists show them, and the button counts again.
+                _batchShown = false;
                 _refresh.Trigger();
             }
 
@@ -394,9 +542,10 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             return;
         }
 
-        _batchTotal = Math.Max(_batchTotal, assisted.Done + assisted.Pending + 1);
-        ClaudeProgressText = string.Format(CultureInfo.CurrentCulture, Strings.Review_ClaudeProgress, Math.Min(assisted.Done + 1, _batchTotal), _batchTotal,
-            assisted.CurrentTitle ?? "…");
+        _batchShown = true;
+        var total = assisted.Done + assisted.Pending + (assisted.IsBatchRunning ? 1 : 0);
+        ClaudeProgressText = string.Format(CultureInfo.CurrentCulture, Strings.Review_ClaudeProgress, Math.Min(assisted.Done + 1, total), total,
+            assisted.IsBatchRunning ? assisted.CurrentTitle ?? "…" : "…");
     }
 
     public override string Title => Strings.Nav_Review;
@@ -431,6 +580,9 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             await _settings.SaveAsync(_settings.Current with { Review = _settings.Current.Review with { BySeries = bySeries } });
         }
 
+        AskClaudeAllConfirmText = null;
+        SearchAllConfirmText = null;
+        SearchSeriesMessage = null;
         if (bySeries)
         {
             await Series.RefreshAsync();
@@ -439,6 +591,10 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
         {
             await RefreshAsync(CancellationToken.None, bookId);
         }
+
+        // The batch buttons act on series or on books, as the mode shows them.
+        await UpdateSearchAllAsync();
+        await UpdateAskClaudeAllAsync();
     }
 
     /// <summary>A book of "No group", reviewed on its own in the By book mode.</summary>
@@ -608,10 +764,67 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
     [ObservableProperty]
     public partial string? SearchAllConfirmText { get; private set; }
 
+    /// <summary>What the button does, in the mode on screen.</summary>
+    [ObservableProperty]
+    public partial string SearchAllHelp { get; private set; } = Strings.Review_SearchAllHelp;
+
+    /// <summary>"Searching series: 3 of 53 · Saga" while "Search all again" looks up the groups' series.</summary>
+    [ObservableProperty]
+    public partial string? SearchSeriesProgressText { get; private set; }
+
+    /// <summary>How the last series search went ("2 searches failed"), or no ComicVine key.</summary>
+    [ObservableProperty]
+    public partial string? SearchSeriesMessage { get; private set; }
+
+    /// <summary>By series: the groups whose series hasn't been chosen.</summary>
+    private IReadOnlyList<ReviewGroup> _groupsToSearch = [];
+
+    private CancellationTokenSource? _searchingSeries;
+
+    /// <summary>By book, the books of the queue; by series, the groups without a chosen series.</summary>
+    private async Task UpdateSearchAllAsync(CancellationToken ct = default)
+    {
+        _groupsToSearch = [];
+        if (IsBySeries)
+        {
+            try
+            {
+                _groupsToSearch = await Series.GroupsWithoutSeriesAsync(ct);
+            }
+            catch (Exception ex) when (LibrarySession.IsExpectedFailure(ex))
+            {
+                _logger.LogError(ex, "Could not count the groups without a series");
+            }
+        }
+
+        SearchAllHelp = IsBySeries ? Strings.Review_SearchAllSeriesHelp : Strings.Review_SearchAllHelp;
+        SearchAllText = IsBySeries
+            ? _groupsToSearch.Count == 0 || _searchingSeries is not null ? null : string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchAllSeries, _groupsToSearch.Count)
+            : _toReview.Count == 0 ? null : string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchAll, _toReview.Count);
+        if (SearchAllText is null)
+        {
+            SearchAllConfirmText = null;
+        }
+    }
+
     [RelayCommand]
-    private void AskSearchAll() => SearchAllConfirmText = _toReview.Count == 0
-        ? null
-        : string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchAllConfirm, _toReview.Count);
+    private void AskSearchAll()
+    {
+        SearchSeriesMessage = null;
+        if (IsBySeries)
+        {
+            // One ComicVine search per group, spaced like every ComicVine call (about 1.2 s).
+            SearchAllConfirmText = _groupsToSearch.Count == 0
+                ? null
+                : string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchAllSeriesConfirm, _groupsToSearch.Count,
+                    Math.Max(1, (int)Math.Ceiling(_groupsToSearch.Count * 1.5 / 60)));
+            return;
+        }
+
+        SearchAllConfirmText = _toReview.Count == 0
+            ? null
+            : string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchAllConfirm, _toReview.Count);
+    }
 
     [RelayCommand]
     private void CancelSearchAll() => SearchAllConfirmText = null;
@@ -620,6 +833,12 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
     private async Task SearchAllAsync(CancellationToken ct)
     {
         SearchAllConfirmText = null;
+        if (IsBySeries)
+        {
+            await SearchSeriesAsync();
+            return;
+        }
+
         if (_session.Identification is not { } queue)
         {
             return;
@@ -631,6 +850,47 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
         await Status.RefreshAsync();
         await RefreshAsync(ct);
     }
+
+    /// <summary>By series: looks up the series of each group without one; nothing is chosen.</summary>
+    private async Task SearchSeriesAsync()
+    {
+        var groups = _groupsToSearch;
+        if (groups.Count == 0 || _searchingSeries is not null)
+        {
+            return;
+        }
+
+        _logger.LogInformation("Review: searching the series of {Count} groups", groups.Count);
+        using var searching = _searchingSeries = new CancellationTokenSource();
+        SearchAllText = null;
+        var progress = new Progress<(int Done, string Name)>(p => SearchSeriesProgressText = p.Done >= groups.Count
+            ? null
+            : string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchSeriesProgress, p.Done + 1, groups.Count, p.Name));
+        try
+        {
+            var failed = await Series.SearchGroupsAsync(groups, progress, searching.Token);
+            SearchSeriesMessage = failed switch
+            {
+                null => Strings.Note_NoKey,
+                > 0 => string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchSeriesFailed, failed, groups.Count),
+                _ => string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchSeriesDone, groups.Count),
+            };
+        }
+        catch (OperationCanceledException)
+        {
+            SearchSeriesMessage = null;
+        }
+        finally
+        {
+            _searchingSeries = null;
+            SearchSeriesProgressText = null;
+        }
+
+        await UpdateSearchAllAsync();
+    }
+
+    [RelayCommand]
+    private void StopSearchSeries() => _searchingSeries?.Cancel();
 
     [ObservableProperty]
     public partial string? EmptyText { get; private set; }
@@ -655,7 +915,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
     public ObservableCollection<CandidateViewModel> Candidates { get; } = [];
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasCandidate), nameof(ShowNoCandidateHint), nameof(ShowCandidates))]
+    [NotifyPropertyChangedFor(nameof(HasCandidate), nameof(ShowNoCandidateHint), nameof(ShowCandidates), nameof(ShowClaudeEvidence))]
     [NotifyCanExecuteChangedFor(nameof(ApproveCommand))]
     public partial CandidateViewModel? SelectedCandidate { get; private set; }
 
@@ -679,7 +939,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
 
     /// <summary>A search or a details request is running (it can take seconds: the sources are spaced).</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ShowNoCandidateHint), nameof(ShowCandidates))]
+    [NotifyPropertyChangedFor(nameof(ShowNoCandidateHint), nameof(ShowCandidates), nameof(ShowClaudeEvidence))]
     [NotifyCanExecuteChangedFor(nameof(ApproveCommand), nameof(SkipCommand), nameof(SearchAgainCommand), nameof(AskClaudeCommand), nameof(SearchDeeperCommand))]
     public partial bool IsBusy { get; private set; }
 
@@ -694,13 +954,44 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
 
     public bool ShowCandidates => !IsBusy && HasCandidate;
 
+    /// <summary>What Claude saw, for the candidate shown; hidden while the book waits, as the candidates are.</summary>
+    public bool ShowClaudeEvidence => ShowCandidates && SelectedCandidate?.IsFromClaude == true;
+
     public bool IsIdle => !IsBusy;
+
+    /// <summary>The search, link or approval running for the selected book, if any.</summary>
+    private string? _busyText;
 
     private void SetBusy(string? text)
     {
-        BusyText = text;
-        IsBusy = text is not null;
+        _busyText = text;
+        UpdateBusy();
+    }
+
+    /// <summary>
+    /// The comparison waits while something runs for the book on screen: a search, a link, an approval,
+    /// or Claude looking at it. Claude's runs belong to their books, so another book shows as it is.
+    /// </summary>
+    private void UpdateBusy()
+    {
+        var assisted = _session.Assisted;
+        string? claudeText = null;
+        if (Selected is { } item && _claudeRuns.TryGetValue(item.BookId, out var run))
+        {
+            // Claude answers one question at a time: until its turn comes, the book says what it waits for.
+            claudeText = assisted?.CurrentTitle is { } current && assisted.CurrentBookId != item.BookId
+                ? string.Format(CultureInfo.CurrentCulture, Strings.Review_ClaudeQueued, item.Title, current)
+                : run.Text;
+        }
+
+        BusyText = _busyText ?? claudeText;
+        IsBusy = BusyText is not null;
+        IsClaudeRunning = _busyText is null && claudeText is not null;
         OnPropertyChanged(nameof(IsIdle));
+        foreach (var i in _allItems)
+        {
+            i.IsClaudeRunning = _claudeRuns.ContainsKey(i.BookId) || assisted?.CurrentBookId == i.BookId;
+        }
     }
 
     public override void SetBooks(IReadOnlyList<string> bookIds) => _pendingBookId = bookIds.FirstOrDefault();
@@ -764,7 +1055,10 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
                 {
                     var book = books[i.BookId];
                     var card = new BookCardViewModel(book, QualityAnalyzer.Analyze(book.Metadata, context), library, _thumbnails, _covers, _ => { });
-                    return new ReviewItemViewModel(card, i, IssueOf(i, card.Report), SelectItem, this);
+                    return new ReviewItemViewModel(card, i, IssueOf(i, card.Report), SelectItem, this)
+                    {
+                        IsClaudeRunning = _claudeRuns.ContainsKey(i.BookId) || _session.Assisted?.CurrentBookId == i.BookId,
+                    };
                 })
                 .ToList();
 
@@ -773,34 +1067,16 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             ShowItems(keep);
             HasItems = items.Count > 0;
             _toReview = items.Where(i => books[i.BookId].Metadata.Review.Status == ReviewStatus.Pending).Select(i => i.BookId).ToList();
-            SearchAllText = _toReview.Count == 0 ? null : string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchAll, _toReview.Count);
-            OnPropertyChanged(nameof(ClaudeEnabled));
-            if (ClaudeEnabled && _session.Assisted is { } assisted)
-            {
-                var answered = await assisted.Store.GetAnsweredAsync(ct);
-                _unanswered = _toReview.Where(id => !answered.Contains(id)).ToList();
-            }
-            else
-            {
-                _unanswered = [];
-            }
-
-            AskClaudeAllText = _unanswered.Count == 0 ? null : string.Format(CultureInfo.CurrentCulture, Strings.Review_AskClaudeAll, _unanswered.Count);
-            if (AskClaudeAllText is null)
-            {
-                AskClaudeAllConfirmText = null;
-            }
-
-            if (SearchAllText is null)
-            {
-                SearchAllConfirmText = null;
-            }
+            await UpdateSearchAllAsync(ct);
+            await UpdateAskClaudeAllAsync(ct);
             Subtitle = string.Format(CultureInfo.CurrentCulture, Strings.Review_Subtitle_Count, items.Count);
             var counts = await queue.GetCountsAsync(ct);
             EmptyText = string.Format(CultureInfo.CurrentCulture, Strings.Review_Empty, counts.AutoApproved, counts.Approved);
             var next = Items.FirstOrDefault(i => i.BookId == keep) ?? Items.FirstOrDefault();
-            if (reloadSelected || next?.BookId != Selected?.BookId || next is null)
+            if (reloadSelected || next?.BookId != Selected?.BookId || next is null
+                || (CandidatesChanged(Selected, next) && !IsBusy))
             {
+                // The book on screen is shown again when its candidates changed: a batch or a group run answered for it.
                 await SelectAsync(next, ct);
             }
             else if (next is not null)
@@ -823,6 +1099,12 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             _refreshGate.Release();
         }
     }
+
+    private static bool CandidatesChanged(ReviewItemViewModel? shown, ReviewItemViewModel? next) =>
+        shown is not null && next is not null && CandidatesKey(shown) != CandidatesKey(next);
+
+    private static string CandidatesKey(ReviewItemViewModel item) => string.Join("|", ShownCandidates(item.Identification.Result)
+        .Select(c => $"{c.Record.Source}:{c.Record.ComicVineId ?? c.Record.Title}:{c.Confidence.ToString(CultureInfo.InvariantCulture)}:{c.Assisted?.Level}"));
 
     private static string IssueOf(BookIdentification identification, QualityReport report)
     {
@@ -849,6 +1131,17 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
         return fields.Count == 0 ? Strings.Review_CheckMatch : string.Join(", ", fields);
     }
 
+    /// <summary>
+    /// The candidates the comparison shows, in order: Claude's record and the algorithm's same record
+    /// are shown once, as Claude's (with its evidence).
+    /// </summary>
+    internal static IEnumerable<MetadataCandidate> ShownCandidates(IdentificationResult? result)
+    {
+        var candidates = result?.Candidates ?? [];
+        var fromClaude = candidates.Where(c => c.Assisted is not null).Select(c => c.Record.ComicVineId).OfType<string>().ToHashSet();
+        return candidates.Where(c => c.Assisted is not null || c.Record.ComicVineId is null || !fromClaude.Contains(c.Record.ComicVineId));
+    }
+
     private void SelectItem(ReviewItemViewModel item) => _ = SelectAsync(item, CancellationToken.None);
 
     private async Task SelectAsync(ReviewItemViewModel? item, CancellationToken ct)
@@ -868,8 +1161,11 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
         AppliedSummary = null;
         if (item?.BookId != _book?.Metadata.Id)
         {
-            ClaudeMessage = null;
+            // A run that ended while another book was on screen says why it gave nothing now.
+            ClaudeMessage = item is not null && _claudeMessages.Remove(item.BookId, out var message) ? message : null;
         }
+
+        UpdateBusy();
 
         if (item is null || _session.Current is not { } library)
         {
@@ -909,9 +1205,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             return;
         }
 
-        // Claude's record and the algorithm's same record are shown once, as Claude's (with its evidence).
-        var fromClaude = (result?.Candidates ?? []).Where(c => c.Assisted is not null).Select(c => c.Record.ComicVineId).OfType<string>().ToHashSet();
-        foreach (var candidate in (result?.Candidates ?? []).Where(c => c.Assisted is not null || c.Record.ComicVineId is null || !fromClaude.Contains(c.Record.ComicVineId)))
+        foreach (var candidate in ShownCandidates(result))
         {
             Candidates.Add(new CandidateViewModel(candidate, c => _ = PickAsync(c, CancellationToken.None), LoadRemoteCoverAsync));
         }
@@ -1210,7 +1504,15 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             assisted.Changed -= OnClaudeChanged;
         }
 
-        _claudeRun?.Cancel();
+        foreach (var run in _claudeRuns.Values)
+        {
+            run.Cancel.Cancel();
+        }
+
+        Series.GroupsChanged -= OnGroupsChanged;
+        Series.CancelClaudeRuns();
+        _searchingSeries?.Cancel();
+
         _refresh.Dispose();
         Status.Dispose();
     }

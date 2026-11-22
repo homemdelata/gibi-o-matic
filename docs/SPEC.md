@@ -167,7 +167,7 @@ Bands: **Poor** (< 60), **Review** (60–84), **OK** (≥ 85). The rule already 
 
 ## 7. Review and Editor
 
-- **Review**: the queue in the order the user chooses (title A–Z, the default, or Z–A; recently added or added longest ago; most problems first, by quality score), with a text filter over titles and file names; skipped books stay at the end. By series, the same order and filter apply to the groups (a group's date is its newest book's; a filter finds a group by its name or by any of its books). For each book: candidates with a confidence % and a *field · current · proposed* table, with one checkbox per field. Actions: Approve and next, Skip, Edit by hand.
+- **Review**: the queue in the order the user chooses (title A–Z, the default, or Z–A; recently added or added longest ago; most problems first, by quality score), with a text filter over titles and file names; skipped books stay at the end. Each book in the queue shows two numbers, each with an icon and named on hover: the quality score of the metadata it has now, and the confidence of its best result (marked when Claude found it), once there is one. By series, the same order and filter apply to the groups (a group's date is its newest book's; a filter finds a group by its name or by any of its books). For each book: candidates with a confidence % and a *field · current · proposed* table, with one checkbox per field. Actions: Approve and next, Skip, Edit by hand.
 - **Review by series** (section 7.1): the same queue, one series at a time.
 - **Editor**: every field from section 4.3, credits with roles, cover (replace or use page 1), preview of the names each destination will generate.
 - **Batch editing**: select N books and edit the fields they share. Empty fields change nothing. "Number in sequence" is for the series number.
@@ -211,6 +211,8 @@ Bands: **Poor** (< 60), **Review** (60–84), **OK** (≥ 85). The rule already 
 - Books with a record are approved as in the Review (`matchedBy: comicvine-volume`, folder moved to `{Publisher}/{Series}/`, automatic destinations triggered). Books without a match stay in the group, with the series already chosen.
 - Every book gets its own history entry, all of them tagged with the same batch, so the whole group can be undone at once.
 - After approving, the next group opens.
+
+**Search all again, by series**: the Review's batch buttons follow the mode. By series, "Search all again (N series)" searches ComicVine for the series of every group whose series hasn't been chosen, by the group's name, as the group's Search button does: one search per group, in the list's order, with progress and Stop. Nothing is chosen: when a group is opened, the volumes found follow its books' suggestions, or show as the search's results when its books found none (without searching again). By book, it searches every book again, as before.
 
 **Not in scope**: regrouping books that are already approved. Those are fixed in the Editor or the batch Editor, or sent back to the Review.
 
@@ -291,7 +293,9 @@ Bands: **Poor** (< 60), **Review** (60–84), **OK** (≥ 85). The rule already 
 **When it runs** (user decision): Settings chooses **Only when I ask** (default) or **Automatically for the books that go to the Review** (after the identification of §8.2, on import and in the Inbox). Where it can be asked:
 - the Review, for one book;
 - the Review by series (§7.1), for a group (**Ask Claude about this series**, below);
-- a batch, "Ask Claude about N books": first an estimate (dry run), then confirmation, progress, cancellation and a log.
+- a batch, "Ask Claude about N books": first an estimate (dry run), then confirmation, progress, cancellation and a log. The button follows the Review's mode: By book it asks about the books without an answer, one run each; By series it asks about the groups without one, one group run each (the books of No group are left for the By book mode). Books approved while they wait are skipped, a group is asked about the books it still has in the Review, and a book or group asked by hand leaves the batch.
+
+Claude answers one question at a time, and a question belongs to its book or group, not to the screen: while it runs (or waits for its turn, which it says), the user reviews other books or groups as they are; going back shows the wait with **Cancel**. The lists mark what Claude is looking at, and an answer that arrives for the book or group on screen shows at once; one for another book or group shows when it is opened.
 
 The app shows the count of books, the time and the calls, not dollars: on a subscription the `total_cost_usd` of the CLI is only what the API would have charged.
 

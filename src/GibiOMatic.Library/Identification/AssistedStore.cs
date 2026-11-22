@@ -133,6 +133,14 @@ public sealed class AssistedStore(LibraryIndex index)
             new { result.GroupId, json = JsonSerializer.Serialize(result, GibiJson.Options), at = result.At.ToString("O") }, cancellationToken: ct));
     }
 
+    /// <summary>Groups of the Review by series that Claude already answered for.</summary>
+    public async Task<IReadOnlySet<string>> GetAnsweredGroupsAsync(CancellationToken ct = default)
+    {
+        await using var connection = await index.OpenAsync(ct);
+        return (await connection.QueryAsync<string>(new CommandDefinition("SELECT group_id FROM assisted_groups;", cancellationToken: ct)))
+            .ToHashSet(StringComparer.Ordinal);
+    }
+
     public async Task<AssistedGroupResult?> GetGroupAsync(string groupId, CancellationToken ct = default)
     {
         await using var connection = await index.OpenAsync(ct);

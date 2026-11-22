@@ -266,6 +266,14 @@ public sealed class ReviewGroups(LibraryIndex index, IdentificationQueue queue)
         await tx.CommitAsync(ct);
     }
 
+    /// <summary>The groups whose series was chosen (and kept until their books are approved).</summary>
+    public async Task<IReadOnlySet<string>> GetGroupsWithSeriesAsync(CancellationToken ct = default)
+    {
+        await using var connection = await index.OpenAsync(ct);
+        return (await connection.QueryAsync<string>(new CommandDefinition("SELECT group_id FROM review_group_series;", cancellationToken: ct)))
+            .ToHashSet(StringComparer.Ordinal);
+    }
+
     public async Task<GroupSeries?> GetSeriesAsync(string groupId, CancellationToken ct = default)
     {
         await using var connection = await index.OpenAsync(ct);

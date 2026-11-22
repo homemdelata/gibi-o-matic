@@ -319,6 +319,65 @@ public sealed class AssistedIdentificationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task A_batch_skips_the_books_approved_while_they_waited_and_a_book_asked_by_hand_leaves_it()
+    {
+        var ids = await StartAsync(null, "a.pdf", "b.pdf", "c.pdf");
+        var gate = new TaskCompletionSource();
+        _claude.Answer = _ =>
+        {
+            gate.Task.Wait(TimeSpan.FromSeconds(10));
+            return FoundSaga;
+        };
+
+        _assisted.Enqueue([ids["a.pdf"], ids["b.pdf"], ids["c.pdf"]]);
+        await WaitForAsync(() => _claude.Runs.Count == 1);
+        Assert.Equal(ids["a.pdf"], _assisted.CurrentBookId);
+        Assert.True(_assisted.IsBatchRunning);
+        Assert.True(_assisted.IsQueued(bookId: ids["b.pdf"]));
+
+        // b is approved while it waits; c is asked by hand, so the batch doesn't ask about it again.
+        await _queue.ApproveAsync(ids["b.pdf"], FakeIdentifier.Saga(0.9), new HashSet<ProposalField>(), Ct);
+        var byHand = _assisted.RunBookAsync(ids["c.pdf"], AssistedLevel.Quick, Ct);
+        Assert.False(_assisted.IsQueued(bookId: ids["c.pdf"]));
+
+        gate.SetResult();
+        await byHand;
+        await WaitForAsync(() => !_assisted.IsBusy && !_assisted.HasBatch);
+
+        bool Asked(string file) => _claude.Runs.Any(r => r.Folder.EndsWith(ids[file][^12..], StringComparison.Ordinal));
+        Assert.True(Asked("a.pdf"));
+        Assert.False(Asked("b.pdf"));
+        Assert.Single(_claude.Runs, r => r.Folder.EndsWith(ids["c.pdf"][^12..], StringComparison.Ordinal) && r.Folder.Contains("-quick-", StringComparison.Ordinal));
+        Assert.Null(_assisted.CurrentBookId);
+    }
+
+    [Fact]
+    public async Task A_batch_of_series_asks_once_per_group_about_the_books_still_in_the_review()
+    {
+        var ids = await StartAsync(null, "The Boys Vol. 1.pdf", "The Boys Vol. 2.pdf", "The Boys Vol. 3.pdf");
+        var group = Assert.Single((await new ReviewGroups(Index, _queue).GetAsync(Ct)).Groups);
+        var (v1, v3) = (ids["The Boys Vol. 1.pdf"], ids["The Boys Vol. 3.pdf"]);
+        await _queue.ApproveAsync(v3, FakeIdentifier.Saga(0.9), new HashSet<ProposalField>(), Ct);
+        _claude.Answer = run => Json(new GroupAnswer
+        {
+            Series = new GroupAnswerSeries { Name = "The Boys", Publisher = "Dynamite", StartYear = 2006 },
+            Books = [new GroupAnswerBook { Id = v1, Number = "1", Confidence = 0.5 }],
+            MissingNumbers = [],
+        });
+
+        Assert.Equal(1, _assisted.EnqueueGroups([group, group]));
+        await WaitForAsync(async () => await _assisted.Store.GetGroupAsync(group.Id, Ct) is not null);
+        await WaitForAsync(() => !_assisted.IsBusy && !_assisted.HasBatch);
+
+        var run = Assert.Single(_claude.Runs);
+        var sent = await File.ReadAllTextAsync(Path.Combine(run.Folder, "group.json"), Ct);
+        Assert.Contains(v1, sent);
+        Assert.DoesNotContain(v3, sent);
+        Assert.Contains(group.Id, await _assisted.Store.GetAnsweredGroupsAsync(Ct));
+        Assert.Null(_assisted.CurrentGroupId);
+    }
+
+    [Fact]
     public async Task A_group_run_fills_the_rows_that_pass_the_checks_and_points_out_the_outsiders()
     {
         var ids = await StartAsync(null, "The Boys Vol. 1.pdf", "The Boys Vol. 2.pdf", "The Boys - Dear Becky 1.pdf");

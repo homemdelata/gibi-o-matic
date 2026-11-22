@@ -24,7 +24,7 @@ public sealed class AssistedQueue : IAsyncDisposable
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly SemaphoreSlim _wake = new(0);
     private readonly CancellationTokenSource _stop = new();
-    private readonly LinkedList<(string BookId, AssistedLevel Level)> _batch = new();
+    private readonly LinkedList<BatchItem> _batch = new();
     private CancellationTokenSource _batchCancel = new();
     private Task _worker = Task.CompletedTask;
 
@@ -51,7 +51,13 @@ public sealed class AssistedQueue : IAsyncDisposable
     /// <summary>What is running now ("Saga, Vol. 3"), or null.</summary>
     public string? CurrentTitle { get; private set; }
 
-    /// <summary>Books waiting in the batch (not counting the one running).</summary>
+    /// <summary>The book Claude is looking at now, or null (also null during a group run).</summary>
+    public string? CurrentBookId { get; private set; }
+
+    /// <summary>The group of the Review by series Claude is looking at now, or null.</summary>
+    public string? CurrentGroupId { get; private set; }
+
+    /// <summary>Books and groups waiting in the batch (not counting the one running).</summary>
     public int Pending
     {
         get
@@ -63,17 +69,30 @@ public sealed class AssistedQueue : IAsyncDisposable
         }
     }
 
-    /// <summary>Books of the current batch already answered.</summary>
+    /// <summary>Books and groups of the current batch already answered (or skipped).</summary>
     public int Done { get; private set; }
 
     public bool IsBusy => CurrentTitle is not null || Pending > 0;
+
+    /// <summary>The run going on came from the batch (not from a book or group asked by hand).</summary>
+    public bool IsBatchRunning { get; private set; }
+
+    /// <summary>A batch is going on: a run of it, or entries waiting.</summary>
+    public bool HasBatch => IsBatchRunning || Pending > 0;
 
     public Task<ClaudeStatus> GetStatusAsync(CancellationToken ct = default) => _identifier.GetStatusAsync(ct);
 
     public void Start() => _worker = Task.Run(() => RunAsync(_stop.Token), CancellationToken.None);
 
     /// <summary>"Ask Claude about N books": they join the batch, one run each.</summary>
-    public int Enqueue(IEnumerable<string> bookIds, AssistedLevel level = AssistedLevel.Quick)
+    public int Enqueue(IEnumerable<string> bookIds, AssistedLevel level = AssistedLevel.Quick) =>
+        Add(bookIds.Distinct().Select(id => new BatchItem(id, null, level)));
+
+    /// <summary>"Ask Claude about N series" (the Review by series): one run for each group.</summary>
+    public int EnqueueGroups(IEnumerable<ReviewGroup> groups) =>
+        Add(groups.DistinctBy(g => g.Id).Select(g => new BatchItem(null, g, AssistedLevel.Group)));
+
+    private int Add(IEnumerable<BatchItem> items)
     {
         var added = 0;
         lock (_batch)
@@ -83,11 +102,11 @@ public sealed class AssistedQueue : IAsyncDisposable
                 Done = 0;
             }
 
-            foreach (var id in bookIds.Distinct())
+            foreach (var item in items)
             {
-                if (_batch.All(b => b.BookId != id))
+                if (_batch.All(b => b.Key != item.Key))
                 {
-                    _batch.AddLast((id, level));
+                    _batch.AddLast(item);
                     added++;
                 }
             }
@@ -95,12 +114,36 @@ public sealed class AssistedQueue : IAsyncDisposable
 
         if (added > 0)
         {
-            _logger.LogInformation("Claude: {Count} books queued ({Level})", added, level);
+            _logger.LogInformation("Claude: {Count} runs queued", added);
             OnChanged();
             _wake.Release();
         }
 
         return added;
+    }
+
+    /// <summary>Asked by hand: the batch doesn't ask about it again.</summary>
+    private void Unqueue(string key)
+    {
+        bool removed;
+        lock (_batch)
+        {
+            removed = _batch.FirstOrDefault(b => b.Key == key) is { } item && _batch.Remove(item);
+        }
+
+        if (removed)
+        {
+            OnChanged();
+        }
+    }
+
+    /// <summary>A book or a group waits in the batch.</summary>
+    public bool IsQueued(string? bookId = null, string? groupId = null)
+    {
+        lock (_batch)
+        {
+            return _batch.Any(b => (bookId is not null && b.BookId == bookId) || (groupId is not null && b.Group?.Id == groupId));
+        }
     }
 
     /// <summary>Stops the batch: the book running is cancelled, the waiting ones are dropped.</summary>
@@ -118,6 +161,7 @@ public sealed class AssistedQueue : IAsyncDisposable
     /// <summary>Asks Claude about one book now (after the run in progress, if any).</summary>
     public async Task<AssistedBookResult?> RunBookAsync(string bookId, AssistedLevel level, CancellationToken ct = default)
     {
+        Unqueue("book:" + bookId);
         await _gate.WaitAsync(ct);
         try
         {
@@ -132,11 +176,25 @@ public sealed class AssistedQueue : IAsyncDisposable
     /// <summary>Asks Claude about a whole group of the Review by series; the result is stored for the group.</summary>
     public async Task<AssistedGroupResult> RunGroupAsync(ReviewGroup group, CancellationToken ct = default)
     {
+        Unqueue("group:" + group.Id);
         await _gate.WaitAsync(ct);
         try
         {
-            CurrentTitle = group.Name;
-            OnChanged();
+            return await ProcessGroupAsync(group, ct);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    private async Task<AssistedGroupResult> ProcessGroupAsync(ReviewGroup group, CancellationToken ct)
+    {
+        CurrentTitle = group.Name;
+        CurrentGroupId = group.Id;
+        OnChanged();
+        try
+        {
             var result = await _identifier.IdentifyGroupAsync(_library, group, ct);
             if (result.Failed)
             {
@@ -159,7 +217,7 @@ public sealed class AssistedQueue : IAsyncDisposable
         finally
         {
             CurrentTitle = null;
-            _gate.Release();
+            CurrentGroupId = null;
             OnChanged();
         }
     }
@@ -172,6 +230,7 @@ public sealed class AssistedQueue : IAsyncDisposable
         }
 
         CurrentTitle = book.Metadata.Title;
+        CurrentBookId = bookId;
         OnChanged();
         try
         {
@@ -206,6 +265,7 @@ public sealed class AssistedQueue : IAsyncDisposable
         finally
         {
             CurrentTitle = null;
+            CurrentBookId = null;
             OnChanged();
         }
     }
@@ -243,7 +303,7 @@ public sealed class AssistedQueue : IAsyncDisposable
         {
             try
             {
-                (string BookId, AssistedLevel Level)? next = null;
+                BatchItem? next = null;
                 lock (_batch)
                 {
                     if (_batch.First is { } first)
@@ -280,11 +340,20 @@ public sealed class AssistedQueue : IAsyncDisposable
                 await _gate.WaitAsync(run.Token);
                 try
                 {
-                    var result = await ProcessAsync(next.Value.BookId, next.Value.Level, run.Token);
-                    Done++;
+                    string? failure;
+                    IsBatchRunning = true;
+                    try
+                    {
+                        failure = await ProcessBatchItemAsync(next, run.Token);
+                    }
+                    finally
+                    {
+                        IsBatchRunning = false;
+                        Done++;
+                    }
 
                     // Not logged in or not installed: the rest of the batch would fail the same way.
-                    if (result is { Outcome: AssistedOutcome.Failed, Message: "not-installed" or "not-logged-in" })
+                    if (failure is "not-installed" or "not-logged-in")
                     {
                         CancelBatch();
                     }
@@ -313,7 +382,56 @@ public sealed class AssistedQueue : IAsyncDisposable
         }
     }
 
+    /// <summary>
+    /// Runs one entry of the batch. Books approved (or removed) while they waited are skipped, and a
+    /// group is asked about the books it still has in the Review. Returns why the run failed, if it did.
+    /// </summary>
+    private async Task<string?> ProcessBatchItemAsync(BatchItem item, CancellationToken ct)
+    {
+        if (item.BookId is { } bookId)
+        {
+            if (!await IsPendingAsync(bookId, ct))
+            {
+                return null;
+            }
+
+            var result = await ProcessAsync(bookId, item.Level, ct);
+            return result is { Outcome: AssistedOutcome.Failed } ? result.Message : null;
+        }
+
+        if (item.Group is not { } group)
+        {
+            return null;
+        }
+
+        var books = new List<ReviewGroupBook>();
+        foreach (var book in group.Books)
+        {
+            if (await IsPendingAsync(book.BookId, ct))
+            {
+                books.Add(book);
+            }
+        }
+
+        if (books.Count == 0)
+        {
+            return null;
+        }
+
+        var answer = await ProcessGroupAsync(group with { Books = books }, ct);
+        return answer.Failed ? answer.Message : null;
+    }
+
+    private async Task<bool> IsPendingAsync(string bookId, CancellationToken ct) =>
+        await _index.GetBookAsync(bookId, ct) is { Metadata.Review.Status: ReviewStatus.Pending };
+
     private void OnChanged() => Changed?.Invoke(this, EventArgs.Empty);
+
+    /// <summary>A book or a group waiting in the batch.</summary>
+    private sealed record BatchItem(string? BookId, ReviewGroup? Group, AssistedLevel Level)
+    {
+        public string Key => BookId is not null ? "book:" + BookId : "group:" + Group?.Id;
+    }
 
     public async ValueTask DisposeAsync()
     {

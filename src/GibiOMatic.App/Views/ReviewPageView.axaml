@@ -28,11 +28,13 @@
           </Border>
           <Button Classes="secondary" MinHeight="32" Padding="12,0" Margin="0,8,0,0" HorizontalAlignment="Left" FontSize="13"
                   Content="{Binding SearchAllText}" Command="{Binding AskSearchAllCommand}"
-                  ToolTip.Tip="{x:Static r:Strings.Review_SearchAllHelp}"
+                  ToolTip.Tip="{Binding SearchAllHelp}"
                   IsVisible="{Binding SearchAllText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          <TextBlock Classes="help" Margin="0,4,0,0" TextWrapping="Wrap" Text="{Binding SearchSeriesMessage}"
+                     IsVisible="{Binding SearchSeriesMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
           <Button Classes="secondary" MinHeight="32" Padding="12,0" Margin="0,6,0,0" HorizontalAlignment="Left" FontSize="13"
                   Content="{Binding AskClaudeAllText}" Command="{Binding AskClaudeAllCommand}"
-                  ToolTip.Tip="{x:Static r:Strings.Review_AskClaudeHelp}"
+                  ToolTip.Tip="{Binding AskClaudeAllHelp}"
                   IsVisible="{Binding AskClaudeAllText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
         </StackPanel>
         <Border DockPanel.Dock="Top" Classes="card" Padding="12,10" Margin="0,0,0,12"
@@ -54,6 +56,15 @@
             <ProgressBar IsIndeterminate="True" Height="4" Foreground="{DynamicResource AccentTextBrush}" Background="{DynamicResource HoverBrush}" />
             <Button Classes="secondary" MinHeight="32" Padding="12,0" HorizontalAlignment="Left" FontSize="13"
                     Content="{x:Static r:Strings.Review_ClaudeStop}" Command="{Binding StopClaudeBatchCommand}" />
+          </StackPanel>
+        </Border>
+        <Border DockPanel.Dock="Top" Classes="card" Padding="12,10" Margin="0,0,0,12"
+                IsVisible="{Binding SearchSeriesProgressText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="help" TextWrapping="Wrap" Text="{Binding SearchSeriesProgressText}" />
+            <ProgressBar IsIndeterminate="True" Height="4" Foreground="{DynamicResource AccentTextBrush}" Background="{DynamicResource HoverBrush}" />
+            <Button Classes="secondary" MinHeight="32" Padding="12,0" HorizontalAlignment="Left" FontSize="13"
+                    Content="{x:Static r:Strings.Review_ClaudeStop}" Command="{Binding StopSearchSeriesCommand}" />
           </StackPanel>
         </Border>
         <Border DockPanel.Dock="Top" Classes="card" Padding="12,10" Margin="0,0,0,12"
@@ -119,6 +130,10 @@
                       <TextBlock FontWeight="SemiBold" Text="{Binding Name}" TextTrimming="CharacterEllipsis" Classes.muted="{Binding IsNoGroup}" />
                       <TextBlock Classes="help" FontSize="12" Foreground="{DynamicResource WarnTextBrush}" Text="{Binding WarningText}"
                                  TextTrimming="CharacterEllipsis" IsVisible="{Binding HasWarnings}" />
+                      <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsClaudeRunning}">
+                        <c:StrokeIcon Data="{StaticResource Icon.Sparkle}" Width="12" Height="12" VerticalAlignment="Center" Foreground="{DynamicResource AccentTextBrush}" />
+                        <TextBlock FontSize="12" Foreground="{DynamicResource AccentTextBrush}" Text="{x:Static r:Strings.Review_ClaudeLooking}" TextTrimming="CharacterEllipsis" />
+                      </StackPanel>
                     </StackPanel>
                     <TextBlock Grid.Column="1" Classes="mono muted" FontSize="12" Margin="8,0,0,0" VerticalAlignment="Center" Text="{Binding CountText}" />
                   </Grid>
@@ -168,10 +183,27 @@
                   </Border>
                   <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center" Spacing="3">
                     <TextBlock FontWeight="SemiBold" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
-                    <TextBlock Classes="muted" FontSize="12" Text="{Binding Issue}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Classes="muted" FontSize="12" Text="{Binding Issue}" TextTrimming="CharacterEllipsis" IsVisible="{Binding !IsClaudeRunning}" />
+                    <StackPanel Orientation="Horizontal" Spacing="4" IsVisible="{Binding IsClaudeRunning}">
+                      <c:StrokeIcon Data="{StaticResource Icon.Sparkle}" Width="12" Height="12" VerticalAlignment="Center" Foreground="{DynamicResource AccentTextBrush}" />
+                      <TextBlock FontSize="12" Foreground="{DynamicResource AccentTextBrush}" Text="{x:Static r:Strings.Review_ClaudeLooking}" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
                   </StackPanel>
-                  <TextBlock Grid.Column="2" Classes="mono" FontSize="12" FontWeight="Medium" VerticalAlignment="Center" Text="{Binding Score}"
-                             Foreground="{Binding Card.Band, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
+                  <!-- The current score and the best result's confidence: two different numbers, each named on hover -->
+                  <Grid Grid.Column="2" ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnSpacing="5" VerticalAlignment="Center">
+                    <c:StrokeIcon Data="{StaticResource Icon.BookOpen}" Width="13" Height="13" VerticalAlignment="Center"
+                                  Foreground="{Binding Card.Band, Converter={x:Static conv:StatusBrushConverter.Instance}}" ToolTip.Tip="{Binding ScoreTip}" />
+                    <TextBlock Grid.Column="1" Classes="mono" FontSize="12" FontWeight="Medium" HorizontalAlignment="Right" Text="{Binding Score}"
+                               Foreground="{Binding Card.Band, Converter={x:Static conv:StatusBrushConverter.Instance}}"
+                               ToolTip.Tip="{Binding ScoreTip}" AutomationProperties.Name="{Binding ScoreTip}" />
+                    <c:StrokeIcon Grid.Row="1" Data="{StaticResource Icon.Sparkle}" Width="13" Height="13" VerticalAlignment="Center" IsVisible="{Binding IsBestFromClaude}"
+                                  Foreground="{Binding BestLevel, Converter={x:Static conv:StatusBrushConverter.Instance}}" ToolTip.Tip="{Binding BestTip}" />
+                    <c:StrokeIcon Grid.Row="1" Data="{StaticResource Icon.Search}" Width="13" Height="13" VerticalAlignment="Center" IsVisible="{Binding IsBestFromSearch}"
+                                  Foreground="{Binding BestLevel, Converter={x:Static conv:StatusBrushConverter.Instance}}" ToolTip.Tip="{Binding BestTip}" />
+                    <TextBlock Grid.Row="1" Grid.Column="1" Classes="mono" FontSize="12" FontWeight="Medium" HorizontalAlignment="Right" Text="{Binding BestText}"
+                               IsVisible="{Binding HasBest}" Foreground="{Binding BestLevel, Converter={x:Static conv:StatusBrushConverter.Instance}}"
+                               ToolTip.Tip="{Binding BestTip}" AutomationProperties.Name="{Binding BestTip}" />
+                  </Grid>
                 </Grid>
               </Button>
             </DataTemplate>
@@ -396,7 +428,7 @@
           </StackPanel>
 
           <!-- What Claude saw (SPEC 8.4): evidence, doubts, the covers and an edition missing from ComicVine -->
-          <Border Classes="card" Padding="14,12" IsVisible="{Binding SelectedCandidate.IsFromClaude, FallbackValue=False}">
+          <Border Classes="card" Padding="14,12" IsVisible="{Binding ShowClaudeEvidence}">
             <StackPanel Spacing="6">
               <TextBlock Classes="section-label" Text="{x:Static r:Strings.Review_ClaudeEvidence}" />
               <TextBlock Classes="muted" FontSize="12.5" Text="{Binding SelectedCandidate.ClaudeLine, FallbackValue={x:Null}}" />
