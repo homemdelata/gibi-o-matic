@@ -107,8 +107,17 @@ public sealed class ClaudeTests : IDisposable
         Assert.True(review.ClaudeEnabled);
         Assert.Contains("2", review.AskClaudeAllText);
         Assert.Empty(review.Candidates);
+        Assert.False(review.Selected!.HasBest);
+        Assert.Null(review.Selected.BestText);
 
         await review.AskClaudeCommand.ExecuteAsync(null);
+
+        // The list shows Claude's confidence beside the book's current score, each named on hover.
+        var item = review.Selected!;
+        Assert.True(item.IsBestFromClaude);
+        Assert.Equal(0.93.ToString("0%", System.Globalization.CultureInfo.CurrentCulture), item.BestText);
+        Assert.Contains("Claude", item.BestTip);
+        Assert.Contains(item.Score.ToString(System.Globalization.CultureInfo.CurrentCulture), item.ScoreTip);
 
         var run = Assert.Single(_app.Claude.Runs);
         Assert.Equal("haiku", run.Model);
@@ -135,6 +144,10 @@ public sealed class ClaudeTests : IDisposable
         await OpenAndImportAsync("saga.pdf");
         var review = _app.Get<ReviewPageViewModel>();
         await review.OnNavigatedToAsync(Ct);
+
+        Assert.True(review.Selected!.IsBestFromSearch);
+        Assert.Equal(0.6.ToString("0%", System.Globalization.CultureInfo.CurrentCulture), review.Selected.BestText);
+        Assert.Equal(CheckStatus.Warn, review.Selected.BestLevel);
 
         await review.SearchDeeperCommand.ExecuteAsync(null);
 

@@ -170,8 +170,21 @@
                     <TextBlock FontWeight="SemiBold" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
                     <TextBlock Classes="muted" FontSize="12" Text="{Binding Issue}" TextTrimming="CharacterEllipsis" />
                   </StackPanel>
-                  <TextBlock Grid.Column="2" Classes="mono" FontSize="12" FontWeight="Medium" VerticalAlignment="Center" Text="{Binding Score}"
-                             Foreground="{Binding Card.Band, Converter={x:Static conv:StatusBrushConverter.Instance}}" />
+                  <!-- The current score and the best result's confidence: two different numbers, each named on hover -->
+                  <Grid Grid.Column="2" ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" RowSpacing="8" ColumnSpacing="5" VerticalAlignment="Center">
+                    <c:StrokeIcon Data="{StaticResource Icon.BookOpen}" Width="13" Height="13" VerticalAlignment="Center"
+                                  Foreground="{Binding Card.Band, Converter={x:Static conv:StatusBrushConverter.Instance}}" ToolTip.Tip="{Binding ScoreTip}" />
+                    <TextBlock Grid.Column="1" Classes="mono" FontSize="12" FontWeight="Medium" HorizontalAlignment="Right" Text="{Binding Score}"
+                               Foreground="{Binding Card.Band, Converter={x:Static conv:StatusBrushConverter.Instance}}"
+                               ToolTip.Tip="{Binding ScoreTip}" AutomationProperties.Name="{Binding ScoreTip}" />
+                    <c:StrokeIcon Grid.Row="1" Data="{StaticResource Icon.Sparkle}" Width="13" Height="13" VerticalAlignment="Center" IsVisible="{Binding IsBestFromClaude}"
+                                  Foreground="{Binding BestLevel, Converter={x:Static conv:StatusBrushConverter.Instance}}" ToolTip.Tip="{Binding BestTip}" />
+                    <c:StrokeIcon Grid.Row="1" Data="{StaticResource Icon.Search}" Width="13" Height="13" VerticalAlignment="Center" IsVisible="{Binding IsBestFromSearch}"
+                                  Foreground="{Binding BestLevel, Converter={x:Static conv:StatusBrushConverter.Instance}}" ToolTip.Tip="{Binding BestTip}" />
+                    <TextBlock Grid.Row="1" Grid.Column="1" Classes="mono" FontSize="12" FontWeight="Medium" HorizontalAlignment="Right" Text="{Binding BestText}"
+                               IsVisible="{Binding HasBest}" Foreground="{Binding BestLevel, Converter={x:Static conv:StatusBrushConverter.Instance}}"
+                               ToolTip.Tip="{Binding BestTip}" AutomationProperties.Name="{Binding BestTip}" />
+                  </Grid>
                 </Grid>
               </Button>
             </DataTemplate>

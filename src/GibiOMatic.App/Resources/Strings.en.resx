@@ -275,6 +275,9 @@
   <data name="Review_ColCurrent" xml:space="preserve"><value>CURRENT</value></data>
   <data name="Review_ColField" xml:space="preserve"><value>FIELD</value></data>
   <data name="Review_ColProposed" xml:space="preserve"><value>PROPOSED</value></data>
+  <data name="Review_ScoreTip" xml:space="preserve"><value>Current score: {0} of 100, for the metadata the book has now</value></data>
+  <data name="Review_BestTip" xml:space="preserve"><value>Best result: {0:0%} confidence</value></data>
+  <data name="Review_BestTipClaude" xml:space="preserve"><value>Best result, from Claude: {0:0%} confidence</value></data>
   <data name="Review_Confidence" xml:space="preserve"><value>{0:0%} confidence</value></data>
   <data name="Review_Conflict" xml:space="preserve"><value>The current value looks good; uncheck to keep it.</value></data>
   <data name="Review_EditByHand" xml:space="preserve"><value>Edit by hand</value></data>

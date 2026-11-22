@@ -35,7 +35,30 @@ public sealed partial class ReviewItemViewModel(BookCardViewModel card, BookIden
     /// <summary>What is wrong, in a few words ("Title, authors and series").</summary>
     public string Issue { get; } = issue;
 
+    /// <summary>The quality score of the metadata the book has now, before any candidate is applied.</summary>
     public int Score => Card.Report.Score;
+
+    /// <summary>"Current score: 35 of 100, for the metadata the book has now".</summary>
+    public string ScoreTip => string.Format(CultureInfo.CurrentCulture, Strings.Review_ScoreTip, Score);
+
+    /// <summary>The candidate the comparison opens with, when there is one.</summary>
+    public MetadataCandidate? Best { get; } = ReviewPageViewModel.ShownCandidates(identification.Result).FirstOrDefault();
+
+    public bool HasBest => Best is not null;
+
+    public bool IsBestFromClaude => Best?.Assisted is not null;
+
+    public bool IsBestFromSearch => Best is { Assisted: null };
+
+    /// <summary>"90%".</summary>
+    public string? BestText => Best is { } best ? best.Confidence.ToString("0%", CultureInfo.CurrentCulture) : null;
+
+    public CheckStatus BestLevel => Best is { } best ? IdentificationText.LevelOf(best.Confidence) : CheckStatus.Bad;
+
+    /// <summary>"Best result: 90% confidence", saying when Claude found it.</summary>
+    public string? BestTip => Best is { } best
+        ? string.Format(CultureInfo.CurrentCulture, IsBestFromClaude ? Strings.Review_BestTipClaude : Strings.Review_BestTip, best.Confidence)
+        : null;
 
     [ObservableProperty]
     public partial bool IsSelected { get; set; }
@@ -849,6 +872,17 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
         return fields.Count == 0 ? Strings.Review_CheckMatch : string.Join(", ", fields);
     }
 
+    /// <summary>
+    /// The candidates the comparison shows, in order: Claude's record and the algorithm's same record
+    /// are shown once, as Claude's (with its evidence).
+    /// </summary>
+    internal static IEnumerable<MetadataCandidate> ShownCandidates(IdentificationResult? result)
+    {
+        var candidates = result?.Candidates ?? [];
+        var fromClaude = candidates.Where(c => c.Assisted is not null).Select(c => c.Record.ComicVineId).OfType<string>().ToHashSet();
+        return candidates.Where(c => c.Assisted is not null || c.Record.ComicVineId is null || !fromClaude.Contains(c.Record.ComicVineId));
+    }
+
     private void SelectItem(ReviewItemViewModel item) => _ = SelectAsync(item, CancellationToken.None);
 
     private async Task SelectAsync(ReviewItemViewModel? item, CancellationToken ct)
@@ -909,9 +943,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             return;
         }
 
-        // Claude's record and the algorithm's same record are shown once, as Claude's (with its evidence).
-        var fromClaude = (result?.Candidates ?? []).Where(c => c.Assisted is not null).Select(c => c.Record.ComicVineId).OfType<string>().ToHashSet();
-        foreach (var candidate in (result?.Candidates ?? []).Where(c => c.Assisted is not null || c.Record.ComicVineId is null || !fromClaude.Contains(c.Record.ComicVineId)))
+        foreach (var candidate in ShownCandidates(result))
         {
             Candidates.Add(new CandidateViewModel(candidate, c => _ = PickAsync(c, CancellationToken.None), LoadRemoteCoverAsync));
         }
