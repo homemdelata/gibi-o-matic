@@ -56,7 +56,7 @@ INBOX ──import──► ARCHIVE (original + metadata.json) ──generate─
   until their metadata is approved.
   The app can live in the system tray and start with your computer.
 - **Metadata from ComicVine and Open Library.** Confident matches are approved automatically; the rest wait in
-  the **Review** screen with a field-by-field comparison, one book at a time or **by series** (choose the
+  the **Review** screen with a field-by-field comparison (any proposed value can be changed before approving), one book at a time or **by series** (choose the
   ComicVine series and the title format once, approve every book of it together and undo it at once). The **Editor** handles everything else, including batch
   edits, credits by role and *universes* (series from the same line, which become collections in Komga). A
   quality score points out what each book is missing.

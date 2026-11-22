@@ -94,6 +94,57 @@ public static class Proposal
     public static IReadOnlySet<ProposalField> DefaultSelection(IEnumerable<FieldChange> rows) =>
         rows.Where(r => r.Changed && r.Field != ProposalField.Cover).Select(r => r.Field).ToHashSet();
 
+    /// <summary>
+    /// Fields whose proposed value the user can change in the Review before approving ("Saga: Book
+    /// One" → "Saga"). The kind, the one-shot mark and the cover are chosen, not typed.
+    /// </summary>
+    public static bool IsEditable(ProposalField field) => field is not (ProposalField.Kind or ProposalField.OneShot or ProposalField.Cover);
+
+    /// <summary>
+    /// Whether a typed value can replace the proposal: not blank, and a date as YYYY, YYYY-MM or
+    /// YYYY-MM-DD.
+    /// </summary>
+    public static bool IsValidEdit(ProposalField field, string? text) =>
+        IsEditable(field) && !string.IsNullOrWhiteSpace(text) && (field != ProposalField.Date || PartialDate.Parse(text) is not null);
+
+    /// <summary>
+    /// The record with the values the user typed in the Review in place of the source's. Credits are
+    /// names separated by commas; invalid edits are ignored (the source's value stays).
+    /// </summary>
+    public static MetadataRecord WithEdits(MetadataRecord record, IReadOnlyDictionary<ProposalField, string> edits)
+    {
+        var result = record;
+        foreach (var (field, raw) in edits)
+        {
+            if (!IsValidEdit(field, raw))
+            {
+                continue;
+            }
+
+            var text = raw.Trim();
+            result = field switch
+            {
+                ProposalField.Title => result with { Title = text },
+                ProposalField.Series => result with { SeriesName = text },
+                ProposalField.Number => result with { Number = text },
+                ProposalField.Date => result with { Date = PartialDate.Parse(text) },
+                ProposalField.Publisher => result with { Publisher = text },
+                ProposalField.Isbn => result with { Isbn = text },
+                ProposalField.Summary => result with { Summary = text },
+                _ when CreditFields.Any(c => c.Field == field) => WithNames(result, CreditFields.First(c => c.Field == field).Role, text),
+                _ => result,
+            };
+        }
+
+        return result;
+    }
+
+    private static MetadataRecord WithNames(MetadataRecord record, CreditRole role, string text)
+    {
+        var names = text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Distinct(StringComparer.OrdinalIgnoreCase);
+        return record with { Credits = record.Credits.Where(c => c.Role != role).Concat(names.Select(n => new Credit(role, n))).ToList() };
+    }
+
     public static BookMetadata Apply(BookMetadata book, MetadataRecord record, IReadOnlySet<ProposalField> fields)
     {
         var result = book;

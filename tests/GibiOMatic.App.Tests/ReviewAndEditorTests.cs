@@ -80,6 +80,107 @@ public sealed class ReviewAndEditorTests : IDisposable
     }
 
     [Fact]
+    public async Task A_proposed_value_can_be_changed_before_approving()
+    {
+        await _app.EnterUiThreadAsync();
+        _app.Identifier.Respond = (_, _) => [FakeIdentifier.Candidate("Saga, Vol. 1", "Saga: Compendium", "1", 0.72, MatchReason.Title, MatchReason.Number)];
+        var book = (await ImportAsync("saga_vol1.pdf")).Single();
+        var review = _app.Get<ReviewPageViewModel>();
+        await review.OnNavigatedToAsync(Ct);
+
+        var series = review.Rows.Single(r => r.Change.Field == ProposalField.Series);
+        Assert.True(series.IsEditable);
+        Assert.False(review.Rows.Single(r => r.Change.Field == ProposalField.Kind).IsEditable);
+        series.IsApplied = false;
+        series.EditCommand.Execute(null);
+        Assert.True(series.IsEditing);
+        Assert.Equal("Saga: Compendium", series.EditText);
+        series.EditText = "  Saga ";
+        series.CommitEditCommand.Execute(null);
+        Assert.False(series.IsEditing);
+        Assert.True(series.IsEdited);
+        Assert.True(series.IsApplied, "typing a value checks the row");
+        Assert.Equal("Saga", series.Proposed);
+
+        // A value being typed when Approve is clicked counts; an invalid one stops the approval.
+        var date = review.Rows.Single(r => r.Change.Field == ProposalField.Date);
+        date.EditCommand.Execute(null);
+        date.EditText = "October 2012";
+        await review.ApproveCommand.ExecuteAsync(null);
+        Assert.NotNull(date.EditError);
+        Assert.Equal(ReviewStatus.Pending, (await BookAsync(book.Metadata.Id)).Review.Status);
+
+        date.EditText = "2012-10";
+        var writers = review.Rows.Single(r => r.Change.Field == ProposalField.Writers);
+        writers.EditCommand.Execute(null);
+        writers.EditText = "Brian K. Vaughan, Someone Else";
+        writers.CommitEditCommand.Execute(null);
+        var publisher = review.Rows.Single(r => r.Change.Field == ProposalField.Publisher);
+        publisher.EditCommand.Execute(null);
+        publisher.EditText = "Image";
+        publisher.CommitEditCommand.Execute(null);
+        publisher.RestoreCommand.Execute(null);
+        Assert.False(publisher.IsEdited);
+        Assert.Equal("Image Comics", publisher.Proposed);
+        await review.ApproveCommand.ExecuteAsync(null);
+
+        var saved = await BookAsync(book.Metadata.Id);
+        Assert.Equal(ReviewStatus.Approved, saved.Review.Status);
+        Assert.Equal("Saga", saved.Series?.Name);
+        Assert.Equal("1", saved.Series?.Number);
+        Assert.Equal(new PartialDate(2012, 10), saved.Date);
+        Assert.Equal("Image Comics", saved.Publisher);
+        Assert.Equal(["Brian K. Vaughan", "Someone Else"], saved.Credits.Where(c => c.Role == CreditRole.Writer).Select(c => c.Name));
+        Assert.Equal(["Fiona Staples"], saved.Credits.Where(c => c.Role == CreditRole.Artist).Select(c => c.Name));
+        Assert.Equal("4000-1", saved.Identifiers.ComicVine);
+    }
+
+    [Fact]
+    public async Task A_field_the_source_did_not_have_can_be_added_before_approving()
+    {
+        await _app.EnterUiThreadAsync();
+        _app.Identifier.Respond = (_, _) => [FakeIdentifier.Candidate("Saga, Vol. 1", "Saga", "1", 0.72, MatchReason.Title, MatchReason.Number)];
+        var book = (await ImportAsync("saga_vol1.pdf")).Single();
+        var review = _app.Get<ReviewPageViewModel>();
+        await review.OnNavigatedToAsync(Ct);
+
+        // The candidate has no inker, letterer, ISBN or summary; the kind, one-shot and cover are never typed.
+        Assert.True(review.HasAddableFields);
+        Assert.Contains(review.AddableFields, f => f.Field == ProposalField.Inkers);
+        Assert.Contains(review.AddableFields, f => f.Field == ProposalField.Isbn);
+        Assert.DoesNotContain(review.AddableFields, f => f.Field is ProposalField.Kind or ProposalField.Cover or ProposalField.OneShot);
+        Assert.DoesNotContain(review.AddableFields, f => review.Rows.Any(r => r.Change.Field == f.Field));
+
+        // Added in the table's order and open for typing; Esc on an empty one takes it out again.
+        review.AddableFields.Single(f => f.Field == ProposalField.Letterers).AddCommand.Execute(null);
+        var letterers = review.Rows.Single(r => r.Change.Field == ProposalField.Letterers);
+        Assert.True(letterers.IsEditing);
+        Assert.DoesNotContain(review.AddableFields, f => f.Field == ProposalField.Letterers);
+        letterers.CancelEditCommand.Execute(null);
+        Assert.DoesNotContain(review.Rows, r => r.Change.Field == ProposalField.Letterers);
+        Assert.Contains(review.AddableFields, f => f.Field == ProposalField.Letterers);
+
+        review.AddableFields.Single(f => f.Field == ProposalField.Inkers).AddCommand.Execute(null);
+        var inkers = review.Rows.Single(r => r.Change.Field == ProposalField.Inkers);
+        var writers = review.Rows.Single(r => r.Change.Field == ProposalField.Writers);
+        Assert.True(review.Rows.IndexOf(inkers) > review.Rows.IndexOf(writers));
+        inkers.EditText = "Someone Inking";
+        inkers.CommitEditCommand.Execute(null);
+        Assert.True(inkers.IsApplied);
+        Assert.Equal("Someone Inking", inkers.Proposed);
+
+        // A field added and left blank when Approve is clicked is no change and does not stop the approval.
+        review.AddableFields.Single(f => f.Field == ProposalField.Isbn).AddCommand.Execute(null);
+        await review.ApproveCommand.ExecuteAsync(null);
+
+        var saved = await BookAsync(book.Metadata.Id);
+        Assert.Equal(ReviewStatus.Approved, saved.Review.Status);
+        Assert.Equal(["Someone Inking"], saved.Credits.Where(c => c.Role == CreditRole.Inker).Select(c => c.Name));
+        Assert.Equal(["Brian K. Vaughan"], saved.Credits.Where(c => c.Role == CreditRole.Writer).Select(c => c.Name));
+        Assert.Null(saved.Identifiers.Isbn);
+    }
+
+    [Fact]
     public async Task Skip_moves_on_and_search_again_uses_the_typed_words()
     {
         await _app.EnterUiThreadAsync();

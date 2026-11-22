@@ -322,6 +322,7 @@
   <data name="Review_SearchingHelp" xml:space="preserve"><value>Pode levar alguns segundos: as consultas ao ComicVine são espaçadas para respeitar o limite dele.</value></data>
   <data name="Review_LoadingDetails" xml:space="preserve"><value>Carregando créditos e sinopse do candidato…</value></data>
   <data name="Review_NothingFor" xml:space="preserve"><value>Nada encontrado para “{0}”.</value></data>
+  <data name="Field_CoverArtists" xml:space="preserve"><value>Artista da capa</value></data>
   <data name="Field_Cover" xml:space="preserve"><value>Capa</value></data>
   <data name="Review_CoverFile" xml:space="preserve"><value>capa do arquivo</value></data>
   <data name="Review_CoverSource" xml:space="preserve"><value>capa da fonte (a do cartão escolhido)</value></data>
@@ -859,6 +860,18 @@
   <data name="Review_CoverDiffers" xml:space="preserve"><value>A capa do registro é diferente da do livro.</value></data>
   <data name="Review_CoverMatches" xml:space="preserve"><value>A capa confere com a do livro.</value></data>
   <data name="Review_EditionMissing" xml:space="preserve"><value>Edição sem registro no ComicVine: os campos vêm da resposta do Claude, com a fonte de cada um (passe o mouse). Os créditos lidos da página de créditos começam desmarcados.</value></data>
+  <data name="Review_EditField" xml:space="preserve"><value>Editar {0}</value></data>
+  <data name="Review_EditEmpty" xml:space="preserve"><value>Escreva um valor, ou desfaça a edição para usar o da fonte.</value></data>
+  <data name="Review_EditConfirm" xml:space="preserve"><value>Usar este valor</value></data>
+  <data name="Review_EditCancel" xml:space="preserve"><value>Cancelar</value></data>
+  <data name="Review_Edited" xml:space="preserve"><value>Editado por você</value></data>
+  <data name="Review_EditRestore" xml:space="preserve"><value>Desfazer</value></data>
+  <data name="Review_EditRestoreHelp" xml:space="preserve"><value>Volta para o valor da fonte</value></data>
+  <data name="Review_EditHelp" xml:space="preserve"><value>Enter para usar o valor, Esc para cancelar.</value></data>
+  <data name="Review_EditHelpNames" xml:space="preserve"><value>Enter para usar o valor, Esc para cancelar. Nomes separados por vírgula.</value></data>
+  <data name="Review_EditHelpDate" xml:space="preserve"><value>Enter para usar o valor, Esc para cancelar. AAAA, AAAA-MM ou AAAA-MM-DD.</value></data>
+  <data name="Review_AddField" xml:space="preserve"><value>+ Adicionar campo</value></data>
+  <data name="Review_AddFieldHelp" xml:space="preserve"><value>Escreva um valor para um campo que a fonte não trouxe</value></data>
   <data name="Review_FieldSource" xml:space="preserve"><value>Fonte: {0}</value></data>
   <data name="Review_AskClaudeAll" xml:space="preserve"><value>Perguntar ao Claude ({0})</value></data>
   <data name="Review_AskClaudeAllConfirm" xml:space="preserve"><value>Perguntar ao Claude sobre {0} livros ainda sem resposta? Um por vez, de 20 s a 1 min cada (uns {1} min ao todo), usando a cota do seu plano. As respostas vão para a Revisão.</value></data>
