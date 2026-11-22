@@ -209,6 +209,54 @@ public sealed class ReviewBySeriesTests : IDisposable
     }
 
     [Fact]
+    public async Task By_series_search_all_again_looks_up_the_series_of_every_group_and_chooses_nothing()
+    {
+        await _app.EnterUiThreadAsync();
+        _app.Identifier.Respond = (book, _) => book.Title.StartsWith("Deadly", StringComparison.Ordinal) ? [Candidate(100, "Deadly Class", book.Title[^1..])] : [];
+        _app.ComicVine.Volumes.AddRange(
+        [
+            new CvVolume(200, "Deadly Class", 2014, "Image", 50),
+            new CvVolume(12, "Saga", 2012, "Image", 66),
+        ]);
+        await ImportAsync("Deadly Class Vol1.pdf", "Deadly Class Vol2.pdf", "Saga Vol1.pdf", "Saga Vol2.pdf");
+        var review = _app.Get<ReviewPageViewModel>();
+        await review.OnNavigatedToAsync(Ct);
+        Assert.Equal(string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchAll, 4), review.SearchAllText);
+
+        // By series, the button counts the groups whose series isn't chosen.
+        await review.ShowBySeriesCommand.ExecuteAsync(null);
+        var series = review.Series;
+        await WaitAsync(() => series.IsIdle && series.Selected?.Name == "Deadly Class");
+        Assert.Empty(_app.ComicVine.Searches);
+        Assert.Equal(string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchAllSeries, 2), review.SearchAllText);
+        Assert.Equal(Strings.Review_SearchAllSeriesHelp, review.SearchAllHelp);
+
+        review.AskSearchAllCommand.Execute(null);
+        Assert.NotNull(review.SearchAllConfirmText);
+        await review.SearchAllCommand.ExecuteAsync(null);
+        Assert.Equal(["Deadly Class", "Saga"], _app.ComicVine.Searches);
+        Assert.Equal(string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchSeriesDone, 2), review.SearchSeriesMessage);
+        Assert.Null(review.SearchSeriesProgressText);
+
+        // The open group: its books' volume first, then the ones found by its name; the choice stays.
+        Assert.Equal([100, 200, 12], series.Volumes.Select(v => v.Volume.Id));
+        Assert.Null(series.SearchResultsText);
+        Assert.Equal(100, series.Volume?.Id);
+
+        // A group whose books found no volume shows what was found, without searching again, and nothing is chosen.
+        await series.GroupItems.Single(g => g.Name == "Saga").SelectCommand.ExecuteAsync(null);
+        await WaitAsync(() => series.IsIdle);
+        Assert.Equal(2, _app.ComicVine.Searches.Count);
+        Assert.Equal(string.Format(CultureInfo.CurrentCulture, Strings.Series_SearchResults, "Saga"), series.SearchResultsText);
+        Assert.Contains(series.Volumes, v => v.Volume.Id == 12);
+        Assert.Null(series.Volume);
+
+        // By book, the button counts the books again.
+        await review.ShowByBookCommand.ExecuteAsync(null);
+        Assert.Equal(string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchAll, 4), review.SearchAllText);
+    }
+
+    [Fact]
     public async Task A_search_replaces_the_suggestions_until_going_back()
     {
         await _app.EnterUiThreadAsync();

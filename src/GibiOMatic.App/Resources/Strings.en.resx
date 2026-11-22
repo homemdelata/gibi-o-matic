@@ -724,6 +724,12 @@
   <data name="Review_SearchAll" xml:space="preserve"><value>Search all again ({0})</value></data>
   <data name="Review_SearchAllHelp" xml:space="preserve"><value>Searches metadata again for every book in the Review. Useful after setting the ComicVine key or when a source was down.</value></data>
   <data name="Review_SearchAllConfirm" xml:space="preserve"><value>Search the {0} books in the Review again? The current suggestions are replaced by the new ones, and books found with confidence are approved on their own. The search runs in the background, one book at a time.</value></data>
+  <data name="Review_SearchAllSeries" xml:space="preserve"><value>Search all again ({0} series)</value></data>
+  <data name="Review_SearchAllSeriesHelp" xml:space="preserve"><value>Searches ComicVine for the series of every group without a chosen series, by the group's name, as the group's Search button does. Nothing is chosen on its own.</value></data>
+  <data name="Review_SearchAllSeriesConfirm" xml:space="preserve"><value>Search ComicVine for the series of {0} groups without a chosen series? One search per group, spaced like every ComicVine call (about {1} min). Nothing is chosen on its own: when you open each group, the volumes found are in its list for you to choose.</value></data>
+  <data name="Review_SearchSeriesProgress" xml:space="preserve"><value>Searching series: {0} of {1} · {2}</value></data>
+  <data name="Review_SearchSeriesDone" xml:space="preserve"><value>Series of {0} groups searched: the volumes found are in each group's list.</value></data>
+  <data name="Review_SearchSeriesFailed" xml:space="preserve"><value>The search failed for {0} of {1} groups (ComicVine may be down); the others have the volumes in their list.</value></data>
   <data name="Review_SearchAllGo" xml:space="preserve"><value>Search again</value></data>
   <data name="Review_OpenIn" xml:space="preserve"><value>Look it up in the browser:</value></data>
   <data name="Review_OpenAmazonHelp" xml:space="preserve"><value>Opens the Amazon book search in the browser. On the page of the print edition (paperback or hardcover, not Kindle), copy the address and paste it in the field below: the app uses the ISBN in the link.</value></data>

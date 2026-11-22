@@ -28,8 +28,10 @@
           </Border>
           <Button Classes="secondary" MinHeight="32" Padding="12,0" Margin="0,8,0,0" HorizontalAlignment="Left" FontSize="13"
                   Content="{Binding SearchAllText}" Command="{Binding AskSearchAllCommand}"
-                  ToolTip.Tip="{x:Static r:Strings.Review_SearchAllHelp}"
+                  ToolTip.Tip="{Binding SearchAllHelp}"
                   IsVisible="{Binding SearchAllText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          <TextBlock Classes="help" Margin="0,4,0,0" TextWrapping="Wrap" Text="{Binding SearchSeriesMessage}"
+                     IsVisible="{Binding SearchSeriesMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
           <Button Classes="secondary" MinHeight="32" Padding="12,0" Margin="0,6,0,0" HorizontalAlignment="Left" FontSize="13"
                   Content="{Binding AskClaudeAllText}" Command="{Binding AskClaudeAllCommand}"
                   ToolTip.Tip="{Binding AskClaudeAllHelp}"
@@ -54,6 +56,15 @@
             <ProgressBar IsIndeterminate="True" Height="4" Foreground="{DynamicResource AccentTextBrush}" Background="{DynamicResource HoverBrush}" />
             <Button Classes="secondary" MinHeight="32" Padding="12,0" HorizontalAlignment="Left" FontSize="13"
                     Content="{x:Static r:Strings.Review_ClaudeStop}" Command="{Binding StopClaudeBatchCommand}" />
+          </StackPanel>
+        </Border>
+        <Border DockPanel.Dock="Top" Classes="card" Padding="12,10" Margin="0,0,0,12"
+                IsVisible="{Binding SearchSeriesProgressText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+          <StackPanel Spacing="8">
+            <TextBlock Classes="help" TextWrapping="Wrap" Text="{Binding SearchSeriesProgressText}" />
+            <ProgressBar IsIndeterminate="True" Height="4" Foreground="{DynamicResource AccentTextBrush}" Background="{DynamicResource HoverBrush}" />
+            <Button Classes="secondary" MinHeight="32" Padding="12,0" HorizontalAlignment="Left" FontSize="13"
+                    Content="{x:Static r:Strings.Review_ClaudeStop}" Command="{Binding StopSearchSeriesCommand}" />
           </StackPanel>
         </Border>
         <Border DockPanel.Dock="Top" Classes="card" Padding="12,10" Margin="0,0,0,12"

@@ -724,6 +724,12 @@
   <data name="Review_SearchAll" xml:space="preserve"><value>Buscar de novo todos ({0})</value></data>
   <data name="Review_SearchAllHelp" xml:space="preserve"><value>Procura de novo os metadados de todos os livros da Revisão. Útil depois de configurar a chave do ComicVine ou quando uma fonte estava fora do ar.</value></data>
   <data name="Review_SearchAllConfirm" xml:space="preserve"><value>Buscar de novo os {0} livros da Revisão? As sugestões de agora serão trocadas pelas novas, e os livros encontrados com segurança são aprovados sozinhos. A busca roda em segundo plano, um livro por vez.</value></data>
+  <data name="Review_SearchAllSeries" xml:space="preserve"><value>Buscar de novo todas ({0} séries)</value></data>
+  <data name="Review_SearchAllSeriesHelp" xml:space="preserve"><value>Procura no ComicVine a série de cada grupo que ainda não tem série escolhida, pelo nome do grupo, como o botão Buscar do grupo. Nada é escolhido sozinho.</value></data>
+  <data name="Review_SearchAllSeriesConfirm" xml:space="preserve"><value>Buscar no ComicVine a série de {0} grupos que ainda não têm série escolhida? Uma busca por grupo, espaçadas como toda chamada ao ComicVine (uns {1} min). Nada é escolhido sozinho: ao abrir cada grupo, os volumes encontrados estão na lista para você escolher.</value></data>
+  <data name="Review_SearchSeriesProgress" xml:space="preserve"><value>Buscando séries: {0} de {1} · {2}</value></data>
+  <data name="Review_SearchSeriesDone" xml:space="preserve"><value>Séries de {0} grupos buscadas: os volumes encontrados estão na lista de cada grupo.</value></data>
+  <data name="Review_SearchSeriesFailed" xml:space="preserve"><value>A busca falhou em {0} de {1} grupos (o ComicVine pode estar fora do ar); os outros têm os volumes na lista.</value></data>
   <data name="Review_SearchAllGo" xml:space="preserve"><value>Buscar de novo</value></data>
   <data name="Review_OpenIn" xml:space="preserve"><value>Procurar no navegador:</value></data>
   <data name="Review_OpenAmazonHelp" xml:space="preserve"><value>Abre a busca de livros da Amazon no navegador. Na página da edição impressa (capa comum ou dura, não a Kindle), copie o endereço e cole no campo abaixo: o app usa o ISBN que vem no link.</value></data>

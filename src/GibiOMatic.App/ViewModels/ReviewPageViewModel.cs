@@ -502,13 +502,19 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
     [RelayCommand]
     private void StopClaudeBatch() => _session.Assisted?.CancelBatch();
 
-    /// <summary>The groups changed (a refresh, an approval, a book moved): by series, the batch button counts them again.</summary>
+    /// <summary>The groups changed (a refresh, an approval, a book moved): by series, the batch buttons count them again.</summary>
     private void OnGroupsChanged(object? sender, EventArgs e)
     {
         if (IsBySeries)
         {
-            _ = UpdateAskClaudeAllAsync();
+            _ = UpdateGroupButtonsAsync();
         }
+    }
+
+    private async Task UpdateGroupButtonsAsync()
+    {
+        await UpdateSearchAllAsync();
+        await UpdateAskClaudeAllAsync();
     }
 
     private void OnClaudeChanged(object? sender, EventArgs e) => _ui.Post(UpdateClaudeProgress);
@@ -575,6 +581,8 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
         }
 
         AskClaudeAllConfirmText = null;
+        SearchAllConfirmText = null;
+        SearchSeriesMessage = null;
         if (bySeries)
         {
             await Series.RefreshAsync();
@@ -584,7 +592,8 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             await RefreshAsync(CancellationToken.None, bookId);
         }
 
-        // The batch button asks about series or about books, as the mode shows them.
+        // The batch buttons act on series or on books, as the mode shows them.
+        await UpdateSearchAllAsync();
         await UpdateAskClaudeAllAsync();
     }
 
@@ -755,10 +764,67 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
     [ObservableProperty]
     public partial string? SearchAllConfirmText { get; private set; }
 
+    /// <summary>What the button does, in the mode on screen.</summary>
+    [ObservableProperty]
+    public partial string SearchAllHelp { get; private set; } = Strings.Review_SearchAllHelp;
+
+    /// <summary>"Searching series: 3 of 53 · Saga" while "Search all again" looks up the groups' series.</summary>
+    [ObservableProperty]
+    public partial string? SearchSeriesProgressText { get; private set; }
+
+    /// <summary>How the last series search went ("2 searches failed"), or no ComicVine key.</summary>
+    [ObservableProperty]
+    public partial string? SearchSeriesMessage { get; private set; }
+
+    /// <summary>By series: the groups whose series hasn't been chosen.</summary>
+    private IReadOnlyList<ReviewGroup> _groupsToSearch = [];
+
+    private CancellationTokenSource? _searchingSeries;
+
+    /// <summary>By book, the books of the queue; by series, the groups without a chosen series.</summary>
+    private async Task UpdateSearchAllAsync(CancellationToken ct = default)
+    {
+        _groupsToSearch = [];
+        if (IsBySeries)
+        {
+            try
+            {
+                _groupsToSearch = await Series.GroupsWithoutSeriesAsync(ct);
+            }
+            catch (Exception ex) when (LibrarySession.IsExpectedFailure(ex))
+            {
+                _logger.LogError(ex, "Could not count the groups without a series");
+            }
+        }
+
+        SearchAllHelp = IsBySeries ? Strings.Review_SearchAllSeriesHelp : Strings.Review_SearchAllHelp;
+        SearchAllText = IsBySeries
+            ? _groupsToSearch.Count == 0 || _searchingSeries is not null ? null : string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchAllSeries, _groupsToSearch.Count)
+            : _toReview.Count == 0 ? null : string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchAll, _toReview.Count);
+        if (SearchAllText is null)
+        {
+            SearchAllConfirmText = null;
+        }
+    }
+
     [RelayCommand]
-    private void AskSearchAll() => SearchAllConfirmText = _toReview.Count == 0
-        ? null
-        : string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchAllConfirm, _toReview.Count);
+    private void AskSearchAll()
+    {
+        SearchSeriesMessage = null;
+        if (IsBySeries)
+        {
+            // One ComicVine search per group, spaced like every ComicVine call (about 1.2 s).
+            SearchAllConfirmText = _groupsToSearch.Count == 0
+                ? null
+                : string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchAllSeriesConfirm, _groupsToSearch.Count,
+                    Math.Max(1, (int)Math.Ceiling(_groupsToSearch.Count * 1.5 / 60)));
+            return;
+        }
+
+        SearchAllConfirmText = _toReview.Count == 0
+            ? null
+            : string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchAllConfirm, _toReview.Count);
+    }
 
     [RelayCommand]
     private void CancelSearchAll() => SearchAllConfirmText = null;
@@ -767,6 +833,12 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
     private async Task SearchAllAsync(CancellationToken ct)
     {
         SearchAllConfirmText = null;
+        if (IsBySeries)
+        {
+            await SearchSeriesAsync();
+            return;
+        }
+
         if (_session.Identification is not { } queue)
         {
             return;
@@ -778,6 +850,47 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
         await Status.RefreshAsync();
         await RefreshAsync(ct);
     }
+
+    /// <summary>By series: looks up the series of each group without one; nothing is chosen.</summary>
+    private async Task SearchSeriesAsync()
+    {
+        var groups = _groupsToSearch;
+        if (groups.Count == 0 || _searchingSeries is not null)
+        {
+            return;
+        }
+
+        _logger.LogInformation("Review: searching the series of {Count} groups", groups.Count);
+        using var searching = _searchingSeries = new CancellationTokenSource();
+        SearchAllText = null;
+        var progress = new Progress<(int Done, string Name)>(p => SearchSeriesProgressText = p.Done >= groups.Count
+            ? null
+            : string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchSeriesProgress, p.Done + 1, groups.Count, p.Name));
+        try
+        {
+            var failed = await Series.SearchGroupsAsync(groups, progress, searching.Token);
+            SearchSeriesMessage = failed switch
+            {
+                null => Strings.Note_NoKey,
+                > 0 => string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchSeriesFailed, failed, groups.Count),
+                _ => string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchSeriesDone, groups.Count),
+            };
+        }
+        catch (OperationCanceledException)
+        {
+            SearchSeriesMessage = null;
+        }
+        finally
+        {
+            _searchingSeries = null;
+            SearchSeriesProgressText = null;
+        }
+
+        await UpdateSearchAllAsync();
+    }
+
+    [RelayCommand]
+    private void StopSearchSeries() => _searchingSeries?.Cancel();
 
     [ObservableProperty]
     public partial string? EmptyText { get; private set; }
@@ -954,12 +1067,8 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             ShowItems(keep);
             HasItems = items.Count > 0;
             _toReview = items.Where(i => books[i.BookId].Metadata.Review.Status == ReviewStatus.Pending).Select(i => i.BookId).ToList();
-            SearchAllText = _toReview.Count == 0 ? null : string.Format(CultureInfo.CurrentCulture, Strings.Review_SearchAll, _toReview.Count);
+            await UpdateSearchAllAsync(ct);
             await UpdateAskClaudeAllAsync(ct);
-            if (SearchAllText is null)
-            {
-                SearchAllConfirmText = null;
-            }
             Subtitle = string.Format(CultureInfo.CurrentCulture, Strings.Review_Subtitle_Count, items.Count);
             var counts = await queue.GetCountsAsync(ct);
             EmptyText = string.Format(CultureInfo.CurrentCulture, Strings.Review_Empty, counts.AutoApproved, counts.Approved);
@@ -1402,6 +1511,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
 
         Series.GroupsChanged -= OnGroupsChanged;
         Series.CancelClaudeRuns();
+        _searchingSeries?.Cancel();
 
         _refresh.Dispose();
         Status.Dispose();

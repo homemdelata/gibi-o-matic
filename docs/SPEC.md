@@ -212,6 +212,8 @@ Bands: **Poor** (< 60), **Review** (60–84), **OK** (≥ 85). The rule already 
 - Every book gets its own history entry, all of them tagged with the same batch, so the whole group can be undone at once.
 - After approving, the next group opens.
 
+**Search all again, by series**: the Review's batch buttons follow the mode. By series, "Search all again (N series)" searches ComicVine for the series of every group whose series hasn't been chosen, by the group's name, as the group's Search button does: one search per group, in the list's order, with progress and Stop. Nothing is chosen: when a group is opened, the volumes found follow its books' suggestions, or show as the search's results when its books found none (without searching again). By book, it searches every book again, as before.
+
 **Not in scope**: regrouping books that are already approved. Those are fixed in the Editor or the batch Editor, or sent back to the Review.
 
 ## 8. Metadata sources and identification

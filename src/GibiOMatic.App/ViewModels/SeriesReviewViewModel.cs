@@ -706,7 +706,7 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
                 : null;
             await SetSeriesAsync(volume, saved);
         }
-        else if (Volumes.FirstOrDefault() is { } first)
+        else if (_suggestions.FirstOrDefault() is { } first)
         {
             await SetSeriesAsync(first.Volume, null);
         }
@@ -719,9 +719,14 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
         // when the user hasn't chosen one yet, as if the run had just ended.
         var stored = _session.Assisted is { } assisted ? await assisted.Store.GetGroupAsync(group.Id) : null;
 
-        // No book found a volume: the group's name is searched at once, nothing is chosen.
-        if (_suggestions.Count == 0 && saved?.VolumeId is null && stored?.Series is null)
+        if (_searched.ContainsKey(group.Id))
         {
+            // "Search all again" already searched the group's name: its volumes join the list, nothing is chosen.
+            ShowSearched(group);
+        }
+        else if (_suggestions.Count == 0 && saved?.VolumeId is null && stored?.Series is null)
+        {
+            // No book found a volume: the group's name is searched at once, nothing is chosen.
             await SearchAsync(auto: true);
         }
 
@@ -839,6 +844,85 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
         ShowVolumes(
             found.Take(12).Select(v => suggested.GetValueOrDefault(v.Id) ?? new VolumeOptionViewModel(v, null, group.Books.Count, v.CoverUrl, PickVolume, LoadCoverAsync)),
             string.Format(CultureInfo.CurrentCulture, found.Count == 0 ? Strings.Series_SearchNothing : Strings.Series_SearchResults, words));
+    }
+
+    // ---- "Search all again", by series: the series of every group ----
+
+    /// <summary>The volumes found for each group's name by "Search all again", by group id, for this session.</summary>
+    private readonly Dictionary<string, IReadOnlyList<CvVolume>> _searched = new(StringComparer.Ordinal);
+
+    /// <summary>The groups whose series hasn't been chosen yet, in the list's order: those "Search all again" looks up.</summary>
+    public async Task<IReadOnlyList<ReviewGroup>> GroupsWithoutSeriesAsync(CancellationToken ct = default)
+    {
+        if (Groups is not { } groups)
+        {
+            return [];
+        }
+
+        var chosen = await groups.GetGroupsWithSeriesAsync(ct);
+        return ReviewListView.Arrange(_grouping.Groups, _sort, null).Where(g => !chosen.Contains(g.Id)).ToList();
+    }
+
+    /// <summary>
+    /// Searches ComicVine for the series of each group, by its name, as the group's Search button does.
+    /// Nothing is chosen: the volumes found join the group's list when it is opened. Returns how many
+    /// searches failed; null when there is no ComicVine key.
+    /// </summary>
+    public async Task<int?> SearchGroupsAsync(IReadOnlyList<ReviewGroup> groups, IProgress<(int Done, string Name)> progress, CancellationToken ct)
+    {
+        if (!await _matcher.HasKeyAsync(ct))
+        {
+            return null;
+        }
+
+        var failed = 0;
+        for (var i = 0; i < groups.Count; i++)
+        {
+            var group = groups[i];
+            progress.Report((i, group.Name));
+            try
+            {
+                _searched[group.Id] = await _matcher.SearchAsync(group.Name, PublisherOf(group), HighestNumber(group), ct);
+            }
+            catch (Exception ex) when (ex is MetadataSourceException or HttpRequestException)
+            {
+                _logger.LogWarning(ex, "Could not search ComicVine for the series of group {GroupId}", group.Id);
+                failed++;
+                continue;
+            }
+
+            if (Selected?.Group?.Id == group.Id && IsIdle)
+            {
+                ShowSearched(group);
+            }
+        }
+
+        progress.Report((groups.Count, string.Empty));
+        return failed;
+    }
+
+    /// <summary>
+    /// The volumes "Search all again" found for the open group: after the books' suggestions (which
+    /// keep their counts), or as the search's results when the books found none.
+    /// </summary>
+    private void ShowSearched(ReviewGroup group)
+    {
+        if (!_searched.TryGetValue(group.Id, out var found))
+        {
+            return;
+        }
+
+        var suggested = _suggestions.ToDictionary(v => v.Volume.Id);
+        var extra = found.Where(v => !suggested.ContainsKey(v.Id))
+            .Select(v => new VolumeOptionViewModel(v, null, group.Books.Count, v.CoverUrl, PickVolume, LoadCoverAsync));
+        if (_suggestions.Count > 0)
+        {
+            ShowVolumes(_suggestions.Concat(extra).Take(18), null);
+        }
+        else
+        {
+            ShowVolumes(extra.Take(12), string.Format(CultureInfo.CurrentCulture, found.Count == 0 ? Strings.Series_SearchNothing : Strings.Series_SearchResults, group.Name));
+        }
     }
 
     /// <summary>The publisher most of the group's books have.</summary>
