@@ -121,7 +121,7 @@ public sealed class EpubBook : IDisposable
         if (Find(zip, "META-INF/container.xml") is { } container)
         {
             using var stream = container.Open();
-            opfPath = LoadXml(stream).Descendants().FirstOrDefault(e => e.Name.LocalName == "rootfile")?.Attribute("full-path")?.Value;
+            opfPath = XmlFiles.Load(stream).Descendants().FirstOrDefault(e => e.Name.LocalName == "rootfile")?.Attribute("full-path")?.Value;
         }
 
         opfPath ??= zip.Entries.FirstOrDefault(e => e.FullName.EndsWith(".opf", StringComparison.OrdinalIgnoreCase))?.FullName;
@@ -131,7 +131,7 @@ public sealed class EpubBook : IDisposable
         }
 
         using var opfStream = opfEntry.Open();
-        var opf = LoadXml(opfStream);
+        var opf = XmlFiles.Load(opfStream);
         return (new OpfPackage(opf, Path.GetDirectoryName(opfPath)?.Replace('\\', '/') ?? string.Empty), opf);
     }
 
@@ -168,7 +168,7 @@ public sealed class EpubBook : IDisposable
                 XDocument doc;
                 using (var stream = navEntry.Open())
                 {
-                    doc = LoadXml(stream);
+                    doc = XmlFiles.Load(stream);
                 }
 
                 var navs = doc.Descendants().Where(e => e.Name.LocalName == "nav").ToList();
@@ -209,7 +209,7 @@ public sealed class EpubBook : IDisposable
                     XDocument doc;
                     using (var stream = ncxEntry.Open())
                     {
-                        doc = LoadXml(stream);
+                        doc = XmlFiles.Load(stream);
                     }
 
                     void Walk(XElement parent, int depth)
@@ -236,13 +236,6 @@ public sealed class EpubBook : IDisposable
         }
 
         return result;
-    }
-
-    /// <summary>XML without DTD processing (no external entities).</summary>
-    internal static XDocument LoadXml(Stream stream)
-    {
-        using var reader = XmlReader.Create(stream, new XmlReaderSettings { DtdProcessing = DtdProcessing.Ignore, XmlResolver = null });
-        return XDocument.Load(reader);
     }
 
     private static ZipArchiveEntry? Find(ZipArchive zip, string path) =>

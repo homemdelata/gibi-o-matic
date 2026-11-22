@@ -102,6 +102,9 @@ public static class SyntheticBooks
         public bool Nav { get; init; }
 
         public string? Generator { get; init; }
+
+        /// <summary>The version in the XML declaration of the OPF package (some publishers write "1.1").</summary>
+        public string XmlVersion { get; init; } = "1.0";
     }
 
     public static string Epub(string path, EpubOptions? options = null)
@@ -205,7 +208,7 @@ public static class SyntheticBooks
         }
 
         Text("OEBPS/content.opf", $"""
-            <?xml version="1.0" encoding="utf-8"?>
+            <?xml version="{options.XmlVersion}" encoding="utf-8"?>
             <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="bookid">
             <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
             {meta}</metadata>

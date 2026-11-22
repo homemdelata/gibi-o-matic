@@ -10,6 +10,7 @@ using GibiOMatic.App.ViewModels;
 using GibiOMatic.App.Views;
 using GibiOMatic.Core.Settings;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace GibiOMatic.App;
 
@@ -44,6 +45,16 @@ public partial class App : Application, IAppHost
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && _services is not null)
         {
             _desktop = desktop;
+
+            // An error left unhandled by a command or an event handler is logged and the app goes on:
+            // it used to close the app, and with it every run and import in progress.
+            var logger = _services.GetRequiredService<ILogger<App>>();
+            Dispatcher.UIThread.UnhandledException += (_, e) =>
+            {
+                logger.LogError(e.Exception, "Unhandled error on the UI thread");
+                e.Handled = true;
+            };
+
             var settings = _services.GetRequiredService<ISettingsService>();
             ApplyTheme(settings.Current.Theme);
             // A new theme applies right away (F6); "Seguir o sistema" follows the system while running.

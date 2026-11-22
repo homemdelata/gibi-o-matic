@@ -1323,6 +1323,13 @@ public sealed partial class SeriesReviewViewModel : ViewModelBase
         {
             return null;
         }
+        catch (Exception ex)
+        {
+            // An error of one run never closes the app: the user sees it on the group.
+            _logger.LogError(ex, "Claude could not look at group {GroupId}", group.Id);
+            ShowClaudeMessage(group, ClaudeText.Failure(ex.Message));
+            return null;
+        }
         finally
         {
             _claudeRuns.Remove(group.Id);

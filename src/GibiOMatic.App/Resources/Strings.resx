@@ -844,6 +844,7 @@
   <data name="Claude_LevelGroup" xml:space="preserve"><value>série</value></data>
   <data name="Claude_Failed" xml:space="preserve"><value>O Claude não respondeu ({0}).</value></data>
   <data name="Claude_Timeout" xml:space="preserve"><value>O Claude demorou demais e foi parado.</value></data>
+  <data name="Claude_BookUnreadable" xml:space="preserve"><value>Não foi possível ler o arquivo do livro para mostrar ao Claude. Os detalhes estão nos logs.</value></data>
   <data name="Claude_Off" xml:space="preserve"><value>Ligue o Claude em Configurações → Claude.</value></data>
   <data name="Review_AskClaude" xml:space="preserve"><value>Perguntar ao Claude</value></data>
   <data name="Review_AskClaudeHelp" xml:space="preserve"><value>O Claude olha a capa e as páginas de créditos e procura no ComicVine.</value></data>

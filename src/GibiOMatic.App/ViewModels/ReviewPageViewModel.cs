@@ -501,6 +501,13 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
         catch (OperationCanceledException)
         {
         }
+        catch (Exception ex)
+        {
+            // An error of one run never closes the app: the user sees it on the book.
+            _logger.LogError(ex, "Claude could not look at book {BookId}", item.BookId);
+            result = new Library.Identification.AssistedBookResult(item.BookId, level, Library.Identification.AssistedOutcome.Failed, null, null,
+                ex.Message, TimeSpan.Zero, 0);
+        }
         finally
         {
             _claudeRuns.Remove(item.BookId);

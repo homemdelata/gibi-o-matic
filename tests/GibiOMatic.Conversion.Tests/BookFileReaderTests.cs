@@ -85,6 +85,18 @@ public sealed class BookFileReaderTests : IDisposable
     }
 
     [Fact]
+    public async Task An_epub_package_declaring_xml_1_1_is_read()
+    {
+        // .NET only reads XML 1.0; a Humble Bundle EPUB declaring 1.1 closed the app (2026-11-22).
+        var path = SyntheticBooks.Epub(_temp.Combine("xml11.epub"), new SyntheticBooks.EpubOptions { Title = "Practical Book", XmlVersion = "1.1" });
+
+        var content = await _reader.ReadAsync(path, BookFormat.Epub, Ct);
+
+        Assert.Equal("Practical Book", content.Metadata.Title);
+        AssertRedCover(content);
+    }
+
+    [Fact]
     public async Task Epub_without_a_declared_cover_uses_the_first_page_image()
     {
         var path = SyntheticBooks.Epub(_temp.Combine("nocover.epub"), new SyntheticBooks.EpubOptions { DeclareCover = false, FixedLayout = false });
