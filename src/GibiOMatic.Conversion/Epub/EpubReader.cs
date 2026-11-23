@@ -17,8 +17,18 @@ internal static partial class EpubReader
         var opfPath = FindOpfPath(zip);
         if (opfPath is null || Find(zip, opfPath) is not { } opfEntry)
         {
+            // A comic zipped as an EPUB without being one: no metadata, but its first page is the cover.
             warnings.Add("The EPUB has no OPF package.");
-            return new BookFileContent(EmbeddedMetadata.Empty, null, warnings);
+            byte[]? firstPage = null;
+            if (Cbz.CbzBuilder.EpubPageImages(zip).FirstOrDefault() is { } first)
+            {
+                using var stream = first.Open();
+                using var buffer = new MemoryStream();
+                stream.CopyTo(buffer);
+                firstPage = buffer.ToArray();
+            }
+
+            return new BookFileContent(EmbeddedMetadata.Empty, firstPage, warnings);
         }
 
         XDocument opf;

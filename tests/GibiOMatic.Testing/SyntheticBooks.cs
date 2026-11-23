@@ -105,6 +105,12 @@ public static class SyntheticBooks
 
         /// <summary>The version in the XML declaration of the OPF package (some publishers write "1.1").</summary>
         public string XmlVersion { get; init; } = "1.0";
+
+        /// <summary>
+        /// A comic zipped as an EPUB without being one: the mimetype and the page images ("1_Book.jpg",
+        /// "2_Book.jpg"… "10_Book.jpg"), with no container.xml and no OPF package.
+        /// </summary>
+        public bool NoPackage { get; init; }
     }
 
     public static string Epub(string path, EpubOptions? options = null)
@@ -126,6 +132,17 @@ public static class SyntheticBooks
         }
 
         Text("mimetype", "application/epub+zip", CompressionLevel.NoCompression);
+        if (options.NoPackage)
+        {
+            // Written out of order, so only a natural sort of the names gives the reading order.
+            foreach (var i in Enumerable.Range(1, options.Pages).Reverse())
+            {
+                Bytes($"{i}_Book.jpg", SyntheticImages.Jpeg(200, 300, i == 1 ? CoverColor : PageColor));
+            }
+
+            return path;
+        }
+
         Text("META-INF/container.xml", """
             <?xml version="1.0"?>
             <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">

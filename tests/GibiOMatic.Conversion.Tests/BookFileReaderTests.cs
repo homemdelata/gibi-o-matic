@@ -107,6 +107,16 @@ public sealed class BookFileReaderTests : IDisposable
     }
 
     [Fact]
+    public async Task Epub_without_a_package_uses_its_first_image_as_the_cover()
+    {
+        var path = SyntheticBooks.Epub(_temp.Combine("renamed.epub"), new SyntheticBooks.EpubOptions { Pages = 12, NoPackage = true });
+
+        var content = await _reader.ReadAsync(path, BookFormat.Epub, Ct);
+
+        AssertRedCover(content);
+    }
+
+    [Fact]
     public async Task A_text_epub_converted_by_calibre_is_flagged()
     {
         var path = SyntheticBooks.Epub(_temp.Combine("novel.epub"), new SyntheticBooks.EpubOptions

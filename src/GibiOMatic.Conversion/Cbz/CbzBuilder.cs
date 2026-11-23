@@ -91,7 +91,11 @@ public static partial class CbzBuilder
         return new CbzResult(images.Count, 0);
     }
 
-    /// <summary>The image of each page in spine order (one per page in comic EPUBs); manifest order as a fallback.</summary>
+    /// <summary>
+    /// The image of each page in spine order (one per page in comic EPUBs); manifest order as a fallback.
+    /// A comic zipped as an EPUB without an OPF package (only a mimetype and the pages) is read as a
+    /// CBZ: its images in natural name order.
+    /// </summary>
     internal static List<ZipArchiveEntry> EpubPageImages(ZipArchive epub)
     {
         var container = epub.GetEntry("META-INF/container.xml");
@@ -100,7 +104,10 @@ public static partial class CbzBuilder
         opfPath ??= epub.Entries.FirstOrDefault(e => e.FullName.EndsWith(".opf", StringComparison.OrdinalIgnoreCase))?.FullName;
         if (opfPath is null || Find(epub, opfPath) is not { } opfEntry)
         {
-            return [];
+            return epub.Entries
+                .Where(e => !string.IsNullOrEmpty(e.Name) && ImageFiles.IsImage(e.FullName) && !IsHidden(e.FullName))
+                .OrderBy(e => e.FullName, NaturalStringComparer.Instance)
+                .ToList();
         }
 
         var package = new OpfPackage(XmlFiles.Load(opfEntry.Open()), Path.GetDirectoryName(opfPath)?.Replace('\\', '/') ?? string.Empty);
