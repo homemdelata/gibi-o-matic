@@ -94,6 +94,7 @@ public sealed partial class EditorPageViewModel : PageViewModel
     private readonly MetadataClipboard _clipboard;
     private readonly ISettingsService _settings;
     private readonly Toasts _toasts;
+    private readonly IReaderLauncher _reader;
     private IReadOnlyList<string> _bookIds = [];
     private IReadOnlyList<string>? _sequence;
     private string? _nextId;
@@ -102,9 +103,10 @@ public sealed partial class EditorPageViewModel : PageViewModel
     private List<CatalogBook> _books = [];
 
     public EditorPageViewModel(LibrarySession session, BookEditor editor, ICoverLoader covers, IFilePicker filePicker, IFileRevealer revealer,
-        MetadataClipboard clipboard, ISettingsService settings, Toasts toasts, ILogger<EditorPageViewModel> logger)
+        MetadataClipboard clipboard, ISettingsService settings, Toasts toasts, IReaderLauncher reader, ILogger<EditorPageViewModel> logger)
     {
         _toasts = toasts;
+        _reader = reader;
         _revealer = revealer;
         _clipboard = clipboard;
         _settings = settings;
@@ -251,6 +253,16 @@ public sealed partial class EditorPageViewModel : PageViewModel
         if (IsSingle && _session.Current is { } library)
         {
             _revealer.RevealBook(library, _books[0]);
+        }
+    }
+
+    /// <summary>Opens the book being edited in the reader ("Open book", or a double click on the cover).</summary>
+    [RelayCommand]
+    private void OpenBook()
+    {
+        if (IsSingle && _books[0] is { MainFile: { } file } book && _session.Current is { } library)
+        {
+            _reader.Open(ReaderRequest.For(library, book, file));
         }
     }
 
