@@ -150,11 +150,17 @@ public sealed class IdentificationQueue : IAsyncDisposable
     public Task<IReadOnlyList<BookIdentification>> GetReviewItemsAsync(CancellationToken ct = default) =>
         QueryAsync("WHERE state IN ('needsReview', 'noMatch', 'failed')", null, ct);
 
+    /// <summary>
+    /// Counts as the Review lists: a book is in the Review while its identification waits for the user,
+    /// approved or not (an approved book sent back to it stays until approved again or kept as it is).
+    /// A row whose book is gone counts nowhere.
+    /// </summary>
     public async Task<IdentificationCounts> GetCountsAsync(CancellationToken ct = default)
     {
         await using var connection = await _index.OpenAsync(ct);
         var rows = (await connection.QueryAsync<(string State, int Count)>(new CommandDefinition(
-            "SELECT state, COUNT(*) FROM identifications GROUP BY state;", cancellationToken: ct))).ToDictionary(r => r.State, r => r.Count);
+            "SELECT i.state, COUNT(*) FROM identifications i JOIN books b ON b.id = i.book_id GROUP BY i.state;",
+            cancellationToken: ct))).ToDictionary(r => r.State, r => r.Count);
         int Of(IdentificationState s) => rows.GetValueOrDefault(Name(s));
         return new IdentificationCounts(
             Of(IdentificationState.Queued) + Of(IdentificationState.Searching),
@@ -162,6 +168,10 @@ public sealed class IdentificationQueue : IAsyncDisposable
             Of(IdentificationState.AutoApproved),
             Of(IdentificationState.Approved));
     }
+
+    /// <summary>Whether the book waits in the Review (approved or not): its identification waits for the user.</summary>
+    public async Task<bool> IsInReviewAsync(string bookId, CancellationToken ct = default) =>
+        await GetAsync(bookId, ct) is { State: IdentificationState.NeedsReview or IdentificationState.NoMatch or IdentificationState.Failed };
 
     /// <summary>Applies the chosen fields of a candidate and marks the book approved.</summary>
     public async Task<CatalogBook> ApproveAsync(string bookId, MetadataCandidate candidate, IReadOnlySet<ProposalField> fields, CancellationToken ct = default)
@@ -264,6 +274,23 @@ public sealed class IdentificationQueue : IAsyncDisposable
     public async Task MarkApprovedAsync(string bookId, CancellationToken ct = default)
     {
         await SetStateAsync(bookId, IdentificationState.Approved, null, null, ct);
+        OnChanged();
+    }
+
+    /// <summary>
+    /// "Keep as it is": an approved book sent back to the Review leaves it with the metadata it has.
+    /// Its candidates are kept; it counts again as approved the way it was (by the user or automatically).
+    /// </summary>
+    public async Task KeepAsync(string bookId, CancellationToken ct = default)
+    {
+        var book = await _index.GetBookAsync(bookId, ct) ?? throw new InvalidOperationException($"Book {bookId} not found.");
+        if (book.Metadata.Review.Status != ReviewStatus.Approved)
+        {
+            throw new InvalidOperationException($"Book {bookId} is not approved.");
+        }
+
+        var state = book.Metadata.Review.MatchedBy is MatchedBy.Auto or MatchedBy.ClaudeAuto ? IdentificationState.AutoApproved : IdentificationState.Approved;
+        await SetStateAsync(bookId, state, null, null, ct);
         OnChanged();
     }
 

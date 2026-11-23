@@ -390,7 +390,7 @@ public sealed class AssistedQueue : IAsyncDisposable
     {
         if (item.BookId is { } bookId)
         {
-            if (!await IsPendingAsync(bookId, ct))
+            if (!await IsInReviewAsync(bookId, ct))
             {
                 return null;
             }
@@ -407,7 +407,7 @@ public sealed class AssistedQueue : IAsyncDisposable
         var books = new List<ReviewGroupBook>();
         foreach (var book in group.Books)
         {
-            if (await IsPendingAsync(book.BookId, ct))
+            if (await IsInReviewAsync(book.BookId, ct))
             {
                 books.Add(book);
             }
@@ -422,8 +422,9 @@ public sealed class AssistedQueue : IAsyncDisposable
         return answer.Failed ? answer.Message : null;
     }
 
-    private async Task<bool> IsPendingAsync(string bookId, CancellationToken ct) =>
-        await _index.GetBookAsync(bookId, ct) is { Metadata.Review.Status: ReviewStatus.Pending };
+    /// <summary>The book is still in the Review (approved ones sent back to it too), and still in the library.</summary>
+    private async Task<bool> IsInReviewAsync(string bookId, CancellationToken ct) =>
+        await _index.GetBookAsync(bookId, ct) is not null && await _identification.IsInReviewAsync(bookId, ct);
 
     private void OnChanged() => Changed?.Invoke(this, EventArgs.Empty);
 

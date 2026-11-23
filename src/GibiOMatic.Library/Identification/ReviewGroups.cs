@@ -193,12 +193,12 @@ public static class SeriesGrouping
 /// </summary>
 public sealed class ReviewGroups(LibraryIndex index, IdentificationQueue queue)
 {
-    /// <summary>The books of the queue (not approved yet), grouped; corrections of books that left it are dropped.</summary>
+    /// <summary>The books of the queue (approved ones sent back to it too), grouped; corrections of books that left it are dropped.</summary>
     public async Task<ReviewGrouping> GetAsync(CancellationToken ct = default)
     {
         var books = (await index.GetBooksAsync(ct)).ToDictionary(b => b.Metadata.Id);
         var queued = (await queue.GetReviewItemsAsync(ct))
-            .Where(i => books.TryGetValue(i.BookId, out var b) && b.Metadata.Review.Status == ReviewStatus.Pending)
+            .Where(i => books.ContainsKey(i.BookId))
             .Select(i => SeriesGrouping.Describe(books[i.BookId], i))
             .ToList();
 

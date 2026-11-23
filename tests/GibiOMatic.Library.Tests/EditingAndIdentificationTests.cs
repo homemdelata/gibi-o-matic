@@ -312,6 +312,46 @@ public sealed class EditingAndIdentificationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task An_approved_book_sent_back_to_the_review_stays_approved_until_approved_again_or_kept()
+    {
+        var book = await ImportAsync("saga_vol1.pdf");
+        _identifier.Respond = (b, _) => new IdentificationResult(BookQuery.From(b), [FakeIdentifier.Saga(0.7, MatchReason.Title)], []);
+        var queue = await StartQueueAsync();
+        Assert.Equal(new IdentificationCounts(0, 1, 0, 0), await queue.GetCountsAsync(Ct));
+        await queue.ApproveAsync(book.Metadata.Id, (await queue.GetAsync(book.Metadata.Id, Ct))!.Result!.Best!, new HashSet<ProposalField> { ProposalField.Title }, Ct);
+        Assert.False(await queue.IsInReviewAsync(book.Metadata.Id, Ct));
+
+        // "Revisar metadados" on the approved book searches again: it is in the Review, and still approved.
+        await queue.SearchAgainAsync(book.Metadata.Id, null, Ct);
+
+        Assert.True(await queue.IsInReviewAsync(book.Metadata.Id, Ct));
+        Assert.Equal(ReviewStatus.Approved, (await Index.GetBookAsync(book.Metadata.Id, Ct))!.Metadata.Review.Status);
+        Assert.Equal(new IdentificationCounts(0, 1, 0, 0), await queue.GetCountsAsync(Ct));
+
+        // "Keep as it is": out of the Review, approved by the user as before, with the candidates kept.
+        await queue.KeepAsync(book.Metadata.Id, Ct);
+
+        Assert.Equal(new IdentificationCounts(0, 0, 0, 1), await queue.GetCountsAsync(Ct));
+        Assert.NotNull((await queue.GetAsync(book.Metadata.Id, Ct))!.Result);
+    }
+
+    [Fact]
+    public async Task A_book_removed_from_the_index_is_not_counted_in_the_review()
+    {
+        var book = await ImportAsync("saga_vol1.pdf");
+        _identifier.Respond = (b, _) => new IdentificationResult(BookQuery.From(b), [FakeIdentifier.Saga(0.7, MatchReason.Title)], []);
+        var queue = await StartQueueAsync();
+
+        // The identification row outlives its book (the folder was deleted by hand).
+        await using (var connection = await Index.OpenAsync(Ct))
+        {
+            await Dapper.SqlMapper.ExecuteAsync(connection, "DELETE FROM books WHERE id = @id;", new { id = book.Metadata.Id });
+        }
+
+        Assert.Equal(new IdentificationCounts(0, 0, 0, 0), await queue.GetCountsAsync(Ct));
+    }
+
+    [Fact]
     public async Task Pause_stops_identification_and_is_remembered()
     {
         await ImportAsync("a.pdf");
