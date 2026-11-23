@@ -31,6 +31,18 @@
               <TextBlock Text="{Binding RevealText}" />
             </StackPanel>
           </Button>
+          <Button Classes="link" Command="{Binding CopyMetadataCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <c:StrokeIcon Data="{StaticResource Icon.Stack}" Width="15" Height="15" />
+              <TextBlock Text="{x:Static r:Strings.Menu_CopyMetadata}" />
+            </StackPanel>
+          </Button>
+          <Button Classes="link" Command="{Binding OpenPasteCommand}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <c:StrokeIcon Data="{StaticResource Icon.Import}" Width="15" Height="15" />
+              <TextBlock Text="{x:Static r:Strings.Menu_PasteMetadata}" />
+            </StackPanel>
+          </Button>
           <Button Classes="link" Command="{Binding AskRemoveCommand}">
             <StackPanel Orientation="Horizontal" Spacing="6">
               <c:StrokeIcon Data="{StaticResource Icon.Trash}" Width="15" Height="15" />
@@ -41,6 +53,47 @@
       </StackPanel>
 
       <ContentControl DockPanel.Dock="Top" Margin="0,0,0,18" Content="{Binding RemovePrompt}" IsVisible="{Binding RemovePrompt.IsOpen}" />
+
+      <!-- "Paste metadata…": the book to copy from and the fields; pasting only fills the form -->
+      <Border DockPanel.Dock="Top" Classes="card" Margin="0,0,0,18" BorderBrush="{DynamicResource AccentTextBrush}" IsVisible="{Binding PastePrompt.IsOpen}">
+        <Grid ColumnDefinitions="*,24,Auto" RowDefinitions="Auto,12,Auto">
+          <TextBlock Grid.ColumnSpan="3" FontSize="15" FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding PastePrompt.Heading}" />
+
+          <StackPanel Grid.Row="2" Spacing="8">
+            <TextBlock Classes="field-label" Text="{x:Static r:Strings.Paste_From}" />
+            <TextBox Text="{Binding PastePrompt.SearchText}" PlaceholderText="{x:Static r:Strings.Paste_Search}"
+                     AutomationProperties.Name="{x:Static r:Strings.Paste_Search}" />
+            <TextBlock Classes="help" Text="{x:Static r:Strings.Paste_NoResults}" IsVisible="{Binding PastePrompt.HasNoResults}" />
+            <ListBox ItemsSource="{Binding PastePrompt.Results}" SelectedItem="{Binding PastePrompt.Source}" Height="230"
+                     Background="Transparent" AutomationProperties.Name="{x:Static r:Strings.Paste_From}" IsVisible="{Binding !PastePrompt.HasNoResults}">
+              <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:PasteSourceViewModel">
+                  <StackPanel Spacing="2" Margin="0,2">
+                    <TextBlock FontWeight="SemiBold" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Classes="muted" FontSize="12" Text="{Binding Line}" TextTrimming="CharacterEllipsis" />
+                  </StackPanel>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+          </StackPanel>
+
+          <StackPanel Grid.Row="2" Grid.Column="2" Width="300" Spacing="8">
+            <TextBlock Classes="field-label" Text="{x:Static r:Strings.Paste_Fields}" />
+            <ItemsControl ItemsSource="{Binding PastePrompt.Fields}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:PasteFieldOption">
+                  <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked}" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Classes="help" TextWrapping="Wrap" Text="{x:Static r:Strings.Paste_Help}" />
+            <WrapPanel ItemSpacing="8" LineSpacing="8">
+              <Button Classes="primary" MinHeight="34" Padding="14,0" Content="{x:Static r:Strings.Paste_Paste}" Command="{Binding PastePrompt.PasteCommand}" />
+              <Button Classes="secondary" MinHeight="34" Padding="14,0" Content="{x:Static r:Strings.Common_Cancel}" Command="{Binding PastePrompt.CancelCommand}" />
+            </WrapPanel>
+          </StackPanel>
+        </Grid>
+      </Border>
 
       <!-- The original is gone from the disk -->
       <Border DockPanel.Dock="Top" Classes="card" Padding="14,12" Margin="0,0,0,18" BorderBrush="{DynamicResource BadBrush}">

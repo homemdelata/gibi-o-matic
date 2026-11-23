@@ -328,6 +328,12 @@ Goal: when the user has Claude Code installed and logged in, it identifies the b
 
 ---
 
+## Adjustments after F9 (user requests)
+
+- [x] **Copy and paste metadata** (§7): "Copy metadata" and "Paste metadata…" in the right-click menus of the Library and the Review queue and in the Editor; pasting opens the target in the Editor with the source book (searchable) and one checkbox per field, remembered; nothing is saved until Save. Strings in pt-BR and en; tests.
+
+---
+
 ## Open source
 
 - [x] English documentation and project files, contributor guide, Code of Conduct, security policy, issue and PR templates, Dependabot, English screenshots (2026-10-28).

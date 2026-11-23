@@ -903,4 +903,19 @@
   <data name="Review_SortProblems" xml:space="preserve"><value>Mais problemas primeiro</value></data>
   <data name="Review_Filter" xml:space="preserve"><value>Filtrar por texto</value></data>
   <data name="Review_FilterNothing" xml:space="preserve"><value>Nada com "{0}".</value></data>
+  <data name="Menu_CopyMetadata" xml:space="preserve"><value>Copiar metadados</value></data>
+  <data name="Menu_PasteMetadata" xml:space="preserve"><value>Colar metadados…</value></data>
+  <data name="Menu_PasteMetadataFrom" xml:space="preserve"><value>Colar metadados de “{0}”…</value></data>
+  <data name="Editor_Copied" xml:space="preserve"><value>Metadados de “{0}” copiados. Use “Colar metadados…” em outro livro.</value></data>
+  <data name="Editor_Pasted" xml:space="preserve"><value>Campos colados de “{0}”. Confira, ajuste o que for diferente e clique em Salvar.</value></data>
+  <data name="Paste_Heading" xml:space="preserve"><value>Colar metadados em “{0}”</value></data>
+  <data name="Paste_From" xml:space="preserve"><value>Copiar de</value></data>
+  <data name="Paste_Search" xml:space="preserve"><value>Buscar um livro da biblioteca</value></data>
+  <data name="Paste_NoResults" xml:space="preserve"><value>Nenhum livro encontrado.</value></data>
+  <data name="Paste_Fields" xml:space="preserve"><value>Campos</value></data>
+  <data name="Paste_Help" xml:space="preserve"><value>Os campos marcados vão para o formulário; nada é salvo até você clicar em Salvar. O número na série continua o deste livro, e ISBN e ComicVine nunca são copiados. Um campo vazio no outro livro não apaga o deste.</value></data>
+  <data name="Paste_Paste" xml:space="preserve"><value>Colar</value></data>
+  <data name="Paste_FieldSeries" xml:space="preserve"><value>Série (sem o número)</value></data>
+  <data name="Paste_FieldPublisher" xml:space="preserve"><value>Editora e selo</value></data>
+  <data name="Paste_FieldOneShot" xml:space="preserve"><value>One-shot</value></data>
 </root>

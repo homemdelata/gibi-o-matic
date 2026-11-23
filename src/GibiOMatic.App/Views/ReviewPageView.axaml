@@ -159,6 +159,9 @@
               <Button Classes="queue-item" Classes.selected="{Binding IsSelected}" Command="{Binding SelectCommand}">
                 <Button.ContextMenu>
                   <ContextMenu>
+                    <MenuItem Header="{x:Static r:Strings.Menu_CopyMetadata}" Command="{Binding CopyMetadataCommand}" />
+                    <MenuItem Header="{Binding PasteMenuText}" Command="{Binding PasteMetadataCommand}" />
+                    <Separator />
                     <MenuItem Header="{Binding RevealText}" Command="{Binding RevealCommand}">
                       <MenuItem.Icon>
                         <c:StrokeIcon Data="{StaticResource Icon.FolderOpen}" Width="16" Height="16" />

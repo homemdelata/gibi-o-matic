@@ -7,6 +7,7 @@ using GibiOMatic.App.Resources;
 using GibiOMatic.App.Services;
 using GibiOMatic.Conversion;
 using GibiOMatic.Core.Domain;
+using GibiOMatic.Core.Settings;
 using GibiOMatic.Core.Text;
 using GibiOMatic.Destinations;
 using GibiOMatic.Destinations.Komga;
@@ -90,14 +91,19 @@ public sealed partial class EditorPageViewModel : PageViewModel
     private readonly IFilePicker _filePicker;
     private readonly ILogger<EditorPageViewModel> _logger;
     private readonly IFileRevealer _revealer;
+    private readonly MetadataClipboard _clipboard;
+    private readonly ISettingsService _settings;
     private IReadOnlyList<string> _bookIds = [];
     private bool _loading;
     private List<CatalogBook> _books = [];
 
     public EditorPageViewModel(LibrarySession session, BookEditor editor, ICoverLoader covers, IFilePicker filePicker, IFileRevealer revealer,
-        ILogger<EditorPageViewModel> logger)
+        MetadataClipboard clipboard, ISettingsService settings, ILogger<EditorPageViewModel> logger)
     {
         _revealer = revealer;
+        _clipboard = clipboard;
+        _settings = settings;
+        PastePrompt = new PastePromptViewModel(PasteFrom);
         RemovePrompt = new RemoveBookPromptViewModel(session, editor, logger) { Removed = _ => RequestNavigation(NavPage.Library) };
         _session = session;
         _editor = editor;
@@ -160,6 +166,79 @@ public sealed partial class EditorPageViewModel : PageViewModel
 
     /// <summary>"Remove from library" (one book only); afterwards the Library opens.</summary>
     public RemoveBookPromptViewModel RemovePrompt { get; }
+
+    /// <summary>"Paste metadata…" (one book only): fills the form from another book.</summary>
+    public PastePromptViewModel PastePrompt { get; }
+
+    /// <summary>Keeps what the form shows, saved or not, for "Paste metadata…" in another book.</summary>
+    [RelayCommand]
+    private void CopyMetadata()
+    {
+        if (IsSingle)
+        {
+            var book = Apply(_books[0].Metadata, 0, out _);
+            _clipboard.Copy(book);
+            SetMessage(string.Format(CultureInfo.CurrentCulture, Strings.Editor_Copied, book.Title), isError: false);
+        }
+    }
+
+    [RelayCommand]
+    private async Task OpenPasteAsync(CancellationToken ct)
+    {
+        if (!IsSingle || _session.Index is not { } index)
+        {
+            return;
+        }
+
+        RemovePrompt.CancelCommand.Execute(null);
+        var books = (await index.GetBooksAsync(ct)).Select(b => b.Metadata);
+        PastePrompt.Open(Apply(_books[0].Metadata, 0, out _), books, _clipboard.Copied, _settings.Current.Editor.PasteFields);
+    }
+
+    /// <summary>Fills the form with the chosen fields of <paramref name="source"/>; nothing is saved until Save.</summary>
+    private void PasteFrom(BookMetadata source, IReadOnlyList<PasteField> fields)
+    {
+        if (!IsSingle)
+        {
+            return;
+        }
+
+        var pasted = MetadataPaste.Apply(source, Apply(_books[0].Metadata, 0, out _), fields);
+        _loading = true;
+        try
+        {
+            Fill(pasted);
+            // The universes the form started with stay: the ones the paste took away are removed on save.
+            Universes.Clear();
+            foreach (var name in pasted.Universes)
+            {
+                Universes.Add(new UniverseChipViewModel(name, RemoveUniverse));
+            }
+        }
+        finally
+        {
+            _loading = false;
+        }
+
+        UpdatePreview();
+        SetMessage(string.Format(CultureInfo.CurrentCulture, Strings.Editor_Pasted, source.Title), isError: false);
+        if (!fields.SequenceEqual(_settings.Current.Editor.PasteFields))
+        {
+            _ = RememberPasteFieldsAsync(fields);
+        }
+    }
+
+    private async Task RememberPasteFieldsAsync(IReadOnlyList<PasteField> fields)
+    {
+        try
+        {
+            await _settings.SaveAsync(_settings.Current with { Editor = _settings.Current.Editor with { PasteFields = fields } });
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogWarning(ex, "Could not remember the pasted fields");
+        }
+    }
 
     [RelayCommand]
     private void Reveal()
@@ -304,6 +383,7 @@ public sealed partial class EditorPageViewModel : PageViewModel
     {
         Message = null;
         RemovePrompt.CancelCommand.Execute(null);
+        PastePrompt.Cancel();
         if (_session.Index is not { } index || _bookIds.Count == 0)
         {
             HasBooks = false;
@@ -342,6 +422,10 @@ public sealed partial class EditorPageViewModel : PageViewModel
         }
 
         UpdatePreview();
+        if (IsSingle && _clipboard.TakePasteRequest(_books[0].Metadata.Id))
+        {
+            await OpenPasteAsync(ct);
+        }
     }
 
     private async Task LoadSingleAsync(CatalogBook book, CancellationToken ct)
@@ -352,6 +436,21 @@ public sealed partial class EditorPageViewModel : PageViewModel
         FolderPath = _session.Current is { } root ? Path.Combine(root.RootPath, book.Folder) : null;
         IsFileMissing = _session.CheckFile(book);
         MissingText = BookFileText.Missing(book);
+        Fill(m);
+        LoadUniverses(m.Universes);
+        MarkReviewed = true;
+        await LoadHistoryAsync(m.Id, ct);
+        Cover = null;
+        if (_session.Current is { } library)
+        {
+            var path = Path.Combine(library.RootPath, book.Folder, LibraryLayout.CoverFileName);
+            Cover = await _covers.LoadAsync(path, 420, ct);
+        }
+    }
+
+    /// <summary>Puts one book's fields in the form (universes apart).</summary>
+    private void Fill(BookMetadata m)
+    {
         BookTitle = m.Title;
         SeriesName = m.Series?.Name;
         Number = m.Series?.Number;
@@ -364,20 +463,10 @@ public sealed partial class EditorPageViewModel : PageViewModel
         Summary = m.Summary;
         SelectedKind = Kinds.First(k => k.Kind == m.Kind);
         OneShot = m.OneShot ?? false;
-        LoadUniverses(m.Universes);
-        MarkReviewed = true;
         Credits.Clear();
         foreach (var credit in m.Credits)
         {
             Credits.Add(new CreditRowViewModel(Roles.First(r => r.Role == credit.Role), credit.Name, RemoveCredit));
-        }
-
-        await LoadHistoryAsync(m.Id, ct);
-        Cover = null;
-        if (_session.Current is { } library)
-        {
-            var path = Path.Combine(library.RootPath, book.Folder, LibraryLayout.CoverFileName);
-            Cover = await _covers.LoadAsync(path, 420, ct);
         }
     }
 

@@ -150,6 +150,8 @@
             <Separator />
             <MenuItem Header="{x:Static r:Strings.Menu_Edit}" Command="{Binding EditCommand}" />
             <MenuItem Header="{x:Static r:Strings.Menu_Review}" Command="{Binding ReviewCommand}" />
+            <MenuItem Header="{x:Static r:Strings.Menu_CopyMetadata}" Command="{Binding CopyMetadataCommand}" />
+            <MenuItem Header="{Binding PasteMenuText}" Command="{Binding PasteMetadataCommand}" />
             <Separator />
             <MenuItem Header="{Binding RevealText}" Command="{Binding RevealCommand}">
               <MenuItem.Icon>

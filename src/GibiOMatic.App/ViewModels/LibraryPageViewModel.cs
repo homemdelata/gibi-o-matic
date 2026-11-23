@@ -83,14 +83,16 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
     private readonly Debouncer _reload;
     private readonly Debouncer _reloadMissing;
     private readonly IFileRevealer _revealer;
+    private readonly MetadataClipboard _clipboard;
     private List<BookCardViewModel> _books = [];
     private double _viewportWidth;
 
     public LibraryPageViewModel(LibrarySession session, ThumbnailCache thumbnails, ICoverLoader covers, IFilePicker filePicker,
         ISettingsService settings, IUiThread ui, IReaderLauncher reader, ReadingTracker reading, IFileRevealer revealer, BookEditor editor,
-        ILogger<LibraryPageViewModel> logger)
+        MetadataClipboard clipboard, ILogger<LibraryPageViewModel> logger)
     {
         _revealer = revealer;
+        _clipboard = clipboard;
         RemovePrompt = new RemoveBookPromptViewModel(session, editor, logger) { Removed = id => _ = LoadAsync() };
         _reader = reader;
         _reading = reading;
@@ -662,6 +664,23 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
     }
 
     public void AskRemove(BookCardViewModel card) => RemovePrompt.Ask(card.Id, card.Title);
+
+    public void CopyMetadata(BookCardViewModel card)
+    {
+        _clipboard.Copy(card.Book.Metadata);
+        foreach (var book in _books)
+        {
+            book.RefreshPasteMenu();
+        }
+    }
+
+    public void PasteMetadata(BookCardViewModel card)
+    {
+        _clipboard.RequestPaste(card.Id);
+        RequestNavigation(NavPage.Editor, [card.Id]);
+    }
+
+    public string PasteMenuText => PasteText.Menu(_clipboard);
 
     /// <summary>"Add to the Kindle list", or "Remove from the Kindle list" when the selected book is in it.</summary>
     [ObservableProperty]

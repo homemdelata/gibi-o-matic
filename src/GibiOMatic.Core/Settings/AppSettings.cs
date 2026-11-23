@@ -54,6 +54,9 @@ public sealed record AppSettings
     /// <summary>Assisted identification with the user's own Claude Code (F9, SPEC §8.4). Off by default.</summary>
     public ClaudeSettings Claude { get; init; } = new();
 
+    /// <summary>What the Editor remembers ("Paste metadata", SPEC §7).</summary>
+    public EditorSettings Editor { get; init; } = new();
+
     public static IReadOnlyList<BookFormat> DefaultFormatPreference { get; } =
         [BookFormat.Cbz, BookFormat.Pdf, BookFormat.Epub, BookFormat.Cbr];
 
@@ -73,6 +76,13 @@ public sealed record ReviewSettings
 
     /// <summary>The order of the Review's lists (by book and by series).</summary>
     public ReviewSort Sort { get; init; } = ReviewSort.TitleAscending;
+}
+
+/// <summary>What the Editor remembers.</summary>
+public sealed record EditorSettings
+{
+    /// <summary>The fields checked the last time metadata was pasted.</summary>
+    public IReadOnlyList<PasteField> PasteFields { get; init; } = MetadataPaste.DefaultFields;
 }
 
 /// <summary>The order of the Review's lists.</summary>

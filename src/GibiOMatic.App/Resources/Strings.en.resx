@@ -903,4 +903,19 @@
   <data name="Review_SortProblems" xml:space="preserve"><value>Most problems first</value></data>
   <data name="Review_Filter" xml:space="preserve"><value>Filter by text</value></data>
   <data name="Review_FilterNothing" xml:space="preserve"><value>Nothing with "{0}".</value></data>
+  <data name="Menu_CopyMetadata" xml:space="preserve"><value>Copy metadata</value></data>
+  <data name="Menu_PasteMetadata" xml:space="preserve"><value>Paste metadata…</value></data>
+  <data name="Menu_PasteMetadataFrom" xml:space="preserve"><value>Paste metadata from “{0}”…</value></data>
+  <data name="Editor_Copied" xml:space="preserve"><value>Metadata of “{0}” copied. Use “Paste metadata…” on another book.</value></data>
+  <data name="Editor_Pasted" xml:space="preserve"><value>Fields pasted from “{0}”. Check them, change what differs and click Save.</value></data>
+  <data name="Paste_Heading" xml:space="preserve"><value>Paste metadata into “{0}”</value></data>
+  <data name="Paste_From" xml:space="preserve"><value>Copy from</value></data>
+  <data name="Paste_Search" xml:space="preserve"><value>Search a book in the library</value></data>
+  <data name="Paste_NoResults" xml:space="preserve"><value>No book found.</value></data>
+  <data name="Paste_Fields" xml:space="preserve"><value>Fields</value></data>
+  <data name="Paste_Help" xml:space="preserve"><value>The checked fields go into the form; nothing is saved until you click Save. The series number stays this book's, and the ISBN and ComicVine id are never copied. A field empty in the other book doesn't clear this one's.</value></data>
+  <data name="Paste_Paste" xml:space="preserve"><value>Paste</value></data>
+  <data name="Paste_FieldSeries" xml:space="preserve"><value>Series (without the number)</value></data>
+  <data name="Paste_FieldPublisher" xml:space="preserve"><value>Publisher and imprint</value></data>
+  <data name="Paste_FieldOneShot" xml:space="preserve"><value>One-shot</value></data>
 </root>

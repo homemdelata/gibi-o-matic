@@ -77,6 +77,18 @@ public sealed partial class ReviewItemViewModel(BookCardViewModel card, BookIden
 
     [RelayCommand]
     private void AskRemove() => files?.AskRemove(Card);
+
+    [RelayCommand]
+    private void CopyMetadata() => files?.CopyMetadata(Card);
+
+    [RelayCommand]
+    private void PasteMetadata() => files?.PasteMetadata(Card);
+
+    /// <summary>"Paste metadata from “Saga, Vol. 1”…".</summary>
+    public string PasteMenuText => files?.PasteMenuText ?? Strings.Menu_PasteMetadata;
+
+    /// <summary>Another book was copied.</summary>
+    public void RefreshPasteMenu() => OnPropertyChanged(nameof(PasteMenuText));
 }
 
 public sealed partial class CandidateViewModel : ViewModelBase
@@ -388,9 +400,10 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
 
     public ReviewPageViewModel(LibrarySession session, ThumbnailCache thumbnails, ICoverLoader covers, CoverImageCache remoteCovers,
         IBookFileReader reader, IUrlOpener urls, IUiThread ui, IReaderLauncher readerWindows, IFileRevealer revealer, BookEditor editor,
-        VolumeMatcher matcher, ISettingsService settings, ILogger<ReviewPageViewModel> logger)
+        VolumeMatcher matcher, ISettingsService settings, MetadataClipboard clipboard, ILogger<ReviewPageViewModel> logger)
     {
         _settings = settings;
+        _clipboard = clipboard;
         IsBySeries = settings.Current.Review.BySeries;
         Series = new SeriesReviewViewModel(session, matcher, settings, remoteCovers, covers, readerWindows, urls, logger,
             bookId => _ = ReviewBookAsync(bookId), bookId => RequestNavigation(NavPage.Editor, [bookId]));
@@ -693,6 +706,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
     public override string Title => Strings.Nav_Review;
 
     private readonly ISettingsService _settings;
+    private readonly MetadataClipboard _clipboard;
 
     /// <summary>The Review by series (SPEC §7.1): the same queue, one series at a time.</summary>
     public SeriesReviewViewModel Series { get; }
@@ -841,6 +855,28 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
     }
 
     public void AskRemove(BookCardViewModel card) => RemovePrompt.Ask(card.Id, card.Title);
+
+    public void CopyMetadata(BookCardViewModel card)
+    {
+        _clipboard.Copy(card.Book.Metadata);
+        RefreshPasteMenus();
+    }
+
+    public void PasteMetadata(BookCardViewModel card)
+    {
+        _clipboard.RequestPaste(card.Id);
+        RequestNavigation(NavPage.Editor, [card.Id]);
+    }
+
+    public string PasteMenuText => PasteText.Menu(_clipboard);
+
+    private void RefreshPasteMenus()
+    {
+        foreach (var item in Items)
+        {
+            item.RefreshPasteMenu();
+        }
+    }
 
     [RelayCommand]
     private void RevealSelected()
@@ -1189,6 +1225,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
 
     public override async Task OnNavigatedToAsync(CancellationToken ct = default)
     {
+        RefreshPasteMenus();
         await Status.RefreshAsync();
         var bookId = _pendingBookId;
         _pendingBookId = null;
