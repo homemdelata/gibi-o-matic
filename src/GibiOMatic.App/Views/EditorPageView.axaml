@@ -21,6 +21,7 @@
       <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,18">
         <Button Classes="link" Content="{x:Static r:Strings.Editor_Back}" Command="{Binding BackToLibraryCommand}" />
         <TextBlock Classes="h1" FontSize="30" TextWrapping="Wrap" Text="{Binding Heading}" />
+        <TextBlock Classes="muted" FontSize="13" Text="{Binding SequenceText}" IsVisible="{Binding SequenceText, Converter={x:Static ObjectConverters.IsNotNull}}" />
         <!-- Where the book is, and taking it out of the library -->
         <WrapPanel ItemSpacing="14" LineSpacing="4" IsVisible="{Binding IsSingle}">
           <SelectableTextBlock Classes="mono" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}"
@@ -115,16 +116,24 @@
       </Border>
 
       <!-- Footer -->
-      <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,18,0,0">
+      <!-- Footer: with a list to go through (the Library's filter), "Save and next" is the main button -->
+      <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto" Margin="0,18,0,0">
         <StackPanel VerticalAlignment="Center" Spacing="6" Margin="0,0,16,0">
           <CheckBox Content="{x:Static r:Strings.Editor_MarkReviewed}" IsChecked="{Binding MarkReviewed}" />
           <TextBlock Classes="success" Text="{Binding Message}" IsVisible="{Binding !MessageIsError}" />
           <TextBlock Classes="error" Text="{Binding Message}" IsVisible="{Binding MessageIsError}" />
         </StackPanel>
-        <Button Grid.Column="1" Classes="secondary" Margin="0,0,10,0" Content="{x:Static r:Strings.Editor_SearchOnline}"
-                Command="{Binding SearchOnlineCommand}" IsVisible="{Binding IsSingle}" />
-        <Button Grid.Column="2" Classes="secondary" Margin="0,0,10,0" Content="{x:Static r:Strings.Editor_Discard}" Command="{Binding DiscardCommand}" />
-        <Button Grid.Column="3" Classes="primary" Padding="22,0" Content="{x:Static r:Strings.Editor_Save}" Command="{Binding SaveCommand}" />
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+          <Button Classes="secondary" Content="{x:Static r:Strings.Editor_SearchOnline}"
+                  Command="{Binding SearchOnlineCommand}" IsVisible="{Binding IsSingle}" />
+          <Button Classes="secondary" Content="{x:Static r:Strings.Editor_Discard}" Command="{Binding DiscardCommand}" />
+          <Button Classes="secondary" Content="{x:Static r:Strings.Editor_Skip}" Command="{Binding SkipCommand}"
+                  ToolTip.Tip="{x:Static r:Strings.Editor_SkipHelp}" IsVisible="{Binding HasNext}" />
+          <Button Classes.primary="{Binding !HasNext}" Classes.secondary="{Binding HasNext}" Padding="22,0"
+                  Content="{x:Static r:Strings.Editor_Save}" Command="{Binding SaveCommand}" />
+          <Button Classes="primary" Padding="22,0" Content="{x:Static r:Strings.Editor_SaveAndNext}" Command="{Binding SaveAndNextCommand}"
+                  ToolTip.Tip="{x:Static r:Strings.Editor_SaveAndNextHelp}" IsVisible="{Binding HasNext}" />
+        </StackPanel>
       </Grid>
 
       <ScrollViewer>
@@ -262,7 +271,10 @@
                             </DataTemplate>
                           </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <TextBox Grid.Column="2" Text="{Binding Name}" AutomationProperties.Name="{x:Static r:Strings.Editor_Name}" />
+                        <!-- The people already credited in the library are suggested; a new name is kept as typed -->
+                        <AutoCompleteBox Grid.Column="2" Text="{Binding Name}" FilterMode="ContainsOrdinal" MinimumPrefixLength="1"
+                                         ItemsSource="{Binding $parent[UserControl].((vm:EditorPageViewModel)DataContext).KnownPeople}"
+                                         AutomationProperties.Name="{x:Static r:Strings.Editor_Name}" />
                         <Button Grid.Column="4" Classes="icon" Width="42" MinHeight="42" Command="{Binding RemoveCommand}"
                                 ToolTip.Tip="{x:Static r:Strings.Editor_RemoveCredit}" AutomationProperties.Name="{x:Static r:Strings.Editor_RemoveCredit}">
                           <c:StrokeIcon Data="{StaticResource Icon.Close}" Width="16" Height="16" Foreground="{DynamicResource TextMutedBrush}" />

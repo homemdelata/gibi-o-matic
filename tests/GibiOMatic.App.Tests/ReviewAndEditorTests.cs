@@ -452,10 +452,20 @@ public sealed class ReviewAndEditorTests : IDisposable
         await editor.SaveCommand.ExecuteAsync(null);
         Assert.True(editor.MessageIsError, "invalid month");
 
+        Assert.Empty(_app.Get<Toasts>().Items);
         editor.DateText = "2012-10";
+        NavigationRequest? request = null;
+        editor.NavigationRequested += (_, r) => request = r;
         await editor.SaveCommand.ExecuteAsync(null);
 
+        // Saved: a notice says so and the Editor closes (back to the Library).
         Assert.False(editor.MessageIsError);
+        Assert.Equal(NavPage.Library, request?.Page);
+        var toast = Assert.Single(_app.Get<Toasts>().Items);
+        Assert.Contains("Saga, Vol. 1", toast.Text);
+        Assert.False(toast.IsError);
+        editor.SetBooks([book.Metadata.Id]);
+        await editor.OnNavigatedToAsync(Ct);
         var saved = (await Session.Index!.GetBookAsync(book.Metadata.Id, Ct))!;
         Assert.Equal(("Saga, Vol. 1", "Image Comics"), (saved.Metadata.Title, saved.Metadata.Publisher));
         Assert.Equal(new PartialDate(2012, 10), saved.Metadata.Date);
@@ -658,6 +668,73 @@ public sealed class ReviewAndEditorTests : IDisposable
         var editor = Assert.IsType<EditorPageViewModel>(shell.CurrentPage);
         Assert.True(editor.IsBatch);
         Assert.Equal("2", shell.NavItems.Single(i => i.Page == NavPage.Review).Count);
+    }
+
+    [Fact]
+    public async Task Save_and_next_walks_the_library_filter_and_suggests_known_people()
+    {
+        await _app.EnterUiThreadAsync();
+        var books = await ImportAsync("alpha.pdf", "beta.pdf", "delta.pdf", "gamma.pdf");
+        var beta = books.Single(b => b.Metadata.Title == "beta").Metadata.Id;
+
+        // One book already credits someone: it leaves the "Unknown author" filter and its people are suggested.
+        var first = _app.Get<EditorPageViewModel>();
+        first.SetBooks([beta]);
+        await first.OnNavigatedToAsync(Ct);
+        Assert.False(first.HasNext);
+        Assert.Null(first.SequenceText);
+        first.AddCreditCommand.Execute(null);
+        first.Credits[^1].Name = "Brian K. Vaughan";
+        await first.SaveCommand.ExecuteAsync(null);
+
+        var main = _app.Get<MainWindowViewModel>();
+        await main.InitializeAsync(Ct);
+        var shell = Assert.IsType<ShellViewModel>(main.Content);
+        await shell.CurrentNavigation;
+        var library = (LibraryPageViewModel)shell.NavItems[0].Content;
+        library.Filters.Single(f => f.Filter == LibraryFilter.UnknownAuthor).PickCommand.Execute(null);
+        var shown = library.VisibleCards.OfType<BookCardViewModel>().ToList();
+        Assert.Equal(["alpha", "delta", "gamma"], shown.Select(c => c.Title));
+
+        library.Edit(shown[0]);
+        await shell.CurrentNavigation;
+        var editor = Assert.IsType<EditorPageViewModel>(shell.CurrentPage);
+        Assert.Equal("alpha", editor.BookTitle);
+        Assert.True(editor.HasNext);
+        Assert.Equal(string.Format(Strings.Editor_Position, 1, 3), editor.SequenceText);
+        Assert.Equal(["Brian K. Vaughan"], editor.KnownPeople);
+
+        // A known person typed in other capitals takes the library's spelling.
+        editor.AddCreditCommand.Execute(null);
+        editor.Credits[^1].Name = " brian k. vaughan ";
+        await editor.SaveAndNextCommand.ExecuteAsync(null);
+        Assert.Same(editor, shell.CurrentPage);
+        Assert.Equal("delta", editor.BookTitle);
+        Assert.Equal(string.Format(Strings.Editor_Position, 2, 3), editor.SequenceText);
+        Assert.Contains("alpha", _app.Get<Toasts>().Items[^1].Text);
+        var alpha = await BookAsync(shown[0].Id);
+        Assert.Equal(["Brian K. Vaughan"], alpha.Credits.Select(c => c.Name));
+
+        // Skip: the next one, nothing saved; the last book has no next.
+        editor.Credits.Clear();
+        editor.AddCreditCommand.Execute(null);
+        editor.Credits[^1].Name = "Fiona Staples";
+        await editor.SkipCommand.ExecuteAsync(null);
+        Assert.Equal("gamma", editor.BookTitle);
+        Assert.Empty((await BookAsync(shown[1].Id)).Credits);
+        Assert.False(editor.HasNext);
+        Assert.Equal(string.Format(Strings.Editor_Position, 3, 3), editor.SequenceText);
+
+        // A new name is kept as typed and suggested from then on.
+        editor.AddCreditCommand.Execute(null);
+        editor.Credits[^1].Name = "Fiona Staples";
+        await editor.SaveCommand.ExecuteAsync(null);
+        await shell.CurrentNavigation;
+        Assert.Same(library, shell.CurrentPage);
+        library.Edit(library.VisibleCards.OfType<BookCardViewModel>().Single(c => c.Title == "delta"));
+        await shell.CurrentNavigation;
+        Assert.Equal(["Brian K. Vaughan", "Fiona Staples"], editor.KnownPeople);
+        Assert.Equal(string.Format(Strings.Editor_Position, 1, 1), editor.SequenceText);
     }
 
     [Fact]

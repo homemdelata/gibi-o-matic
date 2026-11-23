@@ -216,8 +216,13 @@
   <data name="Editor_Restore" xml:space="preserve"><value>Restaurar</value></data>
   <data name="Editor_Restored" xml:space="preserve"><value>Versão de {0} restaurada (a anterior foi para o histórico).</value></data>
   <data name="Editor_Role" xml:space="preserve"><value>Função</value></data>
+  <data name="Editor_SaveAndNext" xml:space="preserve"><value>Salvar e próximo</value></data>
+  <data name="Editor_SaveAndNextHelp" xml:space="preserve"><value>Salva e abre o próximo livro da lista da Biblioteca (o filtro e a busca de quando você abriu este livro).</value></data>
+  <data name="Editor_Skip" xml:space="preserve"><value>Pular</value></data>
+  <data name="Editor_SkipHelp" xml:space="preserve"><value>Abre o próximo livro da lista sem salvar este.</value></data>
+  <data name="Editor_Position" xml:space="preserve"><value>Livro {0} de {1} da lista da Biblioteca</value></data>
   <data name="Editor_Save" xml:space="preserve"><value>Salvar</value></data>
-  <data name="Editor_Saved" xml:space="preserve"><value>Salvo. A versão anterior está no histórico.</value></data>
+  <data name="Editor_Saved" xml:space="preserve"><value>“{0}” salvo. A versão anterior está no histórico.</value></data>
   <data name="Editor_SavedMany" xml:space="preserve"><value>{0} livros salvos. As versões anteriores estão no histórico.</value></data>
   <data name="Editor_SearchOnline" xml:space="preserve"><value>Buscar online</value></data>
   <data name="Editor_UseFirstPage" xml:space="preserve"><value>Usar página 1</value></data>
@@ -920,4 +925,5 @@
   <data name="Paste_FieldSeries" xml:space="preserve"><value>Série (sem o número)</value></data>
   <data name="Paste_FieldPublisher" xml:space="preserve"><value>Editora e selo</value></data>
   <data name="Paste_FieldOneShot" xml:space="preserve"><value>One-shot</value></data>
+  <data name="Toast_Close" xml:space="preserve"><value>Fechar</value></data>
 </root>

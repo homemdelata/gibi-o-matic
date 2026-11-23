@@ -93,13 +93,18 @@ public sealed partial class EditorPageViewModel : PageViewModel
     private readonly IFileRevealer _revealer;
     private readonly MetadataClipboard _clipboard;
     private readonly ISettingsService _settings;
+    private readonly Toasts _toasts;
     private IReadOnlyList<string> _bookIds = [];
+    private IReadOnlyList<string>? _sequence;
+    private string? _nextId;
+    private Dictionary<string, string> _peopleSpelling = new(StringComparer.OrdinalIgnoreCase);
     private bool _loading;
     private List<CatalogBook> _books = [];
 
     public EditorPageViewModel(LibrarySession session, BookEditor editor, ICoverLoader covers, IFilePicker filePicker, IFileRevealer revealer,
-        MetadataClipboard clipboard, ISettingsService settings, ILogger<EditorPageViewModel> logger)
+        MetadataClipboard clipboard, ISettingsService settings, Toasts toasts, ILogger<EditorPageViewModel> logger)
     {
+        _toasts = toasts;
         _revealer = revealer;
         _clipboard = clipboard;
         _settings = settings;
@@ -377,6 +382,20 @@ public sealed partial class EditorPageViewModel : PageViewModel
 
     public override void SetBooks(IReadOnlyList<string> bookIds) => _bookIds = bookIds;
 
+    public override void SetSequence(IReadOnlyList<string>? bookIds) => _sequence = bookIds;
+
+    /// <summary>"Save and next" and "Skip": one book opened from a list (the Library's filter) with more after it.</summary>
+    [ObservableProperty]
+    public partial bool HasNext { get; private set; }
+
+    /// <summary>"Book 3 of 42": where the book is in the list it was opened from.</summary>
+    [ObservableProperty]
+    public partial string? SequenceText { get; private set; }
+
+    /// <summary>Every person credited in the library, for the suggestions of the credits' name box.</summary>
+    [ObservableProperty]
+    public partial IReadOnlyList<string> KnownPeople { get; private set; } = [];
+
     public override Task OnNavigatedToAsync(CancellationToken ct = default) => LoadAsync(ct);
 
     private async Task LoadAsync(CancellationToken ct)
@@ -392,6 +411,7 @@ public sealed partial class EditorPageViewModel : PageViewModel
 
         var all = (await index.GetBooksAsync(ct)).ToDictionary(b => b.Metadata.Id);
         KnownUniverses = Universe.Distinct(all.Values.SelectMany(b => b.Metadata.Universes)).Order(StringComparer.CurrentCultureIgnoreCase).ToList();
+        LoadPeople(all.Values);
         _books = _bookIds.Where(all.ContainsKey).Select(id => all[id])
             .OrderBy(b => b.Metadata.Series?.Name ?? b.Metadata.Title, NaturalStringComparer.Instance)
             .ThenBy(b => b.Metadata.Series?.Number ?? string.Empty, NaturalStringComparer.Instance)
@@ -399,6 +419,7 @@ public sealed partial class EditorPageViewModel : PageViewModel
             .ToList();
         HasBooks = _books.Count > 0;
         IsBatch = _books.Count > 1;
+        UpdateSequence(all);
         if (!HasBooks)
         {
             return;
@@ -426,6 +447,60 @@ public sealed partial class EditorPageViewModel : PageViewModel
         {
             await OpenPasteAsync(ct);
         }
+    }
+
+    /// <summary>The next book of the list that is still in the library, and where this one is in it.</summary>
+    private void UpdateSequence(IReadOnlyDictionary<string, CatalogBook> all)
+    {
+        var position = IsSingle && _sequence is { } sequence ? IndexOf(sequence, _books[0].Metadata.Id) : -1;
+        if (position < 0)
+        {
+            _nextId = null;
+            SequenceText = null;
+        }
+        else
+        {
+            _nextId = _sequence!.Skip(position + 1).FirstOrDefault(all.ContainsKey);
+            SequenceText = string.Format(CultureInfo.CurrentCulture, Strings.Editor_Position, position + 1, _sequence!.Count);
+        }
+
+        HasNext = _nextId is not null;
+    }
+
+    private static int IndexOf(IReadOnlyList<string> list, string id)
+    {
+        for (var i = 0; i < list.Count; i++)
+        {
+            if (list[i] == id)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    /// <summary>
+    /// Everyone credited in the library, each with the spelling used most (a name typed in other
+    /// capitals takes it on save, like the universes).
+    /// </summary>
+    private void LoadPeople(IEnumerable<CatalogBook> books)
+    {
+        _peopleSpelling = books.SelectMany(b => b.Metadata.Credits)
+            .Select(c => c.Name.Trim())
+            .Where(n => n.Length > 0)
+            .GroupBy(n => n, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                g => g.Key,
+                g => g.GroupBy(n => n, StringComparer.Ordinal).OrderByDescending(v => v.Count()).ThenBy(v => v.Key, StringComparer.Ordinal).First().Key,
+                StringComparer.OrdinalIgnoreCase);
+        KnownPeople = _peopleSpelling.Values.Order(StringComparer.CurrentCultureIgnoreCase).ToList();
+    }
+
+    private string PersonName(string typed)
+    {
+        var name = typed.Trim();
+        return _peopleSpelling.GetValueOrDefault(name) ?? name;
     }
 
     private async Task LoadSingleAsync(CatalogBook book, CancellationToken ct)
@@ -593,7 +668,7 @@ public sealed partial class EditorPageViewModel : PageViewModel
             result = result with
             {
                 Credits = Credits.Where(c => !string.IsNullOrWhiteSpace(c.Name))
-                    .Select(c => new Credit(c.Role.Role, c.Name.Trim())).Distinct().OrderBy(c => c.Role).ToList(),
+                    .Select(c => new Credit(c.Role.Role, PersonName(c.Name))).Distinct().OrderBy(c => c.Role).ToList(),
             };
         }
 
@@ -615,19 +690,56 @@ public sealed partial class EditorPageViewModel : PageViewModel
 
     private void RemoveCredit(CreditRowViewModel row) => Credits.Remove(row);
 
+    /// <summary>Saves and goes back to the Library; a notice says it was saved.</summary>
     [RelayCommand]
     private async Task SaveAsync(CancellationToken ct)
     {
-        if (_session.Current is not { } library || !HasBooks)
+        if (await SaveBooksAsync(ct))
         {
+            RequestNavigation(NavPage.Library);
+        }
+    }
+
+    /// <summary>Saves and opens the next book of the list the book was opened from (the Library's filter).</summary>
+    [RelayCommand]
+    private async Task SaveAndNextAsync(CancellationToken ct)
+    {
+        var next = _nextId;
+        if (await SaveBooksAsync(ct))
+        {
+            await OpenAsync(next, ct);
+        }
+    }
+
+    /// <summary>The next book of the list, without saving this one.</summary>
+    [RelayCommand]
+    private Task SkipAsync(CancellationToken ct) => OpenAsync(_nextId, ct);
+
+    private async Task OpenAsync(string? bookId, CancellationToken ct)
+    {
+        if (bookId is null)
+        {
+            RequestNavigation(NavPage.Library);
             return;
         }
 
-        Apply(_books[0].Metadata, 0, out var error);
+        _bookIds = [bookId];
+        await LoadAsync(ct);
+    }
+
+    /// <summary>Writes the form to every book; <c>false</c> (and the error in the form) when nothing was saved.</summary>
+    private async Task<bool> SaveBooksAsync(CancellationToken ct)
+    {
+        if (_session.Current is not { } library || !HasBooks)
+        {
+            return false;
+        }
+
+        var form = Apply(_books[0].Metadata, 0, out var error);
         if (error is not null)
         {
             SetMessage(error, isError: true);
-            return;
+            return false;
         }
 
         try
@@ -649,15 +761,18 @@ public sealed partial class EditorPageViewModel : PageViewModel
                 }
             }
 
-            SetMessage(IsBatch ? string.Format(CultureInfo.CurrentCulture, Strings.Editor_SavedMany, _books.Count) : Strings.Editor_Saved, isError: false);
-            var message = Message;
-            await LoadAsync(ct);
-            Message = message;
+            _toasts.Show(IsBatch
+                ? string.Format(CultureInfo.CurrentCulture, Strings.Editor_SavedMany, _books.Count)
+                : string.Format(CultureInfo.CurrentCulture, Strings.Editor_Saved, form.Title));
+            Message = null;
+            MessageIsError = false;
+            return true;
         }
         catch (Exception ex) when (LibrarySession.IsExpectedFailure(ex))
         {
             _logger.LogError(ex, "Could not save books");
             SetMessage(string.Format(CultureInfo.CurrentCulture, Strings.Error_FileAccess, ex.Message), isError: true);
+            return false;
         }
     }
 

@@ -58,8 +58,8 @@ INBOX ──import──► ARCHIVE (original + metadata.json) ──generate─
 - **Metadata from ComicVine and Open Library.** Confident matches are approved automatically; the rest wait in
   the **Review** screen with a field-by-field comparison (any proposed value can be changed before approving), one book at a time or **by series** (choose the
   ComicVine series and the title format once, approve every book of it together and undo it at once). The **Editor** handles everything else, including batch
-  edits, credits by role, *universes* (series from the same line, which become collections in Komga) and copying one
-  book's metadata onto another, such as the next volume of a series. A
+  edits, credits by role (with the people already in the library suggested as you type), *universes* (series from the same line, which become collections in Komga) and copying one
+  book's metadata onto another, such as the next volume of a series; "Save and next" goes through the books the Library's filter shows. A
   quality score points out what each book is missing.
 - **Optional help from your own Claude Code.** If you have [Claude Code](https://claude.com/claude-code) installed
   and logged in, the Review can ask it about the books the algorithm can't place: it looks at the cover and the

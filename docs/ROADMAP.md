@@ -330,6 +330,7 @@ Goal: when the user has Claude Code installed and logged in, it identifies the b
 
 ## Adjustments after F9 (user requests)
 
+- [x] **Editor: save and close, save and next, suggested people** (§7): Save shows a notice and goes back to the Library; "Save and next" and "Skip" go through the books the Library showed (filter and search); the credits' name box suggests the people already in the library. Strings in pt-BR and en; tests.
 - [x] **Copy and paste metadata** (§7): "Copy metadata" and "Paste metadata…" in the right-click menus of the Library and the Review queue and in the Editor; pasting opens the target in the Editor with the source book (searchable) and one checkbox per field, remembered; nothing is saved until Save. Strings in pt-BR and en; tests.
 
 ---
