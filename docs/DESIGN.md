@@ -117,5 +117,6 @@ The fonts are OFL and are embedded as static TTFs (Avalonia doesn't select axes 
 - **Decorative halftone** (`Border.halftone`): patches of dots fading out in a radial gradient, behind the content and not clickable. Top right of the main area (`HalftoneDot`, grid 9, opacity 0.7), bottom-left corner of the menu (`GlitchMagenta`, grid 8, 0.22) and top right of the details panel (`GlitchCyan`, grid 8, 0.2); in the light theme, half the opacity. The halftone of the placeholder covers stays the same.
 - **Destination card**: icon in a 44 px square, name, type, rule chips and a status strip with a colored dot.
 - **Confidence line**: "94% · title + number + publisher", in mono, in the level's color (≥ 80 `Ok`, ≥ 40 `Warn`, below that `Bad`).
+- **Notice (toast)**: top right of the page area, over every page; `Card` background, 1.5 border in `Ok` (`Bad` for an error), radius 8, soft shadow, medium text and a small close button. Closes by itself after 4 s; at most three stacked.
 - **"Advanced"**: a button that expands ("▸ Advanced" / "▾ Advanced") and reveals a section with a `Surface` background.
 - **Icons**: stroke icons, 2 px, rounded corners (Lucide style), as geometry in `Themes/Icons.axaml`.

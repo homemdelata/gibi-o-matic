@@ -554,15 +554,33 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
     [RelayCommand]
     private void CheckAllVisible()
     {
-        foreach (var card in VisibleCards)
+        foreach (var book in VisibleBooks())
         {
-            foreach (var book in card switch { BookCardViewModel b => [b], SeriesCardViewModel s => s.Books, UniverseCardViewModel u => u.Books, _ => [] })
-            {
-                book.IsChecked = true;
-            }
+            book.IsChecked = true;
         }
 
         UpdateChecked();
+    }
+
+    /// <summary>The books shown (after filter, search and the open series or universe), in the grid's order.</summary>
+    private IEnumerable<BookCardViewModel> VisibleBooks() => VisibleCards
+        .SelectMany(card => card switch
+        {
+            BookCardViewModel b => [b],
+            SeriesCardViewModel s => s.Books,
+            UniverseCardViewModel u => u.Books,
+            _ => (IEnumerable<BookCardViewModel>)[],
+        })
+        .DistinctBy(b => b.Id);
+
+    /// <summary>
+    /// Opens the Editor for one book with the books shown as its "Save and next" list, so going
+    /// through a filter ("Unknown author") needs no trip back to the Library.
+    /// </summary>
+    private void OpenEditor(BookCardViewModel card)
+    {
+        var sequence = VisibleBooks().Select(b => b.Id).ToList();
+        RequestNavigation(NavPage.Editor, [card.Id], sequence.Contains(card.Id) ? sequence : null);
     }
 
     /// <summary>"Books I choose" destinations, offered in the selection bar.</summary>
@@ -651,7 +669,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
         }
     }
 
-    public void Edit(BookCardViewModel card) => RequestNavigation(NavPage.Editor, [card.Id]);
+    public void Edit(BookCardViewModel card) => OpenEditor(card);
 
     public void Review(BookCardViewModel card) => RequestNavigation(NavPage.Review, [card.Id]);
 
@@ -677,7 +695,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
     public void PasteMetadata(BookCardViewModel card)
     {
         _clipboard.RequestPaste(card.Id);
-        RequestNavigation(NavPage.Editor, [card.Id]);
+        OpenEditor(card);
     }
 
     public string PasteMenuText => PasteText.Menu(_clipboard);
@@ -706,7 +724,7 @@ public sealed partial class LibraryPageViewModel : PageViewModel, IBookActions
     {
         if (Selected?.Card is { } card)
         {
-            RequestNavigation(NavPage.Editor, [card.Id]);
+            OpenEditor(card);
         }
     }
 

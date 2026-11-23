@@ -53,8 +53,10 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
 
     public ShellViewModel(LibrarySession session, LibraryPageViewModel libraryPage, InboxPageViewModel inboxPage,
         ReviewPageViewModel reviewPage, EditorPageViewModel editorPage, DestinationsPageViewModel destinationsPage, SettingsPageViewModel settingsPage, IUiThread ui,
-        KindleWatcher kindle, UpdateChecker updates)
+        KindleWatcher kindle, UpdateChecker updates, Toasts toasts)
     {
+        Toasts = toasts;
+        toasts.Items.Clear();
         Update = new UpdateStatusViewModel(updates);
         _session = session;
         _kindle = kindle;
@@ -110,6 +112,9 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
     }
 
     public IReadOnlyList<NavItemViewModel> NavItems { get; }
+
+    /// <summary>The notices shown over every page ("Saved.").</summary>
+    public Toasts Toasts { get; }
 
     /// <summary>"Version 0.7.0 is available." at the top (F6).</summary>
     public UpdateStatusViewModel Update { get; }
@@ -216,6 +221,7 @@ public sealed partial class ShellViewModel : ViewModelBase, IDisposable
         if (request.BookIds is { } ids)
         {
             item.Content.SetBooks(ids);
+            item.Content.SetSequence(request.Sequence);
         }
 
         if (SelectedNavItem == item)

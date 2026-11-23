@@ -99,6 +99,7 @@ public static class ServiceRegistration
         services.AddSingleton<KindleWatcher>();
         services.AddSingleton<LibrarySession>();
         services.AddSingleton<MetadataClipboard>();
+        services.AddSingleton<Toasts>();
         if (OperatingSystem.IsWindows())
         {
             AddWindowsBackground(services);

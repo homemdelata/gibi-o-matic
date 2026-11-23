@@ -55,8 +55,8 @@ ENTRADA ──importar──► ARQUIVO (original + metadata.json) ──gerar�
 - **Metadados do ComicVine e da Open Library.** As identificações seguras são aprovadas sozinhas, e as outras
   esperam na **Revisão**, com a comparação campo a campo (dá para mudar qualquer valor proposto antes de aprovar), um livro por vez ou **por série** (escolha a série do
   ComicVine e o formato do título uma vez, aprove todos os livros dela juntos e desfaça tudo de uma vez). O **Editor** cuida do resto, inclusive em lote, com
-  créditos por função, *universos* (séries da mesma linha, que viram coleções no Komga) e cópia dos metadados de um
-  livro para outro, como o volume seguinte de uma série. Uma nota de qualidade
+  créditos por função (sugerindo, enquanto você digita, as pessoas que já estão na biblioteca), *universos* (séries da mesma linha, que viram coleções no Komga) e cópia dos metadados de um
+  livro para outro, como o volume seguinte de uma série; "Salvar e próximo" percorre os livros que o filtro da Biblioteca mostra. Uma nota de qualidade
   aponta o que falta em cada livro.
 - **Ajuda opcional do seu próprio Claude Code.** Se você tem o [Claude Code](https://claude.com/claude-code)
   instalado e logado, a Revisão pode perguntar a ele sobre os livros que o algoritmo não acha: ele olha a capa e a
