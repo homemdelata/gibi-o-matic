@@ -26,6 +26,12 @@
         <WrapPanel ItemSpacing="14" LineSpacing="4" IsVisible="{Binding IsSingle}">
           <SelectableTextBlock Classes="mono" FontSize="12" VerticalAlignment="Center" Foreground="{DynamicResource TextMutedBrush}"
                                TextWrapping="Wrap" Text="{Binding FolderPath}" />
+          <Button Classes="link" Command="{Binding OpenBookCommand}" ToolTip.Tip="{x:Static r:Strings.Reader_OpenTip}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <c:StrokeIcon Data="{StaticResource Icon.BookOpen}" Width="15" Height="15" />
+              <TextBlock Text="{x:Static r:Strings.Review_OpenBook}" />
+            </StackPanel>
+          </Button>
           <Button Classes="link" Command="{Binding RevealCommand}">
             <StackPanel Orientation="Horizontal" Spacing="6">
               <c:StrokeIcon Data="{StaticResource Icon.FolderOpen}" Width="15" Height="15" />
@@ -141,7 +147,9 @@
           <Grid ColumnDefinitions="Auto,*">
             <!-- Cover -->
             <StackPanel Width="210" Spacing="10" Margin="0,0,28,0" IsVisible="{Binding IsSingle}">
-              <Border Classes="cover">
+              <!-- A double click on the cover opens the book in the reader -->
+              <Border Classes="cover" Cursor="Hand" c:DoubleTap.Command="{Binding OpenBookCommand}"
+                      ToolTip.Tip="{x:Static r:Strings.Reader_OpenTip}">
                 <c:AspectBox>
                   <Border CornerRadius="{StaticResource RadiusCover}" ClipToBounds="True" Background="{DynamicResource HoverBrush}">
                     <Panel>
