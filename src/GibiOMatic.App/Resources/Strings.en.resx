@@ -290,6 +290,8 @@
   <data name="Review_SearchFailed" xml:space="preserve"><value>The search failed</value></data>
   <data name="Review_SearchPlaceholder" xml:space="preserve"><value>Search with other words (e.g. House of Slaughter Vol. 1)</value></data>
   <data name="Review_Skip" xml:space="preserve"><value>Skip</value></data>
+  <data name="Review_Keep" xml:space="preserve"><value>Keep as it is</value></data>
+  <data name="Review_KeepHelp" xml:space="preserve"><value>This book was already approved: it leaves the Review with the metadata it has.</value></data>
   <data name="Review_Source" xml:space="preserve"><value>Source: {0}</value></data>
   <data name="Review_SourceRecord" xml:space="preserve"><value>{0}: {1}</value></data>
   <data name="Review_Subtitle_Count" xml:space="preserve"><value>{0} books · most serious first</value></data>

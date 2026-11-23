@@ -358,11 +358,13 @@
       </StackPanel>
 
       <!-- Footer -->
-      <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,18,0,0">
+      <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto,Auto,Auto,Auto" Margin="0,18,0,0">
         <TextBlock Classes="muted" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,16,0" Text="{Binding AppliedSummary}" />
-        <Button Grid.Column="1" Classes="secondary" Margin="0,0,10,0" Content="{x:Static r:Strings.Review_Skip}" Command="{Binding SkipCommand}" />
-        <Button Grid.Column="2" Classes="secondary" Margin="0,0,10,0" Content="{x:Static r:Strings.Review_EditByHand}" Command="{Binding EditByHandCommand}" />
-        <Button Grid.Column="3" Classes="primary" Padding="22,0" Content="{x:Static r:Strings.Review_Approve}" Command="{Binding ApproveCommand}" />
+        <Button Grid.Column="1" Classes="secondary" Margin="0,0,10,0" Content="{x:Static r:Strings.Review_Keep}" Command="{Binding KeepCommand}"
+                IsVisible="{Binding IsApprovedBook}" ToolTip.Tip="{x:Static r:Strings.Review_KeepHelp}" />
+        <Button Grid.Column="2" Classes="secondary" Margin="0,0,10,0" Content="{x:Static r:Strings.Review_Skip}" Command="{Binding SkipCommand}" />
+        <Button Grid.Column="3" Classes="secondary" Margin="0,0,10,0" Content="{x:Static r:Strings.Review_EditByHand}" Command="{Binding EditByHandCommand}" />
+        <Button Grid.Column="4" Classes="primary" Padding="22,0" Content="{x:Static r:Strings.Review_Approve}" Command="{Binding ApproveCommand}" />
       </Grid>
 
       <ScrollViewer>

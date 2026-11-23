@@ -401,6 +401,35 @@ public sealed class ReviewAndEditorTests : IDisposable
     }
 
     [Fact]
+    public async Task An_approved_book_sent_to_the_review_stays_there_until_approved_or_kept()
+    {
+        await _app.EnterUiThreadAsync();
+        _app.Identifier.Respond = (_, _) => [FakeIdentifier.Candidate("Saga, Vol. 1", "Saga", "1", 0.98, MatchReason.Isbn, MatchReason.SecondSource)];
+        var book = (await ImportAsync("saga_vol1.pdf")).Single();
+        Assert.Equal(ReviewStatus.Approved, (await BookAsync(book.Metadata.Id)).Review.Status);
+        var review = _app.Get<ReviewPageViewModel>();
+
+        // "Revisar metadados" in the Library: the Review opens on the book and searches it again.
+        review.SetBooks([book.Metadata.Id]);
+        await review.OnNavigatedToAsync(Ct);
+        Assert.Equal(book.Metadata.Id, Assert.Single(review.Items).BookId);
+        Assert.True(review.IsApprovedBook);
+
+        // The user goes elsewhere and comes back: the book is still in the queue, and counted.
+        await review.OnNavigatedToAsync(Ct);
+        Assert.Equal(book.Metadata.Id, Assert.Single(review.Items).BookId);
+        Assert.Equal(1, (await Session.Identification!.GetCountsAsync(Ct)).ToReview);
+        Assert.Equal(ReviewStatus.Approved, (await BookAsync(book.Metadata.Id)).Review.Status);
+
+        // "Keep as it is": it leaves the Review as it was, approved automatically.
+        await review.KeepCommand.ExecuteAsync(null);
+
+        Assert.Empty(review.Items);
+        Assert.Equal(new Library.Identification.IdentificationCounts(0, 0, 1, 0), await Session.Identification.GetCountsAsync(Ct));
+        Assert.Equal((ReviewStatus.Approved, MatchedBy.Auto), ((await BookAsync(book.Metadata.Id)).Review.Status, (await BookAsync(book.Metadata.Id)).Review.MatchedBy));
+    }
+
+    [Fact]
     public async Task The_editor_saves_one_book_renames_its_folder_and_can_undo()
     {
         await _app.EnterUiThreadAsync();

@@ -1167,7 +1167,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
     /// <summary>A search or a details request is running (it can take seconds: the sources are spaced).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowNoCandidateHint), nameof(ShowCandidates), nameof(ShowClaudeEvidence))]
-    [NotifyCanExecuteChangedFor(nameof(ApproveCommand), nameof(SkipCommand), nameof(SearchAgainCommand), nameof(AskClaudeCommand), nameof(SearchDeeperCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ApproveCommand), nameof(SkipCommand), nameof(KeepCommand), nameof(SearchAgainCommand), nameof(AskClaudeCommand), nameof(SearchDeeperCommand))]
     public partial bool IsBusy { get; private set; }
 
     [ObservableProperty]
@@ -1278,7 +1278,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             var books = (await index.GetBooksAsync(ct)).ToDictionary(b => b.Metadata.Id);
             var context = QualityContext.From(books.Values.Select(b => b.Metadata));
             var items = reviewItems
-                .Where(i => books.ContainsKey(i.BookId) && (books[i.BookId].Metadata.Review.Status == ReviewStatus.Pending || i.BookId == selectBookId))
+                .Where(i => books.ContainsKey(i.BookId))
                 .Select(i =>
                 {
                     var book = books[i.BookId];
@@ -1294,7 +1294,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
             _allItems = items;
             ShowItems(keep);
             HasItems = items.Count > 0;
-            _toReview = items.Where(i => books[i.BookId].Metadata.Review.Status == ReviewStatus.Pending).Select(i => i.BookId).ToList();
+            _toReview = items.Select(i => i.BookId).ToList();
             await UpdateSearchAllAsync(ct);
             await UpdateAskClaudeAllAsync(ct);
             Subtitle = string.Format(CultureInfo.CurrentCulture, Strings.Review_Subtitle_Count, items.Count);
@@ -1398,6 +1398,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
         if (item is null || _session.Current is not { } library)
         {
             _book = null;
+            IsApprovedBook = false;
             FolderPath = null;
             IsFileMissing = false;
             return;
@@ -1405,6 +1406,7 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
 
         item.IsSelected = true;
         _book = item.Card.Book;
+        IsApprovedBook = _book.Metadata.Review.Status == ReviewStatus.Approved;
         FolderPath = Path.Combine(library.RootPath, _book.Folder);
         IsFileMissing = _session.CheckFile(_book);
         MissingText = BookFileText.Missing(_book);
@@ -1667,6 +1669,27 @@ public sealed partial class ReviewPageViewModel : PageViewModel, IBookFileAction
 
         var index = Items.IndexOf(item);
         await queue.SkipAsync(item.BookId, ct);
+        await MoveToNextAsync(index, ct);
+    }
+
+    /// <summary>The book on screen was approved before and sent back to the Review: it can be kept as it is.</summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(KeepCommand))]
+    public partial bool IsApprovedBook { get; private set; }
+
+    private bool CanKeep => IsApprovedBook && !IsBusy;
+
+    /// <summary>"Keep as it is": the approved book leaves the Review with the metadata it has.</summary>
+    [RelayCommand(CanExecute = nameof(CanKeep))]
+    private async Task KeepAsync(CancellationToken ct)
+    {
+        if (Selected is not { } item || _session.Identification is not { } queue)
+        {
+            return;
+        }
+
+        var index = Items.IndexOf(item);
+        await queue.KeepAsync(item.BookId, ct);
         await MoveToNextAsync(index, ct);
     }
 
