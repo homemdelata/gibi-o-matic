@@ -312,6 +312,23 @@ public sealed class EditingAndIdentificationTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task An_approved_book_searched_again_is_not_counted_as_waiting_in_the_review()
+    {
+        var book = await ImportAsync("saga_vol1.pdf");
+        _identifier.Respond = (b, _) => new IdentificationResult(BookQuery.From(b), [FakeIdentifier.Saga(0.7, MatchReason.Title)], []);
+        var queue = await StartQueueAsync();
+        Assert.Equal(new IdentificationCounts(0, 1, 0, 0), await queue.GetCountsAsync(Ct));
+        await queue.ApproveAsync(book.Metadata.Id, (await queue.GetAsync(book.Metadata.Id, Ct))!.Result!.Best!, new HashSet<ProposalField> { ProposalField.Title }, Ct);
+
+        // "Revisar metadados" on the approved book searches again: it gets new candidates and stays approved.
+        await queue.SearchAgainAsync(book.Metadata.Id, null, Ct);
+
+        Assert.Equal(IdentificationState.NeedsReview, (await queue.GetAsync(book.Metadata.Id, Ct))!.State);
+        Assert.Equal(ReviewStatus.Approved, (await Index.GetBookAsync(book.Metadata.Id, Ct))!.Metadata.Review.Status);
+        Assert.Equal(new IdentificationCounts(0, 0, 0, 1), await queue.GetCountsAsync(Ct));
+    }
+
+    [Fact]
     public async Task Pause_stops_identification_and_is_remembered()
     {
         await ImportAsync("a.pdf");

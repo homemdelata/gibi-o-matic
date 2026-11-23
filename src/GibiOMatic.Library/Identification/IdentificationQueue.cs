@@ -44,6 +44,9 @@ public sealed class IdentificationQueue : IAsyncDisposable
 {
     private const string PausedKey = "identify.paused";
 
+    /// <summary>How the index stores <see cref="ReviewStatus.Pending"/> in <c>books.review_status</c>.</summary>
+    private static readonly string PendingStatus = ReviewStatus.Pending.ToString().ToLowerInvariant();
+
     private readonly LibraryInfo _library;
     private readonly LibraryIndex _index;
     private readonly IBookIdentifier _identifier;
@@ -150,17 +153,50 @@ public sealed class IdentificationQueue : IAsyncDisposable
     public Task<IReadOnlyList<BookIdentification>> GetReviewItemsAsync(CancellationToken ct = default) =>
         QueryAsync("WHERE state IN ('needsReview', 'noMatch', 'failed')", null, ct);
 
+    /// <summary>
+    /// Counts as the Review lists: a book waits for the user only while it is pending. An approved book
+    /// searched again (opened in the Review from the Library, or "Fetch metadata") keeps a review state
+    /// with its new candidates, but it is still approved; a row whose book is gone counts nowhere.
+    /// </summary>
     public async Task<IdentificationCounts> GetCountsAsync(CancellationToken ct = default)
     {
         await using var connection = await _index.OpenAsync(ct);
-        var rows = (await connection.QueryAsync<(string State, int Count)>(new CommandDefinition(
-            "SELECT state, COUNT(*) FROM identifications GROUP BY state;", cancellationToken: ct))).ToDictionary(r => r.State, r => r.Count);
-        int Of(IdentificationState s) => rows.GetValueOrDefault(Name(s));
-        return new IdentificationCounts(
-            Of(IdentificationState.Queued) + Of(IdentificationState.Searching),
-            Of(IdentificationState.NeedsReview) + Of(IdentificationState.NoMatch) + Of(IdentificationState.Failed),
-            Of(IdentificationState.AutoApproved),
-            Of(IdentificationState.Approved));
+        var rows = await connection.QueryAsync<(string State, string? ReviewStatus, int Count)>(new CommandDefinition(
+            """
+            SELECT i.state, b.review_status, COUNT(*) FROM identifications i
+            LEFT JOIN books b ON b.id = i.book_id
+            GROUP BY i.state, b.review_status;
+            """, cancellationToken: ct));
+        int queued = 0, toReview = 0, autoApproved = 0, approved = 0;
+        foreach (var (state, reviewStatus, count) in rows)
+        {
+            var pending = reviewStatus == PendingStatus;
+            switch (Enum.Parse<IdentificationState>(state, ignoreCase: true))
+            {
+                case IdentificationState.Queued or IdentificationState.Searching:
+                    queued += count;
+                    break;
+                case IdentificationState.NeedsReview or IdentificationState.NoMatch or IdentificationState.Failed when reviewStatus is not null:
+                    if (pending)
+                    {
+                        toReview += count;
+                    }
+                    else
+                    {
+                        approved += count;
+                    }
+
+                    break;
+                case IdentificationState.AutoApproved:
+                    autoApproved += count;
+                    break;
+                case IdentificationState.Approved:
+                    approved += count;
+                    break;
+            }
+        }
+
+        return new IdentificationCounts(queued, toReview, autoApproved, approved);
     }
 
     /// <summary>Applies the chosen fields of a candidate and marks the book approved.</summary>
