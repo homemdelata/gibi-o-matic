@@ -150,6 +150,22 @@ public sealed class CbzBuilderTests : IDisposable
     }
 
     [Fact]
+    public async Task An_epub_without_a_package_gives_its_images_in_name_order()
+    {
+        // A CBZ renamed to .epub (only a mimetype and the pages): seen in a Humble Bundle download.
+        var epub = SyntheticBooks.Epub(_temp.Combine("renamed.epub"), new SyntheticBooks.EpubOptions { Pages = 12, NoPackage = true });
+
+        Assert.Equal(12, (await CbzBuilder.BuildAsync(epub, BookFormat.Epub, Saga, Target, null, Ct)).Pages);
+        var (pages, _, zip) = Open(Target);
+        using (zip)
+        {
+            Assert.Equal(12, pages.Count);
+            Assert.True(SyntheticImages.Near(SyntheticImages.Inspect(Bytes(zip, "0001.jpg")).Center, SyntheticBooks.CoverColor));
+            Assert.True(SyntheticImages.Near(SyntheticImages.Inspect(Bytes(zip, "0010.jpg")).Center, SyntheticBooks.PageColor));
+        }
+    }
+
+    [Fact]
     public void Comic_info_has_the_spec_fields_and_one_shots_are_series_of_one()
     {
         var info = XDocument.Parse(ComicInfoWriter.Write(Saga, 144)).Root!;
