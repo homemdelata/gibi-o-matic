@@ -1,3 +1,4 @@
+using GibiOMatic.App.Resources;
 using GibiOMatic.App.Services;
 using GibiOMatic.App.ViewModels;
 using GibiOMatic.Core.Domain;
@@ -486,6 +487,83 @@ public sealed class ReviewAndEditorTests : IDisposable
         Assert.All(saved, m => Assert.Equal(("Deadly Class", "Image Comics"), (m.Series!.Name, m.Publisher)));
         Assert.Equal(["deadly a", "deadly b", "deadly c"], saved.Select(m => m.Title));
         Assert.All(saved, m => Assert.Equal(ReviewStatus.Pending, m.Review.Status));
+    }
+
+    [Fact]
+    public async Task Metadata_copied_in_the_library_is_pasted_into_the_editor_of_another_book()
+    {
+        await _app.EnterUiThreadAsync();
+        var books = await ImportAsync("saga_vol1.pdf", "saga_vol2.pdf", "plutona.pdf");
+        var vol1 = books.Single(b => b.Metadata.Title == "saga vol1").Metadata.Id;
+        var vol2 = books.Single(b => b.Metadata.Title == "saga vol2").Metadata.Id;
+        var editor = _app.Get<EditorPageViewModel>();
+        editor.SetBooks([vol1]);
+        await editor.OnNavigatedToAsync(Ct);
+        editor.BookTitle = "Saga, Vol. 1";
+        editor.SeriesName = "Saga";
+        editor.Number = "1";
+        editor.Publisher = "Image Comics";
+        editor.DateText = "2012-10";
+        editor.Summary = "The first volume.";
+        editor.SelectedKind = editor.Kinds.Single(k => k.Kind == BookKind.Tpb);
+        editor.AddCreditCommand.Execute(null);
+        editor.Credits[^1].Name = "Brian K. Vaughan";
+        editor.NewUniverse = "Saga-Verse";
+        await editor.SaveCommand.ExecuteAsync(null);
+
+        // Copy in the Library: the other books' menu names the copied book; Paste opens the Editor.
+        var library = _app.Get<LibraryPageViewModel>();
+        await library.LoadAsync(Ct);
+        library.SetViewModeCommand.Execute(LibraryViewMode.Books);
+        var cards = library.VisibleCards.OfType<BookCardViewModel>().ToList();
+        Assert.Equal(Strings.Menu_PasteMetadata, cards[0].PasteMenuText);
+        cards.Single(c => c.Id == vol1).CopyMetadataCommand.Execute(null);
+        var target = cards.Single(c => c.Id == vol2);
+        Assert.Contains("Saga, Vol. 1", target.PasteMenuText);
+        NavigationRequest? request = null;
+        library.NavigationRequested += (_, r) => request = r;
+        target.PasteMetadataCommand.Execute(null);
+        Assert.Equal((NavPage.Editor, vol2), (request?.Page, request?.BookIds?.Single()));
+
+        // The Editor opens with the panel: the copied book chosen, the same series listed first.
+        editor.SetBooks([vol2]);
+        await editor.OnNavigatedToAsync(Ct);
+        var prompt = editor.PastePrompt;
+        Assert.True(prompt.IsOpen);
+        Assert.Equal(vol1, prompt.Source?.Book.Id);
+        Assert.Equal(["Saga, Vol. 1", "plutona"], prompt.Results.Select(r => r.Title));
+        prompt.SearchText = "nothing like it";
+        Assert.True(prompt.HasNoResults);
+        prompt.SearchText = "saga";
+        Assert.Equal(vol1, Assert.Single(prompt.Results).Book.Id);
+        Assert.Equal(MetadataPaste.DefaultFields.Order(), prompt.Fields.Where(f => f.IsChecked).Select(f => f.Field).Order());
+        prompt.Fields.Single(f => f.Field == PasteField.Summary).IsChecked = true;
+
+        prompt.PasteCommand.Execute(null);
+
+        // Only the form changes: the title, date and number stay this book's until Save.
+        Assert.False(prompt.IsOpen);
+        Assert.Equal(("saga vol2", "Saga", "2", "Image Comics", null), (editor.BookTitle, editor.SeriesName, editor.Number, editor.Publisher, editor.DateText));
+        Assert.Equal(("The first volume.", BookKind.Tpb), (editor.Summary, editor.SelectedKind.Kind));
+        Assert.Equal("Brian K. Vaughan", Assert.Single(editor.Credits).Name);
+        Assert.Equal(["Saga-Verse"], editor.Universes.Select(u => u.Name));
+        Assert.Contains("Saga, Vol. 1", editor.Message);
+        Assert.Equal("saga vol2", (await BookAsync(vol2)).Title);
+
+        editor.BookTitle = "Saga, Vol. 2";
+        editor.DateText = "2013-06";
+        await editor.SaveCommand.ExecuteAsync(null);
+        var saved = await BookAsync(vol2);
+        Assert.Equal(("Saga, Vol. 2", new SeriesInfo("Saga", "2"), new PartialDate(2013, 6), "Image Comics"), (saved.Title, saved.Series, saved.Date, saved.Publisher));
+        Assert.Equal(["Brian K. Vaughan"], saved.Credits.Select(c => c.Name));
+        Assert.Equal(["Saga-Verse"], saved.Universes);
+        Assert.Equal((ReviewStatus.Approved, MatchedBy.Manual), (saved.Review.Status, saved.Review.MatchedBy));
+
+        // The checked fields are remembered; the Editor's own Copy takes the form as it is.
+        Assert.Contains(PasteField.Summary, _app.Get<ISettingsService>().Current.Editor.PasteFields);
+        editor.BookTitle = "Saga, Vol. 2 (unsaved)";
+        editor.CopyMetadataCommand.Execute(null);
+        Assert.Equal("Saga, Vol. 2 (unsaved)", _app.Get<MetadataClipboard>().Copied?.Title);
     }
 
     [Fact]

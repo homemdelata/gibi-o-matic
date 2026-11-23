@@ -209,6 +209,18 @@ public sealed partial class BookCardViewModel : ViewModelBase
     [RelayCommand]
     private void AskRemove() => _actions?.AskRemove(this);
 
+    [RelayCommand]
+    private void CopyMetadata() => _actions?.CopyMetadata(this);
+
+    [RelayCommand]
+    private void PasteMetadata() => _actions?.PasteMetadata(this);
+
+    /// <summary>"Paste metadata from “Saga, Vol. 1”…", or "Paste metadata…" when nothing was copied.</summary>
+    public string PasteMenuText => _actions?.PasteMenuText ?? Strings.Menu_PasteMetadata;
+
+    /// <summary>Another book was copied.</summary>
+    public void RefreshPasteMenu() => OnPropertyChanged(nameof(PasteMenuText));
+
     public string KindleMenuText => IsInKindleList ? Strings.Menu_RemoveKindle : Strings.Menu_AddKindle;
 
     public string ReadMenuText => IsRead ? Strings.Reading_MarkUnread : Strings.Reading_MarkRead;
@@ -525,7 +537,7 @@ public interface IReadingActions
     Task ClearProgressAsync(BookCardViewModel card);
 }
 
-/// <summary>Where a book is on disk, and taking it out of the library.</summary>
+/// <summary>Where a book is on disk, taking it out of the library, and copying its metadata to another book.</summary>
 public interface IBookFileActions
 {
     /// <summary>Shows the main original (or the book folder) in the file manager.</summary>
@@ -533,6 +545,23 @@ public interface IBookFileActions
 
     /// <summary>Asks whether to remove the book from the library.</summary>
     void AskRemove(BookCardViewModel card);
+
+    /// <summary>Keeps the book's metadata for "Paste metadata…" (SPEC §7).</summary>
+    void CopyMetadata(BookCardViewModel card);
+
+    /// <summary>Opens the book in the Editor with the paste panel.</summary>
+    void PasteMetadata(BookCardViewModel card);
+
+    /// <summary>The menu item's text, naming the copied book.</summary>
+    string PasteMenuText { get; }
+}
+
+/// <summary>The menu text of "Paste metadata…".</summary>
+public static class PasteText
+{
+    public static string Menu(MetadataClipboard clipboard) => clipboard.Copied is { } copied
+        ? string.Format(CultureInfo.CurrentCulture, Strings.Menu_PasteMetadataFrom, copied.Title)
+        : Strings.Menu_PasteMetadata;
 }
 
 /// <summary>What the right-click menu of a book in the Library does.</summary>
