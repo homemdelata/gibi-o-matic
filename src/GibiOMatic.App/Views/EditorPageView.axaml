@@ -134,11 +134,11 @@
                   Command="{Binding SearchOnlineCommand}" IsVisible="{Binding IsSingle}" />
           <Button Classes="secondary" Content="{x:Static r:Strings.Editor_Discard}" Command="{Binding DiscardCommand}" />
           <Button Classes="secondary" Content="{x:Static r:Strings.Editor_Skip}" Command="{Binding SkipCommand}"
-                  ToolTip.Tip="{x:Static r:Strings.Editor_SkipHelp}" IsVisible="{Binding HasNext}" />
+                  ToolTip.Tip="{x:Static r:Strings.Editor_SkipHelp}" ToolTip.Placement="Top" ToolTip.VerticalOffset="-6" IsVisible="{Binding HasNext}" />
           <Button Classes.primary="{Binding !HasNext}" Classes.secondary="{Binding HasNext}" Padding="22,0"
                   Content="{x:Static r:Strings.Editor_Save}" Command="{Binding SaveCommand}" />
           <Button Classes="primary" Padding="22,0" Content="{x:Static r:Strings.Editor_SaveAndNext}" Command="{Binding SaveAndNextCommand}"
-                  ToolTip.Tip="{x:Static r:Strings.Editor_SaveAndNextHelp}" IsVisible="{Binding HasNext}" />
+                  ToolTip.Tip="{x:Static r:Strings.Editor_SaveAndNextHelp}" ToolTip.Placement="Top" ToolTip.VerticalOffset="-6" IsVisible="{Binding HasNext}" />
         </StackPanel>
       </Grid>
 
